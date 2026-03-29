@@ -63,7 +63,7 @@
 
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
       <h3 id="welcomeMsg" style="margin:0;font-size:18px;">반갑습니다!</h3>
-      <button onclick="location.reload()" style="padding:6px 12px;font-size:12px;background:#95a5a6;color:white;border:none;border-radius:5px;cursor:pointer;">로그아웃</button>
+      <button onclick="logout()" style="padding:6px 12px;font-size:12px;background:#95a5a6;color:white;border:none;border-radius:5px;cursor:pointer;">로그아웃</button>
     </div>
 
     <div class="card" style="border-left:6px solid var(--secondary-color);">
@@ -169,30 +169,58 @@
   // ═══════════════════════════════════════════════════════════════
   
   // 1. 다음 티어를 자동으로 계산하기 위한 티어 순서
-  var TIER_ORDER = ['새싹', '브론즈', '실버', '골드', '플래티넘', '다이아몬드', '마스터', '그랜드마스터'];
+  var TIER_ORDER = ['새싹', '브론즈', '빛나는 브론즈', '거친 실버', '성장한 실버','진화한 실버', '찬란한 실버', '거친 골드', '성장한 골드', '진화한 골드', '찬란한 골드', '루비', '성장한 루비', '진화한 루비', '찬란한 루비', '거친 다이아몬드', '성장한 다이아몬드', '진화한 다이아몬드', '찬란한 다이아몬드', '마스터', '완성된 마스터', '그랜드마스터'];
 
   // 2. 각 티어별 응원 문구 (원하시는 문구로 자유롭게 수정하세요!)
   var TIER_MESSAGES = {
     '새싹': '여정의 시작, 너의 이야기가 피어나는 순간',
     '브론즈': '멈추지 않겠다는 선택과 그 노력의 첫 증명',
-    '실버': '실버는 쌓아올린 노력의 결과, 가능성이 현실이 되기 시작한다',
-    '골드': '스스로를 증명한 순간, 멈출 이유가 없어진 순간',
-    '플래티넘': '평범함은 이미 뒤에 있다. 상위권 경쟁의 입구에 도달',
-    '다이아몬드': '이 자리는 충분히 빛나고 있는 위치 그럼에도 더 위를 본다면',
+    '빛나는 브론즈': '멈추지 않겠다는 선택과 그 노력의 첫 증명',
+    '거친 실버': '실버는 쌓아올린 노력의 결과, 가능성이 현실이 되기 시작한다',
+    '성장한 실버': '실버는 쌓아올린 노력의 결과, 가능성이 현실이 되기 시작한다',
+    '진화한 실버': '실버는 쌓아올린 노력의 결과, 가능성이 현실이 되기 시작한다',
+    '찬란한 실버': '실버는 쌓아올린 노력의 결과, 가능성이 현실이 되기 시작한다',
+    '거친 골드': '스스로를 증명한 순간, 멈출 이유가 없어진 순간',
+    '성장한 골드': '스스로를 증명한 순간, 멈출 이유가 없어진 순간',
+    '진화한 골드': '스스로를 증명한 순간, 멈출 이유가 없어진 순간',
+    '찬란한 골드': '스스로를 증명한 순간, 멈출 이유가 없어진 순간',
+    '거친 루비': '평범함은 이미 뒤에 있다. 상위권 경쟁의 입구에 도달',
+    '성장한 루비': '평범함은 이미 뒤에 있다. 상위권 경쟁의 입구에 도달',
+    '진화한 루비': '평범함은 이미 뒤에 있다. 상위권 경쟁의 입구에 도달',
+    '찬란한 루비': '평범함은 이미 뒤에 있다. 상위권 경쟁의 입구에 도달',
+    '거친 다이아몬드': '이 자리는 충분히 빛나고 있는 위치 그럼에도 더 위를 본다면',
+    '성장한 다이아몬드': '이 자리는 충분히 빛나고 있는 위치 그럼에도 더 위를 본다면',
+    '진화한 다이아몬드': '이 자리는 충분히 빛나고 있는 위치 그럼에도 더 위를 본다면',
+    '찬란한 다이아몬드': '이 자리는 충분히 빛나고 있는 위치 그럼에도 더 위를 본다면',
     '마스터': '노력만으로 닿기에는 부족한 선택받은 소수의 영역에 도달하다',
-    '그랜드마스터': '모든 것이 바래져 잊혀진다해도 그대가 이룩한 이 업적은 남으리라 당신의 여정에 무한한 경의를'
+    '완성된 마스터': '오래도록 기억될 단 하나의 이름을 이곳에 기록하다',
+    '그랜드마스터': '모든 것이 바래져 잊혀진다해도 그대가 이룩한 이 업적은 남으리라 지금까지의 당신의 여정에 무한한 경의를'
   };
 
   // 3. 티어 뱃지 이미지 링크
   var TIER_IMAGES = {
     '새싹':         'https://lh3.googleusercontent.com/d/1zFDg7LEHBOO0PpBdo2e4kuVTOJGBUBRQ=s200',
-    '브론즈':       'https://lh3.googleusercontent.com/d/1-ndg1UVXWnFUiz7tcCQxczFhUELVahg0=s200',
-    '실버':         'https://lh3.googleusercontent.com/d/1RKp82q0XBW1qtpAlpRfuMRJuvlpdCiNx=s200',
-    '골드':         'https://lh3.googleusercontent.com/d/1HSFO1wzlGMVt2AxgqDSsvRHGZj7_t34n=s200',
-    '플래티넘':     'https://lh3.googleusercontent.com/d/1yPp_7y6GmRrPyXwfEQv7mnAV9r8LOtoE=s200',
-    '다이아몬드':   'https://lh3.googleusercontent.com/d/1H3NUqNMmFbix8DROB-wyF4XnEcov_nyo=s200',
-    '마스터':       'https://lh3.googleusercontent.com/d/1SoVKFW_rftq0ZZPw7HPAEW1GsnLS5kAN=s200',
-    '그랜드마스터': 'https://lh3.googleusercontent.com/d/1QHQcSe00zXXcCEhrcif0XU900E4dc17U=s200'
+    '브론즈':       'https://lh3.googleusercontent.com/d/1OIyG_nSFeX_bBV1jtxw-kSBChhCHjLVr=s200',
+    '빛나는 브론즈':  'https://lh3.googleusercontent.com/d/1u4I2VY4AeRFsDspjEki9L-hQ1j5JiKGx=s200',
+    '거친 실버':         'https://lh3.googleusercontent.com/d/1uWgt0OOK5rJcVTEi-VyGp5UnVgWwyGlC=s200',
+    '성장한 실버':         'https://lh3.googleusercontent.com/d/1osUBjhruiHVJN4t-Gpr3ZF4q8P0TpDJJ=s200',
+    '진화한 실버':         'https://lh3.googleusercontent.com/d/1BUY9C9_L4OifyyIYZRG5hUwCotRMfpdV=s200',
+    '찬란한 실버':         'https://lh3.googleusercontent.com/d/1WUyRfQrEp694zsOF3HW5TJ7cNSV7hh6N=s200',            
+    '거친 골드':         'https://lh3.googleusercontent.com/d/1TZShnEmdOsJHbiLjX7DP68VY7C9APLwO=s200',
+    '성장한 골드':         'https://lh3.googleusercontent.com/d/1TZShnEmdOsJHbiLjX7DP68VY7C9APLwO=s200',
+    '진화한 골드':         'https://lh3.googleusercontent.com/d/1TZShnEmdOsJHbiLjX7DP68VY7C9APLwO=s200',
+    '찬란한 골드':         'https://lh3.googleusercontent.com/d/1TZShnEmdOsJHbiLjX7DP68VY7C9APLwO=s200',    
+    '거친 루비':     'https://lh3.googleusercontent.com/d/15X9xtvv7FdCJHoSArO2CwbV4fnHNN3UF=s200',
+    '성장한 루비':     'https://lh3.googleusercontent.com/d/1REEir6vppC6iPRh6mOynTHWD4Vx-Ttgf=s200',
+    '진화한 루비':     'https://lh3.googleusercontent.com/d/1MDwOHkjH0u50P5gkB1WrfXrvkpRCNLcS=s200',
+    '찬란한 루비':     'https://lh3.googleusercontent.com/d/1EfCQf-t_gBpIohmamSb3yOCbeOzISMJc=s200',        
+    '거친 다이아몬드':   'https://lh3.googleusercontent.com/d/1Q407DyyD5wndI-rVvKjt6981cRGXxIqN=s200',
+    '성장한 다이아몬드':   'https://lh3.googleusercontent.com/d/1XYMWlQ3QWFeIf0bO_z2Kn8CxJpmPq4Gb=s200',
+    '진화한 다이아몬드':   'https://lh3.googleusercontent.com/d/1Wdb5TSQ3HH_c4Ea0lSBMt7iH4m5L9dlU=s200',
+    '찬란한 다이아몬드':   'https://lh3.googleusercontent.com/d/12KsCvjljkzBP1aMEKN1lFDTshliUNMFp=s200',
+    '마스터':       'https://lh3.googleusercontent.com/d/1aLJ93TjnCrfIw9qNIqHbx2i7NV_xk97w=s200',
+    '완성된 마스터': 'https://lh3.googleusercontent.com/d/1aLJ93TjnCrfIw9qNIqHbx2i7NV_xk97w=s200',
+    '그랜드마스터': 'https://lh3.googleusercontent.com/d/1IMzjE091rxonvuq_DiVzu-rG2o7yI7nu=s200'
   };
 
   // ── 로그인 함수 ─────────────────────────────────────────────
@@ -216,6 +244,13 @@
         alert('서버 오류: ' + err.message);
       })
       .getStudentData(name);
+  }
+
+  // ── 로그아웃 함수 ─────────────────────────────────────────────
+  function logout() {
+    document.getElementById('dashboard').style.display    = 'none';
+    document.getElementById('loginSection').style.display = 'block';
+    document.getElementById('studentName').value = '';  // 입력창 비우기
   }
 
   // ── 대시보드 렌더링 함수 ─────────────────────────────────────
@@ -291,7 +326,7 @@
         var tierPercent     = Math.max(0, Math.min(100, (currentProgress / tierRange) * 100));
         
         document.getElementById('tierProgressBar').style.width = tierPercent + '%';
-        document.getElementById('tierProgressText').innerText  = '승급까지 ' + Number(remainP).toLocaleString() + 'P 남음';
+        document.getElementById('tierProgressText').innerText  = '승급까지 ' + Number(remainP).toLocaleString() + '포인트 남음';
         
         // 새로 추가된 다음 등급 명확한 텍스트 
         document.getElementById('tierNextText').innerText = '[' + nextTierName + '] 등급까지 ' + Number(remainP).toLocaleString() + 'P 남았습니다.';

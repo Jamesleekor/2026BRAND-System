@@ -127,12 +127,26 @@ function getStudentData(studentName) {
   const honor = Number(studentRow[COL_VALUE - 1]) || 0;
   let tier = { name: '새싹', icon: '🌱', min: 0, max: 5000 };
   if      (honor >= 100000) tier = { name: '그랜드마스터', icon: '🏆', min: 100000, max: 100000 };
-  else if (honor >= 75000)  tier = { name: '마스터',       icon: '👑', min: 75000,  max: 100000 };
-  else if (honor >= 50000)  tier = { name: '다이아몬드',   icon: '💠', min: 50000,  max: 75000  };
-  else if (honor >= 30000)  tier = { name: '플래티넘',     icon: '💎', min: 30000,  max: 50000  };
-  else if (honor >= 20000)  tier = { name: '골드',         icon: '🥇', min: 20000,  max: 30000  };
-  else if (honor >= 10000)  tier = { name: '실버',         icon: '🥈', min: 10000,  max: 20000  };
-  else if (honor >= 5000)   tier = { name: '브론즈',       icon: '🥉', min: 5000,   max: 10000  };
+  else if (honor >= 85000)  tier = { name: '완성된 마스터',       icon: '👑', min: 85000,  max: 100000 };
+  else if (honor >= 75000)  tier = { name: '마스터',       icon: '👑', min: 75000,  max: 85000 };
+  else if (honor >= 65000)  tier = { name: '찬란한 다이아몬드',   icon: '💠', min: 50000,  max: 75000  };
+  else if (honor >= 60000)  tier = { name: '진화한 다이아몬드',   icon: '💠', min: 50000,  max: 65000  };
+  else if (honor >= 55000)  tier = { name: '성장한 다이아몬드',   icon: '💠', min: 50000,  max: 60000  };
+  else if (honor >= 50000)  tier = { name: '거친 다이아몬드',   icon: '💠', min: 50000,  max: 55000  };
+  else if (honor >= 45000)  tier = { name: '찬란한 루비',     icon: '💎', min: 30000,  max: 50000  };
+  else if (honor >= 40000)  tier = { name: '진화한 루비',     icon: '💎', min: 30000,  max: 45000  };
+  else if (honor >= 35000)  tier = { name: '성장한 루비',     icon: '💎', min: 30000,  max: 40000  };
+  else if (honor >= 30000)  tier = { name: '거친 루비',     icon: '💎', min: 30000,  max: 35000  };
+  else if (honor >= 27500)  tier = { name: '찬란한 골드',         icon: '🥇', min: 20000,  max: 30000  };
+  else if (honor >= 25000)  tier = { name: '진화한 골드',         icon: '🥇', min: 20000,  max: 27500  };
+  else if (honor >= 22500)  tier = { name: '성장한 골드',         icon: '🥇', min: 20000,  max: 25000  };
+  else if (honor >= 20000)  tier = { name: '거친 골드',         icon: '🥇', min: 20000,  max: 22500  };
+  else if (honor >= 17500)  tier = { name: '찬란한 실버',         icon: '🥈', min: 10000,  max: 20000  };
+  else if (honor >= 15000)  tier = { name: '진화한 실버',         icon: '🥈', min: 10000,  max: 17500  };
+  else if (honor >= 12500)  tier = { name: '성장한 실버',         icon: '🥈', min: 10000,  max: 15000  };
+  else if (honor >= 10000)  tier = { name: '거친 실버',         icon: '🥈', min: 10000,  max: 12500  };
+  else if (honor >= 7500)   tier = { name: '빛나는 브론즈',       icon: '🥉', min: 7500,   max: 10000  };
+  else if (honor >= 5000)   tier = { name: '브론즈',       icon: '🥉', min: 5000,   max: 7500  };
 
   return {
     success:       true,

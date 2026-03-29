@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>5학년 4반 BRAND 시스템</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <style>
+    :root {
+      --primary-color: #3d85c8;
+      --secondary-color: #f39c12;
+      --bg-color: #f8f9fa;
+      --card-bg: #ffffff;
+    }
+    body { font-family: 'Noto Sans KR', sans-serif; background-color: var(--bg-color); margin: 0; padding: 20px; color: #333; line-height: 1.5; }
+    .container { max-width: 500px; margin: 0 auto; }
+
+    /* 로그인 */
+    .login-box { background: var(--card-bg); padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; }
+    .login-box h2 { color: var(--primary-color); margin-bottom: 10px; font-size: 1.4rem; }
+    input[type="text"] { width: 85%; padding: 12px; margin: 15px 0; border: 2px solid #eee; border-radius: 8px; font-size: 16px; outline: none; }
+    input[type="text"]:focus { border-color: var(--primary-color); }
+    button.login-btn { background: var(--primary-color); color: white; border: none; padding: 12px 35px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; width: 90%; }
+
+    /* 대시보드 */
+    #dashboard { display: none; }
+    .card { background: var(--card-bg); border-radius: 15px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+    .card-title { font-size: 13px; color: #777; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+    .value-group { display: flex; justify-content: space-between; align-items: baseline; }
+    .card-value { font-size: 24px; font-weight: bold; color: #2c3e50; }
+    .card-rank  { font-size: 14px; color: var(--secondary-color); font-weight: bold; }
+
+    /* 복지 기금 프로그레스 바 */
+    .progress-container { background: #eee; border-radius: 10px; height: 15px; margin-top: 12px; overflow: hidden; }
+    .progress-bar { background: linear-gradient(90deg, #3498db, #2ecc71); height: 100%; width: 0%; transition: width 1s ease-in-out; }
+
+    /* 간식 테이블 */
+    .table-wrapper { max-height: 400px; overflow-y: auto; border: 1px solid #f0f0f0; border-radius: 10px; margin-top: 10px; }
+    table { width: 100%; border-collapse: collapse; background: white; }
+    thead { position: sticky; top: 0; background: #fdfdfd; z-index: 1; box-shadow: 0 1px 0 rgba(0,0,0,0.1); }
+    th { padding: 12px 10px; text-align: left; font-size: 13px; color: var(--primary-color); border-bottom: 2px solid #eee; }
+    td { padding: 12px 10px; font-size: 14px; border-bottom: 1px solid #f9f9f9; }
+
+    /* 티어 프로그레스 바 */
+    #tierProgressBar { height: 100%; background: var(--secondary-color); width: 0%; transition: width 0.5s ease; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+
+  <div id="loginSection" class="login-box">
+    <i class="fas fa-university" style="font-size:40px;color:var(--primary-color);margin-bottom:15px;"></i>
+    <h2>2026 동화초 5-4 자산관리 시스템</h2>
+    <p style="font-size:14px;color:#888;">이름을 입력하세요</p>
+    <input type="text" id="studentName" placeholder="예: 이순신">
+    <button class="login-btn" onclick="login()">데이터 불러오기</button>
+  </div>
+
+  <div id="dashboard">
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <h3 id="welcomeMsg" style="margin:0;font-size:18px;">반갑습니다!</h3>
+      <button onclick="location.reload()" style="padding:6px 12px;font-size:12px;background:#95a5a6;color:white;border:none;border-radius:5px;cursor:pointer;">로그아웃</button>
+    </div>
+
+    <div class="card" style="border-left:6px solid var(--secondary-color);">
+      <div class="card-title"><span><i class="fas fa-medal"></i> 나의 브랜드 가치 (누적 명예)</span></div>
+      <div class="value-group">
+        <div class="card-value" id="myHonor">0 P</div>
+        <div class="card-rank"  id="honorRank">순위: -위</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:20px; display:flex; align-items:center; gap:20px;">
+      
+      <div style="flex: 1; display:flex; flex-direction:column; align-items:center; justify-content:center; border-right: 1px solid #eee; padding-right: 15px;">
+        <img id="tierBadgeImg" src="" alt="티어 뱃지"
+             style="width:110px; height:110px; object-fit:contain; display:none;"
+             onerror="this.style.display='none'">
+        <h2 style="margin: 10px 0 0 0; font-size: 22px; color: #2c3e50;"><span id="tierName">새싹</span></h2>
+      </div>
+
+      <div style="flex: 2; display:flex; flex-direction:column; justify-content:center;">
+        
+        <div id="tierMessage" style="font-size: 14px; font-weight: bold; color: #34495e; margin-bottom: 12px; line-height: 1.4; word-break: keep-all;">
+          "로딩 중..."
+        </div>
+
+        <div id="tierNextText" style="font-size: 15px; font-weight: bold; color: #000; margin-bottom: 8px;">
+          [...] 등급까지 ...P 남았습니다.
+        </div>
+
+        <div style="font-size:12px;color:#888;margin-bottom:5px;text-align:right;">
+          <span id="tierProgressText">승급까지 ...</span>
+        </div>
+
+        <div style="width:100%;background:#e0e0e0;border-radius:8px;height:12px;overflow:hidden;">
+          <div id="tierProgressBar"></div>
+        </div>
+        
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:#999;margin-top:5px;">
+          <span id="tierMin">0</span>
+          <span id="tierMax">5000</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="card" style="margin-bottom:20px;">
+      <h3 style="margin-top:0;margin-bottom:10px;"><i class="fa-solid fa-cookie-bite"></i> 실시간 간식 거래소</h3>
+      <table style="width:100%;text-align:left;border-collapse:collapse;">
+        <thead>
+          <tr style="border-bottom:2px solid #eee;">
+            <th style="padding:8px 0;">품목</th>
+            <th style="padding:8px 0;text-align:right;">현재 시세</th>
+            <th style="padding:8px 0;text-align:right;">남은 수량</th>
+          </tr>
+        </thead>
+        <tbody id="snackMarketBody"></tbody>
+      </table>
+    </div>
+
+    <div style="background:#f8f9fa;border-radius:10px;padding:15px;margin-top:10px;border-left:5px solid #3498db;margin-bottom:20px;">
+      <div style="font-size:0.9em;color:#7f8c8d;margin-bottom:5px;">현재 나의 직업</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span id="jobTitle"  style="font-size:1.2em;font-weight:bold;color:#2c3e50;">로딩 중...</span>
+        <span id="jobSalary" style="background:#3498db;color:white;padding:2px 8px;border-radius:15px;font-size:0.8em;">$ 0</span>
+      </div>
+      <div id="jobArea" style="font-size:0.85em;color:#95a5a6;margin-top:5px;">담당 구역: -</div>
+    </div>
+
+    <div class="card" style="border-left:6px solid var(--primary-color);">
+      <div class="card-title"><span><i class="fas fa-wallet"></i> 현재 자산 보유량 (현재 잔액)</span></div>
+      <div class="value-group">
+        <div class="card-value" id="myBalance">$ 0</div>
+        <div class="card-rank"  id="balanceRank">순위: -위</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span><i class="fas fa-hand-holding-usd"></i> 우리 반 누적 복지 기금</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">
+        <div id="totalTax" style="font-size:20px;font-weight:bold;">$ 0</div>
+        <div style="font-size:13px;color:#888;">
+          내가 낸 세금:
+          <strong id="myPersonalTax" style="color:var(--primary-color);">$ 0</strong>
+        </div>
+      </div>
+      <div style="font-size:11px;color:#bbb;margin-bottom:6px;">목표: $ 10,000</div>
+      <div class="progress-container"><div id="taxBar" class="progress-bar"></div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span><i class="fas fa-chart-line"></i> 다음 달 입찰 시작가 (전체 항목)</span></div>
+      <div class="table-wrapper">
+        <table id="priceTable">
+          <thead><tr><th>항목</th><th>평균가</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div></div><script>
+  // ═══════════════════════════════════════════════════════════════
+  // 📌 티어 시스템 기본 설정 (이미지, 순서, 응원 문구)
+  // ═══════════════════════════════════════════════════════════════
+  
+  // 1. 다음 티어를 자동으로 계산하기 위한 티어 순서
+  var TIER_ORDER = ['새싹', '브론즈', '실버', '골드', '플래티넘', '다이아몬드', '마스터', '그랜드마스터'];
+
+  // 2. 각 티어별 응원 문구 (원하시는 문구로 자유롭게 수정하세요!)
+  var TIER_MESSAGES = {
+    '새싹': '여정의 시작, 너의 이야기가 피어나는 순간',
+    '브론즈': '멈추지 않겠다는 선택과 그 노력의 첫 증명',
+    '실버': '실버는 쌓아올린 노력의 결과, 가능성이 현실이 되기 시작한다',
+    '골드': '스스로를 증명한 순간, 멈출 이유가 없어진 순간',
+    '플래티넘': '평범함은 이미 뒤에 있다. 상위권 경쟁의 입구에 도달',
+    '다이아몬드': '이 자리는 충분히 빛나고 있는 위치 그럼에도 더 위를 본다면',
+    '마스터': '노력만으로 닿기에는 부족한 선택받은 소수의 영역에 도달하다',
+    '그랜드마스터': '모든 것이 바래져 잊혀진다해도 그대가 이룩한 이 업적은 남으리라 당신의 여정에 무한한 경의를'
+  };
+
+  // 3. 티어 뱃지 이미지 링크
+  var TIER_IMAGES = {
+    '새싹':         'https://lh3.googleusercontent.com/d/1zFDg7LEHBOO0PpBdo2e4kuVTOJGBUBRQ=s200',
+    '브론즈':       'https://lh3.googleusercontent.com/d/1-ndg1UVXWnFUiz7tcCQxczFhUELVahg0=s200',
+    '실버':         'https://lh3.googleusercontent.com/d/1RKp82q0XBW1qtpAlpRfuMRJuvlpdCiNx=s200',
+    '골드':         'https://lh3.googleusercontent.com/d/1HSFO1wzlGMVt2AxgqDSsvRHGZj7_t34n=s200',
+    '플래티넘':     'https://lh3.googleusercontent.com/d/1yPp_7y6GmRrPyXwfEQv7mnAV9r8LOtoE=s200',
+    '다이아몬드':   'https://lh3.googleusercontent.com/d/1H3NUqNMmFbix8DROB-wyF4XnEcov_nyo=s200',
+    '마스터':       'https://lh3.googleusercontent.com/d/1SoVKFW_rftq0ZZPw7HPAEW1GsnLS5kAN=s200',
+    '그랜드마스터': 'https://lh3.googleusercontent.com/d/1QHQcSe00zXXcCEhrcif0XU900E4dc17U=s200'
+  };
+
+  // ── 로그인 함수 ─────────────────────────────────────────────
+  function login() {
+    var name = document.getElementById('studentName').value.trim();
+    if (!name) { alert('이름을 입력해주세요.'); return; }
+
+    var btn = document.querySelector('.login-btn');
+    btn.innerText = '데이터를 불러오는 중...';
+    btn.disabled  = true;
+
+    google.script.run
+      .withSuccessHandler(function(data) {
+        btn.innerText = '데이터 불러오기';
+        btn.disabled  = false;
+        showDashboard(data);
+      })
+      .withFailureHandler(function(err) {
+        btn.innerText = '데이터 불러오기';
+        btn.disabled  = false;
+        alert('서버 오류: ' + err.message);
+      })
+      .getStudentData(name);
+  }
+
+  // ── 대시보드 렌더링 함수 ─────────────────────────────────────
+  function showDashboard(data) {
+    if (!data.success) { alert(data.msg); return; }
+
+    document.getElementById('loginSection').style.display = 'none';
+    document.getElementById('dashboard').style.display    = 'block';
+
+    // 기본 정보
+    document.getElementById('welcomeMsg').innerText   = '👋 ' + data.personal.name + ' (' + data.personal.brand + ')';
+    document.getElementById('myHonor').innerText      = Number(data.personal.honor).toLocaleString() + ' P';
+    document.getElementById('honorRank').innerText    = '순위: ' + data.personal.honorRank + '위';
+    document.getElementById('myBalance').innerText    = '$ ' + Number(data.personal.balance).toLocaleString();
+    document.getElementById('balanceRank').innerText  = '순위: ' + data.personal.balanceRank + '위';
+
+    // 개인 납세액 + 반 전체 복지 기금
+    document.getElementById('myPersonalTax').innerText = '$ ' + Number(data.personalTax || 0).toLocaleString();
+    document.getElementById('totalTax').innerText      = '$ ' + Number(data.classTotalTax || 0).toLocaleString();
+
+    // 복지 기금 프로그레스 바 (목표 10,000 기준)
+    var taxPercent = Math.min(((data.classTotalTax || 0) / 10000) * 100, 100);
+    document.getElementById('taxBar').style.width = taxPercent + '%';
+
+    // 1인1역 직업 정보
+    if (data.job) {
+      document.getElementById('jobTitle').innerText  = data.job.title || '미배정';
+      document.getElementById('jobSalary').innerText = '$ ' + Number(data.job.salary || 0).toLocaleString();
+      document.getElementById('jobArea').innerText   = '담당 구역: ' + (data.job.area || '-');
+    }
+
+    // 브랜드 등급 (티어) 렌더링 영역
+    if (data.tierData) {
+      var tier = data.tierData;
+
+      // 1. 티어 이름 출력
+      document.getElementById('tierName').innerText = tier.name;
+
+      // 2. 티어 이미지 출력
+      var tierImg = document.getElementById('tierBadgeImg');
+      var imgUrl  = TIER_IMAGES[tier.name] || '';
+      if (imgUrl) {
+        tierImg.src = imgUrl;
+        tierImg.style.display = 'block'; // flex 박스 안에서 중앙 정렬을 위해 block 사용
+      } else {
+        tierImg.style.display = 'none';
+      }
+
+      // 3. 커스텀 응원 문구 출력 (설정값이 없으면 기본 문구 출력)
+      var messageText = TIER_MESSAGES[tier.name] || '오늘도 한 걸음 성장해 봅시다!';
+      document.getElementById('tierMessage').innerText = '"' + messageText + '"';
+
+      // 4. 다음 티어 이름 계산 로직
+      var currentTierIndex = TIER_ORDER.indexOf(tier.name);
+      var nextTierName = (currentTierIndex !== -1 && currentTierIndex < TIER_ORDER.length - 1) ? TIER_ORDER[currentTierIndex + 1] : 'MAX';
+
+      // 5. 프로그레스 바 및 수치 계산
+      document.getElementById('tierMin').innerText = Number(tier.min).toLocaleString();
+
+      if (tier.name === '그랜드마스터' || nextTierName === 'MAX') {
+        // 최고 등급 도달 시
+        document.getElementById('tierMax').innerText          = 'MAX';
+        document.getElementById('tierProgressBar').style.width = '100%';
+        document.getElementById('tierProgressText').innerText  = '최고 등급 달성! 🏆';
+        document.getElementById('tierNextText').innerText      = '최고 등급에 도달했습니다! 🎉';
+      } else {
+        // 일반 등급 승급 진행 중
+        var remainP = tier.max - data.personal.honor;
+        document.getElementById('tierMax').innerText = Number(tier.max).toLocaleString();
+        
+        var currentProgress = data.personal.honor - tier.min;
+        var tierRange       = tier.max - tier.min;
+        var tierPercent     = Math.max(0, Math.min(100, (currentProgress / tierRange) * 100));
+        
+        document.getElementById('tierProgressBar').style.width = tierPercent + '%';
+        document.getElementById('tierProgressText').innerText  = '승급까지 ' + Number(remainP).toLocaleString() + 'P 남음';
+        
+        // 새로 추가된 다음 등급 명확한 텍스트 
+        document.getElementById('tierNextText').innerText = '[' + nextTierName + '] 등급까지 ' + Number(remainP).toLocaleString() + 'P 남았습니다.';
+      }
+    }
+
+    // 실시간 간식 거래소
+    var snackBody = document.getElementById('snackMarketBody');
+    if (snackBody && data.snacks) {
+      if (data.snacks.length > 0) {
+        snackBody.innerHTML = data.snacks.map(function(s) {
+          return '<tr style="border-bottom:1px solid #f5f5f5;">' +
+            '<td style="padding:8px 0;font-weight:bold;">' + s.name + '</td>' +
+            '<td style="padding:8px 0;text-align:right;color:#e74c3c;font-weight:bold;">$ ' + s.price.toLocaleString() + '</td>' +
+            '<td style="padding:8px 0;text-align:right;color:' + (s.stock <= 5 ? 'red' : '#888') + ';">' + s.stock + '개</td>' +
+          '</tr>';
+        }).join('');
+      } else {
+        snackBody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:15px;">판매 중인 간식이 없습니다.</td></tr>';
+      }
+    }
+
+    // 다음 달 경매 시작가 테이블
+    var priceTableBody = document.querySelector('#priceTable tbody');
+    if (priceTableBody && data.auctionPrices) {
+      priceTableBody.innerHTML = data.auctionPrices.map(function(item) {
+        return '<tr>' +
+          '<td style="font-size:0.9em;">' + item.item + '</td>' +
+          '<td style="font-weight:bold;color:#e67e22;text-align:right;">$ ' + Number(item.price).toLocaleString() + '</td>' +
+        '</tr>';
+      }).join('');
+    }
+  }
+</script>
+
+</body>
+</html>

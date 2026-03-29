@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: 'Noto Sans KR', sans-serif; padding: 20px; background: #f9f9f9; }
+    .item-card { 
+      background: white; border-radius: 10px; padding: 15px; margin-bottom: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center;
+    }
+    .item-info { flex: 1; }
+    .item-name { font-weight: bold; font-size: 16px; display: block; }
+    .item-price { color: #e74c3c; font-weight: bold; }
+    .item-stock { font-size: 12px; color: #888; margin-left: 10px; }
+    
+    select, button { padding: 10px; border-radius: 5px; border: 1px solid #ddd; }
+    .buy-btn { background: #27ae60; color: white; border: none; cursor: pointer; font-weight: bold; }
+    .buy-btn:disabled { background: #ccc; }
+    
+    #status { margin-top: 15px; text-align: center; font-weight: bold; color: #3498db; }
+  </style>
+</head>
+<body>
+  <h3>🍿 간식 구매 (실시간 시세)</h3>
+  <div style="margin-bottom: 15px;">
+    <label>구매자: </label>
+    <select id="studentSelect">
+      <option value="">-- 학생 선택 --</option>
+    </select>
+  </div>
+  
+  <div id="itemList">데이터 로딩 중...</div>
+  <div id="status"></div>
+
+  <script>
+    // 초기 데이터 로드 (학생 목록 & 간식 목록)
+    window.onload = function() {
+      google.script.run.withSuccessHandler(data => {
+        // 1. 학생 선택박스 채우기
+        const sel = document.getElementById('studentSelect');
+        data.students.forEach(s => {
+          const opt = document.createElement('option');
+          opt.value = s.name;
+          opt.text = s.name + ' (' + s.brand + ')';
+          sel.appendChild(opt);
+        });
+
+        // 2. 간식 목록 출력
+        renderItems(data.snacks);
+      }).getSnackInitData();
+    };
+
+    function renderItems(snacks) {
+      const list = document.getElementById('itemList');
+      if (!snacks || snacks.length === 0) {
+        list.innerHTML = "판매 중인 간식이 없습니다.";
+        return;
+      }
+      list.innerHTML = snacks.map(s => `
+        <div class="item-card">
+          <div class="item-info">
+            <span class="item-name">${s.name}</span>
+            <span class="item-price">$ ${s.price.toLocaleString()}</span>
+            <span class="item-stock">재고: ${s.stock}개</span>
+          </div>
+          <button class="buy-btn" ${s.stock <= 0 ? 'disabled' : ''} onclick="buyItem('${s.name}', ${s.price})">구매</button>
+        </div>
+      `).join('');
+    }
+
+    function buyItem(itemName, price) {
+      const studentName = document.getElementById('studentSelect').value;
+      if (!studentName) return alert('구매할 학생을 먼저 선택하세요!');
+      
+      if (!confirm(`${studentName} 학생이 ${itemName}을(를) $${price}에 구매합니까?`)) return;
+
+      document.getElementById('status').innerText = "처리 중...";
+      google.script.run.withSuccessHandler(res => {
+        document.getElementById('status').innerText = "";
+        if (res.success) {
+          alert('구매 완료!');
+          google.script.host.close(); // 다이얼로그 닫기
+        } else {
+          alert('오류: ' + res.msg);
+        }
+      }).executeSnackPurchase(studentName, itemName, price);
+    }
+  </script>
+</body>
+</html>

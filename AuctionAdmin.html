@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <title>경매 관리자 패널</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Noto Sans KR', sans-serif; background: #f0f2f5; padding: 15px; font-size: 13px; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .control-box { background: white; padding: 12px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 15px; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+    select, button, input { padding: 6px; font-size: 13px; border-radius: 5px; border: 1px solid #ccc; }
+    .btn-start  { background: #3498db; color: white; border: none; font-weight: bold; cursor: pointer; }
+    .btn-fail   { background: #e74c3c; color: white; border: none; font-weight: bold; cursor: pointer; }
+    .btn-next   { background: #2ecc71; color: white; border: none; font-weight: bold; cursor: pointer; }
+    .btn-extend { background: #f39c12; color: white; border: none; font-weight: bold; cursor: pointer; }
+    .btn-end    { background: #8e44ad; color: white; border: none; font-weight: bold; cursor: pointer; width: 100%; padding: 10px; font-size: 15px; border-radius: 8px; }
+
+    /* 테이블 */
+    table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    th, td { padding: 6px 10px; border-bottom: 1px solid #ddd; text-align: left; vertical-align: middle; }
+    th { background: #3d85c8; color: white; position: sticky; top: 0; z-index: 1; font-size: 14px; }
+    tbody tr:nth-child(even) { background-color: #f8f9fa; }
+    tbody tr:hover { background-color: #d1ecf1; outline: 2px solid #17a2b8; }
+
+    .bid-input { width: 70px; text-align: right; border: 2px solid #3d85c8; font-weight: bold; }
+    .btn-sold  { background: #27ae60; color: white; border: none; cursor: pointer; padding: 4px 12px; font-weight: bold; border-radius: 4px; }
+    .btn-sold:hover { background: #219150; transform: scale(1.05); }
+    #statusMsg { color: #e74c3c; font-weight: bold; width: 100%; margin-top: 5px; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h2 style="margin:0;">🎙️ 실시간 경매 제어 패널</h2>
+  <a href="#" onclick="openDisplay(); return false;"
+     style="text-decoration:none; background:#8e44ad; color:white; padding:8px 12px; border-radius:5px; font-weight:bold;">
+    📺 학생용 중계 화면 띄우기
+  </a>
+</div>
+
+<div class="control-box">
+  <label style="font-weight:bold;">진행 회차:</label>
+  <select id="auctionRound" style="border: 2px solid #8e44ad; font-weight:bold;">
+    <option value="1">1차 경매</option><option value="2">2차 경매</option><option value="3">3차 경매</option>
+    <option value="4">4차 경매</option><option value="5">5차 경매</option><option value="6">6차 경매</option>
+    <option value="7">7차 경매</option><option value="8">8차 경매</option><option value="9">9차 경매</option>
+  </select>
+  <span style="border-left: 1px solid #ddd; height: 20px; margin: 0 5px;"></span>
+
+  <label style="font-weight:bold;">상품:</label>
+  <select id="itemSelect" style="max-width: 150px;"></select>
+
+  <button class="btn-start"                                onclick="startItem(0)">▶ 최초 송출</button>
+  <button class="btn-start" style="background:#e67e22;"    onclick="startItem(1)">📉 1차 재경매 송출</button>
+  <button class="btn-start" style="background:#c0392b;"    onclick="startItem(2)">⚠️ 최종 재경매 송출</button>
+
+  <button class="btn-extend" onclick="extendTime()">⏱️ +10초</button>
+  <button class="btn-fail"   onclick="failItem()">❌ 유찰</button>
+  <button class="btn-next" style="background:#95a5a6;" onclick="resetDisplay()">⏹️ 화면초기화</button>
+
+  <div id="statusMsg"></div>
+  <button class="btn-end" onclick="endAuction()">🏁 모든 경매 종료 및 오늘 결과 화면 송출하기</button>
+</div>
+
+<div style="max-height: 50vh; overflow-y: auto; border: 1px solid #ccc; border-radius: 8px;">
+  <table>
+    <thead><tr><th>학생 이름</th><th>잔여 자산</th><th>입찰가 입력</th><th>낙찰 처리</th></tr></thead>
+    <tbody id="studentList"></tbody>
+  </table>
+</div>
+
+<script>
+  // ── 전역 변수 ──────────────────────────────────────────────────
+  let failCount   = 0;  // 현재 상품의 유찰 횟수 (0: 최초, 1: 1차재경매, 2: 최종재경매)
+  let globalItems = []; // 경매 상품 목록 (getAuctionInitData에서 받아옴)
+
+  // ── 초기화: 학생 목록 + 상품 목록 불러오기 ─────────────────────
+  google.script.run.withSuccessHandler(function(data) {
+    globalItems = data.items;
+
+    // 상품 선택 드롭다운 채우기
+    var itemSel = document.getElementById('itemSelect');
+    itemSel.innerHTML = '';
+    globalItems.forEach(function(item, index) {
+      itemSel.innerHTML += '<option value="' + index + '">' + item.name + '</option>';
+    });
+
+    // 학생 테이블 채우기
+    var tbody = document.getElementById('studentList');
+    tbody.innerHTML = '';
+    data.students.forEach(function(st) {
+      tbody.innerHTML += '<tr>' +
+        '<td style="font-size:14px;"><strong>' + st.name + '</strong> <span style="font-size:11px;color:gray;">(' + st.brand + ')</span></td>' +
+        '<td id="bal_' + st.rowIdx + '" data-balance="' + st.balance + '" style="font-weight:bold;color:#2c3e50;">$' + st.balance.toLocaleString() + '</td>' +
+        '<td><input type="number" id="bid_' + st.rowIdx + '" class="bid-input" step="10" placeholder="금액"></td>' +
+        '<td><button class="btn-sold" onclick="sellItem(' + st.rowIdx + ', \'' + st.name + '\', \'' + st.brand + '\')">쾅! 낙찰</button></td>' +
+      '</tr>';
+    });
+
+    // 초기 상태 idle로 설정
+    google.script.run.setAuctionState({ status: 'idle' });
+  }).getAuctionInitData();
+
+
+  // ── 학생용 중계 화면 새 창으로 열기 ────────────────────────────
+  function openDisplay() {
+    google.script.run.withSuccessHandler(function(url) {
+      window.open(url + '?page=display', '_blank');
+    }).getScriptUrl();
+  }
+
+
+  // ── 경매 송출 (level: 0=최초, 1=1차재경매, 2=최종재경매) ────────
+  function startItem(level) {
+    var itemIdx      = parseInt(document.getElementById('itemSelect').value);
+    var selectedItem = globalItems[itemIdx];
+    failCount        = level; // 버튼에서 직접 호출 시 failCount를 level에 맞춤
+
+    var endTime = new Date().getTime() + 31000; // 31초 (1초 여유)
+
+    if (level === 0) {
+      document.getElementById('statusMsg').innerText =
+        '[최초 송출 중] ' + selectedItem.name + ' (시작가: $' + selectedItem.startPrice + ')';
+      google.script.run.setAuctionState({
+        status:     'bidding',
+        itemName:   selectedItem.name,
+        startPrice: selectedItem.startPrice,
+        failCount:  0,
+        endTime:    endTime
+      });
+
+    } else if (level === 1) {
+      var discountedPrice = Math.round(selectedItem.startPrice * 0.9);
+      document.getElementById('statusMsg').innerText =
+        '[1차 재경매 송출 중] ' + selectedItem.name + ' (할인가: $' + discountedPrice + ')';
+      google.script.run.setAuctionState({
+        status:       'failed',
+        itemName:     selectedItem.name,
+        failCount:    1,
+        currentPrice: discountedPrice,
+        endTime:      endTime
+      });
+
+    } else { // level === 2
+      var finalPrice = Math.round(selectedItem.startPrice * 0.81);
+      document.getElementById('statusMsg').innerText =
+        '[최종 재경매 송출 중] ' + selectedItem.name + ' (파격가: $' + finalPrice + ')';
+      google.script.run.setAuctionState({
+        status:       'failed_final',
+        itemName:     selectedItem.name,
+        currentPrice: finalPrice,
+        endTime:      endTime
+      });
+    }
+  }
+
+
+  // ── 시간 연장 (+10초) ────────────────────────────────────────
+  function extendTime() {
+    google.script.run.withSuccessHandler(function(success) {
+      if (success) {
+        var msg = document.getElementById('statusMsg');
+        if (msg.innerText.indexOf('연장됨') === -1) msg.innerText += ' (시간 10초 연장됨)';
+      } else {
+        alert('진행 중인 경매가 없습니다.');
+      }
+    }).addAuctionTime(10000);
+  }
+
+
+  // ── 유찰 처리 ────────────────────────────────────────────────
+  // [수정] 버그 수정: failCount === 2 시 아이템을 이동하지 않음
+  //        최종 유찰(failCount > 2) 시에만 아이템을 목록 맨 뒤로 이동
+  function failItem() {
+    var itemSel = document.getElementById('itemSelect');
+    failCount++;
+
+    if (failCount > 2) {
+      // 3번째 유찰 = 완전 유찰 → 수동 배정 필요
+      alert('⚠️ 최종 유찰되었습니다. 수동 배정이 필요합니다.');
+      resetDisplay();
+      // 완전 유찰된 상품을 드롭다운 맨 뒤로 보냄 (처리 완료 표시)
+      itemSel.appendChild(itemSel.options[itemSel.selectedIndex]);
+      failCount = 0;
+      return;
+    }
+
+    // failCount가 1 또는 2인 경우: 재경매 자동 송출
+    startItem(failCount);
+    // ✅ [수정] failCount === 2 시 아이템 이동 제거
+    //    (이전에는 여기서 이동했는데, 경매 중에 이동되면 다음 유찰 시 다른 아이템이 이동되는 버그 발생)
+  }
+
+
+  // ── 낙찰 처리 ────────────────────────────────────────────────
+  function sellItem(rowIdx, name, brand) {
+    var input     = document.getElementById('bid_' + rowIdx);
+    var price     = parseInt(input.value);
+    var itemIdx   = parseInt(document.getElementById('itemSelect').value);
+    var itemName  = globalItems[itemIdx].name;
+    var roundNum  = parseInt(document.getElementById('auctionRound').value);
+    var balCell   = document.getElementById('bal_' + rowIdx);
+    var curBalance = parseInt(balCell.dataset.balance);
+
+    if (!price || price <= 0) return alert('입찰가를 정확히 입력하세요!');
+    if (price > curBalance)   return alert('잔액이 부족합니다! (현재 잔액: $' + curBalance + ')');
+
+    if (confirm(name + ' 학생에게 [' + itemName + ']을(를) $' + price + '에 낙찰하시겠습니까?')) {
+      var studentInfo = { rowIdx: rowIdx, name: name, brand: brand };
+      var itemDetails = { name: itemName };
+
+      google.script.run.withSuccessHandler(function(res) {
+        if (res.success) {
+          // 잔액 실시간 갱신
+          balCell.dataset.balance = res.newBalance;
+          balCell.innerText       = '$' + res.newBalance.toLocaleString();
+          balCell.style.color     = '#e74c3c'; // 빨간색으로 차감 시각화
+
+          input.value = '';
+
+          // ✅ [수정] 낙찰 완료 시 failCount 초기화 + 낙찰된 상품 목록 맨 뒤로 이동
+          failCount = 0;
+          var itemSel = document.getElementById('itemSelect');
+          itemSel.appendChild(itemSel.options[itemSel.selectedIndex]);
+
+          alert('낙찰 및 기록 완료!');
+        } else {
+          alert('오류: ' + res.msg);
+        }
+      }).executeAuctionSold(studentInfo, itemDetails, price, roundNum);
+    }
+  }
+
+
+  // ── 경매 종료 및 결과 송출 ──────────────────────────────────
+  function endAuction() {
+    if (!confirm('정말 오늘 경매를 종료하시겠습니까? (결과 화면 송출)')) return;
+    document.getElementById('statusMsg').innerText = '결과 집계 중...';
+    google.script.run.withSuccessHandler(function(results) {
+      google.script.run.setAuctionState({ status: 'ended', results: results });
+      document.getElementById('statusMsg').innerText = '결과 송출 완료!';
+    }).getTodayAuctionResults();
+  }
+
+
+  // ── 화면 초기화 ─────────────────────────────────────────────
+  function resetDisplay() {
+    document.getElementById('statusMsg').innerText = '화면 초기화됨';
+    google.script.run.setAuctionState({ status: 'idle' });
+  }
+</script>
+</body>
+</html>

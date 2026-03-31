@@ -10,6 +10,8 @@ const SHEET_JOB     = '1인1역';
 const SHEET_AUCTION = '경매관리';
 const SHEET_TRACKER = '브랜드가치추적';
 const SHEET_SNACK   = '간식관리';
+const SHEET_ACH_MASTER  = '업적마스터';
+const SHEET_ACH_STUDENT = '학생업적달성';
 
 // ── [설정] 열 번호 (1-indexed) ────────────────────────────────────
 const COL_BRAND  = 1;  // A: 브랜드
@@ -20,6 +22,7 @@ const COL_RANK_A = 5;  // E: 랭킹(자산)
 const COL_RANK_V = 6;  // F: 랭킹(가치)
 const COL_MVP    = 7;  // G: MVP포인트
 const COL_TAX    = 8;  // H: 누적납세액
+const COL_PASSWORD = 9;  // I: 비밀번호
 
 
 // ════════════════════════════════════════════════════════════════
@@ -73,7 +76,7 @@ function finalizeDailyTracker() {
 // ════════════════════════════════════════════════════════════════
 // 3. 학생 대시보드 데이터 (Index.html 에서 호출)
 // ════════════════════════════════════════════════════════════════
-function getStudentData(studentName) {
+function getStudentData(studentName, password) {
   const ss       = SpreadsheetApp.getActiveSpreadsheet();
   const mainSheet = ss.getSheetByName(SHEET_MAIN);
   const mainData  = mainSheet.getDataRange().getValues();
@@ -87,6 +90,13 @@ function getStudentData(studentName) {
     }
   }
   if (!studentRow) return { success: false, msg: '학생을 찾을 수 없습니다. 이름을 다시 확인해주세요.' };
+  // 비밀번호 확인 (I열 = 인덱스 8)
+  const correctPassword = String(studentRow[COL_PASSWORD - 1]).trim();
+  const inputPassword = String(password).trim();
+  
+  if (correctPassword && inputPassword !== correctPassword) {
+    return { success: false, msg: '비밀번호가 일치하지 않습니다.' };
+  }
 
   // 전체 반 누적 복지 기금 (H열 합산)
   let totalTax = 0;
@@ -148,6 +158,9 @@ function getStudentData(studentName) {
   else if (honor >= 7500)   tier = { name: '빛나는 브론즈',       icon: '🥉', min: 7500,   max: 10000  };
   else if (honor >= 5000)   tier = { name: '브론즈',       icon: '🥉', min: 5000,   max: 7500  };
 
+  // 업적 자동 체크 (로그인 시마다 조건 확인)
+  checkAndGrantAchievements(studentName, Number(studentRow[COL_ASSET - 1]) || 0, Number(studentRow[COL_TAX - 1]) || 0);
+
   return {
     success:       true,
     personal: {
@@ -163,7 +176,8 @@ function getStudentData(studentName) {
     job:           jobResult,
     auctionPrices: auctionPrices,
     tierData:      tier,
-    snacks:        getSnackData()
+    snacks:        getSnackData(),
+    achievements:  getStudentAchievements(studentName)
   };
 }
 
@@ -376,7 +390,9 @@ function getSnackInitData() {
       });
     }
   }
-  return { students, snacks: getSnackData() };
+  return { students, snacks:        getSnackData(),
+    achievements:  getStudentAchievements(studentName)
+  };
 }
 
 // 간식 구매 실행 (잔액 차감 + 재고 감소 + 시트 기록)
@@ -692,6 +708,7 @@ function getDailyInputHtml() {
     <label style="margin-left:10px;color:#c0392b;">세금(%):</label>
     <input type="number" id="taxRate" value="10" style="width:40px;padding:4px;">
     <button class="btn-fill" onclick="fillAll()">전체적용</button>
+    <button class="btn-fill" style="background:#8e44ad;" onclick="loadJobSalariesAndFill()">🤖 1인1역 자동계산</button>
   </div>
   <div style="max-height:300px;overflow-y:auto;border:1px solid #ddd;">
     <table><thead><tr><th>학생명</th><th>포인트</th><th>비고</th></tr></thead>
@@ -702,6 +719,25 @@ function getDailyInputHtml() {
     function fillAll() {
       var val = document.getElementById('baseScore').value;
       document.querySelectorAll('.ptInput').forEach(function(inp){ if(!inp.value) inp.value = val; });
+    }
+    function autoFillFromJob() {
+      if (!window.jobSalaries) { alert('직업 데이터가 아직 로딩되지 않았습니다. 잠시 후 다시 시도해주세요.'); return; }
+      document.querySelectorAll('.ptInput').forEach(function(inp) {
+        var row = inp.dataset.row;
+        var salary = window.jobSalaries[row] || 0;
+        inp.value = salary + 300;
+      });
+    }
+    function loadJobSalariesAndFill() {
+      var btn = document.querySelector('[onclick="loadJobSalariesAndFill()"]');
+      btn.innerText = '로딩 중...';
+      btn.disabled = true;
+      google.script.run.withSuccessHandler(function(salaries) {
+        window.jobSalaries = salaries; // { "1": 120, "2": 100, ... } (row → salary)
+        autoFillFromJob();
+        btn.innerText = '🤖 1인1역 자동계산';
+        btn.disabled = false;
+      }).getJobSalariesByRow();
     }
     function applyPoints() {
       var date = document.getElementById('today').value;
@@ -840,4 +876,131 @@ function getHistoryHtml() {
       }).getStudentHistory(name);
     }
   </script></body></html>`;
+}
+
+// ════════════════════════════════════════════════════════════════
+// 12. 1인1역 일급 데이터 반환 (행번호 → 일급 매핑)
+// ════════════════════════════════════════════════════════════════
+function getJobSalariesByRow() {
+  const ss       = SpreadsheetApp.getActiveSpreadsheet();
+  const mainData = ss.getSheetByName(SHEET_MAIN).getDataRange().getValues();
+  const jobData  = ss.getSheetByName(SHEET_JOB).getDataRange().getValues();
+
+  // 이름 → 일급 맵 만들기
+  const salaryMap = {};
+  for (let j = 1; j < jobData.length; j++) {
+    const jName   = String(jobData[j][0]).trim();
+    const jSalary = Number(jobData[j][2]) || 0;
+    if (jName) salaryMap[jName] = jSalary;
+  }
+
+  // 행번호(rowIdx) → 일급 맵으로 변환
+  const result = {};
+  for (let i = 1; i < mainData.length; i++) {
+    const name = String(mainData[i][COL_NAME - 1]).trim();
+    if (name) result[String(i)] = salaryMap[name] || 0;
+  }
+  return result;
+}
+
+
+// ════════════════════════════════════════════════════════════════
+// 13. 업적 시스템 서버 함수
+// ════════════════════════════════════════════════════════════════
+
+// 특정 학생의 달성 업적 목록 반환
+function getStudentAchievements(studentName) {
+  const ss    = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_ACH_STUDENT);
+  if (!sheet) return [];
+  const data   = sheet.getDataRange().getValues();
+  const result = [];
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]).trim() === String(studentName).trim()) {
+      let dateVal = data[i][4];
+      if (dateVal instanceof Date) {
+        dateVal = Utilities.formatDate(dateVal, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+      }
+      result.push({
+        achId:     String(data[i][1]),
+        achName:   String(data[i][2]),
+        condition: String(data[i][3]),
+        date:      String(dateVal),
+        equipped:  data[i][5] === true || String(data[i][5]).toUpperCase() === 'TRUE',
+        sheetRow:  i + 1  // 장착/해제 업데이트에 사용
+      });
+    }
+  }
+  return result;
+}
+
+// 칭호 장착 처리 (기존 장착 해제 → 새 칭호 장착)
+function equipAchievement(studentName, targetSheetRow) {
+  const ss    = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_ACH_STUDENT);
+  if (!sheet) return { success: false, msg: '업적 시트를 찾을 수 없습니다.' };
+  const data = sheet.getDataRange().getValues();
+
+  // 해당 학생의 모든 행 탐색 → 기존 장착 FALSE로 초기화
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]).trim() === String(studentName).trim()) {
+      sheet.getRange(i + 1, 6).setValue(false); // F열: 장착여부
+    }
+  }
+  // 새 칭호 TRUE로 설정
+  sheet.getRange(targetSheetRow, 6).setValue(true);
+  return { success: true };
+}
+
+// 칭호 해제
+function unequipAchievement(studentName) {
+  const ss    = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_ACH_STUDENT);
+  if (!sheet) return { success: false };
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]).trim() === String(studentName).trim()) {
+      sheet.getRange(i + 1, 6).setValue(false);
+    }
+  }
+  return { success: true };
+}
+
+// 업적 달성 체크 및 자동 부여 (getStudentData 안에서 호출하거나 독립 호출 가능)
+// 현재 자동 체크 조건: ① 자산 5000이상, ② 납세 500이상
+function checkAndGrantAchievements(studentName, balance, totalTax) {
+  const ss         = SpreadsheetApp.getActiveSpreadsheet();
+  const achSheet   = ss.getSheetByName(SHEET_ACH_STUDENT);
+  const masterSheet = ss.getSheetByName(SHEET_ACH_MASTER);
+  if (!achSheet || !masterSheet) return;
+
+  // 이미 달성한 업적 ID 목록
+  const existing = new Set();
+  const achData  = achSheet.getDataRange().getValues();
+  for (let i = 1; i < achData.length; i++) {
+    if (String(achData[i][0]).trim() === String(studentName).trim()) {
+      existing.add(String(achData[i][1]).trim());
+    }
+  }
+
+  const today = _todayStr();
+
+  // 조건 체크 맵 (업적ID → 달성 여부 함수) // 여기에 업적 추가하는 코드 입력
+  const conditionMap = {
+    'ACH-001': balance >= 5000,
+    'ACH-002': totalTax >= 500,
+  };
+
+  // 업적 마스터에서 정보 읽기
+  const masterData = masterSheet.getDataRange().getValues();
+  for (let m = 1; m < masterData.length; m++) {
+    const achId   = String(masterData[m][0]).trim();
+    const achName = String(masterData[m][1]).trim();
+    const cond    = String(masterData[m][2]).trim();
+    if (!achId) continue;
+    if (existing.has(achId)) continue; // 중복 방지
+    if (conditionMap[achId] === true) {
+      achSheet.appendRow([studentName, achId, achName, cond, today, false]);
+    }
+  }
 }

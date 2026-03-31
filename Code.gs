@@ -159,7 +159,7 @@ function getStudentData(studentName, password) {
   else if (honor >= 5000)   tier = { name: '브론즈',       icon: '🥉', min: 5000,   max: 7500  };
 
   // 업적 자동 체크 (로그인 시마다 조건 확인)
-  checkAndGrantAchievements(studentName, Number(studentRow[COL_ASSET - 1]) || 0, Number(studentRow[COL_TAX - 1]) || 0);
+  checkAndGrantAchievements(studentName, Number(studentRow[COL_ASSET - 1]) || 0, Number(studentRow[COL_TAX - 1]) || 0, honor);
 
   return {
     success:       true,
@@ -177,7 +177,9 @@ function getStudentData(studentName, password) {
     auctionPrices: auctionPrices,
     tierData:      tier,
     snacks:        getSnackData(),
-    achievements:  getStudentAchievements(studentName)
+    achievements:  getStudentAchievements(studentName),
+    job2:          getSecondaryJobForStudent(studentName),
+    jobMarket:     getJobData()
   };
 }
 
@@ -968,7 +970,7 @@ function unequipAchievement(studentName) {
 
 // 업적 달성 체크 및 자동 부여 (getStudentData 안에서 호출하거나 독립 호출 가능)
 // 현재 자동 체크 조건: ① 자산 5000이상, ② 납세 500이상
-function checkAndGrantAchievements(studentName, balance, totalTax) {
+function checkAndGrantAchievements(studentName, balance, totalTax, honor) {
   const ss         = SpreadsheetApp.getActiveSpreadsheet();
   const achSheet   = ss.getSheetByName(SHEET_ACH_STUDENT);
   const masterSheet = ss.getSheetByName(SHEET_ACH_MASTER);
@@ -983,24 +985,525 @@ function checkAndGrantAchievements(studentName, balance, totalTax) {
     }
   }
 
-  const today = _todayStr();
+  const today      = _todayStr();
+  const masterData = masterSheet.getDataRange().getValues();
 
-  // 조건 체크 맵 (업적ID → 달성 여부 함수) // 여기에 업적 추가하는 코드 입력
+  // ── 자동 조건 체크 맵 ──────────────────────────────────────
+  // ── 자동 조건 체크 맵 ──────────────────────────────────────
+  // ⚠️ 여기 없는 업적(ECO-001, ECO-002, RANK 시리즈, HID-004)은
+  //    별도 함수에서 처리하므로 여기에 추가하지 않아도 됩니다.
   const conditionMap = {
     'ACH-001': balance >= 5000,
     'ACH-002': totalTax >= 500,
   };
 
-  // 업적 마스터에서 정보 읽기
-  const masterData = masterSheet.getDataRange().getValues();
+  // ── ECO-001: 황금 절약가 (지난 30일 자산사용 1000 미만) ────
+  const spendSheet = ss.getSheetByName(SHEET_SPEND);
+  if (spendSheet && !existing.has('ECO-001')) {
+    const spendData  = spendSheet.getDataRange().getValues();
+    const cutoff     = new Date(); cutoff.setDate(cutoff.getDate() - 30);
+    let recentSpend  = 0;
+    for (let s = 1; s < spendData.length; s++) {
+      if (String(spendData[s][1]).trim() !== studentName) continue;
+      let rowDate = spendData[s][0];
+      if (rowDate instanceof Date && rowDate >= cutoff) {
+        recentSpend += Number(spendData[s][4]) || 0;
+      }
+    }
+    if (recentSpend < 1000 && recentSpend >= 0) {
+      // 마스터에서 ECO-001 정보 찾기
+      for (let m = 1; m < masterData.length; m++) {
+        if (String(masterData[m][0]).trim() === 'ECO-001') {
+          achSheet.appendRow([studentName, 'ECO-001', String(masterData[m][1]), String(masterData[m][2]), today, false]);
+          break;
+        }
+      }
+    }
+  }
+
+  // ── ECO-002: 학급의 큰 손 (경매 낙찰가 학급 역대 최고가 경신) ──
+  const auctionSheet2 = ss.getSheetByName(SHEET_AUCTION);
+  if (auctionSheet2 && !existing.has('ECO-002')) {
+    const aData2  = auctionSheet2.getDataRange().getValues();
+    let classMax  = 0, myMax = 0;
+    // C열(인덱스2)~K열(인덱스10): 1차~9차 낙찰가 열
+    for (let a = 1; a < aData2.length; a++) {
+      for (let c = 2; c <= 10; c++) {
+        const v = Number(aData2[a][c]) || 0;
+        if (v > classMax) classMax = v;
+      }
+    }
+    // 학생 자신의 최고 낙찰가는 자산사용 시트에서 확인
+    if (spendSheet) {
+      const sd2 = spendSheet.getDataRange().getValues();
+      for (let s = 1; s < sd2.length; s++) {
+        if (String(sd2[s][1]).trim() !== studentName) continue;
+        if (!String(sd2[s][3]).includes('[경매낙찰]')) continue;
+        const v = Number(sd2[s][4]) || 0;
+        if (v > myMax) myMax = v;
+      }
+    }
+    if (myMax > 0 && myMax >= classMax) {
+      for (let m = 1; m < masterData.length; m++) {
+        if (String(masterData[m][0]).trim() === 'ECO-002') {
+          achSheet.appendRow([studentName, 'ECO-002', String(masterData[m][1]), String(masterData[m][2]), today, false]);
+          break;
+        }
+      }
+    }
+  }
+
+  // ── HID-004: 업적 수집가 (달성 업적 10개 이상) ──────────────
+  if (!existing.has('HID-004') && existing.size >= 10) {
+    for (let m = 1; m < masterData.length; m++) {
+      if (String(masterData[m][0]).trim() === 'HID-004') {
+        achSheet.appendRow([studentName, 'HID-004', String(masterData[m][1]), String(masterData[m][2]), today, false]);
+        break;
+      }
+    }
+  }
+
+  // ── RANK-001~006: 랭크 브레이커 ────────────────────────────
+  const rankBreakers = {
+    'RANK-001': ['브론즈', '빛나는 브론즈', '거친 실버'],
+    'RANK-002': ['성장한 실버', '진화한 실버', '찬란한 실버', '거친 골드'],
+    'RANK-003': ['성장한 골드', '진화한 골드', '찬란한 골드', '거친 루비'],
+    'RANK-004': ['성장한 루비', '진화한 루비', '찬란한 루비', '거친 다이아몬드'],
+    'RANK-005': ['성장한 다이아몬드', '진화한 다이아몬드', '찬란한 다이아몬드', '마스터'],
+    'RANK-006': ['완성된 마스터', '그랜드마스터']
+  };
+  // 현재 학생 티어명 계산 (honor 기반)
+  const h = Number(honor) || 0;
+  let currentTierName = '새싹';
+  if      (h >= 100000) currentTierName = '그랜드마스터';
+  else if (h >= 85000)  currentTierName = '완성된 마스터';
+  else if (h >= 75000)  currentTierName = '마스터';
+  else if (h >= 65000)  currentTierName = '찬란한 다이아몬드';
+  else if (h >= 60000)  currentTierName = '진화한 다이아몬드';
+  else if (h >= 55000)  currentTierName = '성장한 다이아몬드';
+  else if (h >= 50000)  currentTierName = '거친 다이아몬드';
+  else if (h >= 45000)  currentTierName = '찬란한 루비';
+  else if (h >= 40000)  currentTierName = '진화한 루비';
+  else if (h >= 35000)  currentTierName = '성장한 루비';
+  else if (h >= 30000)  currentTierName = '거친 루비';
+  else if (h >= 27500)  currentTierName = '찬란한 골드';
+  else if (h >= 25000)  currentTierName = '진화한 골드';
+  else if (h >= 22500)  currentTierName = '성장한 골드';
+  else if (h >= 20000)  currentTierName = '거친 골드';
+  else if (h >= 17500)  currentTierName = '찬란한 실버';
+  else if (h >= 15000)  currentTierName = '진화한 실버';
+  else if (h >= 12500)  currentTierName = '성장한 실버';
+  else if (h >= 10000)  currentTierName = '거친 실버';
+  else if (h >= 7500)   currentTierName = '빛나는 브론즈';
+  else if (h >= 5000)   currentTierName = '브론즈';
+
+  Object.keys(rankBreakers).forEach(function(rankId) {
+    if (existing.has(rankId)) return;
+    if (rankBreakers[rankId].indexOf(currentTierName) === -1) return;
+    // 학급 내 다른 학생이 이 rankId를 이미 달성했는지 확인 (최초 달성만)
+    const allAchData = achSheet.getDataRange().getValues();
+    let alreadyExists = false;
+    for (let i = 1; i < allAchData.length; i++) {
+      if (String(allAchData[i][1]).trim() === rankId) { alreadyExists = true; break; }
+    }
+    if (alreadyExists) return; // 이미 누군가 달성함 → 부여 안 함
+    for (let m = 1; m < masterData.length; m++) {
+      if (String(masterData[m][0]).trim() === rankId) {
+        achSheet.appendRow([studentName, rankId, String(masterData[m][1]), String(masterData[m][2]), today, false]);
+        break;
+      }
+    }
+  });
+
+
   for (let m = 1; m < masterData.length; m++) {
     const achId   = String(masterData[m][0]).trim();
     const achName = String(masterData[m][1]).trim();
     const cond    = String(masterData[m][2]).trim();
     if (!achId) continue;
-    if (existing.has(achId)) continue; // 중복 방지
+    if (existing.has(achId)) continue;
     if (conditionMap[achId] === true) {
       achSheet.appendRow([studentName, achId, achName, cond, today, false]);
     }
   }
+}
+
+// ════════════════════════════════════════════════════════════════
+// 14. 업적 신청-승인 시스템 (v2)
+// ════════════════════════════════════════════════════════════════
+
+const SHEET_ACH_LOG    = '업적신청로그';
+const SHEET_GLOBAL_NOTIFY = '전역알림';
+const SHEET_JOB2_APP   = '2차직업신청';
+const SHEET_JOB2_CURR  = '2차직업현황';
+
+// ── 업적 도감 전체 데이터 반환 (학생 대시보드용) ─────────────────
+// 반환값: { myAchievements, allAchievements, pendingIds, equippedTitle, globalNotices }
+function getAchievementData(studentName) {
+  const ss          = SpreadsheetApp.getActiveSpreadsheet();
+  const masterSheet = ss.getSheetByName(SHEET_ACH_MASTER);
+  const achSheet    = ss.getSheetByName(SHEET_ACH_STUDENT);
+  const logSheet    = ss.getSheetByName(SHEET_ACH_LOG);
+  const notifySheet = ss.getSheetByName(SHEET_GLOBAL_NOTIFY);
+
+  // 1. 내가 달성한 업적 목록
+  const myAchievements = [];
+  let equippedTitle = null;
+  if (achSheet) {
+    const achData = achSheet.getDataRange().getValues();
+    for (let i = 1; i < achData.length; i++) {
+      if (String(achData[i][0]).trim() !== String(studentName).trim()) continue;
+      let dateVal = achData[i][4];
+      if (dateVal instanceof Date) {
+        dateVal = Utilities.formatDate(dateVal, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+      }
+      const equipped = achData[i][5] === true || String(achData[i][5]).toUpperCase() === 'TRUE';
+      const ach = {
+        achId:     String(achData[i][1]),
+        achName:   String(achData[i][2]),
+        condition: String(achData[i][3]),
+        date:      String(dateVal),
+        equipped:  equipped,
+        sheetRow:  i + 1
+      };
+      myAchievements.push(ach);
+      if (equipped) equippedTitle = ach.achName;
+    }
+  }
+  const myAchIds = new Set(myAchievements.map(a => a.achId));
+
+  // 2. 전체 업적 도감 (히든 처리 포함)
+  const allAchievements = [];
+  if (masterSheet) {
+    const mData = masterSheet.getDataRange().getValues();
+    for (let m = 1; m < mData.length; m++) {
+      if (!mData[m][0]) continue;
+      const achId   = String(mData[m][0]).trim();
+      const achName = String(mData[m][1]).trim();
+      const cond    = String(mData[m][2]).trim();
+      const isHidden = String(mData[m][3]).toUpperCase() === 'TRUE';
+      const hint    = String(mData[m][4] || '');
+      const earned  = myAchIds.has(achId);
+      // 자동 부여 업적은 신청 드롭다운에서 제외
+      const AUTO_GRANTED_IDS = new Set(['ACH-001','ACH-002','ECO-001','ECO-002','HID-004',
+        'RANK-001','RANK-002','RANK-003','RANK-004','RANK-005','RANK-006']);
+      allAchievements.push({
+        achId,
+        achName:     isHidden && !earned ? '???' : achName,
+        condition:   isHidden && !earned ? '히든 업적입니다.' : cond,
+        hint:        isHidden && !earned ? hint : '',
+        isHidden,
+        earned,
+        autoGranted: AUTO_GRANTED_IDS.has(achId)
+      });
+    }
+  }
+
+  // 3. 현재 대기 중인 신청 업적ID 목록 (중복 신청 방지용)
+  const pendingIds = new Set();
+  if (logSheet) {
+    const logData = logSheet.getDataRange().getValues();
+    for (let l = 1; l < logData.length; l++) {
+      if (String(logData[l][1]).trim() === String(studentName).trim() &&
+          String(logData[l][4]).trim() === '대기') {
+        pendingIds.add(String(logData[l][2]).trim());
+      }
+    }
+  }
+
+  // 4. 전역 알림 (읽지 않은 공지 — 프론트에서 localStorage로 1회 처리)
+  const globalNotices = [];
+  if (notifySheet) {
+    const nData = notifySheet.getDataRange().getValues();
+    for (let n = 1; n < nData.length; n++) {
+      if (nData[n][0]) {
+        globalNotices.push({
+          noticeId: String(nData[n][0]),
+          message:  String(nData[n][1]),
+          time:     String(nData[n][2])
+        });
+      }
+    }
+  }
+
+  return {
+    myAchievements,
+    allAchievements,
+    pendingIds:    [...pendingIds],
+    equippedTitle,
+    globalNotices
+  };
+}
+
+
+// ── 업적 신청 / 특별 보고 제출 ────────────────────────────────────
+// achievementId: 일반 신청 시 업적ID, 특별 보고 시 '특별보고'
+function submitAchievement(studentName, achievementId, proofText) {
+  const ss       = SpreadsheetApp.getActiveSpreadsheet();
+  const logSheet = ss.getSheetByName(SHEET_ACH_LOG);
+  if (!logSheet) return { success: false, msg: '업적신청로그 시트를 찾을 수 없습니다.' };
+
+  // 중복 대기 방지 (같은 업적ID가 이미 대기 중인지 확인)
+  if (achievementId !== '특별보고') {
+    const logData = logSheet.getDataRange().getValues();
+    for (let i = 1; i < logData.length; i++) {
+      if (String(logData[i][1]).trim() === String(studentName).trim() &&
+          String(logData[i][2]).trim() === String(achievementId).trim() &&
+          String(logData[i][4]).trim() === '대기') {
+        return { success: false, msg: '이미 해당 업적이 승인 대기 중입니다.' };
+      }
+    }
+    // 이미 달성한 업적인지 확인
+    const achSheet = ss.getSheetByName(SHEET_ACH_STUDENT);
+    if (achSheet) {
+      const achData = achSheet.getDataRange().getValues();
+      for (let i = 1; i < achData.length; i++) {
+        if (String(achData[i][0]).trim() === String(studentName).trim() &&
+            String(achData[i][1]).trim() === String(achievementId).trim()) {
+          return { success: false, msg: '이미 달성한 업적입니다.' };
+        }
+      }
+    }
+  }
+
+  const timestamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
+  logSheet.appendRow([timestamp, studentName, achievementId, proofText, '대기']);
+  return { success: true, msg: '신청이 완료되었습니다. 선생님의 승인을 기다려주세요.' };
+}
+
+
+// ── 관리자: 업적 신청 승인/반려 ───────────────────────────────────
+// rowNumber: 업적신청로그 시트의 실제 행 번호
+// isApproved: true=승인, false=반려
+// finalAchievementId: 특별보고를 승인할 때 선생님이 선택한 업적ID (일반 승인 시 null)
+function approveAchievement(rowNumber, isApproved, finalAchievementId) {
+  const ss       = SpreadsheetApp.getActiveSpreadsheet();
+  const logSheet = ss.getSheetByName(SHEET_ACH_LOG);
+  const achSheet = ss.getSheetByName(SHEET_ACH_STUDENT);
+  const masterSheet = ss.getSheetByName(SHEET_ACH_MASTER);
+  if (!logSheet || !achSheet) return { success: false, msg: '시트를 찾을 수 없습니다.' };
+
+  const row = logSheet.getRange(rowNumber, 1, 1, 5).getValues()[0];
+  const studentName = String(row[1]).trim();
+  const requestedId = String(row[2]).trim();
+
+  if (!isApproved) {
+    // 반려 처리
+    logSheet.getRange(rowNumber, 5).setValue('반려');
+    return { success: true, msg: '반려 처리되었습니다.' };
+  }
+
+  // 승인 처리
+  logSheet.getRange(rowNumber, 5).setValue('승인');
+
+  // 특별보고인 경우 선생님이 선택한 업적ID 사용, 일반 신청이면 원래 ID 사용
+  const achId = (requestedId === '특별보고' && finalAchievementId)
+    ? String(finalAchievementId).trim()
+    : requestedId;
+
+  // 마스터에서 업적명, 달성조건 찾기
+  let achName = achId, achCond = '';
+  if (masterSheet) {
+    const mData = masterSheet.getDataRange().getValues();
+    for (let m = 1; m < mData.length; m++) {
+      if (String(mData[m][0]).trim() === achId) {
+        achName = String(mData[m][1]).trim();
+        achCond = String(mData[m][2]).trim();
+        break;
+      }
+    }
+  }
+
+  // 이미 달성한 업적인지 중복 체크
+  const achData = achSheet.getDataRange().getValues();
+  for (let i = 1; i < achData.length; i++) {
+    if (String(achData[i][0]).trim() === studentName &&
+        String(achData[i][1]).trim() === achId) {
+      return { success: false, msg: '이미 달성 처리된 업적입니다.' };
+    }
+  }
+
+  const today = _todayStr();
+
+  // ★ 히든 업적 최초 달성 체크 → 전원 공지 + 히든 해제
+  if (masterSheet) {
+    const mData = masterSheet.getDataRange().getValues();
+    for (let m = 1; m < mData.length; m++) {
+      if (String(mData[m][0]).trim() !== achId) continue;
+      const isHidden = String(mData[m][3]).toUpperCase() === 'TRUE';
+      if (!isHidden) break;
+
+      // 이미 다른 학생이 달성했는지 확인
+      let alreadyUnlocked = false;
+      for (let i = 1; i < achData.length; i++) {
+        if (String(achData[i][1]).trim() === achId) { alreadyUnlocked = true; break; }
+      }
+
+      if (!alreadyUnlocked) {
+        // 최초 달성 → 히든여부 FALSE로 변경
+        masterSheet.getRange(m + 1, 4).setValue('FALSE');
+
+        // 전역 알림 시트에 공지 추가
+        const notifySheet = ss.getSheetByName(SHEET_GLOBAL_NOTIFY);
+        if (notifySheet) {
+          const noticeId = 'HIDDEN_' + achId + '_' + new Date().getTime();
+          const msg = `🎉 히든 업적 [${achName}]을(를) 달성한 사람이 최초로 등장했습니다! 지금부터 이 업적의 정체와 달성 조건이 모두에게 공개됩니다.`;
+          const ts  = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
+          notifySheet.appendRow([noticeId, msg, ts]);
+        }
+      }
+      break;
+    }
+  }
+
+  // 학생업적달성 시트에 기록
+  achSheet.appendRow([studentName, achId, achName, achCond, today, false]);
+  return { success: true, msg: `[${studentName}] ${achName} 업적 승인 완료!` };
+}
+
+
+// ── 관리자: 업적 신청 대기 목록 반환 ─────────────────────────────
+function getPendingAchievements() {
+  const ss       = SpreadsheetApp.getActiveSpreadsheet();
+  const logSheet = ss.getSheetByName(SHEET_ACH_LOG);
+  const masterSheet = ss.getSheetByName(SHEET_ACH_MASTER);
+  if (!logSheet) return { pending: [], allMasterAchs: [] };
+
+  const logData = logSheet.getDataRange().getValues();
+  const pending = [];
+  for (let i = 1; i < logData.length; i++) {
+    if (String(logData[i][4]).trim() !== '대기') continue;
+    pending.push({
+      rowNumber:  i + 1,
+      timestamp:  String(logData[i][0]),
+      studentName: String(logData[i][1]),
+      achId:      String(logData[i][2]),
+      proof:      String(logData[i][3])
+    });
+  }
+
+  // 특별보고 승인 시 업적 선택용 전체 목록
+  const allMasterAchs = [];
+  if (masterSheet) {
+    const mData = masterSheet.getDataRange().getValues();
+    for (let m = 1; m < mData.length; m++) {
+      if (!mData[m][0]) continue;
+      allMasterAchs.push({ achId: String(mData[m][0]), achName: String(mData[m][1]) });
+    }
+  }
+
+  return { pending, allMasterAchs };
+}
+
+
+// ════════════════════════════════════════════════════════════════
+// 15. 2차 직업 시스템
+// ════════════════════════════════════════════════════════════════
+
+// ── 전체 2차 직업 현황 반환 ───────────────────────────────────────
+function getJobData() {
+  const ss   = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_JOB2_CURR);
+  if (!sheet) return [];
+  const data = sheet.getDataRange().getValues();
+  const result = [];
+  for (let i = 1; i < data.length; i++) {
+    if (!data[i][0]) continue;
+    result.push({
+      studentName: String(data[i][0]),
+      jobName:     String(data[i][1]),
+      jobDesc:     String(data[i][2]),
+      approvedDate: String(data[i][3])
+    });
+  }
+  return result;
+}
+
+// ── 학생: 2차 직업 신청 ──────────────────────────────────────────
+function submitJobApplication(studentName, jobName, jobDesc) {
+  const ss      = SpreadsheetApp.getActiveSpreadsheet();
+  const appSheet = ss.getSheetByName(SHEET_JOB2_APP);
+  if (!appSheet) return { success: false, msg: '2차직업신청 시트를 찾을 수 없습니다.' };
+
+  // 이미 대기 중인 신청이 있는지 확인
+  const appData = appSheet.getDataRange().getValues();
+  for (let i = 1; i < appData.length; i++) {
+    if (String(appData[i][1]).trim() === String(studentName).trim() &&
+        String(appData[i][4]).trim() === '대기') {
+      return { success: false, msg: '이미 승인 대기 중인 신청이 있습니다.' };
+    }
+  }
+
+  // 이미 승인된 2차 직업이 있는지 확인
+  const currSheet = ss.getSheetByName(SHEET_JOB2_CURR);
+  if (currSheet) {
+    const currData = currSheet.getDataRange().getValues();
+    for (let i = 1; i < currData.length; i++) {
+      if (String(currData[i][0]).trim() === String(studentName).trim()) {
+        return { success: false, msg: '이미 2차 직업이 있습니다. 변경이 필요하면 선생님께 문의하세요.' };
+      }
+    }
+  }
+
+  const ts = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
+  appSheet.appendRow([ts, studentName, jobName, jobDesc, '대기']);
+  return { success: true, msg: '신청이 완료되었습니다! 선생님의 승인을 기다려주세요.' };
+}
+
+// ── 관리자: 2차 직업 승인/반려 ───────────────────────────────────
+function approveJob(rowNumber, isApproved) {
+  const ss       = SpreadsheetApp.getActiveSpreadsheet();
+  const appSheet = ss.getSheetByName(SHEET_JOB2_APP);
+  const currSheet = ss.getSheetByName(SHEET_JOB2_CURR);
+  if (!appSheet) return { success: false, msg: '시트를 찾을 수 없습니다.' };
+
+  const row = appSheet.getRange(rowNumber, 1, 1, 5).getValues()[0];
+  const studentName = String(row[1]).trim();
+  const jobName     = String(row[2]).trim();
+  const jobDesc     = String(row[3]).trim();
+
+  appSheet.getRange(rowNumber, 5).setValue(isApproved ? '승인' : '반려');
+
+  if (isApproved && currSheet) {
+    const today = _todayStr();
+    currSheet.appendRow([studentName, jobName, jobDesc, today]);
+  }
+
+  return { success: true, msg: isApproved ? `[${studentName}] 2차 직업 승인 완료!` : '반려 처리되었습니다.' };
+}
+
+// ── 관리자: 2차 직업 대기 목록 반환 ─────────────────────────────
+function getPendingJobs() {
+  const ss       = SpreadsheetApp.getActiveSpreadsheet();
+  const appSheet = ss.getSheetByName(SHEET_JOB2_APP);
+  if (!appSheet) return [];
+  const data = appSheet.getDataRange().getValues();
+  const result = [];
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][4]).trim() !== '대기') continue;
+    result.push({
+      rowNumber:   i + 1,
+      timestamp:   String(data[i][0]),
+      studentName: String(data[i][1]),
+      jobName:     String(data[i][2]),
+      jobDesc:     String(data[i][3])
+    });
+  }
+  return result;
+}
+
+// ── getStudentData에 2차 직업 정보 추가용 헬퍼 ──────────────────
+// getStudentData()의 return 블록에 아래 필드를 추가해야 합니다:
+//   job2: getSecondaryJobForStudent(studentName)
+function getSecondaryJobForStudent(studentName) {
+  const ss    = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_JOB2_CURR);
+  if (!sheet) return null;
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]).trim() === String(studentName).trim()) {
+      return { jobName: String(data[i][1]), jobDesc: String(data[i][2]) };
+    }
+  }
+  return null;
 }

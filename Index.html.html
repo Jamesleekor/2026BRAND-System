@@ -192,7 +192,9 @@
 
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
       <h3 id="welcomeMsg" style="margin:0;font-size:18px;">반갑습니다!</h3>
-      <div style="display:flex;gap:6px;">
+      <div style="display:flex;gap:6px;align-items:center;">
+        <button id="job2Btn" onclick="scrollToJob2()" style="padding:6px 12px;font-size:12px;background:#8e44ad;color:white;border:none;border-radius:5px;cursor:pointer;font-weight:bold;display:none;">💼 2차 직업</button>
+        <button id="job2BtnLocked" style="padding:6px 12px;font-size:12px;background:#ccc;color:#888;border:none;border-radius:5px;cursor:default;font-weight:bold;">🔒 2차 직업</button>
         <button onclick="openAchModal()" style="padding:6px 12px;font-size:12px;background:linear-gradient(135deg,#f39c12,#e74c3c);color:white;border:none;border-radius:5px;cursor:pointer;font-weight:bold;">🏅 나의 업적</button>
         <button onclick="logout()" style="padding:6px 12px;font-size:12px;background:#95a5a6;color:white;border:none;border-radius:5px;cursor:pointer;">로그아웃</button>
       </div>
@@ -295,7 +297,48 @@
       </div>
     </div>
 
+    <!-- 2차 직업 신청 섹션 (거친 골드 이상 공개) -->
+    <div id="job2Section" style="display:none;">
+      <div class="card" style="border-left:6px solid #8e44ad;">
+        <div class="card-title"><span>💼 2차 직업 시스템</span></div>
+        <div id="job2MyStatus" style="margin-bottom:12px;padding:10px;background:#f8f0ff;border-radius:8px;font-size:14px;">
+          나의 2차 직업: <strong id="job2MyName" style="color:#8e44ad;">없음</strong>
+        </div>
+        <div id="job2ApplyForm">
+          <input type="text" id="job2Name" placeholder="직업명 (예: 수학 과외 선생님)" style="width:100%;box-sizing:border-box;padding:9px;border:1px solid #ddd;border-radius:6px;font-size:14px;margin-bottom:8px;">
+          <textarea id="job2Desc" placeholder="제공할 서비스 설명 (예: 수학 문제 1개당 $50에 풀어드립니다)" style="width:100%;height:70px;padding:9px;border:1px solid #ddd;border-radius:6px;font-size:14px;box-sizing:border-box;resize:none;margin-bottom:8px;"></textarea>
+          <button onclick="applyJob2()" style="background:#8e44ad;color:white;border:none;border-radius:6px;padding:10px 0;width:100%;font-weight:bold;cursor:pointer;">📨 2차 직업 신청하기</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span>🏪 우리 반 직업 현황판</span></div>
+        <div style="max-height:250px;overflow-y:auto;border:1px solid #f0f0f0;border-radius:8px;">
+          <table id="jobMarketTable" style="width:100%;border-collapse:collapse;">
+            <thead><tr>
+              <th style="padding:8px;font-size:12px;color:#8e44ad;border-bottom:2px solid #eee;text-align:left;">학생</th>
+              <th style="padding:8px;font-size:12px;color:#8e44ad;border-bottom:2px solid #eee;text-align:left;">직업명</th>
+              <th style="padding:8px;font-size:12px;color:#8e44ad;border-bottom:2px solid #eee;text-align:left;">서비스 내용</th>
+            </tr></thead>
+            <tbody id="jobMarketBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 거친 골드 미만: 잠금 카드 -->
+    <div id="job2Locked" class="card" style="text-align:center;opacity:0.6;display:none;">
+      <div style="font-size:30px;">🔒</div>
+      <div style="font-size:14px;color:#888;margin-top:6px;">거친 골드 이상 달성 시 2차 직업 시스템이 해금됩니다.</div>
+    </div>
+
   </div></div>
+      
+
+  <!-- ── 전역 히든 알림 배너 ── -->
+<div id="hiddenNotifyBanner" style="display:none;position:fixed;top:0;left:0;width:100%;background:linear-gradient(135deg,#f39c12,#e74c3c);color:white;z-index:2000;padding:14px 20px;font-size:14px;font-weight:bold;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,0.2);">
+  <span id="hiddenNotifyText"></span>
+  <button onclick="closeBanner()" style="margin-left:16px;background:rgba(255,255,255,0.3);border:none;color:white;border-radius:12px;padding:2px 10px;cursor:pointer;font-weight:bold;">✕ 닫기</button>
+</div>
 
 <!-- ── 업적 모달 ── -->
 <div id="achModal">
@@ -427,35 +470,104 @@
 
   // ── 업적 모달 열기/닫기 ──────────────────────────────────────
   function openAchModal() {
-    renderAchievements(window._achievements || []);
+    // 서버에서 전체 업적 도감 데이터를 새로 가져옴
+    document.getElementById('achList').innerHTML = '<div class="ach-empty">데이터 로딩 중...</div>';
     document.getElementById('achModal').classList.add('open');
+    google.script.run.withSuccessHandler(function(data) {
+      window._achData = data;
+      renderAchievementModal(data);
+    }).getAchievementData(window._currentStudentName);
   }
   function closeAchModal() {
     document.getElementById('achModal').classList.remove('open');
   }
 
   // ── 업적 목록 렌더링 ─────────────────────────────────────────
-  function renderAchievements(list) {
+  // ── 업적 모달 전체 렌더링 (도감 + 신청 폼) ───────────────────
+  function renderAchievementModal(data) {
     var container = document.getElementById('achList');
-    if (!list || list.length === 0) {
-      container.innerHTML = '<div class="ach-empty">아직 달성한 업적이 없습니다.<br>열심히 활동해서 칭호를 획득해 보세요! 🌱</div>';
-      return;
+    var myIds = new Set((data.myAchievements || []).map(function(a){ return a.achId; }));
+    var pendingSet = new Set(data.pendingIds || []);
+
+    // ① 달성한 업적 목록
+    var earnedHtml = '<div style="font-weight:bold;font-size:13px;color:#7f8c8d;margin:8px 0 6px;">✅ 달성한 업적</div>';
+    if (data.myAchievements && data.myAchievements.length > 0) {
+      earnedHtml += data.myAchievements.map(function(ach) {
+        var btnClass = ach.equipped ? 'equipped' : 'unequipped';
+        var btnText  = ach.equipped ? '✓ 장착 중' : '장착하기';
+        return '<div class="ach-row">' +
+          '<div class="ach-info">' +
+            '<div class="ach-name">' + ach.achName + '</div>' +
+            '<div class="ach-cond">' + ach.condition + '</div>' +
+            '<div class="ach-date">달성일: ' + ach.date + '</div>' +
+          '</div>' +
+          '<button class="ach-equip-btn ' + btnClass + '" onclick="toggleEquip(' + ach.sheetRow + ',' + ach.equipped + ')">' + btnText + '</button>' +
+        '</div>';
+      }).join('');
+    } else {
+      earnedHtml += '<div class="ach-empty" style="padding:10px;">아직 달성한 업적이 없습니다.</div>';
     }
-    container.innerHTML = list.map(function(ach) {
-      var btnClass = ach.equipped ? 'equipped' : 'unequipped';
-      var btnText  = ach.equipped ? '✓ 장착 중' : '장착하기';
-      return '<div class="ach-row" id="achrow_' + ach.sheetRow + '">' +
-        '<div class="ach-info">' +
-          '<div class="ach-name">' + ach.achName + '</div>' +
-          '<div class="ach-cond">' + ach.condition + '</div>' +
-          '<div class="ach-date">달성일: ' + ach.date + '</div>' +
-        '</div>' +
-        '<button class="ach-equip-btn ' + btnClass + '" ' +
-          'onclick="toggleEquip(' + ach.sheetRow + ', ' + ach.equipped + ')">' +
-          btnText +
-        '</button>' +
-      '</div>';
+
+    // ② 전체 도감 (미달성 포함) — 검정 배경 테마
+    var allHtml = '<div style="font-weight:bold;font-size:13px;color:#7f8c8d;margin:16px 0 6px;">📖 전체 업적 도감</div>';
+    allHtml += '<div style="max-height:220px;overflow-y:auto;border-radius:10px;background:#1a1a2e;">';
+    (data.allAchievements || []).forEach(function(ach) {
+      if (ach.earned) {
+        allHtml += '<div style="padding:8px 14px;border-bottom:1px solid #2d2d44;">' +
+          '<div style="font-size:13px;font-weight:bold;color:#2ecc71;">✅ ' + ach.achName + '</div>' +
+          '<div style="font-size:11px;color:#7fb3a0;margin-top:2px;">' + ach.condition + '</div></div>';
+      } else if (ach.isHidden) {
+        allHtml += '<div style="padding:8px 14px;border-bottom:1px solid #2d2d44;" title="힌트: ' + ach.hint + '">' +
+          '<div style="font-size:13px;font-weight:bold;color:#555;">🔒 ???</div>' +
+          '<div style="font-size:11px;color:#444;margin-top:2px;">히든 업적 — 마우스를 올려 힌트 확인</div></div>';
+      } else {
+        allHtml += '<div style="padding:8px 14px;border-bottom:1px solid #2d2d44;">' +
+          '<div style="font-size:13px;font-weight:bold;color:#e74c3c;">⬜ ' + ach.achName + '</div>' +
+          '<div style="font-size:11px;color:#c0785a;margin-top:2px;">' + ach.condition + '</div></div>';
+      }
+    });
+    allHtml += '</div>';
+
+    // ③ 일반 업적 신청 폼
+    var unearned = (data.allAchievements || []).filter(function(a){ return !a.earned && !a.isHidden && !a.autoGranted; });
+    var applyOptions = unearned.map(function(a){
+      var disabled = pendingSet.has(a.achId) ? ' disabled' : '';
+      var label = pendingSet.has(a.achId) ? a.achName + ' (대기 중)' : a.achName;
+      return '<option value="' + a.achId + '"' + disabled + '>' + label + '</option>';
     }).join('');
+    var applyHtml = '<div style="font-weight:bold;font-size:13px;color:#7f8c8d;margin:16px 0 6px;">📝 업적 신청</div>' +
+      '<select id="achApplySelect" style="width:100%;padding:7px;border-radius:6px;border:1px solid #ddd;margin-bottom:8px;font-size:13px;">' +
+        '<option value="">-- 신청할 업적 선택 --</option>' + applyOptions +
+      '</select>' +
+      '<textarea id="achApplyProof" placeholder="달성 증빙 내용을 적어주세요 (예: 3월 15일 자산이 5000 초과됨)" style="width:100%;height:60px;padding:7px;border-radius:6px;border:1px solid #ddd;font-size:13px;box-sizing:border-box;resize:none;"></textarea>' +
+      '<button onclick="submitAchApply()" style="background:#3498db;color:white;border:none;border-radius:6px;padding:8px 0;width:100%;font-weight:bold;cursor:pointer;margin-top:6px;">📬 업적 신청하기</button>';
+
+    // ④ 특별 보고 폼
+    var specialHtml = '<div style="font-weight:bold;font-size:13px;color:#7f8c8d;margin:16px 0 6px;">🌟 특별 성과 보고서 (히든 업적용)</div>' +
+      '<textarea id="achSpecialProof" placeholder="히든 업적 달성을 위한 특별 성과를 자유롭게 작성해주세요." style="width:100%;height:80px;padding:7px;border-radius:6px;border:1px solid #e67e22;font-size:13px;box-sizing:border-box;resize:none;"></textarea>' +
+      '<button onclick="submitSpecialReport()" style="background:linear-gradient(135deg,#e67e22,#e74c3c);color:white;border:none;border-radius:6px;padding:8px 0;width:100%;font-weight:bold;cursor:pointer;margin-top:6px;">🚀 특별 보고서 제출</button>';
+
+    container.innerHTML = earnedHtml + allHtml + applyHtml + specialHtml;
+  }
+
+  function submitAchApply() {
+    var sel   = document.getElementById('achApplySelect').value;
+    var proof = document.getElementById('achApplyProof').value.trim();
+    if (!sel)   return alert('신청할 업적을 선택해주세요.');
+    if (!proof) return alert('증빙 내용을 입력해주세요.');
+    google.script.run.withSuccessHandler(function(res) {
+      alert(res.msg);
+      if (res.success) openAchModal(); // 새로고침
+    }).submitAchievement(window._currentStudentName, sel, proof);
+  }
+
+  function submitSpecialReport() {
+    var proof = document.getElementById('achSpecialProof').value.trim();
+    if (!proof) return alert('보고서 내용을 입력해주세요.');
+    google.script.run.withSuccessHandler(function(res) {
+      alert(res.msg);
+      if (res.success) document.getElementById('achSpecialProof').value = '';
+    }).submitAchievement(window._currentStudentName, '특별보고', proof);
   }
 
   // ── 칭호 장착/해제 ──────────────────────────────────────────
@@ -612,11 +724,95 @@
     window._currentStudentName = data.personal.name;
     window._achievements = data.achievements || [];
 
+
+
     // 로그인 시 장착 중인 칭호 있으면 바로 표시
     var equippedAch = (data.achievements || []).find(function(a){ return a.equipped; });
     if (equippedAch) updateTitleBadge(equippedAch.achName);
+
+
+    // 전역 알림 체크 (로그인 시 1회)
+    checkGlobalNotices(data.achievements);
+    }  // ← priceTableBody if 블록 닫기
+  }    // ← showDashboard 함수 닫기
+
+  // ── 2차 직업 섹션 렌더링 ────────────────────────────────────
+  function renderJob2Section(data) {
+    var GOLD_TIERS = ['거친 골드','성장한 골드','진화한 골드','찬란한 골드',
+                      '거친 루비','성장한 루비','진화한 루비','찬란한 루비',
+                      '거친 다이아몬드','성장한 다이아몬드','진화한 다이아몬드','찬란한 다이아몬드',
+                      '마스터','완성된 마스터','그랜드마스터'];
+    var tierName = data.tierData ? data.tierData.name : '';
+    var unlocked = GOLD_TIERS.indexOf(tierName) !== -1;
+
+    document.getElementById('job2Section').style.display  = unlocked ? 'block' : 'none';
+    document.getElementById('job2Locked').style.display   = unlocked ? 'none'  : 'block';
+    document.getElementById('job2Btn').style.display      = unlocked ? 'inline-block' : 'none';
+    document.getElementById('job2BtnLocked').style.display = unlocked ? 'none' : 'inline-block';
+
+    if (!unlocked) return;
+
+    // 나의 2차 직업 상태
+    if (data.job2) {
+      document.getElementById('job2MyName').innerText = data.job2.jobName;
+      document.getElementById('job2ApplyForm').style.display = 'none'; // 이미 있으면 신청폼 숨김
+    } else {
+      document.getElementById('job2MyName').innerText = '없음';
+      document.getElementById('job2ApplyForm').style.display = 'block';
+    }
+
+    // 직업 현황판 렌더링
+    var tbody = document.getElementById('jobMarketBody');
+    if (data.jobMarket && data.jobMarket.length > 0) {
+      tbody.innerHTML = data.jobMarket.map(function(j) {
+        return '<tr style="border-bottom:1px solid #f5f5f5;">' +
+          '<td style="padding:8px;font-weight:bold;font-size:13px;">' + j.studentName + '</td>' +
+          '<td style="padding:8px;color:#8e44ad;font-size:13px;">' + j.jobName + '</td>' +
+          '<td style="padding:8px;font-size:12px;color:#555;">' + j.jobDesc + '</td>' +
+        '</tr>';
+      }).join('');
+    } else {
+      tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:16px;color:#bbb;">아직 2차 직업을 가진 학생이 없습니다.</td></tr>';
     }
   }
+
+  // 2차 직업 스크롤 함수
+  function scrollToJob2() {
+    var el = document.getElementById('job2Section');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // ── 2차 직업 신청 ────────────────────────────────────────────
+  function applyJob2() {
+    var jobName = document.getElementById('job2Name').value.trim();
+    var jobDesc = document.getElementById('job2Desc').value.trim();
+    if (!jobName) return alert('직업명을 입력해주세요.');
+    if (!jobDesc) return alert('서비스 설명을 입력해주세요.');
+    google.script.run.withSuccessHandler(function(res) {
+      alert(res.msg);
+    }).submitJobApplication(window._currentStudentName, jobName, jobDesc);
+  }
+
+  // ── 전역 알림(히든 업적 해금) 배너 처리 ──────────────────────
+  function checkGlobalNotices(achievements) {
+    google.script.run.withSuccessHandler(function(achData) {
+      var notices = achData.globalNotices || [];
+      var seen = JSON.parse(localStorage.getItem('brand_seen_notices') || '[]');
+      var unseen = notices.filter(function(n){ return seen.indexOf(n.noticeId) === -1; });
+      if (unseen.length === 0) return;
+      var latest = unseen[unseen.length - 1];
+      document.getElementById('hiddenNotifyText').innerText = latest.message;
+      document.getElementById('hiddenNotifyBanner').style.display = 'block';
+      seen.push(latest.noticeId);
+      localStorage.setItem('brand_seen_notices', JSON.stringify(seen));
+    }).getAchievementData(window._currentStudentName);
+  }
+
+  function closeBanner() {
+    document.getElementById('hiddenNotifyBanner').style.display = 'none';
+  }
+
+
 </script>
 
 </body>

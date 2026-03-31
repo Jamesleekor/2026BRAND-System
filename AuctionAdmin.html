@@ -250,5 +250,114 @@
     google.script.run.setAuctionState({ status: 'idle' });
   }
 </script>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- 업적 & 2차 직업 승인 대기함 섹션 -->
+<!-- ═══════════════════════════════════════════════ -->
+<div style="margin-top:20px;">
+  <div style="display:flex;gap:10px;margin-bottom:10px;">
+    <button onclick="loadPendingAch()" style="background:#8e44ad;color:white;border:none;padding:8px 16px;border-radius:6px;font-weight:bold;cursor:pointer;">🏅 업적 승인 대기함 불러오기</button>
+    <button onclick="loadPendingJobs()" style="background:#2980b9;color:white;border:none;padding:8px 16px;border-radius:6px;font-weight:bold;cursor:pointer;">💼 2차 직업 대기함 불러오기</button>
+  </div>
+
+  <!-- 업적 대기함 -->
+  <div id="achPendingBox" style="display:none;background:white;border-radius:8px;padding:14px;box-shadow:0 2px 5px rgba(0,0,0,0.1);margin-bottom:14px;">
+    <h3 style="margin:0 0 10px;color:#8e44ad;">🏅 업적 승인 대기함</h3>
+    <div id="achPendingList">로딩 중...</div>
+  </div>
+
+  <!-- 2차 직업 대기함 -->
+  <div id="jobPendingBox" style="display:none;background:white;border-radius:8px;padding:14px;box-shadow:0 2px 5px rgba(0,0,0,0.1);">
+    <h3 style="margin:0 0 10px;color:#2980b9;">💼 2차 직업 승인 대기함</h3>
+    <div id="jobPendingList">로딩 중...</div>
+  </div>
+</div>
+
+<script>
+  // ── 업적 대기함 ────────────────────────────────────────────
+  function loadPendingAch() {
+    document.getElementById('achPendingBox').style.display = 'block';
+    document.getElementById('achPendingList').innerHTML = '로딩 중...';
+    google.script.run.withSuccessHandler(function(data) {
+      renderPendingAch(data);
+    }).getPendingAchievements();
+  }
+
+  function renderPendingAch(data) {
+    var list = document.getElementById('achPendingList');
+    if (!data.pending || data.pending.length === 0) {
+      list.innerHTML = '<div style="color:#aaa;padding:10px;">대기 중인 업적 신청이 없습니다.</div>';
+      return;
+    }
+    // 특별보고 승인용 드롭다운 옵션
+    var masterOptions = (data.allMasterAchs || []).map(function(a){
+      return '<option value="' + a.achId + '">' + a.achId + ' | ' + a.achName + '</option>';
+    }).join('');
+
+    list.innerHTML = data.pending.map(function(p) {
+      var isSpecial = p.achId === '특별보고';
+      var specialSelect = isSpecial
+        ? '<div style="margin-top:6px;"><label style="font-size:12px;color:#888;">부여할 업적 선택:</label>' +
+          '<select id="specialSel_' + p.rowNumber + '" style="width:100%;padding:5px;margin-top:4px;border-radius:4px;border:1px solid #ddd;font-size:12px;">' +
+            '<option value="">-- 업적 선택 --</option>' + masterOptions +
+          '</select></div>'
+        : '';
+      return '<div style="border:1px solid #eee;border-radius:8px;padding:10px;margin-bottom:8px;">' +
+        '<div style="font-size:13px;font-weight:bold;color:#2c3e50;">' + p.studentName + ' <span style="color:#888;font-weight:normal;">(' + p.timestamp + ')</span></div>' +
+        '<div style="font-size:12px;color:#8e44ad;margin:4px 0;">업적 ID: ' + p.achId + (isSpecial ? ' <span style="background:#e74c3c;color:white;border-radius:4px;padding:1px 6px;font-size:11px;">특별보고</span>' : '') + '</div>' +
+        '<div style="font-size:12px;color:#555;background:#f9f9f9;padding:8px;border-radius:6px;">' + p.proof + '</div>' +
+        specialSelect +
+        '<div style="display:flex;gap:6px;margin-top:8px;">' +
+          '<button onclick="doApproveAch(' + p.rowNumber + ', true)" style="background:#27ae60;color:white;border:none;padding:5px 14px;border-radius:4px;font-weight:bold;cursor:pointer;font-size:12px;">✅ 승인</button>' +
+          '<button onclick="doApproveAch(' + p.rowNumber + ', false)" style="background:#e74c3c;color:white;border:none;padding:5px 14px;border-radius:4px;font-weight:bold;cursor:pointer;font-size:12px;">❌ 반려</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  function doApproveAch(rowNumber, isApproved) {
+    var specialSel = document.getElementById('specialSel_' + rowNumber);
+    var finalId = specialSel ? specialSel.value : null;
+    if (specialSel && isApproved && !finalId) return alert('특별보고 승인 시 부여할 업적을 선택해주세요.');
+    google.script.run.withSuccessHandler(function(res) {
+      alert(res.msg);
+      loadPendingAch(); // 목록 새로고침
+    }).approveAchievement(rowNumber, isApproved, finalId || null);
+  }
+
+  // ── 2차 직업 대기함 ────────────────────────────────────────
+  function loadPendingJobs() {
+    document.getElementById('jobPendingBox').style.display = 'block';
+    document.getElementById('jobPendingList').innerHTML = '로딩 중...';
+    google.script.run.withSuccessHandler(function(jobs) {
+      renderPendingJobs(jobs);
+    }).getPendingJobs();
+  }
+
+  function renderPendingJobs(jobs) {
+    var list = document.getElementById('jobPendingList');
+    if (!jobs || jobs.length === 0) {
+      list.innerHTML = '<div style="color:#aaa;padding:10px;">대기 중인 2차 직업 신청이 없습니다.</div>';
+      return;
+    }
+    list.innerHTML = jobs.map(function(j) {
+      return '<div style="border:1px solid #eee;border-radius:8px;padding:10px;margin-bottom:8px;">' +
+        '<div style="font-size:13px;font-weight:bold;color:#2c3e50;">' + j.studentName + ' → <span style="color:#2980b9;">' + j.jobName + '</span></div>' +
+        '<div style="font-size:12px;color:#555;background:#f9f9f9;padding:8px;border-radius:6px;margin-top:4px;">' + j.jobDesc + '</div>' +
+        '<div style="display:flex;gap:6px;margin-top:8px;">' +
+          '<button onclick="doApproveJob(' + j.rowNumber + ', true)" style="background:#27ae60;color:white;border:none;padding:5px 14px;border-radius:4px;font-weight:bold;cursor:pointer;font-size:12px;">✅ 승인</button>' +
+          '<button onclick="doApproveJob(' + j.rowNumber + ', false)" style="background:#e74c3c;color:white;border:none;padding:5px 14px;border-radius:4px;font-weight:bold;cursor:pointer;font-size:12px;">❌ 반려</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  function doApproveJob(rowNumber, isApproved) {
+    google.script.run.withSuccessHandler(function(res) {
+      alert(res.msg);
+      loadPendingJobs(); // 목록 새로고침
+    }).approveJob(rowNumber, isApproved);
+  }
+</script>
 </body>
 </html>

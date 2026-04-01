@@ -289,12 +289,20 @@
       list.innerHTML = '<div style="color:#aaa;padding:10px;">대기 중인 업적 신청이 없습니다.</div>';
       return;
     }
+    
     // 특별보고 승인용 드롭다운 옵션
     var masterOptions = (data.allMasterAchs || []).map(function(a){
       return '<option value="' + a.achId + '">' + a.achId + ' | ' + a.achName + '</option>';
     }).join('');
 
-    list.innerHTML = data.pending.map(function(p) {
+    // 일괄 처리 버튼 추가
+    var batchButtons = '<div style="display:flex;gap:8px;margin-bottom:12px;padding:10px;background:#f8f9fa;border-radius:8px;">' +
+      '<button onclick="batchApprove(true)" style="background:#27ae60;color:white;border:none;padding:8px 16px;border-radius:5px;font-weight:bold;cursor:pointer;font-size:13px;">✅ 선택 항목 일괄 승인</button>' +
+      '<button onclick="batchApprove(false)" style="background:#e74c3c;color:white;border:none;padding:8px 16px;border-radius:5px;font-weight:bold;cursor:pointer;font-size:13px;">❌ 선택 항목 일괄 반려</button>' +
+      '<button onclick="toggleSelectAll()" style="background:#95a5a6;color:white;border:none;padding:8px 16px;border-radius:5px;font-weight:bold;cursor:pointer;font-size:13px;">☑️ 전체 선택/해제</button>' +
+    '</div>';
+
+    var items = data.pending.map(function(p) {
       var isSpecial = p.achId === '특별보고';
       var specialSelect = isSpecial
         ? '<div style="margin-top:6px;"><label style="font-size:12px;color:#888;">부여할 업적 선택:</label>' +
@@ -302,17 +310,28 @@
             '<option value="">-- 업적 선택 --</option>' + masterOptions +
           '</select></div>'
         : '';
-      return '<div style="border:1px solid #eee;border-radius:8px;padding:10px;margin-bottom:8px;">' +
-        '<div style="font-size:13px;font-weight:bold;color:#2c3e50;">' + p.studentName + ' <span style="color:#888;font-weight:normal;">(' + p.timestamp + ')</span></div>' +
-        '<div style="font-size:12px;color:#8e44ad;margin:4px 0;">업적 ID: ' + p.achId + (isSpecial ? ' <span style="background:#e74c3c;color:white;border-radius:4px;padding:1px 6px;font-size:11px;">특별보고</span>' : '') + '</div>' +
-        '<div style="font-size:12px;color:#555;background:#f9f9f9;padding:8px;border-radius:6px;">' + p.proof + '</div>' +
-        specialSelect +
-        '<div style="display:flex;gap:6px;margin-top:8px;">' +
-          '<button onclick="doApproveAch(' + p.rowNumber + ', true)" style="background:#27ae60;color:white;border:none;padding:5px 14px;border-radius:4px;font-weight:bold;cursor:pointer;font-size:12px;">✅ 승인</button>' +
-          '<button onclick="doApproveAch(' + p.rowNumber + ', false)" style="background:#e74c3c;color:white;border:none;padding:5px 14px;border-radius:4px;font-weight:bold;cursor:pointer;font-size:12px;">❌ 반려</button>' +
+      
+      return '<div style="border:1px solid #eee;border-radius:8px;padding:10px;margin-bottom:8px;display:flex;gap:10px;">' +
+        '<div style="display:flex;align-items:flex-start;padding-top:5px;">' +
+          '<input type="checkbox" class="ach-checkbox" data-row="' + p.rowNumber + '" style="width:18px;height:18px;cursor:pointer;">' +
+        '</div>' +
+        '<div style="flex:1;">' +
+          '<div style="font-size:13px;font-weight:bold;color:#2c3e50;">' + p.studentName + ' <span style="color:#888;font-weight:normal;">(' + p.timestamp + ')</span></div>' +
+          '<div style="font-size:12px;color:#8e44ad;margin:4px 0;">' +
+            '<strong>' + p.achId + '</strong> - ' + p.achName +
+            (isSpecial ? ' <span style="background:#e74c3c;color:white;border-radius:4px;padding:1px 6px;font-size:11px;">특별보고</span>' : '') +
+          '</div>' +
+          '<div style="font-size:12px;color:#555;background:#f9f9f9;padding:8px;border-radius:6px;">' + p.proof + '</div>' +
+          specialSelect +
+          '<div style="display:flex;gap:6px;margin-top:8px;">' +
+            '<button onclick="doApproveAch(' + p.rowNumber + ', true)" style="background:#27ae60;color:white;border:none;padding:5px 14px;border-radius:4px;font-weight:bold;cursor:pointer;font-size:12px;">✅ 승인</button>' +
+            '<button onclick="doApproveAch(' + p.rowNumber + ', false)" style="background:#e74c3c;color:white;border:none;padding:5px 14px;border-radius:4px;font-weight:bold;cursor:pointer;font-size:12px;">❌ 반려</button>' +
+          '</div>' +
         '</div>' +
       '</div>';
     }).join('');
+
+    list.innerHTML = batchButtons + items;
   }
 
   function doApproveAch(rowNumber, isApproved) {
@@ -323,6 +342,39 @@
       alert(res.msg);
       loadPendingAch(); // 목록 새로고침
     }).approveAchievement(rowNumber, isApproved, finalId || null);
+  }
+
+  // ── 체크박스 전체 선택/해제 ──────────────────────────────────
+  function toggleSelectAll() {
+    var checkboxes = document.querySelectorAll('.ach-checkbox');
+    if (checkboxes.length === 0) return;
+    
+    var allChecked = Array.from(checkboxes).every(function(cb) { return cb.checked; });
+    checkboxes.forEach(function(cb) {
+      cb.checked = !allChecked;
+    });
+  }
+
+  // ── 일괄 승인/반려 처리 ──────────────────────────────────────
+  function batchApprove(isApproved) {
+    var checkboxes = document.querySelectorAll('.ach-checkbox:checked');
+    if (checkboxes.length === 0) {
+      alert('선택된 항목이 없습니다.');
+      return;
+    }
+
+    var rowNumbers = Array.from(checkboxes).map(function(cb) {
+      return parseInt(cb.getAttribute('data-row'));
+    });
+
+    var action = isApproved ? '승인' : '반려';
+    if (!confirm(rowNumbers.length + '개 항목을 일괄 ' + action + ' 하시겠습니까?')) return;
+
+    document.getElementById('achPendingList').innerHTML = '처리 중...';
+    google.script.run.withSuccessHandler(function(res) {
+      alert(res.msg);
+      loadPendingAch(); // 목록 새로고침
+    }).batchApproveAchievements(rowNumbers, isApproved);
   }
 
   // ── 2차 직업 대기함 ────────────────────────────────────────

@@ -173,6 +173,160 @@
       background: #ecf0f1; color: #555;
     }
     .ach-empty { text-align: center; padding: 30px; color: #bbb; font-size: 15px; }
+    
+    /* ── 명예의 전당 테이블 ── */
+    .honor-board-container {
+      margin-top: 20px;
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .honor-board-title {
+      font-size: 18px;
+      font-weight: bold;
+      color: #2c3e50;
+      margin-bottom: 15px;
+      text-align: center;
+      border-bottom: 2px solid #3d85c8;
+      padding-bottom: 10px;
+    }
+    .honor-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .honor-table th {
+      background: #f8f9fa;
+      padding: 12px 8px;
+      text-align: left;
+      font-size: 13px;
+      color: #555;
+      border-bottom: 2px solid #eee;
+    }
+    .honor-table td {
+      padding: 12px 8px;
+      font-size: 14px;
+      border-bottom: 1px solid #f5f5f5;
+    }
+    .honor-table tr:hover {
+      background: #f9f9f9;
+    }
+    
+    /* ── 업적 등급별 칭호 뱃지 스타일 ── */
+    .title-badge-rare {
+      background: #3498db;
+      color: white;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: bold;
+      display: inline-block;
+      margin-right: 4px;
+    }
+    .title-badge-unique {
+      background: linear-gradient(135deg, #e74c3c, #f39c12, #f1c40f, #2ecc71, #3498db, #9b59b6, #e74c3c);
+      background-size: 200% 200%;
+      animation: rainbowShift 3s ease infinite;
+      color: white;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: bold;
+      display: inline-block;
+      margin-right: 4px;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+    }
+    @keyframes rainbowShift {
+      0%   { background-position: 0% 50%; }
+      50%  { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .title-badge-hidden {
+      background: #f1c40f;
+      color: #2c3e50;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: bold;
+      display: inline-block;
+      margin-right: 4px;
+      box-shadow: 0 0 8px rgba(241,196,15,0.6);
+      cursor: pointer; /* 👈 추가: 클릭 가능하다는 표시 */
+      position: relative; /* 👈 추가: 툴팁 위치 기준 */
+    }
+    /* 👇 히든 업적 힌트 툴팁 스타일 추가 */
+    .hidden-hint-tooltip {
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #2c3e50;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 11px;
+      white-space: nowrap;
+      margin-bottom: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+    .hidden-hint-tooltip::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 6px solid transparent;
+      border-top-color: #2c3e50;
+    }
+    .hidden-hint-tooltip.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .title-badge-only {
+      background: linear-gradient(135deg, #8e44ad, #c0392b, #f39c12, #f1c40f, #2ecc71, #3498db, #9b59b6, #8e44ad);
+      background-size: 300% 300%;
+      color: white;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: bold;
+      display: inline-block;
+      margin-right: 4px;
+      border: 2px solid #f1c40f;
+      box-shadow: 0 0 15px rgba(241,196,15,0.9), 0 0 25px rgba(155,89,182,0.6), inset 0 0 10px rgba(255,255,255,0.4);
+      text-shadow: 0 0 8px rgba(0,0,0,0.8), 1px 1px 3px rgba(0,0,0,0.5);
+      animation: onlyGradient 3s ease infinite, onlyGlow 2s ease infinite;
+      position: relative;
+      overflow: hidden;
+    }
+    .title-badge-only::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(45deg, transparent, rgba(255,255,255,0.4), transparent);
+      animation: onlyShine 3s ease infinite;
+    }
+    @keyframes onlyGradient {
+      0%   { background-position: 0% 50%; }
+      50%  { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    @keyframes onlyGlow {
+      0%   { box-shadow: 0 0 15px rgba(241,196,15,0.9), 0 0 25px rgba(155,89,182,0.6), inset 0 0 10px rgba(255,255,255,0.4); }
+      50%  { box-shadow: 0 0 25px rgba(241,196,15,1), 0 0 35px rgba(155,89,182,0.8), inset 0 0 15px rgba(255,255,255,0.6); }
+      100% { box-shadow: 0 0 15px rgba(241,196,15,0.9), 0 0 25px rgba(155,89,182,0.6), inset 0 0 10px rgba(255,255,255,0.4); }
+    }
+    @keyframes onlyShine {
+      0%   { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+      100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+    }
   </style>
 </head>
 <body>
@@ -186,6 +340,23 @@
     <input type="text" id="studentName" placeholder="예: 이순신">
     <input type="password" id="studentPassword" placeholder="비밀번호를 입력하세요" style="width: 85%; padding: 12px; margin: 15px 0; border: 2px solid #eee; border-radius: 8px; font-size: 16px; outline: none;">
     <button class="login-btn" onclick="login()">데이터 불러오기</button>
+  </div>
+
+  <!-- 명예의 전당: 전체 학생 업적 현황 -->
+  <div id="honorBoardSection" class="honor-board-container" style="display:none;">
+    <div class="honor-board-title">🏆 우리 반 명예의 전당 🏆</div>
+    <table class="honor-table">
+      <thead>
+        <tr>
+          <th style="width:25%;">이름</th>
+          <th style="width:45%;">장착 중인 칭호</th>
+          <th style="width:30%;text-align:center;">달성 업적 수</th>
+        </tr>
+      </thead>
+      <tbody id="honorBoardBody">
+        <tr><td colspan="3" style="text-align:center;padding:30px;color:#bbb;">데이터 로딩 중...</td></tr>
+      </tbody>
+    </table>
   </div>
 
   <div id="dashboard">
@@ -439,10 +610,11 @@
 
   // ── 로그아웃 함수 ─────────────────────────────────────────────
   function logout() {
-    document.getElementById('dashboard').style.display    = 'none';
+    document.getElementById('dashboard').style.display = 'none';
     document.getElementById('loginSection').style.display = 'block';
-    document.getElementById('studentName').value = '';  // 입력창 비우기
-    document.getElementById('studentPassword').value = '';  // 비밀번호 입력창 비우기
+    document.getElementById('honorBoardSection').style.display = 'block'; // 명예의 전당 다시 표시
+    document.getElementById('studentName').value = '';
+    document.getElementById('studentPassword').value = '';
   }
 
   // ── 티어 테두리 클래스 적용 ─────────────────────────────────
@@ -613,10 +785,14 @@
 
   // ── 대시보드 렌더링 함수 ─────────────────────────────────────
   function showDashboard(data) {
-    if (!data.success) { alert(data.msg); return; }
+    if (!data.success) {
+      alert(data.msg);
+      return;
+    }
 
     document.getElementById('loginSection').style.display = 'none';
-    document.getElementById('dashboard').style.display    = 'block';
+    document.getElementById('honorBoardSection').style.display = 'none'; // 명예의 전당 숨기기
+    document.getElementById('dashboard').style.display = 'block';
 
     // 기본 정보
     document.getElementById('welcomeMsg').innerText   = '👋 ' + data.personal.name + ' (' + data.personal.brand + ')';
@@ -812,6 +988,142 @@
     document.getElementById('hiddenNotifyBanner').style.display = 'none';
   }
 
+    // ── 명예의 전당 외부 클릭 시 힌트 닫기 ──────────────────────
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('.title-badge-hidden')) {
+      var allTooltips = document.querySelectorAll('.hidden-hint-tooltip');
+      allTooltips.forEach(function(t) {
+        t.classList.remove('show');
+      });
+    }
+  });
+
+  // ── 명예의 전당 테이블 렌더링 ────────────────────────────────
+  function renderHonorBoard(data) {
+    var tbody = document.getElementById('honorBoardBody');
+    if (!data || data.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:30px;color:#bbb;">아직 업적을 달성한 학생이 없습니다.</td></tr>';
+      return;
+    }
+
+    var html = '';
+    data.forEach(function(student) {
+      html += '<tr>';
+      html += '<td style="font-weight:bold;">' + student.name + '</td>';
+      
+      // 칭호 표시 (등급별 스타일 적용)
+      if (student.equippedTitle) {
+        var titleHtml = renderTitleBadge(student.equippedTitle, student.achievements);
+        html += '<td>' + titleHtml + '</td>';
+      } else {
+        html += '<td style="color:#bbb;font-style:italic;">칭호 미장착</td>';
+      }
+      
+      // 업적 개수
+      html += '<td style="text-align:center;font-weight:bold;color:#3d85c8;">' + student.achievementCount + '개</td>';
+      html += '</tr>';
+    });
+    
+    tbody.innerHTML = html;
+  }
+
+  // 칭호 뱃지 렌더링 (등급에 따라 스타일 적용)
+  function renderTitleBadge(title, achievements) {
+    // 장착한 칭호의 등급 및 힌트 찾기
+    var grade = '희귀'; // 기본값
+    var hint = '';
+    var achId = '';
+    
+    for (var i = 0; i < achievements.length; i++) {
+      if (achievements[i].emoji && title.includes(achievements[i].achName)) {
+        grade = achievements[i].grade;
+        achId = achievements[i].achId;
+        break;
+      }
+    }
+
+    var badgeClass = 'title-badge-rare'; // 기본: 희귀
+    if (grade === '유니크') badgeClass = 'title-badge-unique';
+    else if (grade === '히든') {
+      badgeClass = 'title-badge-hidden';
+      // 히든 업적인 경우 힌트 가져오기
+      hint = getHintForAchievement(achId);
+    }
+    else if (grade === '유일') badgeClass = 'title-badge-only';
+
+    // 히든 업적인 경우 클릭 이벤트 및 툴팁 추가
+    if (grade === '히든' && hint) {
+      var uniqueId = 'hint-' + achId + '-' + Math.random().toString(36).substr(2, 9);
+      return '<span class="' + badgeClass + '" onclick="toggleHiddenHint(\'' + uniqueId + '\')">' +
+        title +
+        '<span id="' + uniqueId + '" class="hidden-hint-tooltip">💡 ' + hint + '</span>' +
+        '</span>';
+    }
+
+    return '<span class="' + badgeClass + '">' + title + '</span>';
+  }
+
+  // 히든 업적 힌트 토글
+  function toggleHiddenHint(tooltipId) {
+    var tooltip = document.getElementById(tooltipId);
+    if (!tooltip) return;
+    
+    // 다른 모든 힌트 닫기
+    var allTooltips = document.querySelectorAll('.hidden-hint-tooltip');
+    allTooltips.forEach(function(t) {
+      if (t.id !== tooltipId) t.classList.remove('show');
+    });
+    
+    // 현재 힌트 토글
+    tooltip.classList.toggle('show');
+  }
+
+  // 업적ID에 따른 힌트 반환 (서버에서 가져온 데이터 기반)
+  function getHintForAchievement(achId) {
+    // 이 맵은 서버에서 가져온 데이터를 기반으로 동적으로 구성될 수 있습니다
+    var hintMap = {
+      'HID-001': '누군가는 항상 지켜보고 있다',
+      'HID-002': '때로는 보이지 않는 것이 더 가치있다',
+      'HID-003': '진정한 발견은 예상치 못한 곳에서',
+      'HID-004': '모으는 자에게 복이 있나니',
+      'HID-005': '완벽함은 세부에서 나온다'
+    };
+    return hintMap[achId] || '숨겨진 비밀이 있습니다';
+  }
+
+  // ── 페이지 로드 시 명예의 전당 표시 ─────────────────────────
+  // 로그인 화면이 보일 때 명예의 전당도 함께 로드
+  (function() {
+    // 페이지 로드 완료 후 실행
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', loadHonorBoard);
+    } else {
+      loadHonorBoard();
+    }
+  })();
+
+  function loadHonorBoard() {
+  // Enter 키 이벤트만 먼저 등록
+  document.getElementById('studentName').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') login();
+  });
+  document.getElementById('studentPassword').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') login();
+  });
+  
+  // 명예의 전당은 화면에 보일 때 로드 (Intersection Observer)
+  var honorSection = document.getElementById('honorBoardSection');
+  honorSection.style.display = 'block';
+  
+  var observer = new IntersectionObserver(function(entries) {
+    if (entries[0].isIntersecting) {
+      google.script.run.withSuccessHandler(renderHonorBoard).getAllStudentsHonorBoard();
+      observer.disconnect(); // 한 번만 로드
+    }
+  });
+  
+  observer.observe(honorSection);
+}
 
 </script>
 

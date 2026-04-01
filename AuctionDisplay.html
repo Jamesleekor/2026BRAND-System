@@ -34,6 +34,38 @@
     .bidding-text { font-size: 60px; color: #ecf0f1; margin-top: 20px; }
     .start-price  { font-size: 50px; color: #2ecc71; margin-bottom: 10px; border: 3px solid #2ecc71; padding: 10px 30px; border-radius: 50px; display: inline-block; background: rgba(46,204,113,0.1); }
 
+    /* ✅ 타이머 스타일 추가 ──────────────────────────────────── */
+    .timer-display {
+      font-size: 80px;
+      color: #e74c3c;
+      font-weight: 900;
+      margin-top: 30px;
+      padding: 20px 40px;
+      border: 5px solid #e74c3c;
+      border-radius: 20px;
+      display: inline-block;
+      background: rgba(231, 76, 60, 0.1);
+      box-shadow: 0 0 20px rgba(231, 76, 60, 0.4);
+      animation: timerPulse 1s ease-in-out infinite;
+    }
+    .timer-display.warning {
+      animation: timerWarning 0.5s ease-in-out infinite;
+      border-color: #ff0000;
+      color: #ff0000;
+      box-shadow: 0 0 30px rgba(255, 0, 0, 0.6);
+    }
+    @keyframes timerPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    @keyframes timerWarning {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.1); opacity: 0.8; }
+    }
+    /* ──────────────────────────────────────────────────────── */
+
+    .discount-badge { display: inline-block; background: #e74c3c; color: white; font-size: 40px; padding: 10px 30px; border-radius: 50px; margin-bottom: 20px; transform: rotate(-5deg); }
+
     .discount-badge { display: inline-block; background: #e74c3c; color: white; font-size: 40px; padding: 10px 30px; border-radius: 50px; margin-bottom: 20px; transform: rotate(-5deg); }
     .warning-box    { border: 5px solid #e74c3c; background: rgba(231,76,60,0.2); padding: 20px; border-radius: 15px; margin-top: 20px; }
     .warning-text   { font-size: 45px; color: #ff6b6b; font-weight: 900; }
@@ -115,6 +147,8 @@
 <script>
   let currentState = 'idle';
   let isAnimating  = false;
+  let timerInterval = null;
+  let endTime = null;
 
   // 1.5초마다 서버에서 경매 상태 폴링
   setInterval(fetchState, 1500);
@@ -127,19 +161,31 @@
   function updateUI(stateObj) {
     if (!stateObj) return;
 
+    // ✅ 시간 연장 감지 (상태는 같지만 endTime이 변경됨)
+    if (stateObj.endTime && endTime && stateObj.endTime > endTime) {
+      endTime = stateObj.endTime; // 전역 변수 업데이트 (타이머가 자동으로 반영)
+    }
+
     // 상태가 바뀌지 않았으면 렌더링 스킵 (불필요한 DOM 갱신 방지)
     var nameEl = document.getElementById('current-item-name');
     if (stateObj.status === currentState && nameEl && nameEl.innerText === stateObj.itemName) return;
 
     // 낙찰 상태는 애니메이션으로 처리
     if (stateObj.status === 'sold' && currentState !== 'sold') {
+      stopTimer();  // 타이머 정리
       playSoldAnimation(stateObj);
       return;
+    }
+
+    // 상태 변경 시 타이머 정리
+    if (stateObj.status !== currentState) {
+      stopTimer();
     }
 
     currentState = stateObj.status;
     renderState(stateObj);
   }
+
 
   function renderState(stateObj) {
     var container = document.getElementById('mainContainer');
@@ -148,42 +194,52 @@
     if (stateObj.status === 'idle') {
       container.innerHTML = '<div class="idle-text">다음 상품을 준비 중입니다... ⏳</div>';
 
-    // ── 경매 진행 중 ───────────────────────────────────────────
+    // ── 최초 경매 진행 중 ──────────────────────────────────────
     } else if (stateObj.status === 'bidding') {
       container.innerHTML =
         '<span id="current-item-name" style="display:none;">' + stateObj.itemName + '</span>' +
         '<div class="item-title">' + stateObj.itemName + '</div>' +
         '<div class="start-price">시작 입찰가: $ ' + Number(stateObj.startPrice).toLocaleString() + '</div>' +
-        '<div class="bidding-text">🔥 자유롭게 호가를 외쳐주세요! 🔥</div>';
+        '<div class="bidding-text">🔥 자유롭게 호가를 외쳐주세요! 🔥</div>' +
+        '<div id="timer" class="timer-display">30</div>';
+      
+      startTimer(stateObj.endTime);
 
     // ── 1차 재경매 ─────────────────────────────────────────────
     } else if (stateObj.status === 'failed') {
       container.innerHTML =
         '<span id="current-item-name" style="display:none;">' + stateObj.itemName + '</span>' +
-        '<div class="discount-badge">📉 ' + stateObj.failCount + '차 재경매 (가치 10% 하락!)</div>' +
+        '<div class="discount-badge">📉 ' + stateObj.failCount + '차 재경매 (입찰가 10% 하락!)</div>' +
         '<div class="item-title">' + stateObj.itemName + '</div>' +
-        '<div class="bidding-text" style="color:#bdc3c7;">지금이 기회입니다. 입찰하시겠습니까?</div>';
+        '<div class="start-price" style="border-color:#f39c12;color:#f39c12;background:rgba(243,156,18,0.1);">할인가: $ ' + Number(stateObj.currentPrice).toLocaleString() + '</div>' +
+        '<div class="bidding-text" style="color:#bdc3c7;">지금이 기회입니다. 입찰하시겠습니까?</div>' +
+        '<div id="timer" class="timer-display">30</div>';
+      
+      startTimer(stateObj.endTime);
 
     // ── 최종 재경매 ────────────────────────────────────────────
     } else if (stateObj.status === 'failed_final') {
       container.innerHTML =
         '<span id="current-item-name" style="display:none;">' + stateObj.itemName + '</span>' +
-        '<div class="discount-badge" style="background:#8e44ad;">⚠️ 최종 재경매</div>' +
+        '<div class="discount-badge" style="background:#8e44ad;">⚠️ 최종 재경매 (누적 20% 하락!)</div>' +
         '<div class="item-title">' + stateObj.itemName + '</div>' +
+        '<div class="start-price" style="border-color:#e74c3c;color:#e74c3c;background:rgba(231,76,60,0.1);">파격가: $ ' + Number(stateObj.currentPrice).toLocaleString() + '</div>' +
         '<div class="warning-box">' +
           '<div class="warning-text">🚨 경고 🚨</div>' +
           '<div style="font-size:30px;color:#fff;margin-top:10px;">' +
             '이번에도 유찰될 경우, 해당 권한이 없는 학생에게<br>' +
             '현재 가격으로 <span style="color:#f1c40f;">\'랜덤 강제 배정\'</span> 됩니다!' +
           '</div>' +
-        '</div>';
+        '</div>' +
+        '<div id="timer" class="timer-display" style="margin-top:20px;">30</div>';
+      
+      startTimer(stateObj.endTime);
 
     // ── 경매 종료: 전체 학생 결과 ──────────────────────────────
     } else if (stateObj.status === 'ended') {
       var results  = stateObj.results || {};
       var students = Object.keys(results);
 
-      // 낙찰 있는 학생 먼저, 그 다음 낙찰 없는 학생 (가나다 순)
       students.sort(function(a, b) {
         var aHas = results[a].length > 0;
         var bHas = results[b].length > 0;
@@ -240,6 +296,54 @@
       isAnimating  = false;
     }, 3000);
   }
+
+    // ✅ 타이머 기능 추가 ──────────────────────────────────────────
+  function startTimer(targetEndTime) {
+    // 기존 타이머 정리
+    if (timerInterval) {
+      clearInterval(timerInterval);
+    }
+    
+    // ✅ endTime을 전역 변수에 저장 (시간 연장 시 업데이트됨)
+    endTime = targetEndTime;
+    
+    timerInterval = setInterval(function() {
+      var now = new Date().getTime();
+      var remaining = Math.max(0, Math.ceil((endTime - now) / 1000));
+      
+      var timerEl = document.getElementById('timer');
+      if (!timerEl) {
+        clearInterval(timerInterval);
+        return;
+      }
+      
+      timerEl.textContent = remaining;
+      
+      // 10초 이하일 때 경고 애니메이션
+      if (remaining <= 10) {
+        timerEl.classList.add('warning');
+      } else {
+        timerEl.classList.remove('warning');
+      }
+      
+      // 시간 종료
+      if (remaining <= 0) {
+        clearInterval(timerInterval);
+        timerEl.textContent = '종료';
+      }
+    }, 100); // 0.1초마다 업데이트 (부드러운 카운트다운)
+  }
+  
+  // 상태 변경 시 타이머 정리
+  function stopTimer() {
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
+  }
+  // ─────────────────────────────────────────────────────────────
+
+</script>
 </script>
 </body>
 </html>

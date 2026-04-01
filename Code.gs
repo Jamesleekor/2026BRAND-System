@@ -64,6 +64,8 @@ function onOpen() {
     .addItem('💾 [필수] 오늘 브랜드 가치 최종 기록', 'finalizeDailyTracker')
     .addItem('🔄 랭킹 새로고침',                  'updateRankings')
     .addItem('⚠️ 마지막 입력 취소(Undo)',          'undoLastHistory')
+    .addItem('🗑️ 업적 캐시 초기화',              'clearAchievementCache') 
+    .addItem('🗑️ 전체 캐시 초기화',              'clearAllCache')          
     .addToUi();
 }
 
@@ -77,6 +79,20 @@ function finalizeDailyTracker() {
 // 3. 학생 대시보드 데이터 (Index.html 에서 호출)
 // ════════════════════════════════════════════════════════════════
 function getStudentData(studentName, password) {
+    const cache = CacheService.getScriptCache();
+  const cacheKey = 'student_' + studentName;
+  
+  // 캐시에서 먼저 확인 (10분 유효)
+  const cached = cache.get(cacheKey);
+  if (cached) {
+    const data = JSON.parse(cached);
+    // 비밀번호만 재확인
+    if (data.success && password === data._password) {
+      delete data._password; // 비밀번호 제거 후 반환
+      return data;
+    }
+  }
+
   const ss       = SpreadsheetApp.getActiveSpreadsheet();
   const mainSheet = ss.getSheetByName(SHEET_MAIN);
   const mainData  = mainSheet.getDataRange().getValues();
@@ -161,7 +177,7 @@ function getStudentData(studentName, password) {
   // 업적 자동 체크 (로그인 시마다 조건 확인)
   checkAndGrantAchievements(studentName, Number(studentRow[COL_ASSET - 1]) || 0, Number(studentRow[COL_TAX - 1]) || 0, honor);
 
-  return {
+  const result = {
     success:       true,
     personal: {
       name:        studentRow[COL_NAME - 1],
@@ -181,6 +197,14 @@ function getStudentData(studentName, password) {
     job2:          getSecondaryJobForStudent(studentName),
     jobMarket:     getJobData()
   };
+  
+  // ── 캐시 저장 ──────────────────────────────────────────────
+  result._password = correctPassword;
+  cache.put(cacheKey, JSON.stringify(result), 600); // 10분
+  
+  delete result._password;
+  return result;
+  // ───────────────────────────────────────────────────────────
 }
 
 // 간식 시세 계산 (재고 비율에 따라 최대 5배까지 비선형 상승)
@@ -910,6 +934,59 @@ function getJobSalariesByRow() {
 // 13. 업적 시스템 서버 함수
 // ════════════════════════════════════════════════════════════════
 
+// 업적마스터 데이터 캐싱 (1시간 유효)
+function getCachedAchievementMaster() {
+  const cache = CacheService.getScriptCache();
+  const cached = cache.get('achievement_master');
+  
+  if (cached) {
+    return JSON.parse(cached);
+  }
+  
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const masterSheet = ss.getSheetByName(SHEET_ACH_MASTER);
+  if (!masterSheet) return [];
+  
+  const data = masterSheet.getDataRange().getValues();
+  const result = [];
+  
+  for (let m = 1; m < data.length; m++) {
+    if (!data[m][0]) continue;
+    result.push({
+      achId:     String(data[m][0]).trim(),
+      achName:   String(data[m][1]).trim(),
+      condition: String(data[m][2]).trim(),
+      isHidden:  String(data[m][3]).toUpperCase() === 'TRUE',
+      hint:      String(data[m][4] || '').trim(),
+      grade:     String(data[m][5] || '희귀').trim()
+    });
+  }
+  
+  cache.put('achievement_master', JSON.stringify(result), 3600); // 1시간
+  return result;
+}
+
+// ════════════════════════════════════════════════════════════════
+// 캐시 관리 함수
+// ════════════════════════════════════════════════════════════════
+
+// 업적마스터 캐시 초기화 (업적 수정 후 실행)
+function clearAchievementCache() {
+  CacheService.getScriptCache().remove('achievement_master');
+  SpreadsheetApp.getUi().alert('✅ 업적마스터 캐시가 초기화되었습니다.');
+}
+
+// 전체 캐시 초기화 (디버깅용)
+function clearAllCache() {
+  const cache = CacheService.getScriptCache();
+  cache.removeAll(['achievement_master']);
+  
+  // 학생별 캐시는 패턴으로 삭제 불가하므로 개별 삭제
+  // (필요시 학생 목록 순회하며 삭제)
+  
+  SpreadsheetApp.getUi().alert('✅ 모든 캐시가 초기화되었습니다.');
+}
+
 // 특정 학생의 달성 업적 목록 반환
 function getStudentAchievements(studentName) {
   const ss    = SpreadsheetApp.getActiveSpreadsheet();
@@ -1369,16 +1446,28 @@ function getPendingAchievements() {
   const masterSheet = ss.getSheetByName(SHEET_ACH_MASTER);
   if (!logSheet) return { pending: [], allMasterAchs: [] };
 
+  // 업적마스터에서 업적ID → 업적명 맵 생성
+  const achNameMap = {};
+  if (masterSheet) {
+    const mData = masterSheet.getDataRange().getValues();
+    for (let m = 1; m < mData.length; m++) {
+      if (!mData[m][0]) continue;
+      achNameMap[String(mData[m][0]).trim()] = String(mData[m][1]).trim();
+    }
+  }
+
   const logData = logSheet.getDataRange().getValues();
   const pending = [];
   for (let i = 1; i < logData.length; i++) {
     if (String(logData[i][4]).trim() !== '대기') continue;
+    const achId = String(logData[i][2]).trim();
     pending.push({
-      rowNumber:  i + 1,
-      timestamp:  String(logData[i][0]),
+      rowNumber:   i + 1,
+      timestamp:   String(logData[i][0]),
       studentName: String(logData[i][1]),
-      achId:      String(logData[i][2]),
-      proof:      String(logData[i][3])
+      achId:       achId,
+      achName:     achNameMap[achId] || '(알 수 없음)', // 업적명 추가
+      proof:       String(logData[i][3])
     });
   }
 
@@ -1393,6 +1482,34 @@ function getPendingAchievements() {
   }
 
   return { pending, allMasterAchs };
+}
+
+// ── 관리자: 업적 일괄 승인/반려 ─────────────────────────────────
+function batchApproveAchievements(rowNumbers, isApproved) {
+  if (!rowNumbers || rowNumbers.length === 0) {
+    return { success: false, msg: '처리할 항목이 없습니다.' };
+  }
+
+  const results = [];
+  let successCount = 0;
+  let failCount = 0;
+
+  for (let i = 0; i < rowNumbers.length; i++) {
+    const res = approveAchievement(rowNumbers[i], isApproved, null);
+    if (res.success) {
+      successCount++;
+    } else {
+      failCount++;
+    }
+    results.push(res);
+  }
+
+  const action = isApproved ? '승인' : '반려';
+  return {
+    success: true,
+    msg: `일괄 ${action} 완료: 성공 ${successCount}건, 실패 ${failCount}건`,
+    details: results
+  };
 }
 
 
@@ -1507,3 +1624,111 @@ function getSecondaryJobForStudent(studentName) {
   }
   return null;
 }
+
+// ════════════════════════════════════════════════════════════════
+// 15. 로그인 화면용 - 전체 학생 업적 명예의 전당
+// ════════════════════════════════════════════════════════════════
+
+// 전체 학생의 칭호 및 업적 정보 반환 (로그인 화면용)
+function getAllStudentsHonorBoard() {
+  const ss          = SpreadsheetApp.getActiveSpreadsheet();
+  const mainSheet   = ss.getSheetByName(SHEET_MAIN);
+  const achSheet    = ss.getSheetByName(SHEET_ACH_STUDENT);
+  const masterSheet = ss.getSheetByName(SHEET_ACH_MASTER);
+  
+  if (!mainSheet || !achSheet || !masterSheet) return [];
+
+  const mainData   = mainSheet.getDataRange().getValues();
+  const achData    = achSheet.getDataRange().getValues();
+  const masterData = masterSheet.getDataRange().getValues();
+
+  // 업적마스터에서 업적ID별 등급 맵 생성 (F열 = 인덱스 5)
+  const gradeMap = {};
+  const emojiMap = {}; // 유니크 이상 업적에 이모지 추가
+  for (let m = 1; m < masterData.length; m++) {
+    const achId = String(masterData[m][0]).trim();
+    const grade = String(masterData[m][5] || '희귀').trim(); // F열: 업적등급
+    gradeMap[achId] = grade;
+    
+    // 유니크 이상 업적에 자동 이모지 할당
+    if (grade === '유니크' || grade === '히든' || grade === '유일') {
+      emojiMap[achId] = getEmojiForAchievement(achId);
+    }
+  }
+
+  const result = [];
+
+  // 학생별로 순회
+  for (let i = 1; i < mainData.length; i++) {
+    const studentName = String(mainData[i][COL_NAME - 1]).trim();
+    if (!studentName) continue;
+
+    // 해당 학생의 달성 업적 수집
+    const achievements = [];
+    let equippedTitle  = null;
+
+    for (let j = 1; j < achData.length; j++) {
+      if (String(achData[j][0]).trim() !== studentName) continue;
+      
+      const achId    = String(achData[j][1]).trim();
+      const achName  = String(achData[j][2]).trim();
+      const equipped = achData[j][5] === true || String(achData[j][5]).toUpperCase() === 'TRUE';
+      const grade    = gradeMap[achId] || '희귀';
+      const emoji    = emojiMap[achId] || '';
+
+      achievements.push({
+        achId:   achId,
+        achName: achName,
+        grade:   grade,
+        emoji:   emoji
+      });
+
+      if (equipped) {
+        equippedTitle = (emoji ? emoji + ' ' : '') + achName;
+      }
+    }
+
+    result.push({
+      name:            studentName,
+      equippedTitle:   equippedTitle,
+      achievementCount: achievements.length,
+      achievements:    achievements
+    });
+  }
+
+  // 업적 많은 순으로 정렬
+  result.sort(function(a, b) {
+    return b.achievementCount - a.achievementCount;
+  });
+
+  return result;
+}
+
+// 업적ID에 따라 적절한 이모지 반환 (유니크/히든/유일용)
+function getEmojiForAchievement(achId) {
+  const emojiMapping = {
+    // 경제 관련
+    'ECO-002': '💰', 'ECO-003': '💎', 'ECO-004': '🏆',
+    // 생활 관련
+    'LIFE-002': '🌟', 'LIFE-003': '⏰', 'LIFE-004': '📚',
+    'LIFE-005': '🎯', 'LIFE-006': '🌈', 'LIFE-007': '💪',
+    'LIFE-008': '🔥', 'LIFE-009': '✨', 'LIFE-010': '🎨',
+    // MVP 관련
+    'MVP-001': '👑', 'MVP-002': '🥇',
+    // 학생 관련
+    'STU-001': '🎓', 'STU-002': '📖', 'STU-003': '🌺',
+    // 팀워크 관련
+    'TEAM-001': '🤝', 'TEAM-002': '🎭',
+    // 소비 관련
+    'CONS-001': '🍪', 'CONS-002': '🎁',
+    // 도전 과제
+    'CHAL-001': '⚡', 'CHAL-002': '🚀', 'CHAL-003': '🌊',
+    'CHAL-004': '🔮', 'CHAL-005': '🎪',
+    // 히든
+    'HID-001': '🕵️', 'HID-002': '🎩', 'HID-003': '💫', 'HID-005': '🏅',
+    // 시작 업적
+    'START-001': '🌱', 'START-002': '🌿', 'START-003': '🌳'
+  };
+  return emojiMapping[achId] || '⭐';
+}
+

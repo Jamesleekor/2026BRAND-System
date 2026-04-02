@@ -153,21 +153,21 @@ function getStudentData(studentName, password) {
   const honor = Number(studentRow[COL_VALUE - 1]) || 0;
   let tier = { name: '새싹', icon: '🌱', min: 0, max: 5000 };
   if      (honor >= 100000) tier = { name: '그랜드마스터', icon: '🏆', min: 100000, max: 100000 };
-  else if (honor >= 85000)  tier = { name: '완성된 마스터',       icon: '👑', min: 85000,  max: 100000 };
+  else if (honor >= 85000)  tier = { name: '천상의 마스터',       icon: '👑', min: 85000,  max: 100000 };
   else if (honor >= 75000)  tier = { name: '마스터',       icon: '👑', min: 75000,  max: 85000 };
-  else if (honor >= 65000)  tier = { name: '찬란한 다이아몬드',   icon: '💠', min: 50000,  max: 75000  };
+  else if (honor >= 65000)  tier = { name: '영원의 결정',   icon: '💠', min: 50000,  max: 75000  };
   else if (honor >= 60000)  tier = { name: '진화한 다이아몬드',   icon: '💠', min: 50000,  max: 65000  };
   else if (honor >= 55000)  tier = { name: '성장한 다이아몬드',   icon: '💠', min: 50000,  max: 60000  };
   else if (honor >= 50000)  tier = { name: '거친 다이아몬드',   icon: '💠', min: 50000,  max: 55000  };
-  else if (honor >= 45000)  tier = { name: '찬란한 루비',     icon: '💎', min: 30000,  max: 50000  };
-  else if (honor >= 40000)  tier = { name: '진화한 루비',     icon: '💎', min: 30000,  max: 45000  };
-  else if (honor >= 35000)  tier = { name: '성장한 루비',     icon: '💎', min: 30000,  max: 40000  };
-  else if (honor >= 30000)  tier = { name: '거친 루비',     icon: '💎', min: 30000,  max: 35000  };
-  else if (honor >= 27500)  tier = { name: '찬란한 골드',         icon: '🥇', min: 20000,  max: 30000  };
+  else if (honor >= 45000)  tier = { name: '홍염의 극한',     icon: '💎', min: 30000,  max: 50000  };
+  else if (honor >= 40000)  tier = { name: '각성한 루비',     icon: '💎', min: 30000,  max: 45000  };
+  else if (honor >= 35000)  tier = { name: '깨어난 루비',     icon: '💎', min: 30000,  max: 40000  };
+  else if (honor >= 30000)  tier = { name: '루비 원석',     icon: '💎', min: 30000,  max: 35000  };
+  else if (honor >= 27500)  tier = { name: '황금의 절정',         icon: '🥇', min: 20000,  max: 30000  };
   else if (honor >= 25000)  tier = { name: '진화한 골드',         icon: '🥇', min: 20000,  max: 27500  };
-  else if (honor >= 22500)  tier = { name: '성장한 골드',         icon: '🥇', min: 20000,  max: 25000  };
-  else if (honor >= 20000)  tier = { name: '거친 골드',         icon: '🥇', min: 20000,  max: 22500  };
-  else if (honor >= 17500)  tier = { name: '찬란한 실버',         icon: '🥈', min: 10000,  max: 20000  };
+  else if (honor >= 22500)  tier = { name: '제련된 골드',         icon: '🥇', min: 20000,  max: 25000  };
+  else if (honor >= 20000)  tier = { name: '금 광석',         icon: '🥇', min: 20000,  max: 22500  };
+  else if (honor >= 17500)  tier = { name: '은빛 정점',         icon: '🥈', min: 10000,  max: 20000  };
   else if (honor >= 15000)  tier = { name: '진화한 실버',         icon: '🥈', min: 10000,  max: 17500  };
   else if (honor >= 12500)  tier = { name: '성장한 실버',         icon: '🥈', min: 10000,  max: 15000  };
   else if (honor >= 10000)  tier = { name: '거친 실버',         icon: '🥈', min: 10000,  max: 12500  };
@@ -993,6 +993,18 @@ function getStudentAchievements(studentName) {
   const sheet = ss.getSheetByName(SHEET_ACH_STUDENT);
   if (!sheet) return [];
   const data   = sheet.getDataRange().getValues();
+
+  // 업적마스터에서 achId → grade 맵 생성
+  const gradeMap = {};
+  const masterSheet = ss.getSheetByName(SHEET_ACH_MASTER);
+  if (masterSheet) {
+    const mData = masterSheet.getDataRange().getValues();
+    for (let m = 1; m < mData.length; m++) {
+      if (!mData[m][0]) continue;
+      gradeMap[String(mData[m][0]).trim()] = String(mData[m][5] || '희귀').trim();
+    }
+  }
+
   const result = [];
   for (let i = 1; i < data.length; i++) {
     if (String(data[i][0]).trim() === String(studentName).trim()) {
@@ -1000,13 +1012,15 @@ function getStudentAchievements(studentName) {
       if (dateVal instanceof Date) {
         dateVal = Utilities.formatDate(dateVal, Session.getScriptTimeZone(), 'yyyy-MM-dd');
       }
+      const achId = String(data[i][1]);
       result.push({
-        achId:     String(data[i][1]),
+        achId:     achId,
         achName:   String(data[i][2]),
         condition: String(data[i][3]),
         date:      String(dateVal),
         equipped:  data[i][5] === true || String(data[i][5]).toUpperCase() === 'TRUE',
-        sheetRow:  i + 1  // 장착/해제 업데이트에 사용
+        sheetRow:  i + 1,
+        grade:     gradeMap[achId] || '희귀'
       });
     }
   }
@@ -1142,32 +1156,32 @@ function checkAndGrantAchievements(studentName, balance, totalTax, honor) {
 
   // ── RANK-001~006: 랭크 브레이커 ────────────────────────────
   const rankBreakers = {
-    'RANK-001': ['브론즈', '빛나는 브론즈', '거친 실버'],
-    'RANK-002': ['성장한 실버', '진화한 실버', '찬란한 실버', '거친 골드'],
-    'RANK-003': ['성장한 골드', '진화한 골드', '찬란한 골드', '거친 루비'],
-    'RANK-004': ['성장한 루비', '진화한 루비', '찬란한 루비', '거친 다이아몬드'],
-    'RANK-005': ['성장한 다이아몬드', '진화한 다이아몬드', '찬란한 다이아몬드', '마스터'],
-    'RANK-006': ['완성된 마스터', '그랜드마스터']
+    'RANK-001': ['거친 실버'],
+    'RANK-002': ['금 광석'],
+    'RANK-003': ['루비 원석'],
+    'RANK-004': ['거친 다이아몬드'],
+    'RANK-005': ['마스터'],
+    'RANK-006': ['그랜드마스터']
   };
   // 현재 학생 티어명 계산 (honor 기반)
   const h = Number(honor) || 0;
   let currentTierName = '새싹';
   if      (h >= 100000) currentTierName = '그랜드마스터';
-  else if (h >= 85000)  currentTierName = '완성된 마스터';
+  else if (h >= 85000)  currentTierName = '천상의 마스터';
   else if (h >= 75000)  currentTierName = '마스터';
-  else if (h >= 65000)  currentTierName = '찬란한 다이아몬드';
+  else if (h >= 65000)  currentTierName = '영원의 결정';
   else if (h >= 60000)  currentTierName = '진화한 다이아몬드';
   else if (h >= 55000)  currentTierName = '성장한 다이아몬드';
   else if (h >= 50000)  currentTierName = '거친 다이아몬드';
-  else if (h >= 45000)  currentTierName = '찬란한 루비';
-  else if (h >= 40000)  currentTierName = '진화한 루비';
-  else if (h >= 35000)  currentTierName = '성장한 루비';
-  else if (h >= 30000)  currentTierName = '거친 루비';
-  else if (h >= 27500)  currentTierName = '찬란한 골드';
+  else if (h >= 45000)  currentTierName = '홍염의 극한';
+  else if (h >= 40000)  currentTierName = '각성한 루비';
+  else if (h >= 35000)  currentTierName = '깨어난 루비';
+  else if (h >= 30000)  currentTierName = '루비 원석';
+  else if (h >= 27500)  currentTierName = '황금의 절정';
   else if (h >= 25000)  currentTierName = '진화한 골드';
-  else if (h >= 22500)  currentTierName = '성장한 골드';
-  else if (h >= 20000)  currentTierName = '거친 골드';
-  else if (h >= 17500)  currentTierName = '찬란한 실버';
+  else if (h >= 22500)  currentTierName = '제련된 골드';
+  else if (h >= 20000)  currentTierName = '금 광석';
+  else if (h >= 17500)  currentTierName = '은빛 정점';
   else if (h >= 15000)  currentTierName = '진화한 실버';
   else if (h >= 12500)  currentTierName = '성장한 실버';
   else if (h >= 10000)  currentTierName = '거친 실버';

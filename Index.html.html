@@ -36,6 +36,72 @@
     .progress-container { background: #eee; border-radius: 10px; height: 15px; margin-top: 12px; overflow: hidden; }
     .progress-bar { background: linear-gradient(90deg, #3498db, #2ecc71); height: 100%; width: 0%; transition: width 1s ease-in-out; }
 
+    /* ── 나의 기록 모달 ── */
+    #historyModal {
+      display: none; position: fixed; top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5); z-index: 1001;
+      justify-content: center; align-items: center;
+    }
+    #historyModal.open { display: flex; }
+    .history-modal-box {
+      background: white; border-radius: 15px; padding: 0;
+      width: 92%; max-width: 500px; max-height: 88vh;
+      overflow: hidden; display: flex; flex-direction: column;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    }
+    .history-header {
+      background: linear-gradient(135deg, #2c3e50, #3d85c8);
+      color: white; padding: 16px 20px;
+      display: flex; justify-content: space-between; align-items: center;
+      flex-shrink: 0;
+    }
+    .history-tabs {
+      display: flex; background: #f8f9fa;
+      border-bottom: 2px solid #eee; flex-shrink: 0;
+    }
+    .history-tab {
+      flex: 1; padding: 9px 0; text-align: center;
+      font-size: 13px; font-weight: bold; cursor: pointer;
+      color: #888; border: none; background: none;
+    }
+    .history-tab.active { color: #3d85c8; border-bottom: 3px solid #3d85c8; background: white; }
+    .history-summary {
+      display: flex; gap: 8px; padding: 12px 16px;
+      background: #f8f9fa; flex-shrink: 0;
+    }
+    .history-stat {
+      flex: 1; background: white; border-radius: 8px; padding: 8px 10px;
+      text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    }
+    .history-stat-label { font-size: 10px; color: #888; margin-bottom: 3px; }
+    .history-stat-val   { font-size: 14px; font-weight: bold; }
+    .history-stat-val.plus  { color: #27ae60; }
+    .history-stat-val.minus { color: #e74c3c; }
+    .history-list { overflow-y: auto; flex: 1; padding: 8px 0; }
+    .history-row {
+      display: flex; align-items: center; padding: 9px 16px;
+      border-bottom: 1px solid #f5f5f5; font-size: 13px;
+    }
+    .history-row:last-child { border-bottom: none; }
+    .history-date  { color: #aaa; font-size: 11px; width: 80px; flex-shrink: 0; }
+    .history-memo  { flex: 1; color: #2c3e50; }
+    .history-delta { font-weight: bold; width: 70px; text-align: right; flex-shrink: 0; }
+
+    /* ── 기부 모달 ── */
+    #donateModal {
+      display: none; position: fixed; top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5); z-index: 1001;
+      justify-content: center; align-items: center;
+    }
+    #donateModal.open { display: flex; }
+    .donate-modal-box {
+      background: white; border-radius: 15px; padding: 24px;
+      width: 88%; max-width: 400px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    }
+
     /* 간식 테이블 */
     .table-wrapper { max-height: 400px; overflow-y: auto; border: 1px solid #f0f0f0; border-radius: 10px; margin-top: 10px; }
     table { width: 100%; border-collapse: collapse; background: white; }
@@ -390,6 +456,182 @@
       60%  { opacity: 0.5; }
       100% { transform: translateY(-38px) translateX(var(--dx)) scale(0); opacity: 0; }
     }
+
+    /* ══════════════════════════════════════════════════════
+       우편함 뱃지
+    ══════════════════════════════════════════════════════ */
+    .mailbox-btn {
+      position: relative;
+      padding: 6px 12px;
+      font-size: 12px;
+      background: #2c3e50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+    .mail-badge {
+      position: absolute;
+      top: -6px; right: -6px;
+      background: #e74c3c;
+      color: white;
+      font-size: 10px;
+      font-weight: bold;
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      pointer-events: none;
+    }
+    /* 우편함 모달 */
+    #mailModal {
+      display: none; position: fixed; top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5); z-index: 1001;
+      justify-content: center; align-items: center;
+    }
+    #mailModal.open { display: flex; }
+    .mail-modal-box {
+      background: white; border-radius: 15px; padding: 24px;
+      width: 90%; max-width: 460px; max-height: 80vh;
+      overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    }
+    .mail-item {
+      padding: 12px; border-radius: 10px; margin-bottom: 10px;
+      border-left: 5px solid #eee; background: #fafafa;
+    }
+    .mail-item.approved { border-left-color: #2ecc71; background: #f0fff4; }
+    .mail-item.rejected { border-left-color: #e74c3c; background: #fff5f5; }
+    .mail-item.reward   { border-left-color: #f39c12; background: #fffbf0; }
+    .mail-item.unread   { font-weight: bold; }
+    .mail-subject { font-size: 14px; color: #2c3e50; margin-bottom: 4px; }
+    .mail-body    { font-size: 13px; color: #555; white-space: pre-wrap; line-height: 1.5; }
+    .mail-time    { font-size: 11px; color: #bbb; margin-top: 6px; }
+
+    /* ══════════════════════════════════════════════════════
+       업적 전광판 팝업 (Global Alert)
+    ══════════════════════════════════════════════════════ */
+    #globalAlertOverlay {
+      display: none; position: fixed; top: 0; left: 0;
+      width: 100%; height: 100%; z-index: 3000;
+      background: rgba(0,0,0,0.7);
+      justify-content: center; align-items: center;
+      animation: alertFadeIn 0.4s ease;
+    }
+    #globalAlertOverlay.show { display: flex; }
+    .alert-box {
+      background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+      border: 3px solid #f39c12;
+      border-radius: 20px;
+      padding: 40px 30px;
+      text-align: center;
+      max-width: 400px; width: 90%;
+      box-shadow: 0 0 40px rgba(243,156,18,0.6), 0 0 80px rgba(243,156,18,0.3);
+      animation: alertPop 0.5s cubic-bezier(0.175,0.885,0.32,1.275);
+      position: relative; overflow: hidden;
+    }
+    .alert-box::before {
+      content: '';
+      position: absolute; top: -50%; left: -50%;
+      width: 200%; height: 200%;
+      background: linear-gradient(45deg, transparent, rgba(243,156,18,0.1), transparent);
+      animation: alertShine 3s linear infinite;
+    }
+    .alert-emoji  { font-size: 60px; display: block; margin-bottom: 12px; animation: alertBounce 0.6s ease infinite alternate; }
+    .alert-title  { font-size: 22px; font-weight: 900; color: #f1c40f; margin-bottom: 8px; text-shadow: 0 0 10px rgba(241,196,15,0.8); }
+    .alert-msg    { font-size: 15px; color: #ecf0f1; line-height: 1.6; margin-bottom: 20px; }
+    .alert-close  { background: #f39c12; color: white; border: none; border-radius: 20px; padding: 10px 30px; font-weight: bold; cursor: pointer; font-size: 14px; }
+    @keyframes alertFadeIn  { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes alertPop     { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    @keyframes alertShine   { from { transform: translateX(-100%) rotate(45deg); } to { transform: translateX(100%) rotate(45deg); } }
+    @keyframes alertBounce  { from { transform: translateY(0); } to { transform: translateY(-8px); } }
+
+    /* ══════════════════════════════════════════════════════
+       Wall of Fame (업적 현황판)
+    ══════════════════════════════════════════════════════ */
+    .wof-card { background: var(--card-bg); border-radius: 15px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+    .wof-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 0; border-bottom: 1px solid #f5f5f5;
+      font-size: 14px;
+    }
+    .wof-row:last-child { border-bottom: none; }
+    .wof-name { flex: 1; font-weight: bold; color: #2c3e50; }
+    .wof-grade { font-size: 11px; padding: 2px 8px; border-radius: 10px; margin: 0 8px; }
+    .wof-grade.희귀   { background:#3498db; color:white; }
+    .wof-grade.유니크 { background:linear-gradient(135deg,#e74c3c,#9b59b6); color:white; }
+    .wof-grade.히든   { background:#f1c40f; color:#2c3e50; }
+    .wof-grade.유일   { background:linear-gradient(135deg,#8e44ad,#f39c12); color:white; }
+    .wof-grade.초월   { background:linear-gradient(135deg,#1a1a1a,#b8860b); color:#ffd700; }
+    .wof-count { font-size: 13px; font-weight: bold; color: #e74c3c; white-space: nowrap; }
+    .wof-zero  { color: #bbb; }
+
+    /* ══════════════════════════════════════════════════════
+       상점 시스템
+    ══════════════════════════════════════════════════════ */
+    #shopModal {
+      display: none; position: fixed; top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5); z-index: 1001;
+      justify-content: center; align-items: center;
+    }
+    #shopModal.open { display: flex; }
+    .shop-modal-box {
+      background: white; border-radius: 15px; padding: 0;
+      width: 92%; max-width: 480px; max-height: 88vh;
+      overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+      display: flex; flex-direction: column;
+    }
+    .shop-header {
+      background: linear-gradient(135deg, #2c3e50, #3d85c8);
+      color: white; padding: 18px 20px;
+      display: flex; justify-content: space-between; align-items: center;
+      flex-shrink: 0;
+    }
+    .shop-header-title { font-size: 18px; font-weight: bold; }
+    .shop-balance { font-size: 13px; color: #a8d8f0; }
+    .shop-tabs {
+      display: flex; background: #f8f9fa;
+      border-bottom: 2px solid #eee; flex-shrink: 0;
+    }
+    .shop-tab {
+      flex: 1; padding: 10px 0; text-align: center;
+      font-size: 13px; font-weight: bold; cursor: pointer;
+      color: #888; border: none; background: none;
+      transition: all 0.2s;
+    }
+    .shop-tab.active { color: #3d85c8; border-bottom: 3px solid #3d85c8; background: white; }
+    .shop-items { padding: 14px; overflow-y: auto; flex: 1; }
+    .shop-item-card {
+      border: 2px solid #eee; border-radius: 12px; padding: 14px;
+      margin-bottom: 10px; display: flex; gap: 12px; align-items: center;
+      transition: border-color 0.2s;
+    }
+    .shop-item-card.owned   { border-color: #2ecc71; background: #f0fff4; }
+    .shop-item-card.locked  { opacity: 0.55; }
+    .shop-item-card.buyable { border-color: #3d85c8; }
+    .shop-item-icon  { font-size: 30px; flex-shrink: 0; }
+    .shop-item-info  { flex: 1; min-width: 0; }
+    .shop-item-name  { font-size: 15px; font-weight: bold; color: #2c3e50; }
+    .shop-item-cond  { font-size: 11px; color: #888; margin-top: 2px; }
+    .shop-item-price { font-size: 13px; color: #e74c3c; font-weight: bold; margin-top: 4px; }
+    .shop-buy-btn {
+      padding: 8px 14px; border-radius: 8px; border: none;
+      font-size: 12px; font-weight: bold; cursor: pointer; white-space: nowrap; flex-shrink: 0;
+    }
+    .shop-buy-btn.can-buy { background: #3d85c8; color: white; }
+    .shop-buy-btn.owned-lbl { background: #2ecc71; color: white; cursor: default; }
+    .shop-buy-btn.locked-lbl { background: #ccc; color: #888; cursor: default; }
+
+    /* 스킨 CSS 변수 */
+    body.skin-ocean   { --primary-color:#0077b6; --secondary-color:#00b4d8; --bg-color:#e0f7fa; --card-bg:#ffffff; }
+    body.skin-dark    { --primary-color:#bb86fc; --secondary-color:#cf6679; --bg-color:#121212; --card-bg:#1e1e1e; color:#e0e0e0; }
+    body.skin-cherry  { --primary-color:#c0392b; --secondary-color:#e91e8c; --bg-color:#fff0f3; --card-bg:#ffffff; }
+    /* 캐릭터 표시 영역 */
+    #charImgArea { transition: opacity 0.3s; }
+    #charImg { box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
+    #charEmoji { display: block; text-align: center; }
   </style>
 </head>
 <body>
@@ -424,19 +666,38 @@
 
   <div id="dashboard">
 
-    <div style="margin-bottom:20px;">
-      <!-- 1행: 칭호 뱃지 + 이름 (브랜드명) -->
-      <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-bottom:8px;">
-        <span id="titleBadgeArea"></span>
-        <h3 id="welcomeMsg" style="margin:0;font-size:18px;">반갑습니다!</h3>
+    <div style="margin-bottom:20px;display:flex;align-items:center;gap:12px;">
+
+      <!-- 캐릭터 이미지 영역 (장착 시에만 표시) -->
+      <div id="charImgArea" style="display:none;flex-shrink:0;">
+        <!-- 이미지 URL인 경우 -->
+        <img id="charImg" src="" alt="캐릭터"
+          style="width:72px;height:72px;object-fit:contain;border-radius:12px;border:2px solid #eee;background:#f8f9fa;">
+        <!-- 이모지인 경우 -->
+        <span id="charEmoji" style="display:none;font-size:52px;line-height:1;"></span>
       </div>
-      <!-- 2행: 버튼 3개 -->
-      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
-        <button id="job2Btn" onclick="scrollToJob2()" style="padding:6px 12px;font-size:12px;background:#8e44ad;color:white;border:none;border-radius:5px;cursor:pointer;font-weight:bold;display:none;white-space:nowrap;">💼 2차 직업</button>
-        <button id="job2BtnLocked" style="padding:6px 12px;font-size:12px;background:#ccc;color:#888;border:none;border-radius:5px;cursor:default;font-weight:bold;white-space:nowrap;">🔒 2차 직업</button>
-        <button onclick="openAchModal()" style="padding:6px 12px;font-size:12px;background:linear-gradient(135deg,#f39c12,#e74c3c);color:white;border:none;border-radius:5px;cursor:pointer;font-weight:bold;white-space:nowrap;">🏅 나의 업적</button>
-        <button onclick="logout()" style="padding:6px 12px;font-size:12px;background:#95a5a6;color:white;border:none;border-radius:5px;cursor:pointer;white-space:nowrap;">로그아웃</button>
+
+      <!-- 우측: 칭호+이름 / 버튼 -->
+      <div style="flex:1;min-width:0;">
+        <!-- 1행: 칭호 뱃지 + 이름 (브랜드명) -->
+        <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-bottom:8px;">
+          <span id="titleBadgeArea"></span>
+          <h3 id="welcomeMsg" style="margin:0;font-size:18px;">반갑습니다!</h3>
+        </div>
+        <!-- 2행: 버튼 -->
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+          <button id="job2Btn" onclick="scrollToJob2()" style="padding:6px 12px;font-size:12px;background:#8e44ad;color:white;border:none;border-radius:5px;cursor:pointer;font-weight:bold;display:none;white-space:nowrap;">💼 2차 직업</button>
+          <button id="job2BtnLocked" style="padding:6px 12px;font-size:12px;background:#ccc;color:#888;border:none;border-radius:5px;cursor:default;font-weight:bold;white-space:nowrap;">🔒 2차 직업</button>
+          <button onclick="openAchModal()" style="padding:6px 12px;font-size:12px;background:linear-gradient(135deg,#f39c12,#e74c3c);color:white;border:none;border-radius:5px;cursor:pointer;font-weight:bold;white-space:nowrap;">🏅 나의 업적</button>
+          <button onclick="openShopModal()" style="padding:6px 12px;font-size:12px;background:linear-gradient(135deg,#27ae60,#2ecc71);color:white;border:none;border-radius:5px;cursor:pointer;font-weight:bold;white-space:nowrap;">🏪 상점</button>
+          <button class="mailbox-btn" onclick="openMailModal()" id="mailBtn">
+            ✉️ 우편함
+            <span id="mailBadge" class="mail-badge" style="display:none;">0</span>
+          </button>
+          <button onclick="logout()" style="padding:6px 12px;font-size:12px;background:#95a5a6;color:white;border:none;border-radius:5px;cursor:pointer;white-space:nowrap;">로그아웃</button>
+        </div>
       </div>
+
     </div>
 
     <div class="card" style="border-left:6px solid var(--secondary-color);">
@@ -444,6 +705,14 @@
       <div class="value-group">
         <div class="card-value" id="myHonor">0 P</div>
         <div class="card-rank"  id="honorRank">순위: -위</div>
+      </div>
+    </div>
+
+    <div class="card" style="border-left:6px solid var(--primary-color);">
+      <div class="card-title"><span><i class="fas fa-wallet"></i> 현재 자산 보유량 (현재 잔액)</span></div>
+      <div class="value-group">
+        <div class="card-value" id="myBalance">$ 0</div>
+        <div class="card-rank"  id="balanceRank">순위: -위</div>
       </div>
     </div>
 
@@ -482,20 +751,6 @@
 
     </div>
 
-    <div class="card" style="margin-bottom:20px;">
-      <h3 style="margin-top:0;margin-bottom:10px;"><i class="fa-solid fa-cookie-bite"></i> 실시간 간식 거래소</h3>
-      <table style="width:100%;text-align:left;border-collapse:collapse;">
-        <thead>
-          <tr style="border-bottom:2px solid #eee;">
-            <th style="padding:8px 0;">품목</th>
-            <th style="padding:8px 0;text-align:right;">현재 시세</th>
-            <th style="padding:8px 0;text-align:right;">남은 수량</th>
-          </tr>
-        </thead>
-        <tbody id="snackMarketBody"></tbody>
-      </table>
-    </div>
-
     <div style="background:#f8f9fa;border-radius:10px;padding:15px;margin-top:10px;border-left:5px solid #3498db;margin-bottom:20px;">
       <div style="font-size:0.9em;color:#7f8c8d;margin-bottom:5px;">현재 나의 직업</div>
       <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -503,14 +758,6 @@
         <span id="jobSalary" style="background:#3498db;color:white;padding:2px 8px;border-radius:15px;font-size:0.8em;">$ 0</span>
       </div>
       <div id="jobArea" style="font-size:0.85em;color:#95a5a6;margin-top:5px;">담당 구역: -</div>
-    </div>
-
-    <div class="card" style="border-left:6px solid var(--primary-color);">
-      <div class="card-title"><span><i class="fas fa-wallet"></i> 현재 자산 보유량 (현재 잔액)</span></div>
-      <div class="value-group">
-        <div class="card-value" id="myBalance">$ 0</div>
-        <div class="card-rank"  id="balanceRank">순위: -위</div>
-      </div>
     </div>
 
     <div class="card">
@@ -524,6 +771,38 @@
       </div>
       <div style="font-size:11px;color:#bbb;margin-bottom:6px;">목표: $ 10,000</div>
       <div class="progress-container"><div id="taxBar" class="progress-bar"></div></div>
+      <button onclick="openDonateModal()" style="margin-top:12px;width:100%;padding:9px;background:linear-gradient(135deg,#27ae60,#2ecc71);color:white;border:none;border-radius:8px;font-weight:bold;cursor:pointer;font-size:13px;">💚 복지 기금 기부하기</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title" style="justify-content:space-between;">
+        <span><i class="fas fa-history"></i> 나의 기록</span>
+        <button onclick="openHistoryModal()" style="padding:4px 12px;background:#3d85c8;color:white;border:none;border-radius:6px;font-size:12px;font-weight:bold;cursor:pointer;">📋 상세 보기</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <div style="flex:1;background:#f0fff4;border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:11px;color:#888;margin-bottom:3px;">7일 순증감</div>
+          <div id="history7dNet" style="font-size:16px;font-weight:bold;color:#27ae60;">-</div>
+        </div>
+        <div style="flex:1;background:#fff5f5;border-radius:8px;padding:10px;text-align:center;">
+          <div style="font-size:11px;color:#888;margin-bottom:3px;">30일 순증감</div>
+          <div id="history30dNet" style="font-size:16px;font-weight:bold;color:#e74c3c;">-</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:20px;">
+      <h3 style="margin-top:0;margin-bottom:10px;"><i class="fa-solid fa-cookie-bite"></i> 실시간 간식 거래소</h3>
+      <table style="width:100%;text-align:left;border-collapse:collapse;">
+        <thead>
+          <tr style="border-bottom:2px solid #eee;">
+            <th style="padding:8px 0;">품목</th>
+            <th style="padding:8px 0;text-align:right;">현재 시세</th>
+            <th style="padding:8px 0;text-align:right;">남은 수량</th>
+          </tr>
+        </thead>
+        <tbody id="snackMarketBody"></tbody>
+      </table>
     </div>
 
     <div class="card">
@@ -570,6 +849,17 @@
       <div style="font-size:14px;color:#888;margin-top:6px;">금 광석 이상 달성 시 2차 직업 시스템이 해금됩니다.</div>
     </div>
 
+    <!-- ── Wall of Fame (업적 현황판) ── -->
+    <div class="wof-card">
+      <div style="font-size:15px;font-weight:bold;color:#2c3e50;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">
+        <span>🏆 우리 반 업적 현황판</span>
+        <span style="font-size:11px;color:#888;font-weight:normal;">업적별 달성 인원</span>
+      </div>
+      <div id="wallOfFameList" style="max-height:320px;overflow-y:auto;">
+        <div style="text-align:center;padding:20px;color:#bbb;font-size:13px;">로딩 중...</div>
+      </div>
+    </div>
+
   </div></div>
       
 
@@ -577,6 +867,65 @@
 <div id="hiddenNotifyBanner" style="display:none;position:fixed;top:0;left:0;width:100%;background:linear-gradient(135deg,#f39c12,#e74c3c);color:white;z-index:2000;padding:14px 20px;font-size:14px;font-weight:bold;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,0.2);">
   <span id="hiddenNotifyText"></span>
   <button onclick="closeBanner()" style="margin-left:16px;background:rgba(255,255,255,0.3);border:none;color:white;border-radius:12px;padding:2px 10px;cursor:pointer;font-weight:bold;">✕ 닫기</button>
+</div>
+
+<!-- ── 나의 기록 모달 ── -->
+<div id="historyModal">
+  <div class="history-modal-box">
+    <div class="history-header">
+      <div style="font-size:17px;font-weight:bold;">📋 나의 기록</div>
+      <button onclick="closeHistoryModal()" style="background:rgba(255,255,255,0.2);border:none;color:white;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:15px;">✕</button>
+    </div>
+    <!-- 기간 탭 -->
+    <div class="history-tabs">
+      <button class="history-tab active" onclick="switchHistoryTab(7, this)">최근 7일</button>
+      <button class="history-tab" onclick="switchHistoryTab(30, this)">최근 30일</button>
+      <button class="history-tab" onclick="switchHistoryTab(0, this)">최근 50건</button>
+    </div>
+    <!-- 요약 통계 -->
+    <div class="history-summary">
+      <div class="history-stat">
+        <div class="history-stat-label">총 획득 (자산)</div>
+        <div class="history-stat-val plus" id="histStatGain">-</div>
+      </div>
+      <div class="history-stat">
+        <div class="history-stat-label">총 사용 (자산)</div>
+        <div class="history-stat-val minus" id="histStatLoss">-</div>
+      </div>
+      <div class="history-stat">
+        <div class="history-stat-label">순 증감</div>
+        <div class="history-stat-val" id="histStatNet">-</div>
+      </div>
+    </div>
+    <!-- 목록 -->
+    <div class="history-list" id="historyList">
+      <div style="text-align:center;padding:30px;color:#bbb;">로딩 중...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── 기부 모달 ── -->
+<div id="donateModal">
+  <div class="donate-modal-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+      <div style="font-size:17px;font-weight:bold;color:#2c3e50;">💚 복지 기금 기부</div>
+      <button onclick="closeDonateModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#95a5a6;">✕</button>
+    </div>
+    <div style="background:#f0fff4;border-radius:10px;padding:12px;margin-bottom:16px;font-size:13px;color:#27ae60;text-align:center;">
+      현재 보유 자산: <strong id="donateMyBalance">$ 0</strong>
+    </div>
+    <div style="font-size:14px;color:#555;margin-bottom:8px;">기부할 금액을 입력하세요</div>
+    <input type="number" id="donateAmount" min="1" placeholder="예: 500"
+      style="width:100%;box-sizing:border-box;padding:11px;border:2px solid #eee;border-radius:8px;font-size:16px;outline:none;margin-bottom:6px;">
+    <div style="display:flex;gap:6px;margin-bottom:14px;">
+      <button onclick="setDonateAmount(100)"  style="flex:1;padding:6px;background:#ecf0f1;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:bold;">+100</button>
+      <button onclick="setDonateAmount(500)"  style="flex:1;padding:6px;background:#ecf0f1;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:bold;">+500</button>
+      <button onclick="setDonateAmount(1000)" style="flex:1;padding:6px;background:#ecf0f1;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:bold;">+1000</button>
+    </div>
+    <input type="text" id="donateMsg" placeholder="한마디 (선택, 모든 학생에게 공개)"
+      style="width:100%;box-sizing:border-box;padding:10px;border:2px solid #eee;border-radius:8px;font-size:14px;outline:none;margin-bottom:14px;">
+    <button onclick="submitDonate()" style="width:100%;padding:12px;background:linear-gradient(135deg,#27ae60,#2ecc71);color:white;border:none;border-radius:8px;font-weight:bold;font-size:15px;cursor:pointer;">💚 기부하기</button>
+  </div>
 </div>
 
 <!-- ── 업적 모달 ── -->
@@ -590,13 +939,55 @@
   </div>
 </div>
 
+<!-- ── 우편함 모달 ── -->
+<div id="mailModal">
+  <div class="mail-modal-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div style="font-size:17px;font-weight:bold;color:#2c3e50;">✉️ 나의 우편함</div>
+      <button onclick="closeMailModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#95a5a6;">✕</button>
+    </div>
+    <div id="mailList"><div style="text-align:center;padding:30px;color:#bbb;">로딩 중...</div></div>
+  </div>
+</div>
+
+<!-- ── 상점 모달 ── -->
+<div id="shopModal">
+  <div class="shop-modal-box">
+    <div class="shop-header">
+      <div>
+        <div class="shop-header-title">🏪 BRAND 상점</div>
+        <div class="shop-balance">보유 자산: <span id="shopBalance">$ 0</span></div>
+      </div>
+      <button onclick="closeShopModal()" style="background:rgba(255,255,255,0.2);border:none;color:white;border-radius:50%;width:30px;height:30px;cursor:pointer;font-size:16px;">✕</button>
+    </div>
+    <div class="shop-tabs">
+      <button class="shop-tab active" onclick="switchShopTab('스킨',this)">🎨 스킨</button>
+      <button class="shop-tab" onclick="switchShopTab('폰트',this)">✏️ 폰트</button>
+      <button class="shop-tab" onclick="switchShopTab('캐릭터',this)">🐱 캐릭터</button>
+    </div>
+    <div class="shop-items" id="shopItemList">
+      <div style="text-align:center;padding:30px;color:#bbb;">로딩 중...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── 업적 전광판 팝업 ── -->
+<div id="globalAlertOverlay">
+  <div class="alert-box">
+    <span class="alert-emoji" id="alertEmoji">🎉</span>
+    <div class="alert-title" id="alertTitle">전체 공지</div>
+    <div class="alert-msg"   id="alertMsg"></div>
+    <button class="alert-close" onclick="closeGlobalAlert()">확인</button>
+  </div>
+</div>
+
 <script>
   // ═══════════════════════════════════════════════════════════════
   // 📌 티어 시스템 기본 설정 (이미지, 순서, 응원 문구)
   // ═══════════════════════════════════════════════════════════════
   
   // 1. 다음 티어를 자동으로 계산하기 위한 티어 순서
-  var TIER_ORDER = ['새싹', '브론즈', '빛나는 브론즈', '거친 실버', '성장한 실버','진화한 실버', '은빛 정점', '금 광석', '제련된 골드', '진화한 골드', '황금의 절정', '루비', '깨어난 루비', '각성한 루비', '홍염의 극한', '거친 다이아몬드', '성장한 다이아몬드', '진화한 다이아몬드', '영원의 결정', '마스터', '천상의 마스터', '그랜드마스터'];
+  var TIER_ORDER = ['새싹', '브론즈', '빛나는 브론즈', '거친 실버', '성장한 실버', '진화한 실버', '은빛 극점', '금 광석', '제련된 골드', '정련된 골드', '태양의 황금', '루비 원석', '연마된 루비', '각성한 루비', '홍염의 정점', '다이아 원석', '고순도 다이아', '무결 다이아', '영원의 결정', '마스터', '천상의 마스터', '그랜드마스터'];
 
   // 2. 각 티어별 응원 문구 (원하시는 문구로 자유롭게 수정하세요!)
   var TIER_MESSAGES = {
@@ -606,48 +997,48 @@
     '거친 실버': '실버는 쌓아올린 노력의 결과, 가능성이 현실이 되기 시작한다',
     '성장한 실버': '실버는 쌓아올린 노력의 결과, 가능성이 현실이 되기 시작한다',
     '진화한 실버': '실버는 쌓아올린 노력의 결과, 가능성이 현실이 되기 시작한다',
-    '은빛 정점': '실버는 쌓아올린 노력의 결과, 가능성이 현실이 되기 시작한다',
+    '은빛 극점': '실버의 정점, 그 빛이 눈부시게 빛나는 곳에 다다랐다',
     '금 광석': '스스로를 증명한 순간, 멈출 이유가 없어진 순간',
-    '제련된 골드': '스스로를 증명한 순간, 멈출 이유가 없어진 순간',
-    '진화한 골드': '스스로를 증명한 순간, 멈출 이유가 없어진 순간',
-    '황금의 절정': '스스로를 증명한 순간, 멈출 이유가 없어진 순간',
+    '제련된 골드': '불꽃 속에서 더욱 단단해진 황금의 의지',
+    '정련된 골드': '순수함만 남긴 황금, 흔들리지 않는 경지에 올랐다',
+    '태양의 황금': '황금의 극점, 태양처럼 반짝이는 눈부신 존재',
     '루비 원석': '평범함은 이미 뒤에 있다. 상위권 경쟁의 입구에 도달',
-    '깨어난 루비': '평범함은 이미 뒤에 있다. 상위권 경쟁의 입구에 도달',
-    '각성한 루비': '평범함은 이미 뒤에 있다. 상위권 경쟁의 입구에 도달',
-    '홍염의 극한': '평범함은 이미 뒤에 있다. 상위권 경쟁의 입구에 도달',
-    '거친 다이아몬드': '이 자리는 충분히 빛나고 있는 위치 그럼에도 더 위를 본다면',
-    '성장한 다이아몬드': '이 자리는 충분히 빛나고 있는 위치 그럼에도 더 위를 본다면',
-    '진화한 다이아몬드': '이 자리는 충분히 빛나고 있는 위치 그럼에도 더 위를 본다면',
-    '영원의 결정': '이 자리는 충분히 빛나고 있는 위치 그럼에도 더 위를 본다면',
+    '연마된 루비': '갈고 닦인 붉은 빛, 더욱 선명하게 빛나기 시작한다',
+    '각성한 루비': '잠들어 있던 붉은 불꽃이 깨어났다. 이제 멈출 수 없다',
+    '홍염의 정점': '타오르는 붉은 정점, 루비 등급의 최고 경지에 도달',
+    '다이아 원석': '이 자리는 충분히 빛나고 있는 위치, 그럼에도 더 위를 본다면',
+    '고순도 다이아': '불순물 없이 정화된 결정, 진정한 강자의 반열에 올랐다',
+    '무결 다이아': '흠 하나 없는 완벽한 결정체, 이 경지에 닿은 자는 드물다',
+    '영원의 결정': '다이아몬드의 정점, 시간이 지나도 빛을 잃지 않는 영원한 존재',
     '마스터': '노력만으로 닿기에는 부족한 선택받은 소수의 영역에 도달하다',
-    '천상의 마스터': '오래도록 기억될 단 하나의 이름을 이곳에 기록하다',
-    '그랜드마스터': '모든 것이 바래져 잊혀진다해도 그대가 이룩한 이 업적은 남으리라 지금까지의 당신의 여정에 무한한 경의를'
+    '천상의 마스터': '인간의 한계를 넘어 하늘에 닿은 자, 이름이 별이 되다',
+    '그랜드마스터': '모든 것이 바래져 잊혀진다 해도 그대가 이룩한 이 업적은 남으리라. 지금까지의 당신의 여정에 무한한 경의를'
   };
 
   // 3. 티어 뱃지 이미지 링크
   var TIER_IMAGES = {
-    '새싹':         'https://lh3.googleusercontent.com/d/1zFDg7LEHBOO0PpBdo2e4kuVTOJGBUBRQ=s200',
-    '브론즈':       'https://lh3.googleusercontent.com/d/1OIyG_nSFeX_bBV1jtxw-kSBChhCHjLVr=s200',
-    '빛나는 브론즈':  'https://lh3.googleusercontent.com/d/1u4I2VY4AeRFsDspjEki9L-hQ1j5JiKGx=s200',
-    '거친 실버':         'https://lh3.googleusercontent.com/d/1uWgt0OOK5rJcVTEi-VyGp5UnVgWwyGlC=s200',
-    '성장한 실버':         'https://lh3.googleusercontent.com/d/1osUBjhruiHVJN4t-Gpr3ZF4q8P0TpDJJ=s200',
-    '진화한 실버':         'https://lh3.googleusercontent.com/d/1BUY9C9_L4OifyyIYZRG5hUwCotRMfpdV=s200',
-    '은빛 정점':         'https://lh3.googleusercontent.com/d/1WUyRfQrEp694zsOF3HW5TJ7cNSV7hh6N=s200',            
+    '새싹':           'https://lh3.googleusercontent.com/d/1zFDg7LEHBOO0PpBdo2e4kuVTOJGBUBRQ=s200',
+    '브론즈':         'https://lh3.googleusercontent.com/d/1OIyG_nSFeX_bBV1jtxw-kSBChhCHjLVr=s200',
+    '빛나는 브론즈':   'https://lh3.googleusercontent.com/d/1u4I2VY4AeRFsDspjEki9L-hQ1j5JiKGx=s200',
+    '거친 실버':       'https://lh3.googleusercontent.com/d/1uWgt0OOK5rJcVTEi-VyGp5UnVgWwyGlC=s200',
+    '성장한 실버':     'https://lh3.googleusercontent.com/d/1osUBjhruiHVJN4t-Gpr3ZF4q8P0TpDJJ=s200',
+    '진화한 실버':     'https://lh3.googleusercontent.com/d/1BUY9C9_L4OifyyIYZRG5hUwCotRMfpdV=s200',
+    '은빛 극점':       'https://lh3.googleusercontent.com/d/1WUyRfQrEp694zsOF3HW5TJ7cNSV7hh6N=s200',
     '금 광석':         'https://lh3.googleusercontent.com/d/1TZShnEmdOsJHbiLjX7DP68VY7C9APLwO=s200',
-    '제련된 골드':         'https://lh3.googleusercontent.com/d/1TZShnEmdOsJHbiLjX7DP68VY7C9APLwO=s200',
-    '진화한 골드':         'https://lh3.googleusercontent.com/d/1TZShnEmdOsJHbiLjX7DP68VY7C9APLwO=s200',
-    '황금의 절정':         'https://lh3.googleusercontent.com/d/1TZShnEmdOsJHbiLjX7DP68VY7C9APLwO=s200',    
-    '루비 원석':     'https://lh3.googleusercontent.com/d/15X9xtvv7FdCJHoSArO2CwbV4fnHNN3UF=s200',
-    '깨어난 루비':     'https://lh3.googleusercontent.com/d/1REEir6vppC6iPRh6mOynTHWD4Vx-Ttgf=s200',
+    '제련된 골드':     'https://lh3.googleusercontent.com/d/1TZShnEmdOsJHbiLjX7DP68VY7C9APLwO=s200',
+    '정련된 골드':     'https://lh3.googleusercontent.com/d/1TZShnEmdOsJHbiLjX7DP68VY7C9APLwO=s200',
+    '태양의 황금':     'https://lh3.googleusercontent.com/d/1TZShnEmdOsJHbiLjX7DP68VY7C9APLwO=s200',
+    '루비 원석':       'https://lh3.googleusercontent.com/d/15X9xtvv7FdCJHoSArO2CwbV4fnHNN3UF=s200',
+    '연마된 루비':     'https://lh3.googleusercontent.com/d/1REEir6vppC6iPRh6mOynTHWD4Vx-Ttgf=s200',
     '각성한 루비':     'https://lh3.googleusercontent.com/d/1MDwOHkjH0u50P5gkB1WrfXrvkpRCNLcS=s200',
-    '홍염의 극한':     'https://lh3.googleusercontent.com/d/1EfCQf-t_gBpIohmamSb3yOCbeOzISMJc=s200',        
-    '거친 다이아몬드':   'https://lh3.googleusercontent.com/d/1Q407DyyD5wndI-rVvKjt6981cRGXxIqN=s200',
-    '성장한 다이아몬드':   'https://lh3.googleusercontent.com/d/1XYMWlQ3QWFeIf0bO_z2Kn8CxJpmPq4Gb=s200',
-    '진화한 다이아몬드':   'https://lh3.googleusercontent.com/d/1Wdb5TSQ3HH_c4Ea0lSBMt7iH4m5L9dlU=s200',
-    '영원의 결정':   'https://lh3.googleusercontent.com/d/12KsCvjljkzBP1aMEKN1lFDTshliUNMFp=s200',
-    '마스터':       'https://lh3.googleusercontent.com/d/1aLJ93TjnCrfIw9qNIqHbx2i7NV_xk97w=s200',
-    '천상의 마스터': 'https://lh3.googleusercontent.com/d/1aLJ93TjnCrfIw9qNIqHbx2i7NV_xk97w=s200',
-    '그랜드마스터': 'https://lh3.googleusercontent.com/d/1IMzjE091rxonvuq_DiVzu-rG2o7yI7nu=s200'
+    '홍염의 정점':     'https://lh3.googleusercontent.com/d/1EfCQf-t_gBpIohmamSb3yOCbeOzISMJc=s200',
+    '다이아 원석':     'https://lh3.googleusercontent.com/d/1Q407DyyD5wndI-rVvKjt6981cRGXxIqN=s200',
+    '고순도 다이아':   'https://lh3.googleusercontent.com/d/1XYMWlQ3QWFeIf0bO_z2Kn8CxJpmPq4Gb=s200',
+    '무결 다이아':     'https://lh3.googleusercontent.com/d/1Wdb5TSQ3HH_c4Ea0lSBMt7iH4m5L9dlU=s200',
+    '영원의 결정':     'https://lh3.googleusercontent.com/d/12KsCvjljkzBP1aMEKN1lFDTshliUNMFp=s200',
+    '마스터':          'https://lh3.googleusercontent.com/d/1aLJ93TjnCrfIw9qNIqHbx2i7NV_xk97w=s200',
+    '천상의 마스터':   'https://lh3.googleusercontent.com/d/1aLJ93TjnCrfIw9qNIqHbx2i7NV_xk97w=s200',
+    '그랜드마스터':    'https://lh3.googleusercontent.com/d/1IMzjE091rxonvuq_DiVzu-rG2o7yI7nu=s200'
   };
 
   // ── 로그인 함수 ─────────────────────────────────────────────
@@ -678,9 +1069,25 @@
 
   // ── 로그아웃 함수 ─────────────────────────────────────────────
   function logout() {
+    // 스킨 / 폰트 / 캐릭터 / 티어 초기화
+    applySkin('default');
+    applyFont(null);
+    applyCharacter(null);
+    applyTierBorderClass('');   // 티어 테두리 클래스 전체 제거
+
+    // 전역 변수 초기화
+    window._currentStudentName = null;
+    window._currentSkin        = null;
+    window._currentFont        = null;
+    window._currentChar        = null;
+    window._lastDashboardData  = null;
+    _historyData               = null;
+    _shopData                  = null;
+
+    // 화면 전환
     document.getElementById('dashboard').style.display = 'none';
     document.getElementById('loginSection').style.display = 'block';
-    document.getElementById('honorBoardSection').style.display = 'block'; // 명예의 전당 다시 표시
+    document.getElementById('honorBoardSection').style.display = 'block';
     document.getElementById('studentName').value = '';
     document.getElementById('studentPassword').value = '';
   }
@@ -688,14 +1095,13 @@
   // ── 티어 테두리 클래스 적용 ─────────────────────────────────
   function applyTierBorderClass(tierName) {
     var body = document.body;
-    // 기존 티어 클래스 모두 제거
     ['tier-silver','tier-gold','tier-ruby','tier-diamond','tier-master','tier-grandmaster']
       .forEach(function(c){ body.classList.remove(c); });
 
-    var silverTiers      = ['거친 실버','성장한 실버','진화한 실버','은빛 정점'];
-    var goldTiers        = ['금 광석','제련된 골드','진화한 골드','황금의 절정'];
-    var rubyTiers        = ['루비 원석','성장한 루비','각성한 루비','홍염의 극한'];
-    var diamondTiers     = ['거친 다이아몬드','성장한 다이아몬드','진화한 다이아몬드','영원의 결정'];
+    var silverTiers      = ['거친 실버','성장한 실버','진화한 실버','은빛 극점'];
+    var goldTiers        = ['금 광석','제련된 골드','정련된 골드','태양의 황금'];
+    var rubyTiers        = ['루비 원석','연마된 루비','각성한 루비','홍염의 정점'];
+    var diamondTiers     = ['다이아 원석','고순도 다이아','무결 다이아','영원의 결정'];
     var masterTiers      = ['마스터','천상의 마스터'];
     var grandmasterTiers = ['그랜드마스터'];
 
@@ -705,7 +1111,6 @@
     else if (rubyTiers.includes(tierName))        body.classList.add('tier-ruby');
     else if (goldTiers.includes(tierName))        body.classList.add('tier-gold');
     else if (silverTiers.includes(tierName))      body.classList.add('tier-silver');
-    // 새싹/브론즈는 특전 없음
   }
 
   // ── 업적 모달 열기/닫기 ──────────────────────────────────────
@@ -1005,28 +1410,71 @@
           '<td style="font-weight:bold;color:#e67e22;text-align:right;">$ ' + Number(item.price).toLocaleString() + '</td>' +
         '</tr>';
       }).join('');
+    }
 
-      // 업적 데이터 캐싱 (모달에서 사용)
+    // ── 아래는 priceTable 유무와 무관하게 항상 실행 ──
+
+    // 업적/학생 데이터 캐싱 (모달에서 사용)
     window._currentStudentName = data.personal.name;
     window._achievements = data.achievements || [];
 
-
+    // 2차 직업 섹션 렌더링
+    renderJob2Section(data);
 
     // 로그인 시 장착 중인 칭호 있으면 바로 표시
     var equippedAch = (data.achievements || []).find(function(a){ return a.equipped; });
     if (equippedAch) updateTitleBadge(equippedAch.achName);
 
-
     // 전역 알림 체크 (로그인 시 1회)
     checkGlobalNotices(data.achievements);
-    }  // ← priceTableBody if 블록 닫기
+
+    // 우편함 읽지 않은 수 뱃지
+    google.script.run.withSuccessHandler(function(cnt) {
+      updateMailBadge(cnt);
+    }).getUnreadMailCount(data.personal.name);
+
+    // 장착 아이템 복원 (스킨/폰트/캐릭터)
+    google.script.run
+      .withSuccessHandler(function(equipped) {
+        if (equipped && equipped.length > 0) applyOwnedItems(equipped);
+      })
+      .withFailureHandler(function(err) {
+        // 장착 복원 실패해도 대시보드 나머지는 정상 작동
+        console.log('장착 아이템 복원 실패: ' + err.message);
+      })
+      .getEquippedItems(data.personal.name);
+
+    // Wall of Fame 로드
+    loadWallOfFame();
+
+    // 전광판 폴링 시작
+    startAlertPolling();
+
+    // 대시보드 데이터 캐싱 (기부 모달에서 잔액 표시용)
+    window._lastDashboardData = data;
+
+    // 나의 기록 요약 (7일/30일 순증감) 비동기 로드
+    google.script.run
+      .withSuccessHandler(function(rows) {
+        _historyData = rows || [];
+        updateHistorySummary(_historyData);
+      })
+      .withFailureHandler(function(err) {
+        // 오류 시 0으로 표시 (무한 "-" 방지)
+        var el7  = document.getElementById('history7dNet');
+        var el30 = document.getElementById('history30dNet');
+        if (el7)  el7.textContent  = '+$0';
+        if (el30) el30.textContent = '+$0';
+      })
+      .getStudentHistory(data.personal.name);
+
   }    // ← showDashboard 함수 닫기
 
   // ── 2차 직업 섹션 렌더링 ────────────────────────────────────
   function renderJob2Section(data) {
-    var GOLD_TIERS = ['금 광석','제련된 골드','진화한 골드','황금의 절정',
-                      '루비 원석','깨어난 루비','각성한 루비','홍염의 극한',
-                      '거친 다이아몬드','성장한 다이아몬드','진화한 다이아몬드','불변의 정점',
+    var GOLD_TIERS = ['금 광석','제련된 골드','정련된 골드','태양의 황금',
+                      '루비 원석','연마된 루비','각성한 루비','홍염의 정점',
+                      '다이아 원석','고순도 다이아','무결 다이아','영원의 결정',
                       '마스터','천상의 마스터','그랜드마스터'];
     var tierName = data.tierData ? data.tierData.name : '';
     var unlocked = GOLD_TIERS.indexOf(tierName) !== -1;
@@ -1262,6 +1710,514 @@
   
   observer.observe(honorSection);
 }
+
+  // ══════════════════════════════════════════════════════════════
+  // ██ 우편함 시스템
+  // ══════════════════════════════════════════════════════════════
+  function updateMailBadge(count) {
+    var badge = document.getElementById('mailBadge');
+    if (!badge) return;
+    if (count > 0) {
+      badge.textContent = count > 9 ? '9+' : count;
+      badge.style.display = 'flex';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  function openMailModal() {
+    document.getElementById('mailModal').classList.add('open');
+    var list = document.getElementById('mailList');
+    list.innerHTML = '<div style="text-align:center;padding:30px;color:#bbb;">로딩 중...</div>';
+    google.script.run.withSuccessHandler(function(msgs) {
+      // 읽음 처리됐으므로 뱃지 0으로
+      updateMailBadge(0);
+      if (!msgs || msgs.length === 0) {
+        list.innerHTML = '<div style="text-align:center;padding:30px;color:#bbb;font-size:13px;">📭 받은 메시지가 없습니다.</div>';
+        return;
+      }
+      list.innerHTML = msgs.map(function(m) {
+        var typeClass = m.type === '승인' ? 'approved' : m.type === '반려' ? 'rejected' : 'reward';
+        var unread    = m.isRead ? '' : ' unread';
+        return '<div class="mail-item ' + typeClass + unread + '">' +
+          '<div class="mail-subject">' + m.subject + '</div>' +
+          '<div class="mail-body">' + m.body + '</div>' +
+          '<div class="mail-time">' + m.sentAt + '</div>' +
+        '</div>';
+      }).join('');
+    }).getMailboxMessages(window._currentStudentName);
+  }
+
+  function closeMailModal() {
+    document.getElementById('mailModal').classList.remove('open');
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // ██ 업적 전광판 (Global Alert) — 30초마다 폴링
+  // ══════════════════════════════════════════════════════════════
+  var _lastAlertId = null;
+  var _alertPolling = null;
+
+  function startAlertPolling() {
+    if (_alertPolling) return;
+    _alertPolling = setInterval(function() {
+      google.script.run.withSuccessHandler(function(alert) {
+        if (!alert) return;
+        if (alert.noticeId === _lastAlertId) return;
+        _lastAlertId = alert.noticeId;
+        showGlobalAlert(alert);
+      }).getLatestGlobalAlert(_lastAlertId || '');
+    }, 30000); // 30초
+  }
+
+  function showGlobalAlert(alert) {
+    var overlay = document.getElementById('globalAlertOverlay');
+    // 이모지 결정
+    var emoji = '🎉';
+    if (alert.msg.indexOf('초월') !== -1)      emoji = '✨';
+    else if (alert.msg.indexOf('유일') !== -1)  emoji = '🌌';
+    else if (alert.msg.indexOf('히든') !== -1)  emoji = '🔮';
+    else if (alert.msg.indexOf('개 달성') !== -1) emoji = '🏆';
+
+    document.getElementById('alertEmoji').textContent = emoji;
+    document.getElementById('alertTitle').textContent = '📢 전체 공지';
+    document.getElementById('alertMsg').textContent   = alert.msg;
+    overlay.classList.add('show');
+  }
+
+  function closeGlobalAlert() {
+    document.getElementById('globalAlertOverlay').classList.remove('show');
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // ██ Wall of Fame (업적 현황판)
+  // ══════════════════════════════════════════════════════════════
+  function loadWallOfFame() {
+    var container = document.getElementById('wallOfFameList');
+    if (!container) return;
+    container.innerHTML = '<div style="text-align:center;padding:20px;color:#bbb;font-size:13px;">로딩 중...</div>';
+    google.script.run
+      .withSuccessHandler(function(data) {
+        if (!data || data.length === 0) {
+          container.innerHTML = '<div style="text-align:center;padding:20px;color:#bbb;font-size:13px;">아직 등록된 업적이 없습니다.</div>';
+          return;
+        }
+        var html = '';
+        data.forEach(function(item) {
+          var countText = item.count > 0
+            ? '<span class="wof-count">' + item.count + '명 달성 중</span>'
+            : '<span class="wof-count wof-zero">아직 없음</span>';
+          var gradeClass = item.grade || '희귀';
+          html += '<div class="wof-row">' +
+            '<span class="wof-name">' + item.achName + '</span>' +
+            '<span class="wof-grade ' + gradeClass + '">' + item.grade + '</span>' +
+            countText +
+          '</div>';
+        });
+        container.innerHTML = html;
+      })
+      .withFailureHandler(function(err) {
+        container.innerHTML = '<div style="text-align:center;padding:20px;color:#e74c3c;font-size:13px;">⚠️ 현황판 로드 실패: ' + err.message + '</div>';
+      })
+      .getWallOfFame();
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // ██ 상점 시스템
+  // ══════════════════════════════════════════════════════════════
+  var _shopData = null;
+  var _currentShopTab = '스킨';
+
+  // 구글 폰트 로드 (구매한 폰트 적용용)
+  function loadGoogleFont(fontName) {
+    var id = 'gf-' + fontName.replace(/\s/g,'');
+    if (document.getElementById(id)) return;
+    var link = document.createElement('link');
+    link.id   = id;
+    link.rel  = 'stylesheet';
+    link.href = 'https://fonts.googleapis.com/css2?family=' + encodeURIComponent(fontName) + ':wght@400;700&display=swap';
+    document.head.appendChild(link);
+  }
+
+  function applyOwnedItems(ownedItems) {
+    // 장착 중인 스킨/폰트/캐릭터 적용 (마지막으로 구매한 것)
+    var skin = null, font = null, char = null;
+    ownedItems.forEach(function(item) {
+      if (item.category === '스킨')     skin = item.resourceVal;
+      if (item.category === '폰트')     font = item.resourceVal;
+      if (item.category === '캐릭터')   char = item.resourceVal;
+    });
+    if (skin) applySkin(skin);
+    if (font) applyFont(font);
+    // 캐릭터: 장착된 것이 없으면 기본 이모지(😊) 표시
+    applyCharacter(char || '😊');
+  }
+
+  function applySkin(skinKey) {
+    // 기존 스킨 클래스 제거
+    document.body.classList.remove('skin-ocean','skin-dark','skin-cherry');
+    if (skinKey && skinKey !== 'default') document.body.classList.add('skin-' + skinKey);
+    window._currentSkin = skinKey;
+  }
+
+  function applyFont(fontName) {
+    if (!fontName || fontName === 'default') {
+      document.body.style.fontFamily = "'Noto Sans KR', sans-serif";
+      window._currentFont = null;
+      return;
+    }
+    loadGoogleFont(fontName);
+    document.body.style.fontFamily = "'" + fontName + "', 'Noto Sans KR', sans-serif";
+    window._currentFont = fontName;
+  }
+
+  function applyCharacter(charVal) {
+    var area  = document.getElementById('charImgArea');
+    var img   = document.getElementById('charImg');
+    var emoji = document.getElementById('charEmoji');
+    if (!area || !img || !emoji) return;
+
+    if (!charVal || charVal === 'default') {
+      // 캐릭터 없음 → 영역 전체 숨김
+      area.style.display  = 'none';
+      img.style.display   = 'none';
+      emoji.style.display = 'none';
+    } else if (charVal.startsWith('http://') || charVal.startsWith('https://')) {
+      // 이미지 URL → <img> 표시
+      img.src             = charVal;
+      img.style.display   = 'block';
+      emoji.style.display = 'none';
+      area.style.display  = 'block';
+    } else {
+      // 이모지 텍스트 → <span> 표시
+      emoji.textContent   = charVal;
+      emoji.style.display = 'block';
+      img.style.display   = 'none';
+      area.style.display  = 'block';
+    }
+    window._currentChar = charVal;
+  }
+
+  function openShopModal() {
+    document.getElementById('shopModal').classList.add('open');
+    var itemList = document.getElementById('shopItemList');
+    itemList.innerHTML = '<div style="text-align:center;padding:30px;color:#bbb;">로딩 중...</div>';
+    google.script.run
+      .withSuccessHandler(function(data) {
+        if (!data) {
+          itemList.innerHTML = '<div style="text-align:center;padding:20px;color:#e74c3c;font-size:13px;">⚠️ 상점 데이터를 불러올 수 없습니다.<br>상점_아이템 시트를 확인해주세요.</div>';
+          return;
+        }
+        _shopData = data;
+        document.getElementById('shopBalance').textContent = '$ ' + Number(data.balance).toLocaleString();
+        renderShopItems(_currentShopTab);
+      })
+      .withFailureHandler(function(err) {
+        itemList.innerHTML = '<div style="text-align:center;padding:20px;color:#e74c3c;font-size:13px;">⚠️ 오류: ' + err.message + '</div>';
+      })
+      .getShopItemsWithEquip(window._currentStudentName);
+  }
+
+  function closeShopModal() {
+    document.getElementById('shopModal').classList.remove('open');
+  }
+
+  function switchShopTab(category, btn) {
+    _currentShopTab = category;
+    document.querySelectorAll('.shop-tab').forEach(function(t){ t.classList.remove('active'); });
+    btn.classList.add('active');
+    renderShopItems(category);
+  }
+
+  function renderShopItems(category) {
+    var container = document.getElementById('shopItemList');
+    if (!_shopData) return;
+
+    // 기본 아이템 행 (장착 해제 → 기본값으로)
+    var defaultItem = { itemId: 'DEFAULT_' + category, category: category,
+      itemName: category === '스킨' ? '🏠 기본 스킨' : category === '폰트' ? '✏️ 기본 폰트' : '😊 캐릭터 없음',
+      price: 0, condDesc: '기본 제공', resourceVal: 'default', isOwned: true,
+      isEquipped: !(_shopData.equippedSet || []).some(function(id) {
+        return (_shopData.items || []).some(function(it){ return it.itemId === id && it.category === category && it.isEquipped; });
+      }),
+      condMet: true, canBuy: false };
+
+    var items = [defaultItem].concat((_shopData.items || []).filter(function(i){ return i.category === category; }));
+
+    if (items.length <= 1) {
+      container.innerHTML = '<div style="text-align:center;padding:30px;color:#bbb;font-size:13px;">아직 준비된 아이템이 없습니다.</div>';
+      return;
+    }
+
+    container.innerHTML = items.map(function(item) {
+      var isDefault = item.itemId.startsWith('DEFAULT_');
+      var cardClass = item.isEquipped ? 'owned' : (!item.isOwned && !isDefault ? (!item.condMet ? 'locked' : 'buyable') : '');
+
+      var btnHtml;
+      if (item.isEquipped) {
+        btnHtml = '<button class="shop-buy-btn owned-lbl" disabled>✓ 장착 중</button>';
+      } else if (isDefault) {
+        btnHtml = '<button class="shop-buy-btn can-buy" onclick="unequipShopItem(\'' + item.category + '\')">장착하기</button>';
+      } else if (!item.isOwned) {
+        if (!item.condMet) {
+          btnHtml = '<button class="shop-buy-btn locked-lbl">🔒 조건 미달</button>';
+        } else if (_shopData.balance < item.price) {
+          btnHtml = '<button class="shop-buy-btn locked-lbl">잔액 부족</button>';
+        } else {
+          btnHtml = '<button class="shop-buy-btn can-buy" onclick="buyShopItem(\'' + item.itemId + '\')">구매 & 장착</button>';
+        }
+      } else {
+        // 보유 중이지만 미장착
+        btnHtml = '<button class="shop-buy-btn can-buy" onclick="equipShopItem(\'' + item.itemId + '\')">장착하기</button>';
+      }
+
+      var iconHtml;
+      if (item.category === '캐릭터') {
+        var rv = item.resourceVal;
+        if (!rv || rv === 'default') {
+          iconHtml = '<span class="shop-item-icon">😊</span>';
+        } else if (rv.startsWith('http://') || rv.startsWith('https://')) {
+          iconHtml = '<span class="shop-item-icon" style="padding:4px;"><img src="' + rv + '" alt="캐릭터" style="width:44px;height:44px;object-fit:contain;border-radius:8px;"></span>';
+        } else {
+          iconHtml = '<span class="shop-item-icon">' + rv + '</span>';
+        }
+      } else {
+        iconHtml = '<span class="shop-item-icon">' + item.itemName.substring(0,2) + '</span>';
+      }
+
+      var equippedBadge = item.isEquipped ? '<span style="font-size:10px;background:#2ecc71;color:white;padding:1px 6px;border-radius:8px;margin-left:4px;">장착 중</span>' : '';
+
+      return '<div class="shop-item-card ' + cardClass + '">' +
+        iconHtml +
+        '<div class="shop-item-info">' +
+          '<div class="shop-item-name">' + item.itemName + equippedBadge + '</div>' +
+          '<div class="shop-item-cond">🔑 ' + item.condDesc + '</div>' +
+          (item.price > 0 ? '<div class="shop-item-price">💰 $ ' + Number(item.price).toLocaleString() + '</div>' : '') +
+        '</div>' +
+        btnHtml +
+      '</div>';
+    }).join('');
+  }
+
+  function equipShopItem(itemId) {
+    google.script.run
+      .withSuccessHandler(function(res) {
+        if (!res.success) { alert('오류: ' + res.msg); return; }
+        if (res.category === '스킨')   applySkin(res.resourceVal);
+        if (res.category === '폰트')   applyFont(res.resourceVal);
+        if (res.category === '캐릭터') applyCharacter(res.resourceVal);
+        openShopModal(); // 상태 새로고침
+      })
+      .withFailureHandler(function(err) { alert('오류: ' + err.message); })
+      .equipShopItem(window._currentStudentName, itemId);
+  }
+
+  function unequipShopItem(category) {
+    google.script.run
+      .withSuccessHandler(function(res) {
+        if (!res.success) { alert('오류: ' + res.msg); return; }
+        if (category === '스킨')   applySkin('default');
+        if (category === '폰트')   applyFont(null);
+        if (category === '캐릭터') applyCharacter(null);
+        openShopModal();
+      })
+      .withFailureHandler(function(err) { alert('오류: ' + err.message); })
+      .unequipShopItem(window._currentStudentName, category);
+  }
+
+  function buyShopItem(itemId) {
+    if (!confirm('구매하시겠습니까?')) return;
+    google.script.run.withSuccessHandler(function(res) {
+      if (!res.success) { alert('오류: ' + res.msg); return; }
+      alert(res.msg);
+      // 즉시 스킨/폰트/캐릭터 적용
+      if (res.category === '스킨')     applySkin(res.resourceVal);
+      if (res.category === '폰트')     applyFont(res.resourceVal);
+      if (res.category === '캐릭터')   applyCharacter(res.resourceVal);
+      // 상점 새로고침
+      openShopModal();
+    }).purchaseShopItem(window._currentStudentName, itemId);
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // ██ 나의 기록
+  // ══════════════════════════════════════════════════════════════
+  var _historyData  = null;  // 서버에서 받은 전체 기록 (역순)
+  var _historyDays  = 7;     // 현재 선택된 기간
+
+  function openHistoryModal() {
+    document.getElementById('historyModal').classList.add('open');
+    if (_historyData) {
+      renderHistory(_historyDays);
+      return;
+    }
+    document.getElementById('historyList').innerHTML =
+      '<div style="text-align:center;padding:30px;color:#bbb;">로딩 중...</div>';
+    google.script.run
+      .withSuccessHandler(function(rows) {
+        _historyData = rows || [];
+        renderHistory(_historyDays);
+      })
+      .withFailureHandler(function(err) {
+        document.getElementById('historyList').innerHTML =
+          '<div style="text-align:center;padding:20px;color:#e74c3c;font-size:13px;">⚠️ ' + err.message + '</div>';
+      })
+      .getStudentHistory(window._currentStudentName);
+  }
+
+  function closeHistoryModal() {
+    document.getElementById('historyModal').classList.remove('open');
+  }
+
+  function switchHistoryTab(days, btn) {
+    _historyDays = days;
+    document.querySelectorAll('.history-tab').forEach(function(t){ t.classList.remove('active'); });
+    btn.classList.add('active');
+    renderHistory(days);
+  }
+
+  function renderHistory(days) {
+    if (!_historyData) return;
+    var now    = new Date();
+    var today  = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    var cutoff = days > 0 ? new Date(today.getTime() - days * 86400000) : null;
+
+    // 필터링
+    var rows = _historyData.filter(function(r) {
+      if (!cutoff) return true;
+      var d = _parseLocalDate(r[0]);
+      return d !== null && d >= cutoff;
+    });
+    if (days === 0) rows = _historyData.slice(0, 50);  // 최근 50건
+
+    // 통계 계산 (자산 변동 r[2] 기준)
+    var gain = 0, loss = 0;
+    rows.forEach(function(r) {
+      var delta = Number(r[2]) || 0;  // 자산변동
+      if (delta > 0) gain += delta;
+      else           loss += delta;
+    });
+    var net = gain + loss;
+
+    document.getElementById('histStatGain').textContent = '+ $' + gain.toLocaleString();
+    document.getElementById('histStatLoss').textContent = '- $' + Math.abs(loss).toLocaleString();
+    var netEl = document.getElementById('histStatNet');
+    netEl.textContent = (net >= 0 ? '+ $' : '- $') + Math.abs(net).toLocaleString();
+    netEl.className   = 'history-stat-val ' + (net >= 0 ? 'plus' : 'minus');
+
+    if (rows.length === 0) {
+      document.getElementById('historyList').innerHTML =
+        '<div style="text-align:center;padding:30px;color:#bbb;font-size:13px;">해당 기간에 기록이 없습니다.</div>';
+      return;
+    }
+
+    document.getElementById('historyList').innerHTML = rows.map(function(r) {
+      // r = [날짜, 브랜드가치변동, 자산변동, 브랜드가치, 자산, 메모]
+      var delta    = Number(r[2]) || 0;
+      var plusMinus = delta >= 0 ? '+' : '';
+      var color     = delta >= 0 ? '#27ae60' : '#e74c3c';
+      var memo      = String(r[5] || r[4] || '-');
+      return '<div class="history-row">' +
+        '<span class="history-date">' + String(r[0]).substring(0, 10) + '</span>' +
+        '<span class="history-memo">' + memo + '</span>' +
+        '<span class="history-delta" style="color:' + color + ';">' +
+          plusMinus + '$' + Math.abs(delta).toLocaleString() +
+        '</span>' +
+      '</div>';
+    }).join('');
+  }
+
+  // 대시보드 요약 카드용 7일/30일 집계
+  // 'yyyy-MM-dd' 문자열을 로컬 날짜로 안전하게 파싱 (UTC 오프셋 문제 방지)
+  function _parseLocalDate(str) {
+    if (!str) return null;
+    var s = String(str).substring(0, 10); // 'yyyy-MM-dd'만 사용
+    var parts = s.split('-');
+    if (parts.length !== 3) return null;
+    var d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  function updateHistorySummary(rows) {
+    if (!rows || rows.length === 0) {
+      // 데이터 없음 → 0으로 표시
+      var el7  = document.getElementById('history7dNet');
+      var el30 = document.getElementById('history30dNet');
+      if (el7)  { el7.textContent  = '+$0'; el7.style.color  = '#27ae60'; }
+      if (el30) { el30.textContent = '+$0'; el30.style.color = '#27ae60'; }
+      return;
+    }
+
+    // 오늘 자정 기준 (로컬)
+    var now   = new Date();
+    var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    function netDays(d) {
+      var cut = new Date(today.getTime() - d * 86400000);
+      return rows
+        .filter(function(r) {
+          var dt = _parseLocalDate(r[0]);
+          return dt !== null && dt >= cut;
+        })
+        .reduce(function(s, r) { return s + (Number(r[2]) || 0); }, 0);
+    }
+
+    var n7  = netDays(7);
+    var n30 = netDays(30);
+    var el7  = document.getElementById('history7dNet');
+    var el30 = document.getElementById('history30dNet');
+    if (el7) {
+      el7.textContent = (n7 >= 0 ? '+$' : '-$') + Math.abs(n7).toLocaleString();
+      el7.style.color = n7 >= 0 ? '#27ae60' : '#e74c3c';
+    }
+    if (el30) {
+      el30.textContent = (n30 >= 0 ? '+$' : '-$') + Math.abs(n30).toLocaleString();
+      el30.style.color = n30 >= 0 ? '#27ae60' : '#e74c3c';
+    }
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // ██ 기부 시스템
+  // ══════════════════════════════════════════════════════════════
+  function openDonateModal() {
+    document.getElementById('donateModal').classList.add('open');
+    // 현재 잔액 표시
+    var mainData = window._lastDashboardData;
+    if (mainData && mainData.personal) {
+      document.getElementById('donateMyBalance').textContent =
+        '$ ' + Number(mainData.personal.balance).toLocaleString();
+    }
+    document.getElementById('donateAmount').value = '';
+    document.getElementById('donateMsg').value    = '';
+  }
+
+  function closeDonateModal() {
+    document.getElementById('donateModal').classList.remove('open');
+  }
+
+  function setDonateAmount(val) {
+    var el = document.getElementById('donateAmount');
+    el.value = (Number(el.value) || 0) + val;
+  }
+
+  function submitDonate() {
+    var amount = parseInt(document.getElementById('donateAmount').value, 10);
+    var msg    = document.getElementById('donateMsg').value.trim();
+    if (!amount || amount <= 0) { alert('기부할 금액을 입력해주세요.'); return; }
+    if (!confirm('$' + amount.toLocaleString() + '을(를) 복지 기금에 기부하시겠습니까?')) return;
+
+    google.script.run
+      .withSuccessHandler(function(res) {
+        if (!res.success) { alert('오류: ' + res.msg); return; }
+        alert('💚 ' + res.msg);
+        closeDonateModal();
+        // 기록 캐시 무효화 (다음 열기 시 새로고침)
+        _historyData = null;
+        // 복지기금 / 잔액 수치는 다음 로그인 시 갱신
+      })
+      .withFailureHandler(function(err) { alert('오류: ' + err.message); })
+      .donateToWelfare(window._currentStudentName, amount, msg);
+  }
 
 </script>
 

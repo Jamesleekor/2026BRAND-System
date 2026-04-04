@@ -88,7 +88,18 @@ function getStudentData(studentName, password) {
     const data = JSON.parse(cached);
     // 비밀번호만 재확인
     if (data.success && password === data._password) {
-      delete data._password; // 비밀번호 제거 후 반환
+      delete data._password;
+      // 복지기금 합계는 캐시를 무시하고 항상 실시간 계산 (기부 후 즉시 반영)
+      try {
+        const ss2      = SpreadsheetApp.getActiveSpreadsheet();
+        const main2    = ss2.getSheetByName(SHEET_MAIN);
+        if (main2) {
+          const md2 = main2.getDataRange().getValues();
+          let liveTax = 0;
+          for (let i = 1; i < md2.length; i++) liveTax += Number(md2[i][COL_TAX - 1]) || 0;
+          data.classTotalTax = liveTax;
+        }
+      } catch(e) {}
       return data;
     }
   }
@@ -153,21 +164,21 @@ function getStudentData(studentName, password) {
   const honor = Number(studentRow[COL_VALUE - 1]) || 0;
   let tier = { name: '새싹', icon: '🌱', min: 0, max: 5000 };
   if      (honor >= 100000) tier = { name: '그랜드마스터', icon: '🏆', min: 100000, max: 100000 };
-  else if (honor >= 85000)  tier = { name: '천상의 마스터',       icon: '👑', min: 85000,  max: 100000 };
+  else if (honor >= 85000)  tier = { name: '완성된 마스터',       icon: '👑', min: 85000,  max: 100000 };
   else if (honor >= 75000)  tier = { name: '마스터',       icon: '👑', min: 75000,  max: 85000 };
-  else if (honor >= 65000)  tier = { name: '영원의 결정',   icon: '💠', min: 50000,  max: 75000  };
+  else if (honor >= 65000)  tier = { name: '찬란한 다이아몬드',   icon: '💠', min: 50000,  max: 75000  };
   else if (honor >= 60000)  tier = { name: '진화한 다이아몬드',   icon: '💠', min: 50000,  max: 65000  };
   else if (honor >= 55000)  tier = { name: '성장한 다이아몬드',   icon: '💠', min: 50000,  max: 60000  };
   else if (honor >= 50000)  tier = { name: '거친 다이아몬드',   icon: '💠', min: 50000,  max: 55000  };
-  else if (honor >= 45000)  tier = { name: '홍염의 극한',     icon: '💎', min: 30000,  max: 50000  };
-  else if (honor >= 40000)  tier = { name: '각성한 루비',     icon: '💎', min: 30000,  max: 45000  };
-  else if (honor >= 35000)  tier = { name: '깨어난 루비',     icon: '💎', min: 30000,  max: 40000  };
+  else if (honor >= 45000)  tier = { name: '찬란한 루비',     icon: '💎', min: 30000,  max: 50000  };
+  else if (honor >= 40000)  tier = { name: '진화한 루비',     icon: '💎', min: 30000,  max: 45000  };
+  else if (honor >= 35000)  tier = { name: '성장한 루비',     icon: '💎', min: 30000,  max: 40000  };
   else if (honor >= 30000)  tier = { name: '루비 원석',     icon: '💎', min: 30000,  max: 35000  };
-  else if (honor >= 27500)  tier = { name: '황금의 절정',         icon: '🥇', min: 20000,  max: 30000  };
+  else if (honor >= 27500)  tier = { name: '찬란한 골드',         icon: '🥇', min: 20000,  max: 30000  };
   else if (honor >= 25000)  tier = { name: '진화한 골드',         icon: '🥇', min: 20000,  max: 27500  };
-  else if (honor >= 22500)  tier = { name: '제련된 골드',         icon: '🥇', min: 20000,  max: 25000  };
+  else if (honor >= 22500)  tier = { name: '성장한 골드',         icon: '🥇', min: 20000,  max: 25000  };
   else if (honor >= 20000)  tier = { name: '금 광석',         icon: '🥇', min: 20000,  max: 22500  };
-  else if (honor >= 17500)  tier = { name: '은빛 정점',         icon: '🥈', min: 10000,  max: 20000  };
+  else if (honor >= 17500)  tier = { name: '찬란한 실버',         icon: '🥈', min: 10000,  max: 20000  };
   else if (honor >= 15000)  tier = { name: '진화한 실버',         icon: '🥈', min: 10000,  max: 17500  };
   else if (honor >= 12500)  tier = { name: '성장한 실버',         icon: '🥈', min: 10000,  max: 15000  };
   else if (honor >= 10000)  tier = { name: '거친 실버',         icon: '🥈', min: 10000,  max: 12500  };
@@ -1167,21 +1178,21 @@ function checkAndGrantAchievements(studentName, balance, totalTax, honor) {
   const h = Number(honor) || 0;
   let currentTierName = '새싹';
   if      (h >= 100000) currentTierName = '그랜드마스터';
-  else if (h >= 85000)  currentTierName = '천상의 마스터';
+  else if (h >= 85000)  currentTierName = '완성된 마스터';
   else if (h >= 75000)  currentTierName = '마스터';
-  else if (h >= 65000)  currentTierName = '영원의 결정';
+  else if (h >= 65000)  currentTierName = '찬란한 다이아몬드';
   else if (h >= 60000)  currentTierName = '진화한 다이아몬드';
   else if (h >= 55000)  currentTierName = '성장한 다이아몬드';
   else if (h >= 50000)  currentTierName = '거친 다이아몬드';
-  else if (h >= 45000)  currentTierName = '홍염의 극한';
-  else if (h >= 40000)  currentTierName = '각성한 루비';
-  else if (h >= 35000)  currentTierName = '깨어난 루비';
+  else if (h >= 45000)  currentTierName = '찬란한 루비';
+  else if (h >= 40000)  currentTierName = '진화한 루비';
+  else if (h >= 35000)  currentTierName = '성장한 루비';
   else if (h >= 30000)  currentTierName = '루비 원석';
-  else if (h >= 27500)  currentTierName = '황금의 절정';
+  else if (h >= 27500)  currentTierName = '찬란한 골드';
   else if (h >= 25000)  currentTierName = '진화한 골드';
-  else if (h >= 22500)  currentTierName = '제련된 골드';
+  else if (h >= 22500)  currentTierName = '성장한 골드';
   else if (h >= 20000)  currentTierName = '금 광석';
-  else if (h >= 17500)  currentTierName = '은빛 정점';
+  else if (h >= 17500)  currentTierName = '찬란한 실버';
   else if (h >= 15000)  currentTierName = '진화한 실버';
   else if (h >= 12500)  currentTierName = '성장한 실버';
   else if (h >= 10000)  currentTierName = '거친 실버';
@@ -1449,6 +1460,25 @@ function approveAchievement(rowNumber, isApproved, finalAchievementId) {
 
   // 학생업적달성 시트에 기록
   achSheet.appendRow([studentName, achId, achName, achCond, today, false]);
+
+  // ★ 마일스톤 자산 보상 체크
+  const finalAchData = achSheet.getDataRange().getValues();
+  let totalCount = 0;
+  for (let i = 1; i < finalAchData.length; i++) {
+    if (String(finalAchData[i][0]).trim() === studentName) totalCount++;
+  }
+  grantMilestoneReward(studentName, totalCount);
+
+  // ★ 전광판 알림 체크
+  const achGradeForAlert = masterSheet ? (() => {
+    const mData2 = masterSheet.getDataRange().getValues();
+    for (let m = 1; m < mData2.length; m++) {
+      if (String(mData2[m][0]).trim() === achId) return String(mData2[m][5] || '희귀').trim();
+    }
+    return '희귀';
+  })() : '희귀';
+  _checkAndPostGlobalAlert(studentName, achName, achGradeForAlert);
+
   return { success: true, msg: `[${studentName}] ${achName} 업적 승인 완료!` };
 }
 
@@ -1583,12 +1613,12 @@ function submitJobApplication(studentName, jobName, jobDesc) {
 
 // ── 관리자: 2차 직업 승인/반려 ───────────────────────────────────
 function approveJob(rowNumber, isApproved) {
-  const ss       = SpreadsheetApp.getActiveSpreadsheet();
-  const appSheet = ss.getSheetByName(SHEET_JOB2_APP);
+  const ss        = SpreadsheetApp.getActiveSpreadsheet();
+  const appSheet  = ss.getSheetByName(SHEET_JOB2_APP);
   const currSheet = ss.getSheetByName(SHEET_JOB2_CURR);
   if (!appSheet) return { success: false, msg: '시트를 찾을 수 없습니다.' };
 
-  const row = appSheet.getRange(rowNumber, 1, 1, 5).getValues()[0];
+  const row         = appSheet.getRange(rowNumber, 1, 1, 5).getValues()[0];
   const studentName = String(row[1]).trim();
   const jobName     = String(row[2]).trim();
   const jobDesc     = String(row[3]).trim();
@@ -1599,6 +1629,26 @@ function approveJob(rowNumber, isApproved) {
     const today = _todayStr();
     currSheet.appendRow([studentName, jobName, jobDesc, today]);
   }
+
+  // ── 우편함 발송 ──────────────────────────────────────────────
+  if (isApproved) {
+    _sendMail(
+      studentName,
+      `✅ 2차 직업 승인: ${jobName}`,
+      `🎉 축하합니다! 2차 직업 [${jobName}] 신청이 승인되었습니다.\n\n직업 설명: ${jobDesc}\n\n대시보드의 '2차 직업 시스템'에서 확인해보세요!`,
+      '승인'
+    );
+  } else {
+    _sendMail(
+      studentName,
+      `❌ 2차 직업 반려: ${jobName}`,
+      `[${jobName}] 2차 직업 신청이 반려되었습니다.\n\n직업 내용을 다듬어서 다시 신청해주세요.`,
+      '반려'
+    );
+  }
+
+  // ── 캐시 무효화 (학생 재로그인 시 최신 데이터 반영) ──────────
+  CacheService.getScriptCache().remove('student_' + studentName);
 
   return { success: true, msg: isApproved ? `[${studentName}] 2차 직업 승인 완료!` : '반려 처리되었습니다.' };
 }
@@ -1746,3 +1796,787 @@ function getEmojiForAchievement(achId) {
   return emojiMapping[achId] || '⭐';
 }
 
+
+// ════════════════════════════════════════════════════════════════
+// ★ 신규 시트 상수 (우편함 / 상점 / 전광판)
+// ════════════════════════════════════════════════════════════════
+const SHEET_MAILBOX   = '우편함_로그';      // 우편함 메시지 저장
+const SHEET_SHOP_ITEMS = '상점_아이템';     // 상점 아이템 DB
+const SHEET_SHOP_LOG   = '상점_구매로그';   // 구매 내역
+
+// ════════════════════════════════════════════════════════════════
+// ██ 기능 1: 우편함(Mailbox) ██
+// 시트 컬럼: A=메시지ID, B=수신자, C=제목, D=내용, E=타입(승인/반려),
+//            F=읽음여부(TRUE/FALSE), G=발송일시
+// ════════════════════════════════════════════════════════════════
+
+// 우편함 메시지 전송 (내부 헬퍼, approveAchievement에서 호출)
+function _sendMail(recipientName, subject, body, type) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(SHEET_MAILBOX);
+  if (!sheet) {
+    sheet = ss.insertSheet(SHEET_MAILBOX);
+    sheet.appendRow(['메시지ID','수신자','제목','내용','타입','읽음','발송일시']);
+  }
+  const msgId = 'MSG_' + new Date().getTime() + '_' + Math.random().toString(36).substr(2,5);
+  const ts    = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
+  sheet.appendRow([msgId, recipientName, subject, body, type, false, ts]);
+}
+
+// 학생의 읽지 않은 메시지 수 반환
+function getUnreadMailCount(studentName) {
+  const ss    = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_MAILBOX);
+  if (!sheet) return 0;
+  const data = sheet.getDataRange().getValues();
+  let count = 0;
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][1]).trim() === String(studentName).trim() &&
+        String(data[i][5]).toUpperCase() !== 'TRUE') {
+      count++;
+    }
+  }
+  return count;
+}
+
+// 학생의 전체 메시지 목록 반환 + 읽음 처리
+function getMailboxMessages(studentName) {
+  const ss    = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_MAILBOX);
+  if (!sheet) return [];
+  const data = sheet.getDataRange().getValues();
+  const msgs = [];
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][1]).trim() !== String(studentName).trim()) continue;
+    const isRead = String(data[i][5]).toUpperCase() === 'TRUE';
+    msgs.push({
+      msgId:   String(data[i][0]),
+      subject: String(data[i][2]),
+      body:    String(data[i][3]),
+      type:    String(data[i][4]),   // '승인' | '반려'
+      isRead:  isRead,
+      sentAt:  String(data[i][6]),
+      rowNum:  i + 1
+    });
+    // 읽음 처리
+    if (!isRead) sheet.getRange(i + 1, 6).setValue(true);
+  }
+  return msgs.reverse(); // 최신순
+}
+
+// ════════════════════════════════════════════════════════════════
+// approveAchievement 확장: 승인/반려 시 우편함 메시지 자동 발송
+// 기존 함수를 덮어쓰지 않고, 래퍼 함수로 우편함 호출을 삽입합니다.
+// → AuctionAdmin.html에서 approveAchievement 대신
+//   approveAchievementWithMail 을 호출하도록 변경하세요.
+// ════════════════════════════════════════════════════════════════
+function approveAchievementWithMail(rowNumber, isApproved, finalAchievementId, rejectReason) {
+  const result = approveAchievement(rowNumber, isApproved, finalAchievementId);
+  if (!result.success) return result;
+
+  // 수신자 이름 다시 조회
+  const ss       = SpreadsheetApp.getActiveSpreadsheet();
+  const logSheet = ss.getSheetByName(SHEET_ACH_LOG);
+  if (!logSheet) return result;
+  const row         = logSheet.getRange(rowNumber, 1, 1, 5).getValues()[0];
+  const studentName = String(row[1]).trim();
+  const achId       = String(row[2]).trim();
+
+  // 업적명 조회
+  let achName = achId;
+  const masterSheet = ss.getSheetByName(SHEET_ACH_MASTER);
+  if (masterSheet) {
+    const mData = masterSheet.getDataRange().getValues();
+    for (let m = 1; m < mData.length; m++) {
+      if (String(mData[m][0]).trim() === (finalAchievementId || achId)) {
+        achName = String(mData[m][1]).trim();
+        break;
+      }
+    }
+  }
+
+  if (isApproved) {
+    _sendMail(
+      studentName,
+      `✅ 업적 승인: ${achName}`,
+      `🎉 축하합니다! [${achName}] 업적 신청이 승인되었습니다. 나의 업적 창에서 확인해보세요!`,
+      '승인'
+    );
+  } else {
+    const reason = rejectReason ? rejectReason : '조건 미충족';
+    _sendMail(
+      studentName,
+      `❌ 업적 반려: ${achName}`,
+      `[${achName}] 업적 신청이 반려되었습니다.\n\n반려 사유: ${reason}\n\n조건을 다시 확인하고 재신청해주세요.`,
+      '반려'
+    );
+  }
+  return result;
+}
+
+// ════════════════════════════════════════════════════════════════
+// ██ 기능 2: 업적 전광판 (Global Alert)
+// 전광판 조건: ① 업적 10개 단위 ② 유일/초월 등급 획득
+// 시트: 전역알림 (기존 SHEET_GLOBAL_NOTIFY) 재활용
+// ════════════════════════════════════════════════════════════════
+
+// 학생 업적 개수 & 등급 기반 전광판 메시지 생성 (approveAchievement 후 호출)
+function _checkAndPostGlobalAlert(studentName, achName, achGrade) {
+  const ss    = SpreadsheetApp.getActiveSpreadsheet();
+  const achSheet = ss.getSheetByName(SHEET_ACH_STUDENT);
+  const notify   = ss.getSheetByName(SHEET_GLOBAL_NOTIFY);
+  if (!achSheet || !notify) return;
+
+  // 해당 학생 총 업적 수
+  const achData = achSheet.getDataRange().getValues();
+  let count = 0;
+  for (let i = 1; i < achData.length; i++) {
+    if (String(achData[i][0]).trim() === String(studentName).trim()) count++;
+  }
+
+  const ts = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
+  let msg = null;
+  let noticeId = null;
+
+  // ① 10개 단위 달성
+  if (count > 0 && count % 10 === 0) {
+    noticeId = `MILESTONE_${studentName}_${count}_${new Date().getTime()}`;
+    msg = `🏆 [${studentName}] 학생이 업적 ${count}개 달성! 대단한 업적 수집가가 탄생했습니다!`;
+  }
+
+  // ② 유일/초월 등급 획득 (더 우선순위 높음)
+  if (achGrade === '유일' || achGrade === '초월') {
+    const gradeLabel = achGrade === '유일' ? '🌌 유일' : '✨ 초월';
+    noticeId = `GRADE_${achGrade}_${studentName}_${new Date().getTime()}`;
+    msg = `${gradeLabel} 등급 업적 [${achName}] 최초 달성! [${studentName}] 학생이 역사에 이름을 남겼습니다!`;
+  }
+
+  if (msg && noticeId) {
+    notify.appendRow([noticeId, msg, ts, 'ALERT']); // D열 = 'ALERT' 타입 표시
+  }
+}
+
+// 전광판 최신 메시지 조회 (프론트에서 폴링)
+function getLatestGlobalAlert(lastSeenId) {
+  const ss     = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet  = ss.getSheetByName(SHEET_GLOBAL_NOTIFY);
+  if (!sheet) return null;
+  const data = sheet.getDataRange().getValues();
+  // ALERT 타입만, lastSeenId 이후 것만 반환
+  for (let i = data.length - 1; i >= 1; i--) {
+    if (String(data[i][3]) === 'ALERT' && String(data[i][0]) !== String(lastSeenId)) {
+      return { noticeId: String(data[i][0]), msg: String(data[i][1]), ts: String(data[i][2]) };
+    }
+  }
+  return null;
+}
+
+// ════════════════════════════════════════════════════════════════
+// ██ 기능 3: 실시간 업적 현황판 (Wall of Fame)
+// ════════════════════════════════════════════════════════════════
+function getWallOfFame() {
+  const ss          = SpreadsheetApp.getActiveSpreadsheet();
+  const masterSheet = ss.getSheetByName(SHEET_ACH_MASTER);
+  const achSheet    = ss.getSheetByName(SHEET_ACH_STUDENT);
+  if (!masterSheet || !achSheet) return [];
+
+  // 업적마스터 목록
+  const mData = masterSheet.getDataRange().getValues();
+  const achList = [];
+  const achMap  = {};  // achId → index
+  for (let m = 1; m < mData.length; m++) {
+    if (!mData[m][0]) continue;
+    const id    = String(mData[m][0]).trim();
+    const name  = String(mData[m][1]).trim();
+    const isHid = String(mData[m][3]).toUpperCase() === 'TRUE';
+    const grade = String(mData[m][5] || '희귀').trim();
+    achList.push({ achId: id, achName: isHid ? '🔒 ???' : name, grade, isHidden: isHid, count: 0 });
+    achMap[id]  = achList.length - 1;
+  }
+
+  // 달성 학생 집계
+  const sData = achSheet.getDataRange().getValues();
+  for (let i = 1; i < sData.length; i++) {
+    const id = String(sData[i][1]).trim();
+    if (achMap[id] !== undefined) achList[achMap[id]].count++;
+  }
+
+  // count 내림차순 정렬
+  achList.sort(function(a, b) { return b.count - a.count; });
+  return achList;
+}
+
+// ════════════════════════════════════════════════════════════════
+// ██ 기능 4: 상점 시스템
+// 상점_아이템 시트 컬럼:
+//   A=아이템ID, B=카테고리(스킨/폰트/캐릭터), C=아이템명,
+//   D=가격(자산), E=구매조건설명, F=조건타입, G=조건값,
+//   H=리소스URL(CSS값 또는 이미지URL), I=활성여부
+// 조건타입: 'none' | 'ach_count' | 'ach_unique' | 'ach_grade:{등급명}'
+// 상점_구매로그 컬럼:
+//   A=구매ID, B=학생명, C=아이템ID, D=아이템명, E=가격, F=구매일시
+// ════════════════════════════════════════════════════════════════
+
+// 상점 초기화 (최초 1회 실행)
+function initShopSheet() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  // 상점_아이템 시트 생성
+  let itemSheet = ss.getSheetByName(SHEET_SHOP_ITEMS);
+  if (!itemSheet) {
+    itemSheet = ss.insertSheet(SHEET_SHOP_ITEMS);
+    itemSheet.appendRow(['아이템ID','카테고리','아이템명','가격','구매조건설명','조건타입','조건값','리소스값','활성여부']);
+    // ── 샘플 스킨 3종 ──
+    itemSheet.appendRow(['SKIN-001','스킨','🌊 오션 블루',  800, '업적 5개 이상 달성',       'ach_count',     '5',  'ocean',    true]);
+    itemSheet.appendRow(['SKIN-002','스킨','🌑 다크 나이트', 1500,'유니크 업적 1개 이상 달성', 'ach_grade:유니크','1', 'dark',     true]);
+    itemSheet.appendRow(['SKIN-003','스킨','🌸 체리 블라썸', 2000,'업적 10개 이상 달성',      'ach_count',     '10', 'cherry',   true]);
+    // ── 샘플 폰트 3종 ──
+    itemSheet.appendRow(['FONT-001','폰트','✏️ 귀여운 손글씨', 500, '조건 없음',              'none',          '0',  'Gaegu',         true]);
+    itemSheet.appendRow(['FONT-002','폰트','📐 모던 고딕',     800, '업적 3개 이상 달성',      'ach_count',     '3',  'Black Han Sans', true]);
+    itemSheet.appendRow(['FONT-003','폰트','👑 프리미엄 세리프', 2000,'초월 업적 1개 이상 달성','ach_grade:초월', '1',  'Nanum Myeongjo', true]);
+    // ── 샘플 캐릭터 3종 ──
+    itemSheet.appendRow(['CHAR-001','캐릭터','🐱 고양이 마스코트', 600, '조건 없음',           'none',          '0',  '🐱', true]);
+    itemSheet.appendRow(['CHAR-002','캐릭터','🦊 여우 탐정',      1200,'업적 7개 이상 달성',   'ach_count',     '7',  '🦊', true]);
+    itemSheet.appendRow(['CHAR-003','캐릭터','🐲 황금 드래곤',    3000,'유일 업적 1개 이상 달성','ach_grade:유일','1',  '🐲', true]);
+  }
+
+  // 상점_구매로그 시트 생성
+  let logSheet = ss.getSheetByName(SHEET_SHOP_LOG);
+  if (!logSheet) {
+    logSheet = ss.insertSheet(SHEET_SHOP_LOG);
+    logSheet.appendRow(['구매ID','학생명','아이템ID','아이템명','가격','구매일시']);
+  }
+
+  // 우편함_로그 시트 생성
+  let mailSheet = ss.getSheetByName(SHEET_MAILBOX);
+  if (!mailSheet) {
+    mailSheet = ss.insertSheet(SHEET_MAILBOX);
+    mailSheet.appendRow(['메시지ID','수신자','제목','내용','타입','읽음','발송일시']);
+  }
+
+  SpreadsheetApp.getUi().alert('✅ 상점 시트 초기화 완료! 상점_아이템 시트에서 아이템을 수정하세요.');
+}
+
+// 상점 아이템 목록 + 학생별 구매가능 여부 반환
+function getShopItems(studentName) {
+  const ss        = SpreadsheetApp.getActiveSpreadsheet();
+  const itemSheet = ss.getSheetByName(SHEET_SHOP_ITEMS);
+  const logSheet  = ss.getSheetByName(SHEET_SHOP_LOG);
+  const achSheet  = ss.getSheetByName(SHEET_ACH_STUDENT);
+  const masterSheet = ss.getSheetByName(SHEET_ACH_MASTER);
+  if (!itemSheet) return { items: [], owned: [] };
+
+  // 학생 보유 자산 조회
+  const mainSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_MAIN);
+  const mainData  = mainSheet.getDataRange().getValues();
+  let balance = 0;
+  for (let i = 1; i < mainData.length; i++) {
+    if (String(mainData[i][COL_NAME-1]).trim() === studentName) {
+      balance = Number(mainData[i][COL_ASSET-1]) || 0;
+      break;
+    }
+  }
+
+  // 학생의 업적 목록 (등급 포함)
+  const gradeMap = {};
+  if (masterSheet) {
+    const mData = masterSheet.getDataRange().getValues();
+    for (let m = 1; m < mData.length; m++) {
+      if (mData[m][0]) gradeMap[String(mData[m][0]).trim()] = String(mData[m][5] || '희귀').trim();
+    }
+  }
+  let totalAch = 0;
+  const gradeCount = {};  // { '유니크': 2, '초월': 1, ... }
+  if (achSheet) {
+    const aData = achSheet.getDataRange().getValues();
+    for (let i = 1; i < aData.length; i++) {
+      if (String(aData[i][0]).trim() !== studentName) continue;
+      totalAch++;
+      const g = gradeMap[String(aData[i][1]).trim()] || '희귀';
+      gradeCount[g] = (gradeCount[g] || 0) + 1;
+    }
+  }
+
+  // 이미 구매한 아이템 목록
+  const owned = [];
+  if (logSheet) {
+    const lData = logSheet.getDataRange().getValues();
+    for (let i = 1; i < lData.length; i++) {
+      if (String(lData[i][1]).trim() === studentName) owned.push(String(lData[i][2]).trim());
+    }
+  }
+
+  // 아이템 목록 + 구매가능여부 판별
+  const iData = itemSheet.getDataRange().getValues();
+  const items = [];
+  for (let i = 1; i < iData.length; i++) {
+    if (!iData[i][0] || String(iData[i][8]).toUpperCase() !== 'TRUE') continue;
+    const itemId      = String(iData[i][0]).trim();
+    const category    = String(iData[i][1]).trim();
+    const itemName    = String(iData[i][2]).trim();
+    const price       = Number(iData[i][3]) || 0;
+    const condDesc    = String(iData[i][4]).trim();
+    const condType    = String(iData[i][5]).trim();
+    const condVal     = String(iData[i][6]).trim();
+    const resourceVal = String(iData[i][7]).trim();
+    const isOwned     = owned.includes(itemId);
+
+    // 구매 조건 충족 여부
+    let condMet = true;
+    if (condType === 'ach_count') {
+      condMet = totalAch >= Number(condVal);
+    } else if (condType.startsWith('ach_grade:')) {
+      const targetGrade = condType.split(':')[1];
+      condMet = (gradeCount[targetGrade] || 0) >= Number(condVal);
+    }
+    // 'none' 이면 condMet = true
+
+    const canBuy = !isOwned && condMet && balance >= price;
+
+    items.push({ itemId, category, itemName, price, condDesc, condType, condVal, resourceVal, isOwned, condMet, canBuy });
+  }
+
+  return { items, owned, balance };
+}
+
+// 상점 아이템 목록 + 장착 여부 포함 반환 (Index.html openShopModal에서 호출)
+function getShopItemsWithEquip(studentName) {
+  const base = getShopItems(studentName);
+  if (!base || !base.items) return base;
+
+  const ss       = SpreadsheetApp.getActiveSpreadsheet();
+  const logSheet = ss.getSheetByName(SHEET_SHOP_LOG);
+  const itemSheet = ss.getSheetByName(SHEET_SHOP_ITEMS);
+  if (!logSheet || !itemSheet) return base;
+
+  const iData = itemSheet.getDataRange().getValues();
+  const lData = logSheet.getDataRange().getValues();
+
+  // 장착 중인 아이템 ID 집합
+  const equippedSet = new Set();
+  for (let i = 1; i < lData.length; i++) {
+    if (String(lData[i][1]).trim() !== studentName) continue;
+    const isEq = lData[i][6] === true || String(lData[i][6]).toUpperCase() === 'TRUE';
+    if (isEq) equippedSet.add(String(lData[i][2]).trim());
+  }
+
+  // 각 아이템에 isEquipped 필드 추가
+  base.items = base.items.map(function(item) {
+    item.isEquipped = equippedSet.has(item.itemId);
+    return item;
+  });
+  base.equippedSet = Array.from(equippedSet);
+  return base;
+}
+
+// 상점 구매 처리
+function purchaseShopItem(studentName, itemId) {
+  const ss        = SpreadsheetApp.getActiveSpreadsheet();
+  const itemSheet = ss.getSheetByName(SHEET_SHOP_ITEMS);
+  const logSheet  = ss.getSheetByName(SHEET_SHOP_LOG);
+  const mainSheet = ss.getSheetByName(SHEET_MAIN);
+  if (!itemSheet || !logSheet || !mainSheet) return { success: false, msg: '시트 오류' };
+
+  // 아이템 정보 조회
+  const iData = itemSheet.getDataRange().getValues();
+  let itemRow = null;
+  let itemRowNum = -1;
+  for (let i = 1; i < iData.length; i++) {
+    if (String(iData[i][0]).trim() === itemId) { itemRow = iData[i]; itemRowNum = i + 1; break; }
+  }
+  if (!itemRow) return { success: false, msg: '아이템을 찾을 수 없습니다.' };
+
+  const price    = Number(itemRow[3]) || 0;
+  const itemName = String(itemRow[2]).trim();
+
+  // 이미 구매했는지 체크
+  const lData = logSheet.getDataRange().getValues();
+  for (let i = 1; i < lData.length; i++) {
+    if (String(lData[i][1]).trim() === studentName && String(lData[i][2]).trim() === itemId) {
+      return { success: false, msg: '이미 구매한 아이템입니다.' };
+    }
+  }
+
+  // 잔액 차감
+  const mData = mainSheet.getDataRange().getValues();
+  for (let i = 1; i < mData.length; i++) {
+    if (String(mData[i][COL_NAME-1]).trim() === studentName) {
+      const current = Number(mData[i][COL_ASSET-1]) || 0;
+      if (current < price) return { success: false, msg: `잔액 부족 (현재: $${current}, 필요: $${price})` };
+      mainSheet.getRange(i + 1, COL_ASSET).setValue(current - price);
+
+      // 자산사용 시트에 기록 (A=날짜, B=학생명, C=브랜드, D=구분, E=금액, F=사용후잔액, G=비고)
+      const spendSheet = ss.getSheetByName(SHEET_SPEND);
+      if (spendSheet) {
+        const today = _todayStr();
+        const newAsset = current - price;
+        spendSheet.appendRow([today, studentName, mData[i][COL_BRAND-1], '상점구매', price, newAsset, `[${itemName}] 구매`]);
+      }
+      break;
+    }
+  }
+
+  // 구매 로그 기록 (A=구매ID, B=학생명, C=아이템ID, D=아이템명, E=가격, F=구매일시, G=장착여부)
+  const purchaseId = 'PUR_' + new Date().getTime();
+  const ts = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
+  logSheet.appendRow([purchaseId, studentName, itemId, itemName, price, ts, true]);
+
+  // 캐시 무효화
+  CacheService.getScriptCache().remove('student_' + studentName);
+  updateRankings();
+
+  return { success: true, msg: `[${itemName}] 구매 완료! $${price} 차감되었습니다.`, itemId, resourceVal: String(itemRow[7]).trim(), category: String(itemRow[1]).trim() };
+}
+
+// 학생의 구매 아이템 목록 반환 (로그인 시 호출 → 스킨 복원용)
+function getOwnedItems(studentName) {
+  const ss       = SpreadsheetApp.getActiveSpreadsheet();
+  const logSheet = ss.getSheetByName(SHEET_SHOP_LOG);
+  const itemSheet = ss.getSheetByName(SHEET_SHOP_ITEMS);
+  if (!logSheet || !itemSheet) return [];
+
+  // 아이템 리소스값 맵
+  const resourceMap = {};
+  const iData = itemSheet.getDataRange().getValues();
+  for (let i = 1; i < iData.length; i++) {
+    if (iData[i][0]) {
+      resourceMap[String(iData[i][0]).trim()] = {
+        category: String(iData[i][1]).trim(),
+        itemName: String(iData[i][2]).trim(),
+        resourceVal: String(iData[i][7]).trim()
+      };
+    }
+  }
+
+  const lData = logSheet.getDataRange().getValues();
+  const owned = [];
+  for (let i = 1; i < lData.length; i++) {
+    if (String(lData[i][1]).trim() !== studentName) continue;
+    const itemId = String(lData[i][2]).trim();
+    const info   = resourceMap[itemId] || {};
+    owned.push({ itemId, itemName: String(lData[i][3]), category: info.category || '', resourceVal: info.resourceVal || '' });
+  }
+  return owned;
+}
+
+// 장착된 아이템만 반환 (로그인 시 복원용) - G열 장착여부 TRUE인 것만
+function getEquippedItems(studentName) {
+  try {
+    const ss        = SpreadsheetApp.getActiveSpreadsheet();
+    const logSheet  = ss.getSheetByName(SHEET_SHOP_LOG);
+    const itemSheet = ss.getSheetByName(SHEET_SHOP_ITEMS);
+    if (!logSheet || !itemSheet) return [];
+
+    const resourceMap = {};
+    const iData = itemSheet.getDataRange().getValues();
+    for (let i = 1; i < iData.length; i++) {
+      if (iData[i][0]) {
+        resourceMap[String(iData[i][0]).trim()] = {
+          category:    String(iData[i][1]).trim(),
+          itemName:    String(iData[i][2]).trim(),
+          resourceVal: String(iData[i][7]).trim()
+        };
+      }
+    }
+
+    const lData    = logSheet.getDataRange().getValues();
+    const equipped = [];
+    for (let i = 1; i < lData.length; i++) {
+      if (String(lData[i][1]).trim() !== studentName) continue;
+      const isEquipped = lData[i][6] === true || String(lData[i][6]).toUpperCase() === 'TRUE';
+      if (!isEquipped) continue;
+      const itemId = String(lData[i][2]).trim();
+      const info   = resourceMap[itemId] || {};
+      equipped.push({
+        itemId,
+        itemName:    String(lData[i][3]),
+        category:    info.category    || '',
+        resourceVal: info.resourceVal || ''
+      });
+    }
+    return equipped;
+  } catch(e) {
+    Logger.log('getEquippedItems 오류: ' + e.toString());
+    return [];
+  }
+}
+
+// 아이템 장착 처리 (보유 중인 아이템을 장착으로 변경)
+function equipShopItem(studentName, itemId) {
+  const ss        = SpreadsheetApp.getActiveSpreadsheet();
+  const logSheet  = ss.getSheetByName(SHEET_SHOP_LOG);
+  const itemSheet = ss.getSheetByName(SHEET_SHOP_ITEMS);
+  if (!logSheet || !itemSheet) return { success: false, msg: '시트 오류' };
+
+  // 아이템 정보 조회
+  const iData = itemSheet.getDataRange().getValues();
+  let category    = '';
+  let resourceVal = '';
+  for (let i = 1; i < iData.length; i++) {
+    if (String(iData[i][0]).trim() === itemId) {
+      category    = String(iData[i][1]).trim();
+      resourceVal = String(iData[i][7]).trim();
+      break;
+    }
+  }
+  if (!category) return { success: false, msg: '아이템을 찾을 수 없습니다.' };
+
+  // 같은 카테고리의 기존 장착 아이템 전체 해제 후 해당 아이템 장착
+  const lData = logSheet.getDataRange().getValues();
+  let targetRow = -1;
+  for (let i = 1; i < lData.length; i++) {
+    if (String(lData[i][1]).trim() !== studentName) continue;
+    const rowItemId = String(lData[i][2]).trim();
+    // 같은 카테고리 여부 확인
+    for (let j = 1; j < iData.length; j++) {
+      if (String(iData[j][0]).trim() === rowItemId &&
+          String(iData[j][1]).trim() === category) {
+        logSheet.getRange(i + 1, 7).setValue(false);
+        break;
+      }
+    }
+    if (rowItemId === itemId) targetRow = i + 1;
+  }
+
+  if (targetRow === -1) return { success: false, msg: '보유하지 않은 아이템입니다.' };
+  logSheet.getRange(targetRow, 7).setValue(true);
+
+  return { success: true, msg: '장착 완료!', category, resourceVal };
+}
+
+// 아이템 장착 해제 (카테고리 기준 전체 해제)
+function unequipShopItem(studentName, category) {
+  const ss        = SpreadsheetApp.getActiveSpreadsheet();
+  const logSheet  = ss.getSheetByName(SHEET_SHOP_LOG);
+  const itemSheet = ss.getSheetByName(SHEET_SHOP_ITEMS);
+  if (!logSheet || !itemSheet) return { success: false, msg: '시트 오류' };
+
+  const iData = itemSheet.getDataRange().getValues();
+  const lData = logSheet.getDataRange().getValues();
+
+  for (let i = 1; i < lData.length; i++) {
+    if (String(lData[i][1]).trim() !== studentName) continue;
+    const rowItemId = String(lData[i][2]).trim();
+    for (let j = 1; j < iData.length; j++) {
+      if (String(iData[j][0]).trim() === rowItemId &&
+          String(iData[j][1]).trim() === category) {
+        logSheet.getRange(i + 1, 7).setValue(false);
+        break;
+      }
+    }
+  }
+  return { success: true, msg: '장착 해제 완료!', category, resourceVal: 'default' };
+}
+
+// ════════════════════════════════════════════════════════════════
+// ██ 기능 4-b: 업적 마일스톤 자산 보상 트리거
+// checkAndGrantAchievements 내부 또는 approveAchievementWithMail 이후 호출
+// ════════════════════════════════════════════════════════════════
+function grantMilestoneReward(studentName, achCount) {
+  // 마일스톤별 보상 정의 (업적 개수 → 자산 보상)
+  const MILESTONES = { 5: 500, 10: 1000, 15: 1500, 20: 3000, 30: 5000 };
+  const reward = MILESTONES[achCount];
+  if (!reward) return;
+
+  const ss        = SpreadsheetApp.getActiveSpreadsheet();
+  const mainSheet = ss.getSheetByName(SHEET_MAIN);
+  if (!mainSheet) return;
+
+  const data = mainSheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][COL_NAME-1]).trim() !== studentName) continue;
+    const current = Number(data[i][COL_ASSET-1]) || 0;
+    mainSheet.getRange(i + 1, COL_ASSET).setValue(current + reward);
+
+    // 히스토리 기록
+    const histSheet = ss.getSheetByName(SHEET_HISTORY);
+    if (histSheet) {
+      const ts = _todayStr();
+      histSheet.appendRow([ts, studentName, data[i][COL_BRAND-1], '업적보상', reward, data[i][COL_VALUE-1], current + reward, `업적 ${achCount}개 달성 자동 보상`]);
+    }
+
+
+    // 우편함 알림 발송
+    _sendMail(
+      studentName,
+      `🎁 업적 ${achCount}개 달성 보상!`,
+      `축하합니다! 업적 ${achCount}개를 달성하여 자동 보상 $${reward}이 지급되었습니다! 계속 도전하세요! 🚀`,
+      '보상'
+    );
+    break;
+  }
+  CacheService.getScriptCache().remove('student_' + studentName);
+}
+
+// onOpen 메뉴에 상점 초기화 추가 (기존 onOpen 대신 별도 등록)
+function addShopMenu() {
+  SpreadsheetApp.getUi()
+    .createMenu('🏪 상점 관리')
+    .addItem('상점 시트 초기화 (최초 1회)', 'initShopSheet')
+    .addToUi();
+}
+
+// ════════════════════════════════════════════════════════════════
+// 일괄 승인/반려 + 우편함 발송 버전
+// ════════════════════════════════════════════════════════════════
+function batchApproveAchievementsWithMail(rowNumbers, isApproved, rejectReason) {
+  let successCount = 0;
+  let failCount    = 0;
+  const msgs = [];
+
+  rowNumbers.forEach(function(rowNum) {
+    try {
+      const res = approveAchievementWithMail(rowNum, isApproved, null, rejectReason || '조건 미충족');
+      if (res.success) {
+        successCount++;
+        // 승인인 경우 마일스톤 체크
+        if (isApproved) {
+          const ss       = SpreadsheetApp.getActiveSpreadsheet();
+          const logSheet = ss.getSheetByName(SHEET_ACH_LOG);
+          if (logSheet) {
+            const row         = logSheet.getRange(rowNum, 1, 1, 5).getValues()[0];
+            const studentName = String(row[1]).trim();
+            const achSheet    = ss.getSheetByName(SHEET_ACH_STUDENT);
+            const masterSheet = ss.getSheetByName(SHEET_ACH_MASTER);
+
+            // 총 업적 수 집계
+            let count = 0;
+            const gradeMap = {};
+            if (masterSheet) {
+              const mData = masterSheet.getDataRange().getValues();
+              for (let m = 1; m < mData.length; m++) {
+                if (mData[m][0]) gradeMap[String(mData[m][0]).trim()] = String(mData[m][5] || '희귀').trim();
+              }
+            }
+            let achGrade = '희귀';
+            if (achSheet) {
+              const aData = achSheet.getDataRange().getValues();
+              for (let i = 1; i < aData.length; i++) {
+                if (String(aData[i][0]).trim() === studentName) {
+                  count++;
+                  const id = String(aData[i][1]).trim();
+                  if (gradeMap[id]) achGrade = gradeMap[id];
+                }
+              }
+            }
+
+            // 마일스톤 자산 보상
+            grantMilestoneReward(studentName, count);
+
+            // 전광판 체크
+            const achNameRow = logSheet.getRange(rowNum, 1, 1, 5).getValues()[0];
+            let achName = String(achNameRow[2]).trim();
+            _checkAndPostGlobalAlert(studentName, achName, achGrade);
+          }
+        }
+      } else {
+        failCount++;
+      }
+    } catch(e) {
+      failCount++;
+    }
+  });
+
+  return {
+    success: true,
+    msg: `일괄 처리 완료: 성공 ${successCount}건, 실패/중복 ${failCount}건`
+  };
+}
+
+// ════════════════════════════════════════════════════════════════
+// ██ 기부 시스템
+// 학생이 자신의 자산을 복지 기금으로 자발 기부
+// ════════════════════════════════════════════════════════════════
+function donateToWelfare(studentName, amount, message) {
+  if (!amount || amount <= 0) return { success: false, msg: '금액이 올바르지 않습니다.' };
+
+  const ss        = SpreadsheetApp.getActiveSpreadsheet();
+  const mainSheet = ss.getSheetByName(SHEET_MAIN);
+  if (!mainSheet) return { success: false, msg: '메인 시트를 찾을 수 없습니다.' };
+
+  const data = mainSheet.getDataRange().getValues();
+  let studentRowIdx = -1;
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][COL_NAME - 1]).trim() === String(studentName).trim()) {
+      studentRowIdx = i;
+      break;
+    }
+  }
+  if (studentRowIdx === -1) return { success: false, msg: '학생을 찾을 수 없습니다.' };
+
+  const curAsset = Number(data[studentRowIdx][COL_ASSET - 1]) || 0;
+  if (curAsset < amount) {
+    return { success: false, msg: `잔액이 부족합니다. (현재: $${curAsset.toLocaleString()})` };
+  }
+
+  const curTax    = Number(data[studentRowIdx][COL_TAX - 1]) || 0;
+  const curValue  = Number(data[studentRowIdx][COL_VALUE - 1]) || 0;
+  const newAsset  = curAsset - amount;
+  const newTax    = curTax + amount;  // 복지 기금 누적에 합산
+
+  // 자산 차감 + 복지기금(세금) 누적
+  mainSheet.getRange(studentRowIdx + 1, COL_ASSET).setValue(newAsset);
+  mainSheet.getRange(studentRowIdx + 1, COL_TAX).setValue(newTax);
+
+  // 히스토리 기록
+  const today    = _todayStr();
+  const memo     = message ? `[기부] ${message}` : '[복지 기금 기부]';
+  const histSheet = ss.getSheetByName(SHEET_HISTORY);
+  if (histSheet) {
+    histSheet.appendRow([
+      today,
+      studentName,
+      data[studentRowIdx][COL_BRAND - 1],
+      0,          // 브랜드가치 변동 없음
+      -amount,    // 자산 변동
+      curValue,   // 브랜드가치 (변동 없음)
+      newAsset,   // 새 자산
+      memo
+    ]);
+  }
+
+  // 자산사용 시트 기록
+  const spendSheet = ss.getSheetByName(SHEET_SPEND);
+  if (spendSheet) {
+    spendSheet.appendRow([today, studentName, data[studentRowIdx][COL_BRAND - 1], '기부', amount, newAsset, memo]);
+  }
+
+  // 캐시 무효화: 기부자 본인 + 전체 학생 캐시 삭제
+  // (복지기금 합계는 전 학생에게 동일하게 보여야 하므로 전체 무효화)
+  const cache = CacheService.getScriptCache();
+  cache.remove('student_' + studentName);
+  // 다른 학생들의 캐시도 무효화 (메인 시트에서 이름 목록 조회)
+  const allNames = mainSheet.getDataRange().getValues()
+    .slice(1)
+    .map(r => String(r[COL_NAME - 1]).trim())
+    .filter(n => n && n !== studentName);
+  allNames.forEach(n => cache.remove('student_' + n));
+
+  updateRankings();
+
+  return {
+    success: true,
+    msg: `$${amount.toLocaleString()} 기부 완료! 따뜻한 마음 감사합니다 💚`
+  };
+}
+
+function testWallOfFame() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheets = ss.getSheets().map(s => s.getName());
+  Logger.log('전체 시트 목록: ' + JSON.stringify(sheets));
+  Logger.log('업적마스터 시트: ' + (ss.getSheetByName('업적마스터') ? '있음' : '없음'));
+  Logger.log('학생업적달성 시트: ' + (ss.getSheetByName('학생업적달성') ? '있음' : '없음'));
+}
+
+function testWallOfFame2() {
+  try {
+    const result = getWallOfFame();
+    Logger.log('결과 개수: ' + result.length);
+    if (result.length > 0) {
+      Logger.log('첫 번째 항목: ' + JSON.stringify(result[0]));
+    }
+  } catch(e) {
+    Logger.log('오류 발생: ' + e.toString());
+    Logger.log('오류 위치: ' + e.stack);
+  }
+}

@@ -258,6 +258,7 @@
   <div style="display:flex;gap:10px;margin-bottom:10px;">
     <button onclick="loadPendingAch()" style="background:#8e44ad;color:white;border:none;padding:8px 16px;border-radius:6px;font-weight:bold;cursor:pointer;">🏅 업적 승인 대기함 불러오기</button>
     <button onclick="loadPendingJobs()" style="background:#2980b9;color:white;border:none;padding:8px 16px;border-radius:6px;font-weight:bold;cursor:pointer;">💼 2차 직업 대기함 불러오기</button>
+    <button onclick="loadRejectedAch()" style="background:#c0392b;color:white;border:none;padding:8px 16px;border-radius:6px;font-weight:bold;cursor:pointer;">↩️ 반려 정정함 불러오기</button>
   </div>
 
   <!-- 업적 대기함 -->
@@ -270,6 +271,13 @@
   <div id="jobPendingBox" style="display:none;background:white;border-radius:8px;padding:14px;box-shadow:0 2px 5px rgba(0,0,0,0.1);">
     <h3 style="margin:0 0 10px;color:#2980b9;">💼 2차 직업 승인 대기함</h3>
     <div id="jobPendingList">로딩 중...</div>
+  </div>
+
+  <!-- 반려 정정함 -->
+  <div id="rejectedBox" style="display:none;background:white;border-radius:8px;padding:14px;box-shadow:0 2px 5px rgba(0,0,0,0.1);margin-top:14px;border-left:5px solid #c0392b;">
+    <h3 style="margin:0 0 6px;color:#c0392b;">↩️ 반려 정정함</h3>
+    <p style="font-size:13px;color:#888;margin:0 0 12px;">실수로 반려한 업적 신청을 '대기' 상태로 되돌려 재심사할 수 있습니다.</p>
+    <div id="rejectedList">로딩 중...</div>
   </div>
 </div>
 
@@ -338,10 +346,19 @@
     var specialSel = document.getElementById('specialSel_' + rowNumber);
     var finalId = specialSel ? specialSel.value : null;
     if (specialSel && isApproved && !finalId) return alert('특별보고 승인 시 부여할 업적을 선택해주세요.');
+
+    // 반려 시 사유 입력
+    var rejectReason = null;
+    if (!isApproved) {
+      rejectReason = prompt('반려 사유를 입력하세요 (학생 우편함에 전달됩니다):');
+      if (rejectReason === null) return; // 취소
+      if (!rejectReason.trim()) rejectReason = '조건 미충족';
+    }
+
     google.script.run.withSuccessHandler(function(res) {
       alert(res.msg);
-      loadPendingAch(); // 목록 새로고침
-    }).approveAchievement(rowNumber, isApproved, finalId || null);
+      loadPendingAch();
+    }).approveAchievementWithMail(rowNumber, isApproved, finalId || null, rejectReason);
   }
 
   // ── 체크박스 전체 선택/해제 ──────────────────────────────────
@@ -368,13 +385,19 @@
     });
 
     var action = isApproved ? '승인' : '반려';
+    var rejectReason = null;
+    if (!isApproved) {
+      rejectReason = prompt('일괄 반려 사유를 입력하세요 (학생 우편함에 전달됩니다):');
+      if (rejectReason === null) return;
+      if (!rejectReason.trim()) rejectReason = '조건 미충족';
+    }
     if (!confirm(rowNumbers.length + '개 항목을 일괄 ' + action + ' 하시겠습니까?')) return;
 
     document.getElementById('achPendingList').innerHTML = '처리 중...';
     google.script.run.withSuccessHandler(function(res) {
       alert(res.msg);
-      loadPendingAch(); // 목록 새로고침
-    }).batchApproveAchievements(rowNumbers, isApproved);
+      loadPendingAch();
+    }).batchApproveAchievementsWithMail(rowNumbers, isApproved, rejectReason);
   }
 
   // ── 2차 직업 대기함 ────────────────────────────────────────
@@ -409,6 +432,59 @@
       alert(res.msg);
       loadPendingJobs(); // 목록 새로고침
     }).approveJob(rowNumber, isApproved);
+  }
+
+  // ── 반려 정정함 ────────────────────────────────────────────
+  function loadRejectedAch() {
+    document.getElementById('rejectedBox').style.display = 'block';
+    document.getElementById('rejectedList').innerHTML = '로딩 중...';
+    google.script.run
+      .withSuccessHandler(function(data) {
+        renderRejectedAch(data);
+      })
+      .withFailureHandler(function(err) {
+        document.getElementById('rejectedList').innerHTML = '<div style="color:#e74c3c;font-size:13px;">⚠️ 오류: ' + err.message + '</div>';
+      })
+      .getRejectedAchievements();
+  }
+
+  function renderRejectedAch(data) {
+    var list = document.getElementById('rejectedList');
+    if (!data || data.length === 0) {
+      list.innerHTML = '<div style="color:#aaa;padding:10px;font-size:13px;">반려된 업적 신청이 없습니다.</div>';
+      return;
+    }
+    list.innerHTML = data.map(function(p) {
+      return '<div style="border:1px solid #fadbd8;border-radius:8px;padding:10px;margin-bottom:8px;background:#fff9f9;">' +
+        '<div style="font-size:13px;font-weight:bold;color:#2c3e50;">' +
+          p.studentName + ' <span style="color:#888;font-weight:normal;font-size:12px;">(' + p.timestamp + ')</span>' +
+          '<span style="background:#e74c3c;color:white;font-size:11px;padding:1px 7px;border-radius:4px;margin-left:6px;">반려됨</span>' +
+        '</div>' +
+        '<div style="font-size:12px;color:#8e44ad;margin:4px 0;"><strong>' + p.achId + '</strong> — ' + p.achName + '</div>' +
+        '<div style="font-size:12px;color:#555;background:#f9f9f9;padding:8px;border-radius:6px;margin-bottom:8px;">' + p.proof + '</div>' +
+        '<button onclick="doCorrectRejection(' + p.rowNumber + ')" ' +
+          'style="background:#27ae60;color:white;border:none;padding:6px 16px;border-radius:4px;font-weight:bold;cursor:pointer;font-size:12px;">' +
+          '↩️ 대기 상태로 정정 (재심사)' +
+        '</button>' +
+      '</div>';
+    }).join('');
+  }
+
+  function doCorrectRejection(rowNumber) {
+    if (!confirm('이 업적 신청을 대기 상태로 되돌려 재심사 대기열에 올리시겠습니까?')) return;
+    google.script.run
+      .withSuccessHandler(function(res) {
+        alert(res.msg);
+        loadRejectedAch(); // 정정함 새로고침
+        // 대기함도 새로고침 (이미 열려 있으면)
+        if (document.getElementById('achPendingBox').style.display !== 'none') {
+          loadPendingAch();
+        }
+      })
+      .withFailureHandler(function(err) {
+        alert('오류: ' + err.message);
+      })
+      .correctRejection(rowNumber);
   }
 </script>
 </body>

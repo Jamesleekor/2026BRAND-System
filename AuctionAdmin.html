@@ -250,5 +250,311 @@
     google.script.run.setAuctionState({ status: 'idle' });
   }
 </script>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- 업적 & 2차 직업 승인 대기함 섹션 -->
+<!-- ═══════════════════════════════════════════════ -->
+<div style="margin-top:20px;">
+  <div style="display:flex;gap:10px;margin-bottom:10px;">
+    <button onclick="loadPendingAch()" style="background:#8e44ad;color:white;border:none;padding:8px 16px;border-radius:6px;font-weight:bold;cursor:pointer;">🏅 업적 승인 대기함 불러오기</button>
+    <button onclick="loadPendingJobs()" style="background:#2980b9;color:white;border:none;padding:8px 16px;border-radius:6px;font-weight:bold;cursor:pointer;">💼 2차 직업 대기함 불러오기</button>
+    <button onclick="loadRejectedAch()" style="background:#c0392b;color:white;border:none;padding:8px 16px;border-radius:6px;font-weight:bold;cursor:pointer;">↩️ 반려 정정함 불러오기</button>
+    <button onclick="loadP2PAlerts()"
+  style="background:#16a085;color:white;border:none;padding:8px 16px;border-radius:6px;font-weight:bold;cursor:pointer;">
+  🚨 P2P 이상거래 확인
+</button>
+  </div>
+
+  <!-- 업적 대기함 -->
+  <div id="achPendingBox" style="display:none;background:white;border-radius:8px;padding:14px;box-shadow:0 2px 5px rgba(0,0,0,0.1);margin-bottom:14px;">
+    <h3 style="margin:0 0 10px;color:#8e44ad;">🏅 업적 승인 대기함</h3>
+    <div id="achPendingList">로딩 중...</div>
+  </div>
+
+  <!-- 2차 직업 대기함 -->
+  <div id="jobPendingBox" style="display:none;background:white;border-radius:8px;padding:14px;box-shadow:0 2px 5px rgba(0,0,0,0.1);">
+    <h3 style="margin:0 0 10px;color:#2980b9;">💼 2차 직업 승인 대기함</h3>
+    <div id="jobPendingList">로딩 중...</div>
+  </div>
+
+  <!-- 반려 정정함 -->
+  <div id="rejectedBox" style="display:none;background:white;border-radius:8px;padding:14px;box-shadow:0 2px 5px rgba(0,0,0,0.1);margin-top:14px;border-left:5px solid #c0392b;">
+    <h3 style="margin:0 0 6px;color:#c0392b;">↩️ 반려 정정함</h3>
+    <p style="font-size:13px;color:#888;margin:0 0 12px;">실수로 반려한 업적 신청을 '대기' 상태로 되돌려 재심사할 수 있습니다.</p>
+    <div id="rejectedList">로딩 중...</div>
+  </div>
+</div>
+
+<script>
+  // ── 업적 대기함 ────────────────────────────────────────────
+  function loadPendingAch() {
+    document.getElementById('achPendingBox').style.display = 'block';
+    document.getElementById('achPendingList').innerHTML = '로딩 중...';
+    google.script.run.withSuccessHandler(function(data) {
+      renderPendingAch(data);
+    }).getPendingAchievements();
+  }
+
+  function renderPendingAch(data) {
+    var list = document.getElementById('achPendingList');
+    if (!data.pending || data.pending.length === 0) {
+      list.innerHTML = '<div style="color:#aaa;padding:10px;">대기 중인 업적 신청이 없습니다.</div>';
+      return;
+    }
+    
+    // 특별보고 승인용 드롭다운 옵션
+    var masterOptions = (data.allMasterAchs || []).map(function(a){
+      return '<option value="' + a.achId + '">' + a.achId + ' | ' + a.achName + '</option>';
+    }).join('');
+
+    // 일괄 처리 버튼 추가
+    var batchButtons = '<div style="display:flex;gap:8px;margin-bottom:12px;padding:10px;background:#f8f9fa;border-radius:8px;">' +
+      '<button onclick="batchApprove(true)" style="background:#27ae60;color:white;border:none;padding:8px 16px;border-radius:5px;font-weight:bold;cursor:pointer;font-size:13px;">✅ 선택 항목 일괄 승인</button>' +
+      '<button onclick="batchApprove(false)" style="background:#e74c3c;color:white;border:none;padding:8px 16px;border-radius:5px;font-weight:bold;cursor:pointer;font-size:13px;">❌ 선택 항목 일괄 반려</button>' +
+      '<button onclick="toggleSelectAll()" style="background:#95a5a6;color:white;border:none;padding:8px 16px;border-radius:5px;font-weight:bold;cursor:pointer;font-size:13px;">☑️ 전체 선택/해제</button>' +
+    '</div>';
+
+    var items = data.pending.map(function(p) {
+      var isSpecial = p.achId === '특별보고';
+      var specialSelect = isSpecial
+        ? '<div style="margin-top:6px;"><label style="font-size:12px;color:#888;">부여할 업적 선택:</label>' +
+          '<select id="specialSel_' + p.rowNumber + '" style="width:100%;padding:5px;margin-top:4px;border-radius:4px;border:1px solid #ddd;font-size:12px;">' +
+            '<option value="">-- 업적 선택 --</option>' + masterOptions +
+          '</select></div>'
+        : '';
+      
+      return '<div style="border:1px solid #eee;border-radius:8px;padding:10px;margin-bottom:8px;display:flex;gap:10px;">' +
+        '<div style="display:flex;align-items:flex-start;padding-top:5px;">' +
+          '<input type="checkbox" class="ach-checkbox" data-row="' + p.rowNumber + '" style="width:18px;height:18px;cursor:pointer;">' +
+        '</div>' +
+        '<div style="flex:1;">' +
+          '<div style="font-size:13px;font-weight:bold;color:#2c3e50;">' + p.studentName + ' <span style="color:#888;font-weight:normal;">(' + p.timestamp + ')</span></div>' +
+          '<div style="font-size:12px;color:#8e44ad;margin:4px 0;">' +
+            '<strong>' + p.achId + '</strong> - ' + p.achName +
+            (isSpecial ? ' <span style="background:#e74c3c;color:white;border-radius:4px;padding:1px 6px;font-size:11px;">특별보고</span>' : '') +
+          '</div>' +
+          '<div style="font-size:12px;color:#555;background:#f9f9f9;padding:8px;border-radius:6px;">' + p.proof + '</div>' +
+          specialSelect +
+          '<div style="display:flex;gap:6px;margin-top:8px;">' +
+            '<button onclick="doApproveAch(' + p.rowNumber + ', true)" style="background:#27ae60;color:white;border:none;padding:5px 14px;border-radius:4px;font-weight:bold;cursor:pointer;font-size:12px;">✅ 승인</button>' +
+            '<button onclick="doApproveAch(' + p.rowNumber + ', false)" style="background:#e74c3c;color:white;border:none;padding:5px 14px;border-radius:4px;font-weight:bold;cursor:pointer;font-size:12px;">❌ 반려</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    list.innerHTML = batchButtons + items;
+  }
+
+  function doApproveAch(rowNumber, isApproved) {
+    var specialSel = document.getElementById('specialSel_' + rowNumber);
+    var finalId = specialSel ? specialSel.value : null;
+    if (specialSel && isApproved && !finalId) return alert('특별보고 승인 시 부여할 업적을 선택해주세요.');
+
+    // 반려 시 사유 입력
+    var rejectReason = null;
+    if (!isApproved) {
+      rejectReason = prompt('반려 사유를 입력하세요 (학생 우편함에 전달됩니다):');
+      if (rejectReason === null) return; // 취소
+      if (!rejectReason.trim()) rejectReason = '조건 미충족';
+    }
+
+    google.script.run.withSuccessHandler(function(res) {
+      alert(res.msg);
+      loadPendingAch();
+    }).approveAchievementWithMail(rowNumber, isApproved, finalId || null, rejectReason);
+  }
+
+  // ── 체크박스 전체 선택/해제 ──────────────────────────────────
+  function toggleSelectAll() {
+    var checkboxes = document.querySelectorAll('.ach-checkbox');
+    if (checkboxes.length === 0) return;
+    
+    var allChecked = Array.from(checkboxes).every(function(cb) { return cb.checked; });
+    checkboxes.forEach(function(cb) {
+      cb.checked = !allChecked;
+    });
+  }
+
+  // ── 일괄 승인/반려 처리 ──────────────────────────────────────
+  function batchApprove(isApproved) {
+    var checkboxes = document.querySelectorAll('.ach-checkbox:checked');
+    if (checkboxes.length === 0) {
+      alert('선택된 항목이 없습니다.');
+      return;
+    }
+
+    var rowNumbers = Array.from(checkboxes).map(function(cb) {
+      return parseInt(cb.getAttribute('data-row'));
+    });
+
+    var action = isApproved ? '승인' : '반려';
+    var rejectReason = null;
+    if (!isApproved) {
+      rejectReason = prompt('일괄 반려 사유를 입력하세요 (학생 우편함에 전달됩니다):');
+      if (rejectReason === null) return;
+      if (!rejectReason.trim()) rejectReason = '조건 미충족';
+    }
+    if (!confirm(rowNumbers.length + '개 항목을 일괄 ' + action + ' 하시겠습니까?')) return;
+
+    document.getElementById('achPendingList').innerHTML = '처리 중...';
+    google.script.run.withSuccessHandler(function(res) {
+      alert(res.msg);
+      loadPendingAch();
+    }).batchApproveAchievementsWithMail(rowNumbers, isApproved, rejectReason);
+  }
+
+  // ── 2차 직업 대기함 ────────────────────────────────────────
+  function loadPendingJobs() {
+    document.getElementById('jobPendingBox').style.display = 'block';
+    document.getElementById('jobPendingList').innerHTML = '로딩 중...';
+    google.script.run.withSuccessHandler(function(jobs) {
+      renderPendingJobs(jobs);
+    }).getPendingJobs();
+  }
+
+  function renderPendingJobs(jobs) {
+    var list = document.getElementById('jobPendingList');
+    if (!jobs || jobs.length === 0) {
+      list.innerHTML = '<div style="color:#aaa;padding:10px;">대기 중인 2차 직업 신청이 없습니다.</div>';
+      return;
+    }
+    list.innerHTML = jobs.map(function(j) {
+      return '<div style="border:1px solid #eee;border-radius:8px;padding:10px;margin-bottom:8px;">' +
+        '<div style="font-size:13px;font-weight:bold;color:#2c3e50;">' + j.studentName + ' → <span style="color:#2980b9;">' + j.jobName + '</span></div>' +
+        '<div style="font-size:12px;color:#555;background:#f9f9f9;padding:8px;border-radius:6px;margin-top:4px;">' + j.jobDesc + '</div>' +
+        '<div style="display:flex;gap:6px;margin-top:8px;">' +
+          '<button onclick="doApproveJob(' + j.rowNumber + ', true)" style="background:#27ae60;color:white;border:none;padding:5px 14px;border-radius:4px;font-weight:bold;cursor:pointer;font-size:12px;">✅ 승인</button>' +
+          '<button onclick="doApproveJob(' + j.rowNumber + ', false)" style="background:#e74c3c;color:white;border:none;padding:5px 14px;border-radius:4px;font-weight:bold;cursor:pointer;font-size:12px;">❌ 반려</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  function doApproveJob(rowNumber, isApproved) {
+    google.script.run.withSuccessHandler(function(res) {
+      alert(res.msg);
+      loadPendingJobs(); // 목록 새로고침
+    }).approveJob(rowNumber, isApproved);
+  }
+
+  // ── 반려 정정함 ────────────────────────────────────────────
+  function loadRejectedAch() {
+    document.getElementById('rejectedBox').style.display = 'block';
+    document.getElementById('rejectedList').innerHTML = '로딩 중...';
+    google.script.run
+      .withSuccessHandler(function(data) {
+        renderRejectedAch(data);
+      })
+      .withFailureHandler(function(err) {
+        document.getElementById('rejectedList').innerHTML = '<div style="color:#e74c3c;font-size:13px;">⚠️ 오류: ' + err.message + '</div>';
+      })
+      .getRejectedAchievements();
+  }
+
+  function renderRejectedAch(data) {
+    var list = document.getElementById('rejectedList');
+    if (!data || data.length === 0) {
+      list.innerHTML = '<div style="color:#aaa;padding:10px;font-size:13px;">반려된 업적 신청이 없습니다.</div>';
+      return;
+    }
+    list.innerHTML = data.map(function(p) {
+      return '<div style="border:1px solid #fadbd8;border-radius:8px;padding:10px;margin-bottom:8px;background:#fff9f9;">' +
+        '<div style="font-size:13px;font-weight:bold;color:#2c3e50;">' +
+          p.studentName + ' <span style="color:#888;font-weight:normal;font-size:12px;">(' + p.timestamp + ')</span>' +
+          '<span style="background:#e74c3c;color:white;font-size:11px;padding:1px 7px;border-radius:4px;margin-left:6px;">반려됨</span>' +
+        '</div>' +
+        '<div style="font-size:12px;color:#8e44ad;margin:4px 0;"><strong>' + p.achId + '</strong> — ' + p.achName + '</div>' +
+        '<div style="font-size:12px;color:#555;background:#f9f9f9;padding:8px;border-radius:6px;margin-bottom:8px;">' + p.proof + '</div>' +
+        '<button onclick="doCorrectRejection(' + p.rowNumber + ')" ' +
+          'style="background:#27ae60;color:white;border:none;padding:6px 16px;border-radius:4px;font-weight:bold;cursor:pointer;font-size:12px;">' +
+          '↩️ 대기 상태로 정정 (재심사)' +
+        '</button>' +
+      '</div>';
+    }).join('');
+  }
+
+  function doCorrectRejection(rowNumber) {
+    if (!confirm('이 업적 신청을 대기 상태로 되돌려 재심사 대기열에 올리시겠습니까?')) return;
+    google.script.run
+      .withSuccessHandler(function(res) {
+        alert(res.msg);
+        loadRejectedAch(); // 정정함 새로고침
+        // 대기함도 새로고침 (이미 열려 있으면)
+        if (document.getElementById('achPendingBox').style.display !== 'none') {
+          loadPendingAch();
+        }
+      })
+      .withFailureHandler(function(err) {
+        alert('오류: ' + err.message);
+      })
+      .correctRejection(rowNumber);
+  }
+</script>
+
+<!-- ── P2P 이상거래 박스 (다른 대기함 박스들 아래에 추가) ──────── -->
+<div id="p2pAlertBox"
+  style="display:none;background:white;border-radius:8px;padding:14px;box-shadow:0 2px 5px rgba(0,0,0,0.1);margin-top:14px;border-left:5px solid #16a085;">
+  <h3 style="margin:0 0 6px;color:#16a085;">🚨 P2P 이상거래 목록</h3>
+  <p style="font-size:13px;color:#888;margin:0 0 12px;">오늘 동일인 3회 이상 거래 또는 단일 $2,000 이상 거래가 자동 표시됩니다.</p>
+  <div id="p2pAlertList">로딩 중...</div>
+</div>
+
+<script>
+// ── P2P 이상거래 목록 불러오기 ───────────────────────────────
+function loadP2PAlerts() {
+  document.getElementById('p2pAlertBox').style.display = 'block';
+  document.getElementById('p2pAlertList').innerHTML = '로딩 중...';
+  google.script.run
+    .withSuccessHandler(renderP2PAlerts)
+    .withFailureHandler(function(err) {
+      document.getElementById('p2pAlertList').innerHTML =
+        '<div style="color:#e74c3c;font-size:13px;">⚠️ 오류: ' + err.message + '</div>';
+    })
+    .getP2PAlerts();
+}
+
+function renderP2PAlerts(list) {
+  var container = document.getElementById('p2pAlertList');
+  if (!list || list.length === 0) {
+    container.innerHTML = '<div style="color:#aaa;padding:10px;font-size:13px;">이상 거래가 없습니다. 👍</div>';
+    return;
+  }
+  container.innerHTML = list.map(function(tx) {
+    return '<div style="border:1px solid #fadbd8;border-radius:8px;padding:10px;margin-bottom:8px;background:#fff9f9;">' +
+      '<div style="font-size:13px;font-weight:bold;color:#2c3e50;">' +
+        tx.sender + ' → ' + tx.receiver +
+        '<span style="background:#e74c3c;color:white;font-size:11px;padding:1px 7px;border-radius:4px;margin-left:6px;">이상거래</span>' +
+      '</div>' +
+      '<div style="font-size:12px;color:#555;margin:4px 0;">' +
+        tx.date + ' · ' +
+        '<strong>$' + Number(tx.amount).toLocaleString() + '</strong> · ' +
+        '<span style="background:#eaf4ff;color:#3d85c8;padding:1px 5px;border-radius:3px;">' + tx.tag + '</span>' +
+      '</div>' +
+      '<div style="font-size:12px;color:#888;background:#f9f9f9;padding:6px 8px;border-radius:5px;margin-bottom:8px;">' +
+        tx.description +
+      '</div>' +
+      '<button onclick="doResolveP2P(' + tx.rowNum + ')" ' +
+        'style="background:#27ae60;color:white;border:none;padding:5px 14px;border-radius:4px;font-weight:bold;cursor:pointer;font-size:12px;">' +
+        '✅ 정상 확인됨 처리' +
+      '</button>' +
+    '</div>';
+  }).join('');
+}
+
+function doResolveP2P(rowNum) {
+  if (!confirm('이 거래를 정상 확인됨으로 처리하시겠습니까?')) return;
+  google.script.run
+    .withSuccessHandler(function(res) {
+      alert(res.msg);
+      loadP2PAlerts();
+    })
+    .withFailureHandler(function(err) {
+      alert('오류: ' + err.message);
+    })
+    .resolveP2PAlert(rowNum);
+}
+</script>
+
 </body>
 </html>

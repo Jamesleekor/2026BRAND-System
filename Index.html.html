@@ -625,9 +625,47 @@
     .shop-buy-btn.locked-lbl { background: #ccc; color: #888; cursor: default; }
 
     /* 스킨 CSS 변수 */
-    body.skin-ocean   { --primary-color:#0077b6; --secondary-color:#00b4d8; --bg-color:#e0f7fa; --card-bg:#ffffff; }
-    body.skin-dark    { --primary-color:#bb86fc; --secondary-color:#cf6679; --bg-color:#121212; --card-bg:#1e1e1e; color:#e0e0e0; }
-    body.skin-cherry  { --primary-color:#c0392b; --secondary-color:#e91e8c; --bg-color:#fff0f3; --card-bg:#ffffff; }
+    /* ── 이미지 배경 스킨 공통 설정 ── */
+    body[class*="skin-"] {
+      background-size: 100% auto;
+      background-attachment: scroll;
+      background-position: top center;
+      background-repeat: no-repeat;
+    }
+    /* 이미지 하단 페이드아웃 오버레이 */
+    body[class*="skin-"]::after {
+      content: '';
+      position: fixed;
+      left: 0; right: 0; bottom: 0;
+      height: 35%;
+      background: linear-gradient(to bottom, transparent, var(--bg-color, #f8f9fa));
+      pointer-events: none;
+      z-index: 0;
+    }
+    body[class*="skin-"] .container {
+      position: relative;
+      z-index: 1;
+    }
+    body[class*="skin-"] .card,
+    body[class*="skin-"] .table-wrapper,
+    body[class*="skin-"] [style*="background:#f8f9fa"] {
+      background: rgba(255,255,255,0.82) !important;
+      backdrop-filter: blur(2px);
+    }
+
+    /* ── 스킨 12종 ── */
+    body.skin-abstract         { background-image: url('https://lh3.googleusercontent.com/d/1MlMlvLkAsFcdoSgv_8bEwNBWmg8grlgT'); --primary-color:#6c3fc5; --secondary-color:#f39c12; --bg-color:transparent; --card-bg:rgba(255,255,255,0.82); }
+    body.skin-colorful_glass   { background-image: url('https://lh3.googleusercontent.com/d/1fUgRthL_1YoZgZJbC6MF0_6shH2_1hsy'); --primary-color:#0077b6; --secondary-color:#00b4d8; --bg-color:transparent; --card-bg:rgba(255,255,255,0.82); }
+    body.skin-red_brick        { background-image: url('https://lh3.googleusercontent.com/d/1gzm2gT2xixkWoz-dw--CirRlNPzOgiy4'); --primary-color:#c0392b; --secondary-color:#e67e22; --bg-color:transparent; --card-bg:rgba(255,255,255,0.82); }
+    body.skin-hideout          { background-image: url('https://lh3.googleusercontent.com/d/1zD9p8DUgmU1GDf-GPb8QmsVgieCiZMF9'); --primary-color:#2d6a4f; --secondary-color:#52b788; --bg-color:transparent; --card-bg:rgba(255,255,255,0.82); }
+    body.skin-ocean_fairy      { background-image: url('https://lh3.googleusercontent.com/d/1IVEWOHz_rzeZf6YPyDjTrIdZ80WTZakd'); --primary-color:#0096c7; --secondary-color:#48cae4; --bg-color:transparent; --card-bg:rgba(255,255,255,0.82); }
+    body.skin-snowflower       { background-image: url('https://lh3.googleusercontent.com/d/1eSopdeGz01BPXmTJYe0AQyUdfT4PvNfM'); --primary-color:#5c85d6; --secondary-color:#a8d8ea; --bg-color:transparent; --card-bg:rgba(255,255,255,0.82); }
+    body.skin-pink_lake        { background-image: url('https://lh3.googleusercontent.com/d/1M5YQAJzkJQyOmIMPLigq6ASjjQIxU5z-'); --primary-color:#c9184a; --secondary-color:#ff85a1; --bg-color:transparent; --card-bg:rgba(255,255,255,0.82); }
+    body.skin-full_moon        { background-image: url('https://lh3.googleusercontent.com/d/1sUoZn7sRwhVFwloCHe_GjEsHgImGihe1'); --primary-color:#3d5a80; --secondary-color:#98c1d9; --bg-color:transparent; --card-bg:rgba(255,255,255,0.82); }
+    body.skin-white_dragon     { background-image: url('https://lh3.googleusercontent.com/d/1zGkNvTPs8WWFTUjnd549QoPORH80z-_c'); --primary-color:#4a4e69; --secondary-color:#9a8c98; --bg-color:transparent; --card-bg:rgba(255,255,255,0.82); }
+    body.skin-wish_tree        { background-image: url('https://lh3.googleusercontent.com/d/1TKsqUcO6KEg3xMxrvNnNhm7kPInQxvNo'); --primary-color:#386641; --secondary-color:#6a994e; --bg-color:transparent; --card-bg:rgba(255,255,255,0.82); }
+    body.skin-milky_way        { background-image: url('https://lh3.googleusercontent.com/d/11ubsdy-OKHJSaTPLMUr-llYJCW3SUnwf'); --primary-color:#7b2d8b; --secondary-color:#c77dff; --bg-color:transparent; --card-bg:rgba(255,255,255,0.82); }
+    body.skin-palace_of_wizard { background-image: url('https://lh3.googleusercontent.com/d/1NDFBtsZhJ6peUHqsqLrNy6n18vJ-vWn-'); --primary-color:#3a0ca3; --secondary-color:#7209b7; --bg-color:transparent; --card-bg:rgba(255,255,255,0.82); }
     /* 캐릭터 표시 영역 */
     #charImgArea { transition: opacity 0.3s; }
     #charImg { box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
@@ -1321,7 +1359,7 @@
     document.getElementById('totalTax').innerText      = '$ ' + Number(data.classTotalTax || 0).toLocaleString();
 
     // 복지 기금 프로그레스 바 (목표 10,000 기준)
-    var taxPercent = Math.min(((data.classTotalTax || 0) / 10000) * 100, 100);
+    var taxPercent = Math.min(((data.classTotalTax || 0) / 100000) * 100, 100);
     document.getElementById('taxBar').style.width = taxPercent + '%';
 
     // 1인1역 직업 정보
@@ -1855,7 +1893,12 @@
 
   function applySkin(skinKey) {
     // 기존 스킨 클래스 제거
-    document.body.classList.remove('skin-ocean','skin-dark','skin-cherry');
+    document.body.classList.remove(
+      'skin-ocean','skin-dark','skin-cherry',
+      'skin-abstract','skin-colorful_glass','skin-red_brick','skin-hideout',
+      'skin-ocean_fairy','skin-snowflower','skin-pink_lake','skin-full_moon',
+      'skin-white_dragon','skin-wish_tree','skin-milky_way','skin-palace_of_wizard'
+    );
     if (skinKey && skinKey !== 'default') document.body.classList.add('skin-' + skinKey);
     window._currentSkin = skinKey;
   }

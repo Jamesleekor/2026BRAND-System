@@ -2026,10 +2026,19 @@ function initShopSheet() {
   if (!itemSheet) {
     itemSheet = ss.insertSheet(SHEET_SHOP_ITEMS);
     itemSheet.appendRow(['아이템ID','카테고리','아이템명','가격','구매조건설명','조건타입','조건값','리소스값','활성여부']);
-    // ── 샘플 스킨 3종 ──
-    itemSheet.appendRow(['SKIN-001','스킨','🌊 오션 블루',  800, '업적 5개 이상 달성',       'ach_count',     '5',  'ocean',    true]);
-    itemSheet.appendRow(['SKIN-002','스킨','🌑 다크 나이트', 1500,'유니크 업적 1개 이상 달성', 'ach_grade:유니크','1', 'dark',     true]);
-    itemSheet.appendRow(['SKIN-003','스킨','🌸 체리 블라썸', 2000,'업적 10개 이상 달성',      'ach_count',     '10', 'cherry',   true]);
+    // ── 스킨 12종 ──
+    itemSheet.appendRow(['SKIN-001','스킨','추상화',           500,  '업적 5개 이상 달성',         'ach_count',      '5',  'abstract',         true]);
+    itemSheet.appendRow(['SKIN-002','스킨','컬러풀 글래스',    700,  '업적 7개 이상 달성',         'ach_count',      '7',  'colorful_glass',   true]);
+    itemSheet.appendRow(['SKIN-003','스킨','붉은 벽돌벽',      500,  '업적 10개 이상 달성',        'ach_count',      '10', 'red_brick',        true]);
+    itemSheet.appendRow(['SKIN-004','스킨','숲 속의 비밀기지', 700,  '업적 10개 이상 달성',        'ach_count',      '10', 'hideout',          true]);
+    itemSheet.appendRow(['SKIN-005','스킨','바다요정의 쉼터',  1000, '업적 10개 이상 달성',        'ach_count',      '10', 'ocean_fairy',      true]);
+    itemSheet.appendRow(['SKIN-006','스킨','눈꽃',             1500, '업적 15개 이상 달성',        'ach_count',      '15', 'snowflower',       true]);
+    itemSheet.appendRow(['SKIN-007','스킨','환상의 핑크레이크',1500, '유니크 업적 3개 이상 달성',  'ach_grade:유니크','3',  'pink_lake',        true]);
+    itemSheet.appendRow(['SKIN-008','스킨','풀문',             1500, '업적 15개 이상 달성',        'ach_count',      '15', 'full_moon',        true]);
+    itemSheet.appendRow(['SKIN-009','스킨','화이트 드래곤',    2000, '유니크 업적 5개 이상 달성',  'ach_grade:유니크','5',  'white_dragon',     true]);
+    itemSheet.appendRow(['SKIN-010','스킨','전설의 소원나무',  2000, '업적 20개 이상 달성',        'ach_count',      '20', 'wish_tree',        true]);
+    itemSheet.appendRow(['SKIN-011','스킨','밀키 웨이',        3000, '유니크 업적 7개 이상 달성',  'ach_grade:유니크','7',  'milky_way',        true]);
+    itemSheet.appendRow(['SKIN-012','스킨','마법사왕의 궁전',  3000, '업적 30개 이상 달성',        'ach_count',      '30', 'palace_of_wizard', true]);
     // ── 샘플 폰트 3종 ──
     itemSheet.appendRow(['FONT-001','폰트','✏️ 귀여운 손글씨', 500, '조건 없음',              'none',          '0',  'Gaegu',         true]);
     itemSheet.appendRow(['FONT-002','폰트','📐 모던 고딕',     800, '업적 3개 이상 달성',      'ach_count',     '3',  'Black Han Sans', true]);

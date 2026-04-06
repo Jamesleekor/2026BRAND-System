@@ -2794,6 +2794,12 @@ function p2pTransfer(senderName, receiverName, amount, tag, description) {
 }
 
 // ── 나의 P2P 거래 내역 반환 ──────────────────────────────────────
+// ██ getMyP2PHistory 함수 교체본
+// 기존 함수 전체를 아래로 교체하세요.
+// 변경 내용: rating(J열) 필드 추가, canRate 필드 추가
+// ════════════════════════════════════════════════════════════════
+
+// ── 나의 P2P 거래 내역 반환 ──────────────────────────────────────
 function getMyP2PHistory(studentName) {
   const ss      = SpreadsheetApp.getActiveSpreadsheet();
   const sheet   = ss.getSheetByName(SHEET_P2P);
@@ -2801,26 +2807,34 @@ function getMyP2PHistory(studentName) {
 
   const data   = sheet.getDataRange().getValues();
   const result = [];
+  const name   = String(studentName).trim();
+
   for (let i = 1; i < data.length; i++) {
     const sender   = String(data[i][2]).trim();
     const receiver = String(data[i][3]).trim();
-    const name     = String(studentName).trim();
     if (sender !== name && receiver !== name) continue;
 
+    const isSent = sender === name;
+    const rating = Number(data[i][9]) || 0;  // J열: 평점 (0=미평가)
+
     result.push({
-      txnId:       String(data[i][0]),
-      date:        String(data[i][1]),
+      txnId:       String(data[i][0]).trim(),
+      date:        String(data[i][1]).substring(0, 10),
       sender:      sender,
       receiver:    receiver,
       amount:      Number(data[i][4]) || 0,
-      tag:         String(data[i][5]),
-      description: String(data[i][6]),
-      status:      String(data[i][7]),
-      isSent:      sender === name  // true=내가 보낸 것, false=내가 받은 것
+      tag:         String(data[i][5]).trim(),
+      description: String(data[i][6]).trim(),
+      status:      String(data[i][7]).trim(),
+      isSent:      isSent,
+      rating:      rating,
+      // 평점 가능 여부: receiver이고 아직 미평가인 경우만 true
+      canRate:     (!isSent && rating === 0)
     });
   }
   return result.reverse(); // 최신순
 }
+
 
 // ── 교사용: 이상 거래 목록 반환 ──────────────────────────────────
 function getP2PAlerts() {
@@ -3302,7 +3316,7 @@ function createDeposit(studentName, amount, weeks) {
     ]);
   }
 
-  // 캐시 무효화
+  /// 캐시 무효화
   CacheService.getScriptCache().remove('student_' + studentName);
   updateRankings();
 
@@ -3532,7 +3546,7 @@ function _payOneDeposit(ss, logSheet, rowIdx, row) {
     ]);
   }
 
-  // 우편함 알림
+  // 예금 만기 우편함 알림
   _sendMail(
     studentName,
     '🎉 예금 만기 지급 완료!',
@@ -3547,5 +3561,47 @@ function _payOneDeposit(ss, logSheet, rowIdx, row) {
   );
 
   CacheService.getScriptCache().remove('student_' + studentName);
+}
+
+// ════════════════════════════════════════════════════════════════
+// ██ P2P 거래 평점 시스템
+// J열: 0 = 미평가, 1~10 = 평점
+// ════════════════════════════════════════════════════════════════
+
+// ── P2P 거래 평점 저장 ───────────────────────────────────────────
+// txnId   : 거래ID (A열 값)
+// rater   : 평점을 남기는 학생 (반드시 receiver여야 함)
+// rating  : 1~10 정수
+function rateP2PTransaction(txnId, rater, rating) {
+  rating = Number(rating);
+  if (!txnId || !rater) return { success: false, msg: '거래 정보가 올바르지 않습니다.' };
+  if (!Number.isInteger(rating) || rating < 1 || rating > 10)
+    return { success: false, msg: '평점은 1~10 사이의 정수로 입력해주세요.' };
+
+  const ss    = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_P2P);
+  if (!sheet) return { success: false, msg: 'P2P거래로그 시트를 찾을 수 없습니다.' };
+
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    const rowTxnId   = String(data[i][0]).trim();
+    const rowReceiver = String(data[i][3]).trim();  // D열: 받는 학생
+
+    if (rowTxnId !== String(txnId).trim()) continue;
+
+    // 평점 권한 확인: 반드시 receiver(서비스 구매자)만 평가 가능
+    if (rowReceiver !== String(rater).trim())
+      return { success: false, msg: '거래 상대방만 평점을 남길 수 있습니다.' };
+
+    // 이미 평가한 경우 중복 방지
+    const existing = Number(data[i][9]) || 0;  // J열: 인덱스 9
+    if (existing > 0)
+      return { success: false, msg: '이미 평점을 남긴 거래입니다.' };
+
+    // J열(10번째 열)에 평점 저장
+    sheet.getRange(i + 1, 10).setValue(rating);
+    return { success: true, msg: `⭐ 평점 ${rating}점이 저장되었습니다.` };
+  }
+  return { success: false, msg: '해당 거래를 찾을 수 없습니다.' };
 }
 

@@ -1464,41 +1464,147 @@ function closeP2PHistoryModal() {
 }
 
 // ── P2P 내역 렌더링 ──────────────────────────────────────────
-function renderP2PHistory(list) {
-  var container = document.getElementById('p2pHistoryList');
-  if (!list || list.length === 0) {
-    container.innerHTML = '<div style="text-align:center;padding:30px;color:#bbb;font-size:14px;">아직 거래 내역이 없습니다.</div>';
-    return;
+// ════════════════════════════════════════════════════════════════
+  function renderP2PHistory(list) {
+    var container = document.getElementById('p2pHistoryList');
+    if (!list || list.length === 0) {
+      container.innerHTML =
+        '<div style="text-align:center;padding:30px;color:#bbb;font-size:14px;">아직 거래 내역이 없습니다.</div>';
+      return;
+    }
+
+    var html = list.map(function(tx) {
+      var isSent    = tx.isSent;
+      var color     = isSent ? '#e74c3c' : '#27ae60';
+      var icon      = isSent ? '↑ 송금' : '↓ 수령';
+      var partner   = isSent ? tx.receiver : tx.sender;
+      var amtStr    = (isSent ? '-' : '+') + '$' + Number(tx.amount).toLocaleString();
+      var anomaly   = tx.status === '이상거래'
+        ? '<span style="background:#e74c3c;color:white;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px;">이상거래</span>'
+        : '';
+
+      // ── 평점 영역 ──────────────────────────────────────────
+      var ratingHtml = '';
+
+      if (!isSent) {
+        // 받은 거래 → 평점 표시 또는 입력 UI
+        if (tx.rating > 0) {
+          // 이미 평가함: 별 표시
+          var stars = '';
+          for (var s = 1; s <= 10; s++) {
+            stars += '<span style="color:' + (s <= tx.rating ? '#f39c12' : '#ddd') + ';font-size:14px;">★</span>';
+          }
+          ratingHtml =
+            '<div style="margin-top:6px;display:flex;align-items:center;gap:4px;">' +
+              '<span style="font-size:11px;color:#888;">내 평점:</span>' +
+              stars +
+              '<span style="font-size:12px;color:#f39c12;font-weight:bold;margin-left:2px;">' + tx.rating + '/10</span>' +
+            '</div>';
+        } else {
+          // 미평가: 별점 선택 UI
+          var starBtns = '';
+          for (var s2 = 1; s2 <= 10; s2++) {
+            // onclick에서 따옴표 충돌 방지: 변수 escaping
+            starBtns +=
+              '<button onclick="selectRating(\'' + tx.txnId + '\',' + s2 + ',this)" ' +
+              'data-val="' + s2 + '" ' +
+              'style="background:none;border:none;font-size:18px;cursor:pointer;padding:1px;color:#ddd;line-height:1;" ' +
+              'title="' + s2 + '점">★</button>';
+          }
+          ratingHtml =
+            '<div style="margin-top:8px;">' +
+              '<div style="font-size:11px;color:#888;margin-bottom:4px;">거래 평가 (판매자에게 별점을 남겨주세요)</div>' +
+              '<div id="stars_' + tx.txnId + '" style="display:flex;align-items:center;gap:0;">' +
+                starBtns +
+              '</div>' +
+              '<button id="rateBtn_' + tx.txnId + '" onclick="submitRating(\'' + tx.txnId + '\')" ' +
+              'style="display:none;margin-top:6px;padding:4px 14px;background:#f39c12;color:white;' +
+              'border:none;border-radius:6px;font-size:12px;font-weight:bold;cursor:pointer;">' +
+              '평점 제출' +
+              '</button>' +
+            '</div>';
+        }
+      } else {
+        // 보낸 거래 → 상대방이 남긴 평점 표시 (있으면)
+        if (tx.rating > 0) {
+          ratingHtml =
+            '<div style="margin-top:6px;font-size:11px;color:#888;">' +
+              '상대방 평점: <span style="color:#f39c12;font-weight:bold;">★ ' + tx.rating + '/10</span>' +
+            '</div>';
+        }
+      }
+      // ──────────────────────────────────────────────────────
+
+      return '<div style="padding:10px 12px;border-bottom:1px solid #f5f5f5;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">' +
+          '<div style="font-size:13px;font-weight:bold;color:#2c3e50;">' +
+            '<span style="color:' + color + ';margin-right:4px;">' + icon + '</span>' +
+            partner + anomaly +
+          '</div>' +
+          '<div style="font-size:15px;font-weight:bold;color:' + color + ';">' + amtStr + '</div>' +
+        '</div>' +
+        '<div style="font-size:11px;color:#888;">' +
+          tx.date + ' · ' +
+          '<span style="background:#eaf4ff;color:#3d85c8;padding:1px 6px;border-radius:3px;">' + tx.tag + '</span>' +
+        '</div>' +
+        '<div style="font-size:12px;color:#555;margin-top:3px;">' + tx.description + '</div>' +
+        ratingHtml +
+      '</div>';
+    }).join('');
+
+    container.innerHTML = html;
   }
 
-  var html = list.map(function(tx) {
-    var isSent    = tx.isSent;
-    var color     = isSent ? '#e74c3c' : '#27ae60';
-    var icon      = isSent ? '↑ 송금' : '↓ 수령';
-    var partner   = isSent ? tx.receiver : tx.sender;
-    var amtStr    = (isSent ? '-' : '+') + '$' + Number(tx.amount).toLocaleString();
-    var anomaly   = tx.status === '이상거래'
-      ? '<span style="background:#e74c3c;color:white;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px;">이상거래</span>'
-      : '';
+  // ── 별점 선택 시 하이라이트 ──────────────────────────────────
+  function selectRating(txnId, val, clickedBtn) {
+    var starsContainer = document.getElementById('stars_' + txnId);
+    if (!starsContainer) return;
 
-    return '<div style="padding:10px 12px;border-bottom:1px solid #f5f5f5;">' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">' +
-        '<div style="font-size:13px;font-weight:bold;color:#2c3e50;">' +
-          '<span style="color:' + color + ';margin-right:4px;">' + icon + '</span>' +
-          partner + anomaly +
-        '</div>' +
-        '<div style="font-size:15px;font-weight:bold;color:' + color + ';">' + amtStr + '</div>' +
-      '</div>' +
-      '<div style="font-size:11px;color:#888;">' +
-        tx.date + ' · ' +
-        '<span style="background:#eaf4ff;color:#3d85c8;padding:1px 6px;border-radius:3px;">' + tx.tag + '</span>' +
-      '</div>' +
-      '<div style="font-size:12px;color:#555;margin-top:3px;">' + tx.description + '</div>' +
-    '</div>';
-  }).join('');
+    // 모든 별 색상 초기화 후 선택된 것까지 노란색으로
+    var btns = starsContainer.querySelectorAll('button');
+    btns.forEach(function(btn) {
+      var bVal = parseInt(btn.getAttribute('data-val'));
+      btn.style.color = bVal <= val ? '#f39c12' : '#ddd';
+    });
 
-  container.innerHTML = html;
-}
+    // 선택값 저장 (컨테이너 data 속성 활용)
+    starsContainer.setAttribute('data-selected', val);
+
+    // 제출 버튼 표시
+    var rateBtn = document.getElementById('rateBtn_' + txnId);
+    if (rateBtn) rateBtn.style.display = 'inline-block';
+  }
+
+  // ── 평점 제출 ────────────────────────────────────────────────
+  function submitRating(txnId) {
+    var starsContainer = document.getElementById('stars_' + txnId);
+    if (!starsContainer) return;
+
+    var selected = parseInt(starsContainer.getAttribute('data-selected') || '0');
+    if (!selected || selected < 1 || selected > 10) {
+      alert('별점을 선택해주세요.'); return;
+    }
+
+    var btn = document.getElementById('rateBtn_' + txnId);
+    if (btn) { btn.disabled = true; btn.innerText = '저장 중...'; }
+
+    google.script.run
+      .withSuccessHandler(function(res) {
+        if (res.success) {
+          // 모달 새로고침
+          openP2PHistoryModal();
+        } else {
+          alert('평점 저장 실패: ' + res.msg);
+          if (btn) { btn.disabled = false; btn.innerText = '평점 제출'; }
+        }
+      })
+      .withFailureHandler(function(err) {
+        alert('서버 오류: ' + err.message);
+        if (btn) { btn.disabled = false; btn.innerText = '평점 제출'; }
+      })
+      .rateP2PTransaction(txnId, window._currentStudentName, selected);
+  }
+
 </script>
 
 

@@ -859,6 +859,8 @@
         <div class="card-title"><span>💼 2차 직업 시스템</span></div>
         <div id="job2MyStatus" style="margin-bottom:12px;padding:10px;background:#f8f0ff;border-radius:8px;font-size:14px;">
           나의 2차 직업: <strong id="job2MyName" style="color:#8e44ad;">없음</strong>
+          <div id="job2MyRating"></div>
+          <div id="job2MyRating"></div>
         </div>
         <div id="job2ApplyForm">
           <input type="text" id="job2Name" placeholder="직업명 (예: 수학 과외 선생님)" style="width:100%;box-sizing:border-box;padding:9px;border:1px solid #ddd;border-radius:6px;font-size:14px;margin-bottom:8px;">
@@ -1486,8 +1488,8 @@ function closeP2PHistoryModal() {
       // ── 평점 영역 ──────────────────────────────────────────
       var ratingHtml = '';
 
-      if (!isSent) {
-        // 받은 거래 → 평점 표시 또는 입력 UI
+      if (isSent) {
+        // 받은 거래 → 판매자에게 평점 입력 UI
         if (tx.rating > 0) {
           // 이미 평가함: 별 표시
           var stars = '';
@@ -1525,14 +1527,9 @@ function closeP2PHistoryModal() {
             '</div>';
         }
       } else {
-        // 보낸 거래 → 상대방이 남긴 평점 표시 (있으면)
-        if (tx.rating > 0) {
-          ratingHtml =
-            '<div style="margin-top:6px;font-size:11px;color:#888;">' +
-              '상대방 평점: <span style="color:#f39c12;font-weight:bold;">★ ' + tx.rating + '/10</span>' +
-            '</div>';
-        }
+        // 받은 거래(서비스 판매자) → 구매자가 남긴 평점 읽기 전용 표시 -> 기능 삭제 4월 6일
       }
+
       // ──────────────────────────────────────────────────────
 
       return '<div style="padding:10px 12px;border-bottom:1px solid #f5f5f5;">' +
@@ -1746,7 +1743,7 @@ function closeP2PHistoryModal() {
   // ═══════════════════════════════════════════════════════════════
   
   // 1. 다음 티어를 자동으로 계산하기 위한 티어 순서
-  var TIER_ORDER = ['새싹', '브론즈', '빛나는 브론즈', '거친 실버', '성장한 실버', '진화한 실버', '은빛 극점', '금 광석', '제련된 골드', '정련된 골드', '태양의 황금', '루비 원석', '연마된 루비', '각성한 루비', '홍염의 정점', '다이아 원석', '고순도 다이아', '무결 다이아', '영원의 결정', '마스터', '천상의 마스터', '그랜드마스터'];
+  var TIER_ORDER = ['새싹', '브론즈', '빛나는 브론즈', '거친 실버', '성장한 실버', '진화한 실버', '은빛 극점', '금 광석', '제련된 골드', '정련된 골드', '태양의 황금', '루비 원석', '연마된 루비', '각성한 루비', '홍염의 정점', '다이아 원석', '세공된 다이아', '무결 다이아', '영원의 결정', '마스터', '천상의 마스터', '그랜드마스터'];
 
   // 2. 각 티어별 응원 문구 (원하시는 문구로 자유롭게 수정하세요!)
   var TIER_MESSAGES = {
@@ -1766,7 +1763,7 @@ function closeP2PHistoryModal() {
     '각성한 루비': '잠들어 있던 붉은 불꽃이 깨어났다. 이제 멈출 수 없다',
     '홍염의 정점': '타오르는 붉은 정점, 루비 등급의 최고 경지에 도달',
     '다이아 원석': '이 자리는 충분히 빛나고 있는 위치, 그럼에도 더 위를 본다면',
-    '고순도 다이아': '불순물 없이 정화된 결정, 진정한 강자의 반열에 올랐다',
+    '세공된 다이아': '불순물 없이 정화된 결정, 진정한 강자의 반열에 올랐다',
     '무결 다이아': '흠 하나 없는 완벽한 결정체, 이 경지에 닿은 자는 드물다',
     '영원의 결정': '다이아몬드의 정점, 시간이 지나도 빛을 잃지 않는 영원한 존재',
     '마스터': '노력만으로 닿기에는 부족한 선택받은 소수의 영역에 도달하다',
@@ -1792,7 +1789,7 @@ function closeP2PHistoryModal() {
     '각성한 루비':     'https://lh3.googleusercontent.com/d/1MDwOHkjH0u50P5gkB1WrfXrvkpRCNLcS=s200',
     '홍염의 정점':     'https://lh3.googleusercontent.com/d/1EfCQf-t_gBpIohmamSb3yOCbeOzISMJc=s200',
     '다이아 원석':     'https://lh3.googleusercontent.com/d/1Q407DyyD5wndI-rVvKjt6981cRGXxIqN=s200',
-    '고순도 다이아':   'https://lh3.googleusercontent.com/d/1XYMWlQ3QWFeIf0bO_z2Kn8CxJpmPq4Gb=s200',
+    '세공된 다이아':   'https://lh3.googleusercontent.com/d/1XYMWlQ3QWFeIf0bO_z2Kn8CxJpmPq4Gb=s200',
     '무결 다이아':     'https://lh3.googleusercontent.com/d/1Wdb5TSQ3HH_c4Ea0lSBMt7iH4m5L9dlU=s200',
     '영원의 결정':     'https://lh3.googleusercontent.com/d/12KsCvjljkzBP1aMEKN1lFDTshliUNMFp=s200',
     '마스터':          'https://lh3.googleusercontent.com/d/1aLJ93TjnCrfIw9qNIqHbx2i7NV_xk97w=s200',
@@ -1860,7 +1857,7 @@ function closeP2PHistoryModal() {
     var silverTiers      = ['거친 실버','성장한 실버','진화한 실버','은빛 극점'];
     var goldTiers        = ['금 광석','제련된 골드','정련된 골드','태양의 황금'];
     var rubyTiers        = ['루비 원석','연마된 루비','각성한 루비','홍염의 정점'];
-    var diamondTiers     = ['다이아 원석','고순도 다이아','무결 다이아','영원의 결정'];
+    var diamondTiers     = ['다이아 원석','세공된 다이아','무결 다이아','영원의 결정'];
     var masterTiers      = ['마스터','천상의 마스터'];
     var grandmasterTiers = ['그랜드마스터'];
 
@@ -2239,7 +2236,7 @@ function closeP2PHistoryModal() {
   function renderJob2Section(data) {
     var GOLD_TIERS = ['금 광석','제련된 골드','정련된 골드','태양의 황금',
                       '루비 원석','연마된 루비','각성한 루비','홍염의 정점',
-                      '다이아 원석','고순도 다이아','무결 다이아','영원의 결정',
+                      '다이아 원석','세공된 다이아','무결 다이아','영원의 결정',
                       '마스터','천상의 마스터','그랜드마스터'];
     var tierName = data.tierData ? data.tierData.name : '';
     var unlocked = GOLD_TIERS.indexOf(tierName) !== -1;
@@ -2257,7 +2254,33 @@ function closeP2PHistoryModal() {
     // 나의 2차 직업 상태
     if (data.job2) {
       document.getElementById('job2MyName').innerText = data.job2.jobName;
-      document.getElementById('job2ApplyForm').style.display = 'none'; // 이미 있으면 신청폼 숨김
+      document.getElementById('job2ApplyForm').style.display = 'none';
+
+      // 나의 서비스 평점 표시
+      var ratingEl = document.getElementById('job2MyRating');
+      if (ratingEl) {
+        if (data.job2.ratingAvg !== null) {
+          var stars = '';
+          var avg = data.job2.ratingAvg;
+          for (var s = 1; s <= 10; s++) {
+            stars += '<span style="color:' + (s <= Math.round(avg) ? '#f39c12' : '#ddd') + ';font-size:13px;">★</span>';
+          }
+          ratingEl.innerHTML =
+            '<div style="margin-top:8px;padding:8px 10px;background:#fff8e1;border-radius:8px;font-size:12px;">' +
+              '⭐ 나의 서비스 품질: ' + stars +
+              '<span style="color:#f39c12;font-weight:bold;margin-left:4px;">' + avg + '/10</span>' +
+              '<span style="color:#bbb;font-size:11px;margin-left:6px;">(' + data.job2.ratingCount + '명 평가)</span>' +
+            '</div>';
+        } else {
+          ratingEl.innerHTML =
+            '<div style="margin-top:8px;padding:8px 10px;background:#f8f9fa;border-radius:8px;font-size:12px;color:#aaa;">' +
+              '⭐ 나의 서비스 품질: 평가 5건 이상 시 공개됩니다.' +
+              (data.job2.ratingCount > 0
+                ? ' (현재 ' + data.job2.ratingCount + '건)'
+                : '') +
+            '</div>';
+        }
+      } // 이미 있으면 신청폼 숨김
     } else {
       document.getElementById('job2MyName').innerText = '없음';
       document.getElementById('job2ApplyForm').style.display = 'block';
@@ -2994,7 +3017,29 @@ function closeP2PHistoryModal() {
       .donateToWelfare(window._currentStudentName, amount, msg);
   }
 
+// ── P2P: 받는 학생 목록 로드 ─────────────────────────────────
+  function loadP2PReceiverList() {
+    google.script.run
+      .withSuccessHandler(function(list) {
+        var sel = document.getElementById('p2pReceiver');
+        if (!sel) return;
+        sel.innerHTML = '<option value="">-- 학생 선택 --</option>';
+        (list || []).forEach(function(s) {
+          var opt = document.createElement('option');
+          opt.value       = s.name;
+          opt.textContent = s.name + ' (' + s.brand + ')';
+          sel.appendChild(opt);
+        });
+      })
+      .withFailureHandler(function(err) {
+        console.log('P2P 수신자 목록 로드 실패: ' + err.message);
+      })
+      .getP2PReceiverList(window._currentStudentName);
+  }
+
 </script>
+
+
 
 </body>
 </html>

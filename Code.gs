@@ -169,19 +169,19 @@ function getStudentData(studentName, password) {
   const honor = Number(studentRow[COL_VALUE - 1]) || 0;
   let tier = { name: '새싹', icon: '🌱', min: 0, max: 5000 };
   if      (honor >= 100000) tier = { name: '그랜드마스터', icon: '🏆', min: 100000, max: 100000 };
-  else if (honor >= 85000)  tier = { name: '완성된 마스터',       icon: '👑', min: 85000,  max: 100000 };
+  else if (honor >= 85000)  tier = { name: '천상의 마스터',       icon: '👑', min: 85000,  max: 100000 };
   else if (honor >= 75000)  tier = { name: '마스터',       icon: '👑', min: 75000,  max: 85000 };
-  else if (honor >= 65000)  tier = { name: '찬란한 다이아몬드',   icon: '💠', min: 50000,  max: 75000  };
-  else if (honor >= 60000)  tier = { name: '진화한 다이아몬드',   icon: '💠', min: 50000,  max: 65000  };
-  else if (honor >= 55000)  tier = { name: '성장한 다이아몬드',   icon: '💠', min: 50000,  max: 60000  };
-  else if (honor >= 50000)  tier = { name: '거친 다이아몬드',   icon: '💠', min: 50000,  max: 55000  };
-  else if (honor >= 45000)  tier = { name: '찬란한 루비',     icon: '💎', min: 30000,  max: 50000  };
-  else if (honor >= 40000)  tier = { name: '진화한 루비',     icon: '💎', min: 30000,  max: 45000  };
-  else if (honor >= 35000)  tier = { name: '성장한 루비',     icon: '💎', min: 30000,  max: 40000  };
+  else if (honor >= 65000)  tier = { name: '영원의 결정',   icon: '💠', min: 50000,  max: 75000  };
+  else if (honor >= 60000)  tier = { name: '무결 다이아',   icon: '💠', min: 50000,  max: 65000  };
+  else if (honor >= 55000)  tier = { name: '세공된 다이아',   icon: '💠', min: 50000,  max: 60000  };
+  else if (honor >= 50000)  tier = { name: '다이아 원석',   icon: '💠', min: 50000,  max: 55000  };
+  else if (honor >= 45000)  tier = { name: '홍염의 정점',     icon: '💎', min: 30000,  max: 50000  };
+  else if (honor >= 40000)  tier = { name: '강성한 루비',     icon: '💎', min: 30000,  max: 45000  };
+  else if (honor >= 35000)  tier = { name: '연마된 루비',     icon: '💎', min: 30000,  max: 40000  };
   else if (honor >= 30000)  tier = { name: '루비 원석',     icon: '💎', min: 30000,  max: 35000  };
-  else if (honor >= 27500)  tier = { name: '찬란한 골드',         icon: '🥇', min: 20000,  max: 30000  };
-  else if (honor >= 25000)  tier = { name: '진화한 골드',         icon: '🥇', min: 20000,  max: 27500  };
-  else if (honor >= 22500)  tier = { name: '성장한 골드',         icon: '🥇', min: 20000,  max: 25000  };
+  else if (honor >= 27500)  tier = { name: '태양의 황금',         icon: '🥇', min: 20000,  max: 30000  };
+  else if (honor >= 25000)  tier = { name: '정련된 골드',         icon: '🥇', min: 20000,  max: 27500  };
+  else if (honor >= 22500)  tier = { name: '제련된 골드',         icon: '🥇', min: 20000,  max: 25000  };
   else if (honor >= 20000)  tier = { name: '금 광석',         icon: '🥇', min: 20000,  max: 22500  };
   else if (honor >= 17500)  tier = { name: '찬란한 실버',         icon: '🥈', min: 10000,  max: 20000  };
   else if (honor >= 15000)  tier = { name: '진화한 실버',         icon: '🥈', min: 10000,  max: 17500  };
@@ -1175,7 +1175,7 @@ function checkAndGrantAchievements(studentName, balance, totalTax, honor) {
     'RANK-001': ['거친 실버'],
     'RANK-002': ['금 광석'],
     'RANK-003': ['루비 원석'],
-    'RANK-004': ['거친 다이아몬드'],
+    'RANK-004': ['다이아 원석'],
     'RANK-005': ['마스터'],
     'RANK-006': ['그랜드마스터']
   };
@@ -1183,21 +1183,21 @@ function checkAndGrantAchievements(studentName, balance, totalTax, honor) {
   const h = Number(honor) || 0;
   let currentTierName = '새싹';
   if      (h >= 100000) currentTierName = '그랜드마스터';
-  else if (h >= 85000)  currentTierName = '완성된 마스터';
+  else if (h >= 85000)  currentTierName = '천상의 마스터';
   else if (h >= 75000)  currentTierName = '마스터';
-  else if (h >= 65000)  currentTierName = '찬란한 다이아몬드';
-  else if (h >= 60000)  currentTierName = '진화한 다이아몬드';
-  else if (h >= 55000)  currentTierName = '성장한 다이아몬드';
-  else if (h >= 50000)  currentTierName = '거친 다이아몬드';
-  else if (h >= 45000)  currentTierName = '찬란한 루비';
-  else if (h >= 40000)  currentTierName = '진화한 루비';
-  else if (h >= 35000)  currentTierName = '성장한 루비';
+  else if (h >= 65000)  currentTierName = '영원의 결정';
+  else if (h >= 60000)  currentTierName = '무결 다이아';
+  else if (h >= 55000)  currentTierName = '세공된 다이아';
+  else if (h >= 50000)  currentTierName = '다이아 원석';
+  else if (h >= 45000)  currentTierName = '홍염의 정점';
+  else if (h >= 40000)  currentTierName = '강성한 루비';
+  else if (h >= 35000)  currentTierName = '연마된 루비';
   else if (h >= 30000)  currentTierName = '루비 원석';
-  else if (h >= 27500)  currentTierName = '찬란한 골드';
-  else if (h >= 25000)  currentTierName = '진화한 골드';
-  else if (h >= 22500)  currentTierName = '성장한 골드';
+  else if (h >= 27500)  currentTierName = '태양의 황금';
+  else if (h >= 25000)  currentTierName = '정련된 골드';
+  else if (h >= 22500)  currentTierName = '제련된 골드';
   else if (h >= 20000)  currentTierName = '금 광석';
-  else if (h >= 17500)  currentTierName = '찬란한 실버';
+  else if (h >= 17500)  currentTierName = '은빛 극점';
   else if (h >= 15000)  currentTierName = '진화한 실버';
   else if (h >= 12500)  currentTierName = '성장한 실버';
   else if (h >= 10000)  currentTierName = '거친 실버';
@@ -1687,9 +1687,36 @@ function getSecondaryJobForStudent(studentName) {
   if (!sheet) return null;
   const data = sheet.getDataRange().getValues();
   for (let i = 1; i < data.length; i++) {
-    if (String(data[i][0]).trim() === String(studentName).trim()) {
-      return { jobName: String(data[i][1]), jobDesc: String(data[i][2]) };
+    if (String(data[i][0]).trim() !== String(studentName).trim()) continue;
+
+    // ── 평균 평점 계산 (구매자 5명 이상일 때만 공개) ──────────
+    let ratingAvg    = null;
+    let ratingCount  = 0;
+    const p2pSheet   = ss.getSheetByName(SHEET_P2P);
+    if (p2pSheet) {
+      const p2pData = p2pSheet.getDataRange().getValues();
+      let ratingSum = 0;
+      for (let j = 1; j < p2pData.length; j++) {
+        // receiver가 본인 = 판매자로서 받은 거래
+        if (String(p2pData[j][3]).trim() !== String(studentName).trim()) continue;
+        const r = Number(p2pData[j][9]) || 0;  // J열: 평점
+        if (r > 0) {
+          ratingSum += r;
+          ratingCount++;
+        }
+      }
+      // 5명 이상 평가한 경우만 평균 공개
+      if (ratingCount >= 5) {
+        ratingAvg = Math.round((ratingSum / ratingCount) * 10) / 10; // 소수점 1자리
+      }
     }
+
+    return {
+      jobName:     String(data[i][1]),
+      jobDesc:     String(data[i][2]),
+      ratingAvg:   ratingAvg,
+      ratingCount: ratingCount
+    };
   }
   return null;
 }
@@ -2828,8 +2855,8 @@ function getMyP2PHistory(studentName) {
       status:      String(data[i][7]).trim(),
       isSent:      isSent,
       rating:      rating,
-      // 평점 가능 여부: receiver이고 아직 미평가인 경우만 true
-      canRate:     (!isSent && rating === 0)
+      // 평점 가능 여부: sender(서비스 구매자)이고 아직 미평가인 경우만 true
+      canRate:     (isSent && rating === 0)
     });
   }
   return result.reverse(); // 최신순
@@ -3248,7 +3275,27 @@ function createDeposit(studentName, amount, weeks) {
   if (amount < prod.minAmount)
     return { success: false, msg: `최소 가입 금액은 $${prod.minAmount.toLocaleString()}입니다.` };
   if (amount > prod.maxAmount)
-    return { success: false, msg: `최대 가입 금액은 $${prod.maxAmount.toLocaleString()}입니다.` };
+    return { success: false, msg: `1회 최대 가입 금액은 $${prod.maxAmount.toLocaleString()}입니다.` };
+
+  // ── 상품당 누적 한도 체크 ─────────────────────────────────
+  // 현재 활성 상품에 진행중인 예금 합산액이 maxAmount를 초과하지 않도록
+  const logSheetCheck = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_DEPOSIT_LOG);
+  if (logSheetCheck) {
+    const logCheck = logSheetCheck.getDataRange().getValues();
+    let alreadyDeposited = 0;
+    for (let i = 1; i < logCheck.length; i++) {
+      if (String(logCheck[i][1]).trim() === String(studentName).trim() &&
+          String(logCheck[i][10]).trim() === prod.prodId &&
+          String(logCheck[i][7]).trim() === '진행중') {
+        alreadyDeposited += Number(logCheck[i][2]) || 0;
+      }
+    }
+    const remaining = prod.maxAmount - alreadyDeposited;
+    if (remaining <= 0)
+      return { success: false, msg: `이번 상품의 최대 한도 $${prod.maxAmount.toLocaleString()}에 이미 도달했습니다.` };
+    if (amount > remaining)
+      return { success: false, msg: `이번 상품에 추가 가입 가능한 금액은 $${remaining.toLocaleString()}입니다. (한도: $${prod.maxAmount.toLocaleString()})` };
+  }
 
   const ss        = SpreadsheetApp.getActiveSpreadsheet();
   const mainSheet = ss.getSheetByName(SHEET_MAIN);
@@ -3585,13 +3632,13 @@ function rateP2PTransaction(txnId, rater, rating) {
   const data = sheet.getDataRange().getValues();
   for (let i = 1; i < data.length; i++) {
     const rowTxnId   = String(data[i][0]).trim();
-    const rowReceiver = String(data[i][3]).trim();  // D열: 받는 학생
+    const rowSender = String(data[i][2]).trim();  // C열: 보낸 학생 = 서비스 구매자
 
     if (rowTxnId !== String(txnId).trim()) continue;
 
-    // 평점 권한 확인: 반드시 receiver(서비스 구매자)만 평가 가능
-    if (rowReceiver !== String(rater).trim())
-      return { success: false, msg: '거래 상대방만 평점을 남길 수 있습니다.' };
+    // 평점 권한 확인: 돈을 보낸 쪽(sender = 서비스 구매자)만 평가 가능
+    if (rowSender !== String(rater).trim())
+      return { success: false, msg: '서비스 구매자(송금한 학생)만 평점을 남길 수 있습니다.' };
 
     // 이미 평가한 경우 중복 방지
     const existing = Number(data[i][9]) || 0;  // J열: 인덱스 9
@@ -3604,4 +3651,5 @@ function rateP2PTransaction(txnId, rater, rating) {
   }
   return { success: false, msg: '해당 거래를 찾을 수 없습니다.' };
 }
+
 

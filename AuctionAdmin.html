@@ -260,9 +260,16 @@
     <button onclick="loadPendingJobs()" style="background:#2980b9;color:white;border:none;padding:8px 16px;border-radius:6px;font-weight:bold;cursor:pointer;">💼 2차 직업 대기함 불러오기</button>
     <button onclick="loadRejectedAch()" style="background:#c0392b;color:white;border:none;padding:8px 16px;border-radius:6px;font-weight:bold;cursor:pointer;">↩️ 반려 정정함 불러오기</button>
     <button onclick="loadP2PAlerts()"
-  style="background:#16a085;color:white;border:none;padding:8px 16px;border-radius:6px;font-weight:bold;cursor:pointer;">
-  🚨 P2P 이상거래 확인
-</button>
+     style="background:#16a085;color:white;border:none;padding:8px 16px;border-radius:6px;font-weight:bold;cursor:pointer;">
+     🚨 P2P 이상거래 확인</button>
+    <button onclick="openLaunchDepositModal()"
+      style="background:#2471a3;color:white;border:none;padding:8px 16px;border-radius:6px;font-weight:bold;cursor:pointer;">
+     🏦 신규 예금 상품 론칭</button>
+    <button onclick="doSetPenaltyRate()"
+      style="background:#7f8c8d;color:white;border:none;padding:8px 16px;border-radius:6px;font-weight:bold;cursor:pointer;">
+      ✏️ 패널티율 수정</button>
+    <button onclick="setGuardPw()"
+     style="background:#0d1117;color:#58a6ff;border:1px solid #58a6ff;padding:8px 16px;border-radius:6px;font-weight:bold;cursor:pointer;">🛡️ 수호대 비밀번호 설정</button>
   </div>
 
   <!-- 업적 대기함 -->
@@ -282,6 +289,84 @@
     <h3 style="margin:0 0 6px;color:#c0392b;">↩️ 반려 정정함</h3>
     <p style="font-size:13px;color:#888;margin:0 0 12px;">실수로 반려한 업적 신청을 '대기' 상태로 되돌려 재심사할 수 있습니다.</p>
     <div id="rejectedList">로딩 중...</div>
+  </div>
+
+  <!-- 예금 론칭 모달 -->
+  <div id="depositLaunchModal"
+    style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+          background:rgba(0,0,0,0.5);z-index:9999;justify-content:center;align-items:center;">
+    <div style="background:white;border-radius:12px;padding:24px;width:92%;max-width:440px;
+                box-shadow:0 10px 40px rgba(0,0,0,0.3);max-height:90vh;overflow-y:auto;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+        <div style="font-size:17px;font-weight:bold;color:#2471a3;">🏦 신규 예금 상품 론칭</div>
+        <button onclick="closeDepositLaunchModal()"
+          style="background:none;border:none;font-size:22px;cursor:pointer;color:#95a5a6;">✕</button>
+      </div>
+
+      <div style="background:#fef9e7;border:1px solid #f39c12;border-radius:8px;
+                  padding:10px 12px;font-size:12px;color:#856404;margin-bottom:16px;">
+        ⚠️ 론칭 즉시 기존 상품이 종료되고 전체 학생에게 우편이 발송됩니다.
+      </div>
+
+      <!-- 상품명 -->
+      <div style="margin-bottom:10px;">
+        <label style="font-size:12px;color:#555;display:block;margin-bottom:4px;font-weight:bold;">상품명</label>
+        <input type="text" id="dpName" placeholder="예: 5월 정기예금"
+          style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:14px;box-sizing:border-box;">
+      </div>
+
+      <!-- 이자율 4개 -->
+      <div style="margin-bottom:10px;">
+        <label style="font-size:12px;color:#555;display:block;margin-bottom:6px;font-weight:bold;">이자율 (%)</label>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
+          <div style="text-align:center;">
+            <div style="font-size:11px;color:#888;margin-bottom:3px;">1주</div>
+            <input type="number" id="dpR1" min="0" max="100" step="0.1" value="2"
+              style="width:100%;padding:6px;border:1px solid #ddd;border-radius:6px;font-size:13px;text-align:center;box-sizing:border-box;">
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:11px;color:#888;margin-bottom:3px;">2주</div>
+            <input type="number" id="dpR2" min="0" max="100" step="0.1" value="5"
+              style="width:100%;padding:6px;border:1px solid #ddd;border-radius:6px;font-size:13px;text-align:center;box-sizing:border-box;">
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:11px;color:#888;margin-bottom:3px;">3주</div>
+            <input type="number" id="dpR3" min="0" max="100" step="0.1" value="9"
+              style="width:100%;padding:6px;border:1px solid #ddd;border-radius:6px;font-size:13px;text-align:center;box-sizing:border-box;">
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:11px;color:#888;margin-bottom:3px;">4주</div>
+            <input type="number" id="dpR4" min="0" max="100" step="0.1" value="15"
+              style="width:100%;padding:6px;border:1px solid #ddd;border-radius:6px;font-size:13px;text-align:center;box-sizing:border-box;">
+          </div>
+        </div>
+      </div>
+
+      <!-- 패널티율 / 한도 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;">
+        <div>
+          <label style="font-size:12px;color:#555;display:block;margin-bottom:4px;font-weight:bold;">패널티율 (%)</label>
+          <input type="number" id="dpPenalty" min="0" max="100" step="1" value="5"
+            style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:13px;box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="font-size:12px;color:#555;display:block;margin-bottom:4px;font-weight:bold;">최소금액 ($)</label>
+          <input type="number" id="dpMin" min="100" step="100" value="500"
+            style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:13px;box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="font-size:12px;color:#555;display:block;margin-bottom:4px;font-weight:bold;">최대금액 ($)</label>
+          <input type="number" id="dpMax" min="100" step="100" value="5000"
+            style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:13px;box-sizing:border-box;">
+        </div>
+      </div>
+
+      <button onclick="doLaunchDeposit()" id="dpLaunchBtn"
+        style="width:100%;padding:11px;background:#2471a3;color:white;border:none;
+              border-radius:8px;font-weight:bold;font-size:15px;cursor:pointer;">
+        🚀 론칭하기
+      </button>
+    </div>
   </div>
 </div>
 
@@ -556,5 +641,78 @@ function doResolveP2P(rowNum) {
 }
 </script>
 
+<script>
+function setGuardPw() {
+  var pw = prompt('수호대 비밀번호를 입력하세요.\n(매달 인원 교체 시 변경 권장)');
+  if (pw === null) return;
+  if (!pw.trim()) { alert('비밀번호를 입력해주세요.'); return; }
+  google.script.run
+    .withSuccessHandler(function(res) { alert(res.msg); })
+    .withFailureHandler(function(e)   { alert('오류: ' + e.message); })
+    .setGuardPassword(pw.trim());
+}
+</script>
+
+<script>
+// ── 예금 론칭 모달 열기/닫기 ───────────────────────────────────
+function openLaunchDepositModal() {
+  document.getElementById('depositLaunchModal').style.display = 'flex';
+}
+function closeDepositLaunchModal() {
+  document.getElementById('depositLaunchModal').style.display = 'none';
+}
+
+// ── 신규 예금 상품 론칭 실행 ───────────────────────────────────
+function doLaunchDeposit() {
+  var name    = document.getElementById('dpName').value.trim();
+  var r1      = parseFloat(document.getElementById('dpR1').value);
+  var r2      = parseFloat(document.getElementById('dpR2').value);
+  var r3      = parseFloat(document.getElementById('dpR3').value);
+  var r4      = parseFloat(document.getElementById('dpR4').value);
+  var penalty = parseFloat(document.getElementById('dpPenalty').value);
+  var minAmt  = parseInt(document.getElementById('dpMin').value);
+  var maxAmt  = parseInt(document.getElementById('dpMax').value);
+
+  if (!name)                { alert('상품명을 입력해주세요.'); return; }
+  if (!r1 || !r2 || !r3 || !r4) { alert('이자율 4개를 모두 입력해주세요.'); return; }
+  if (minAmt >= maxAmt)     { alert('최소금액은 최대금액보다 작아야 합니다.'); return; }
+
+  if (!confirm(
+    '[' + name + '] 상품을 론칭하시겠습니까?\n\n' +
+    '• 이자율: ' + r1 + '% / ' + r2 + '% / ' + r3 + '% / ' + r4 + '%\n' +
+    '• 패널티: ' + penalty + '% / 한도: $' + minAmt + '~$' + maxAmt + '\n\n' +
+    '기존 상품이 즉시 종료되고 전체 학생에게 우편이 발송됩니다.'
+  )) return;
+
+  var btn = document.getElementById('dpLaunchBtn');
+  btn.disabled = true; btn.innerText = '처리 중...';
+
+  google.script.run
+    .withSuccessHandler(function(res) {
+      btn.disabled = false; btn.innerText = '🚀 론칭하기';
+      alert(res.msg);
+      if (res.success) closeDepositLaunchModal();
+    })
+    .withFailureHandler(function(err) {
+      btn.disabled = false; btn.innerText = '🚀 론칭하기';
+      alert('오류: ' + err.message);
+    })
+    .launchDepositProduct(name, { r1: r1, r2: r2, r3: r3, r4: r4 }, penalty, minAmt, maxAmt);
+}
+
+// ── 패널티율 단독 수정 ──────────────────────────────────────────
+function doSetPenaltyRate() {
+  var rate = prompt('현재 활성 상품의 중도해지 패널티율을 입력하세요 (숫자만, 예: 5)');
+  if (rate === null) return;
+  rate = parseFloat(rate);
+  if (isNaN(rate) || rate < 0 || rate > 100) {
+    alert('0~100 사이의 숫자를 입력해주세요.'); return;
+  }
+  google.script.run
+    .withSuccessHandler(function(res) { alert(res.msg); })
+    .withFailureHandler(function(err) { alert('오류: ' + err.message); })
+    .setPenaltyRate(rate);
+}
+</script>
 </body>
 </html>

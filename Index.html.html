@@ -887,6 +887,406 @@
       <div style="font-size:14px;color:#888;margin-top:6px;">금 광석 이상 달성 시 2차 직업 시스템이 해금됩니다.</div>
     </div>
 
+    <!-- ── 정기예금 카드 ── -->
+<div class="card" style="border-left:6px solid #2471a3;">
+
+  <!-- 카드 타이틀 -->
+  <div class="card-title">
+    <span>🏦 정기 예금</span>
+    <button onclick="openDepositHistoryModal()"
+      style="padding:4px 10px;background:#2471a3;color:white;border:none;border-radius:6px;font-size:12px;font-weight:bold;cursor:pointer;">
+      📋 내 예금 현황
+    </button>
+  </div>
+
+  <!-- 활성 상품 정보 -->
+  <div id="depositProdInfo" style="background:#eaf4fb;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:13px;">
+    <div id="depositProdName" style="font-weight:bold;color:#2471a3;margin-bottom:4px;">로딩 중...</div>
+    <div id="depositProdRates" style="color:#555;font-size:12px;"></div>
+  </div>
+
+  <!-- 신규 예금 신청 폼 -->
+  <div id="depositFormWrap">
+    <!-- 금액 -->
+    <div style="margin-bottom:8px;">
+      <label style="font-size:12px;color:#555;display:block;margin-bottom:4px;">
+        금액 (100 단위, 최소 <span id="depositMin">$500</span> ~ 최대 <span id="depositMax">$5,000</span>)
+      </label>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+        <input type="number" id="depositAmount" min="500" max="5000" step="100"
+          placeholder="예: 1000"
+          oninput="calcDepositPreview()"
+          style="flex:1;min-width:100px;padding:9px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;box-sizing:border-box;">
+        <button onclick="addDepositAmount(500)"  style="padding:7px 10px;background:#ecf0f1;border:1px solid #ddd;border-radius:6px;font-size:12px;cursor:pointer;">+500</button>
+        <button onclick="addDepositAmount(1000)" style="padding:7px 10px;background:#ecf0f1;border:1px solid #ddd;border-radius:6px;font-size:12px;cursor:pointer;">+1000</button>
+        <button onclick="addDepositAmount(2000)" style="padding:7px 10px;background:#ecf0f1;border:1px solid #ddd;border-radius:6px;font-size:12px;cursor:pointer;">+2000</button>
+      </div>
+    </div>
+
+    <!-- 기간 선택 -->
+    <div style="margin-bottom:12px;">
+      <label style="font-size:12px;color:#555;display:block;margin-bottom:6px;">거치 기간</label>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;" id="depositWeekBtns">
+        <button onclick="selectDepositWeek(this,1)"
+          style="padding:10px 0;border:2px solid #ddd;border-radius:8px;background:white;font-size:13px;cursor:pointer;font-weight:bold;">
+          1주<br><span style="font-size:11px;color:#27ae60;" id="drate1">2%</span>
+        </button>
+        <button onclick="selectDepositWeek(this,2)"
+          style="padding:10px 0;border:2px solid #ddd;border-radius:8px;background:white;font-size:13px;cursor:pointer;font-weight:bold;">
+          2주<br><span style="font-size:11px;color:#27ae60;" id="drate2">5%</span>
+        </button>
+        <button onclick="selectDepositWeek(this,3)"
+          style="padding:10px 0;border:2px solid #ddd;border-radius:8px;background:white;font-size:13px;cursor:pointer;font-weight:bold;">
+          3주<br><span style="font-size:11px;color:#27ae60;" id="drate3">9%</span>
+        </button>
+        <button onclick="selectDepositWeek(this,4)"
+          style="padding:10px 0;border:2px solid #ddd;border-radius:8px;background:white;font-size:13px;cursor:pointer;font-weight:bold;">
+          4주<br><span style="font-size:11px;color:#27ae60;" id="drate4">15%</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 예상 수령액 미리보기 -->
+    <div id="depositPreview" style="display:none;background:#f0f9ff;border:1px solid #aed6f1;border-radius:8px;padding:12px;margin-bottom:8px;font-size:13px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+        <span style="color:#555;">원금</span>
+        <span id="prevPrincipal" style="font-weight:bold;">-</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+        <span style="color:#555;" id="prevRateLabel">이자</span>
+        <span id="prevGrossInt" style="color:#27ae60;font-weight:bold;">-</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+        <span style="color:#555;">소득세 (10%)</span>
+        <span id="prevTax" style="color:#e74c3c;font-weight:bold;">-</span>
+      </div>
+      <div style="border-top:1px solid #aed6f1;padding-top:6px;display:flex;justify-content:space-between;">
+        <span style="font-weight:bold;color:#2471a3;">실수령액</span>
+        <span id="prevTotal" style="font-weight:bold;font-size:15px;color:#2471a3;">-</span>
+      </div>
+      <div style="margin-top:8px;font-size:11px;color:#888;">
+        ⚠️ 예금 이자로 얻은 수익에도 세금이 적용됩니다.
+      </div>
+    </div>
+
+    <button onclick="submitDeposit()" id="depositSubmitBtn"
+      style="width:100%;padding:11px;background:linear-gradient(135deg,#2471a3,#2e86c1);color:white;border:none;border-radius:8px;font-weight:bold;font-size:15px;cursor:pointer;">
+      🏦 예금 가입하기
+    </button>
+  </div>
+
+  <!-- 상품 없을 때 안내 -->
+  <div id="depositNoProduct" style="display:none;text-align:center;padding:20px;color:#aaa;font-size:13px;">
+    현재 가입 가능한 예금 상품이 없습니다.
+  </div>
+</div>
+
+<!-- ── 예금 현황 모달 ── -->
+<div id="depositHistoryModal"
+  style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1001;justify-content:center;align-items:center;">
+  <div style="background:white;border-radius:15px;width:92%;max-width:500px;max-height:88vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,0.3);">
+    <div style="background:linear-gradient(135deg,#2471a3,#2e86c1);color:white;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
+      <div style="font-size:17px;font-weight:bold;">📋 나의 예금 현황</div>
+      <button onclick="closeDepositHistoryModal()" style="background:rgba(255,255,255,0.2);border:none;color:white;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:15px;">✕</button>
+    </div>
+    <div id="depositHistoryList" style="overflow-y:auto;flex:1;padding:12px;">
+      <div style="text-align:center;padding:30px;color:#bbb;">로딩 중...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     아래 <script> 블록은 기존 </script> 안에 추가하거나
+     별도 <script> 태그로 추가하세요.
+     ══════════════════════════════════════════════════════════ -->
+<script>
+// ── 예금 전역 상태 ────────────────────────────────────────────
+var _depositProd    = null;   // 현재 활성 상품
+var _selectedWeeks  = 0;      // 선택된 주수
+
+// ── 대시보드 로드 시 예금 상품 불러오기 (showDashboard에서 호출) ─
+// showDashboard 함수 내 loadP2PReceiverList(); 바로 아래에 추가:
+// loadDepositProduct();
+function loadDepositProduct() {
+  google.script.run
+    .withSuccessHandler(function(prod) {
+      _depositProd = prod;
+      renderDepositCard(prod);
+    })
+    .withFailureHandler(function(err) {
+      console.log('예금 상품 로드 실패: ' + err.message);
+      document.getElementById('depositProdName').innerText = '상품 정보를 불러올 수 없습니다.';
+    })
+    .getActiveDepositProduct();
+}
+
+// ── 예금 카드 렌더링 ──────────────────────────────────────────
+function renderDepositCard(prod) {
+  var formWrap   = document.getElementById('depositFormWrap');
+  var noProduct  = document.getElementById('depositNoProduct');
+  var prodInfo   = document.getElementById('depositProdInfo');
+
+  if (!prod) {
+    if (formWrap)  formWrap.style.display  = 'none';
+    if (noProduct) noProduct.style.display = 'block';
+    document.getElementById('depositProdName').innerText  = '현재 가입 가능한 상품이 없습니다.';
+    document.getElementById('depositProdRates').innerText = '';
+    return;
+  }
+
+  if (formWrap)  formWrap.style.display  = 'block';
+  if (noProduct) noProduct.style.display = 'none';
+
+  document.getElementById('depositProdName').innerText =
+    '📌 ' + prod.prodName + ' (론칭일: ' + prod.launchDate + ')';
+  document.getElementById('depositProdRates').innerText =
+    '1주 ' + prod.rate1 + '% / 2주 ' + prod.rate2 + '% / 3주 ' + prod.rate3 + '% / 4주 ' + prod.rate4 + '%';
+
+  // 금액 한도 표시
+  document.getElementById('depositMin').innerText = '$' + prod.minAmount.toLocaleString();
+  document.getElementById('depositMax').innerText = '$' + prod.maxAmount.toLocaleString();
+
+  // 기간 버튼 이자율 업데이트
+  document.getElementById('drate1').innerText = prod.rate1 + '%';
+  document.getElementById('drate2').innerText = prod.rate2 + '%';
+  document.getElementById('drate3').innerText = prod.rate3 + '%';
+  document.getElementById('drate4').innerText = prod.rate4 + '%';
+
+  // input 한도 업데이트
+  var amtInput = document.getElementById('depositAmount');
+  if (amtInput) {
+    amtInput.min  = prod.minAmount;
+    amtInput.max  = prod.maxAmount;
+  }
+}
+
+// ── 금액 빠른 추가 버튼 ──────────────────────────────────────
+function addDepositAmount(val) {
+  var input   = document.getElementById('depositAmount');
+  var current = parseInt(input.value) || 0;
+  input.value = current + val;
+  calcDepositPreview();
+}
+
+// ── 기간 버튼 선택 ────────────────────────────────────────────
+function selectDepositWeek(btn, weeks) {
+  _selectedWeeks = weeks;
+  // 버튼 스타일 초기화
+  var btns = document.querySelectorAll('#depositWeekBtns button');
+  btns.forEach(function(b) {
+    b.style.borderColor = '#ddd';
+    b.style.background  = 'white';
+    b.style.color       = '#333';
+  });
+  // 선택된 버튼 강조
+  btn.style.borderColor = '#2471a3';
+  btn.style.background  = '#eaf4fb';
+  btn.style.color       = '#2471a3';
+  calcDepositPreview();
+}
+
+// ── 예상 수령액 계산 및 표시 ─────────────────────────────────
+function calcDepositPreview() {
+  if (!_depositProd || !_selectedWeeks) {
+    document.getElementById('depositPreview').style.display = 'none';
+    return;
+  }
+  var amount = parseInt(document.getElementById('depositAmount').value) || 0;
+  if (amount <= 0) {
+    document.getElementById('depositPreview').style.display = 'none';
+    return;
+  }
+
+  var rateMap = {1: _depositProd.rate1, 2: _depositProd.rate2,
+                 3: _depositProd.rate3, 4: _depositProd.rate4};
+  var rate     = rateMap[_selectedWeeks] || 0;
+  var grossInt = Math.floor(amount * rate / 100);
+  var tax      = Math.floor(grossInt * 0.1);
+  var netInt   = grossInt - tax;
+  var total    = amount + netInt;
+
+  document.getElementById('prevPrincipal').innerText  = '$ ' + amount.toLocaleString();
+  document.getElementById('prevRateLabel').innerText  = '이자 (' + rate + '%)';
+  document.getElementById('prevGrossInt').innerText   = '+ $ ' + grossInt.toLocaleString();
+  document.getElementById('prevTax').innerText        = '- $ ' + tax.toLocaleString();
+  document.getElementById('prevTotal').innerText      = '$ ' + total.toLocaleString();
+  document.getElementById('depositPreview').style.display = 'block';
+}
+
+// ── 예금 가입 제출 ────────────────────────────────────────────
+function submitDeposit() {
+  if (!_depositProd) { alert('현재 가입 가능한 상품이 없습니다.'); return; }
+  var amount = parseInt(document.getElementById('depositAmount').value) || 0;
+  var weeks  = _selectedWeeks;
+
+  if (!amount || amount <= 0)  { alert('금액을 입력해주세요.'); return; }
+  if (amount % 100 !== 0)      { alert('금액은 100 단위로 입력해주세요. (예: 500, 1000)'); return; }
+  if (amount < _depositProd.minAmount) {
+    alert('최소 가입 금액은 $' + _depositProd.minAmount.toLocaleString() + '입니다.'); return;
+  }
+  if (amount > _depositProd.maxAmount) {
+    alert('최대 가입 금액은 $' + _depositProd.maxAmount.toLocaleString() + '입니다.'); return;
+  }
+  if (!weeks) { alert('거치 기간을 선택해주세요.'); return; }
+
+  var rateMap  = {1: _depositProd.rate1, 2: _depositProd.rate2,
+                  3: _depositProd.rate3, 4: _depositProd.rate4};
+  var grossInt = Math.floor(amount * rateMap[weeks] / 100);
+  var tax      = Math.floor(grossInt * 0.1);
+  var total    = amount + grossInt - tax;
+
+  if (!confirm(
+    weeks + '주 정기예금 가입\n\n' +
+    '예치 금액: $' + amount.toLocaleString() + '\n' +
+    '만기 실수령: $' + total.toLocaleString() + '\n\n' +
+    '가입하시겠습니까?'
+  )) return;
+
+  var btn = document.getElementById('depositSubmitBtn');
+  btn.disabled = true; btn.innerText = '처리 중...';
+
+  google.script.run
+    .withSuccessHandler(function(res) {
+      btn.disabled = false; btn.innerText = '🏦 예금 가입하기';
+      if (res.success) {
+        alert(res.msg);
+        // 잔액 즉시 반영
+        var balEl = document.getElementById('myBalance');
+        if (balEl) balEl.innerText = '$ ' + Number(res.newBalance).toLocaleString();
+        if (window._lastDashboardData)
+          window._lastDashboardData.personal.balance = res.newBalance;
+        // 입력 초기화
+        document.getElementById('depositAmount').value = '';
+        _selectedWeeks = 0;
+        var btns = document.querySelectorAll('#depositWeekBtns button');
+        btns.forEach(function(b) {
+          b.style.borderColor = '#ddd';
+          b.style.background  = 'white';
+          b.style.color       = '#333';
+        });
+        document.getElementById('depositPreview').style.display = 'none';
+      } else {
+        alert('가입 실패: ' + res.msg);
+      }
+    })
+    .withFailureHandler(function(err) {
+      btn.disabled = false; btn.innerText = '🏦 예금 가입하기';
+      alert('서버 오류: ' + err.message);
+    })
+    .createDeposit(window._currentStudentName, amount, weeks);
+}
+
+// ── 예금 현황 모달 열기 ──────────────────────────────────────
+function openDepositHistoryModal() {
+  document.getElementById('depositHistoryModal').style.display = 'flex';
+  document.getElementById('depositHistoryList').innerHTML =
+    '<div style="text-align:center;padding:30px;color:#bbb;">로딩 중...</div>';
+  google.script.run
+    .withSuccessHandler(renderDepositHistory)
+    .withFailureHandler(function(err) {
+      document.getElementById('depositHistoryList').innerHTML =
+        '<div style="color:#e74c3c;padding:16px;">오류: ' + err.message + '</div>';
+    })
+    .getMyDeposits(window._currentStudentName);
+}
+
+function closeDepositHistoryModal() {
+  document.getElementById('depositHistoryModal').style.display = 'none';
+}
+
+// ── 예금 현황 렌더링 ──────────────────────────────────────────
+function renderDepositHistory(list) {
+  var container = document.getElementById('depositHistoryList');
+  if (!list || list.length === 0) {
+    container.innerHTML =
+      '<div style="text-align:center;padding:30px;color:#bbb;font-size:14px;">아직 예금 내역이 없습니다.</div>';
+    return;
+  }
+
+  var html = list.map(function(dep) {
+    var statusColor = dep.status === '진행중' ? '#2471a3'
+                    : dep.status === '만기'   ? '#27ae60'
+                    : '#e74c3c';
+    var statusBg    = dep.status === '진행중' ? '#eaf4fb'
+                    : dep.status === '만기'   ? '#f0fff4'
+                    : '#fff5f5';
+
+    var cancelBtn = '';
+    if (dep.status === '진행중') {
+      cancelBtn =
+        '<button onclick="requestCancelDeposit(\'' + dep.depId + '\',' + dep.amount + ')"' +
+        ' style="margin-top:8px;width:100%;padding:7px;background:#fff5f5;border:1px solid #e74c3c;' +
+        'color:#e74c3c;border-radius:6px;font-size:12px;font-weight:bold;cursor:pointer;">' +
+        '⚠️ 중도 해지' +
+        '</button>';
+    }
+
+    var paidLine = '';
+    if (dep.status === '만기' && dep.paidInt > 0) {
+      paidLine = '<div style="font-size:12px;color:#27ae60;margin-top:2px;">' +
+        '지급 이자 (세후): +$' + dep.paidInt.toLocaleString() + '</div>';
+    }
+
+    return '<div style="padding:12px;border-bottom:1px solid #f5f5f5;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">' +
+        '<div style="font-size:15px;font-weight:bold;color:#2c3e50;">' +
+          '$' + dep.amount.toLocaleString() + ' · ' + dep.weeks + '주 · ' + dep.rate + '%' +
+        '</div>' +
+        '<span style="background:' + statusBg + ';color:' + statusColor + ';' +
+          'border-radius:12px;padding:2px 10px;font-size:12px;font-weight:bold;">' +
+          dep.status +
+        '</span>' +
+      '</div>' +
+      '<div style="font-size:12px;color:#888;">' +
+        dep.startDate + ' ~ ' + dep.dueDate +
+      '</div>' +
+      paidLine +
+      cancelBtn +
+    '</div>';
+  }).join('');
+
+  container.innerHTML = html;
+}
+
+// ── 중도 해지 요청 ────────────────────────────────────────────
+function requestCancelDeposit(depId, amount) {
+  if (!_depositProd && !depId) { alert('오류가 발생했습니다.'); return; }
+
+  // 패널티 안내 (활성 상품 패널티율 기준으로 표시)
+  var penaltyRate = _depositProd ? _depositProd.penalty : 5;
+  var penalty     = Math.floor(amount * penaltyRate / 100);
+  var refund      = amount - penalty;
+
+  if (!confirm(
+    '⚠️ 중도 해지 안내\n\n' +
+    '원금: $' + amount.toLocaleString() + '\n' +
+    '패널티 (' + penaltyRate + '%): -$' + penalty.toLocaleString() + '\n' +
+    '반환액: $' + refund.toLocaleString() + '\n\n' +
+    '중도 해지하시겠습니까?'
+  )) return;
+
+  if (!confirm('⚠️ 이 작업은 되돌릴 수 없습니다.\n정말 해지하시겠습니까?')) return;
+
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (res.success) {
+        alert(res.msg);
+        var balEl = document.getElementById('myBalance');
+        if (balEl) balEl.innerText = '$ ' + Number(res.newBalance).toLocaleString();
+        if (window._lastDashboardData)
+          window._lastDashboardData.personal.balance = res.newBalance;
+        openDepositHistoryModal(); // 목록 새로고침
+      } else {
+        alert('해지 실패: ' + res.msg);
+      }
+    })
+    .withFailureHandler(function(err) {
+      alert('서버 오류: ' + err.message);
+    })
+    .cancelDeposit(window._currentStudentName, depId);
+}
+</script>
+
    
     <!-- ── P2P거래 카드 ── -->
     <!-- job2Locked div 바로 아래, Wall of Fame 바로 위에 삽입 -->
@@ -1702,6 +2102,9 @@ function renderP2PHistory(list) {
 
     // P2P 받는 사람 리스트 로드
     loadP2PReceiverList();
+
+    //예금상품 로드
+    loadDepositProduct();
 
     // 전광판 폴링 시작
     startAlertPolling();

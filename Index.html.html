@@ -859,6 +859,8 @@
         <div class="card-title"><span>💼 2차 직업 시스템</span></div>
         <div id="job2MyStatus" style="margin-bottom:12px;padding:10px;background:#f8f0ff;border-radius:8px;font-size:14px;">
           나의 2차 직업: <strong id="job2MyName" style="color:#8e44ad;">없음</strong>
+          <div id="job2MyRating"></div>
+          <div id="job2MyRating"></div>
         </div>
         <div id="job2ApplyForm">
           <input type="text" id="job2Name" placeholder="직업명 (예: 수학 과외 선생님)" style="width:100%;box-sizing:border-box;padding:9px;border:1px solid #ddd;border-radius:6px;font-size:14px;margin-bottom:8px;">
@@ -886,6 +888,722 @@
       <div style="font-size:30px;">🔒</div>
       <div style="font-size:14px;color:#888;margin-top:6px;">금 광석 이상 달성 시 2차 직업 시스템이 해금됩니다.</div>
     </div>
+
+    <!-- ── 정기예금 카드 ── -->
+<div class="card" style="border-left:6px solid #2471a3;">
+
+  <!-- 카드 타이틀 -->
+  <div class="card-title">
+    <span>🏦 정기 예금</span>
+    <button onclick="openDepositHistoryModal()"
+      style="padding:4px 10px;background:#2471a3;color:white;border:none;border-radius:6px;font-size:12px;font-weight:bold;cursor:pointer;">
+      📋 내 예금 현황
+    </button>
+  </div>
+
+  <!-- 활성 상품 정보 -->
+  <div id="depositProdInfo" style="background:#eaf4fb;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:13px;">
+    <div id="depositProdName" style="font-weight:bold;color:#2471a3;margin-bottom:4px;">로딩 중...</div>
+    <div id="depositProdRates" style="color:#555;font-size:12px;"></div>
+  </div>
+
+  <!-- 신규 예금 신청 폼 -->
+  <div id="depositFormWrap">
+    <!-- 금액 -->
+    <div style="margin-bottom:8px;">
+      <label style="font-size:12px;color:#555;display:block;margin-bottom:4px;">
+        금액 (100 단위, 최소 <span id="depositMin">$500</span> ~ 최대 <span id="depositMax">$5,000</span>)
+      </label>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+        <input type="number" id="depositAmount" min="500" max="5000" step="100"
+          placeholder="예: 1000"
+          oninput="calcDepositPreview()"
+          style="flex:1;min-width:100px;padding:9px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;box-sizing:border-box;">
+        <button onclick="addDepositAmount(500)"  style="padding:7px 10px;background:#ecf0f1;border:1px solid #ddd;border-radius:6px;font-size:12px;cursor:pointer;">+500</button>
+        <button onclick="addDepositAmount(1000)" style="padding:7px 10px;background:#ecf0f1;border:1px solid #ddd;border-radius:6px;font-size:12px;cursor:pointer;">+1000</button>
+        <button onclick="addDepositAmount(2000)" style="padding:7px 10px;background:#ecf0f1;border:1px solid #ddd;border-radius:6px;font-size:12px;cursor:pointer;">+2000</button>
+      </div>
+    </div>
+
+    <!-- 기간 선택 -->
+    <div style="margin-bottom:12px;">
+      <label style="font-size:12px;color:#555;display:block;margin-bottom:6px;">거치 기간</label>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;" id="depositWeekBtns">
+        <button onclick="selectDepositWeek(this,1)"
+          style="padding:10px 0;border:2px solid #ddd;border-radius:8px;background:white;font-size:13px;cursor:pointer;font-weight:bold;">
+          1주<br><span style="font-size:11px;color:#27ae60;" id="drate1">2%</span>
+        </button>
+        <button onclick="selectDepositWeek(this,2)"
+          style="padding:10px 0;border:2px solid #ddd;border-radius:8px;background:white;font-size:13px;cursor:pointer;font-weight:bold;">
+          2주<br><span style="font-size:11px;color:#27ae60;" id="drate2">5%</span>
+        </button>
+        <button onclick="selectDepositWeek(this,3)"
+          style="padding:10px 0;border:2px solid #ddd;border-radius:8px;background:white;font-size:13px;cursor:pointer;font-weight:bold;">
+          3주<br><span style="font-size:11px;color:#27ae60;" id="drate3">9%</span>
+        </button>
+        <button onclick="selectDepositWeek(this,4)"
+          style="padding:10px 0;border:2px solid #ddd;border-radius:8px;background:white;font-size:13px;cursor:pointer;font-weight:bold;">
+          4주<br><span style="font-size:11px;color:#27ae60;" id="drate4">15%</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 예상 수령액 미리보기 -->
+    <div id="depositPreview" style="display:none;background:#f0f9ff;border:1px solid #aed6f1;border-radius:8px;padding:12px;margin-bottom:8px;font-size:13px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+        <span style="color:#555;">원금</span>
+        <span id="prevPrincipal" style="font-weight:bold;">-</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+        <span style="color:#555;" id="prevRateLabel">이자</span>
+        <span id="prevGrossInt" style="color:#27ae60;font-weight:bold;">-</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+        <span style="color:#555;">소득세 (10%)</span>
+        <span id="prevTax" style="color:#e74c3c;font-weight:bold;">-</span>
+      </div>
+      <div style="border-top:1px solid #aed6f1;padding-top:6px;display:flex;justify-content:space-between;">
+        <span style="font-weight:bold;color:#2471a3;">실수령액</span>
+        <span id="prevTotal" style="font-weight:bold;font-size:15px;color:#2471a3;">-</span>
+      </div>
+      <div style="margin-top:8px;font-size:11px;color:#888;">
+        ⚠️ 예금 이자로 얻은 수익에도 세금이 적용됩니다.
+      </div>
+    </div>
+
+    <button onclick="submitDeposit()" id="depositSubmitBtn"
+      style="width:100%;padding:11px;background:linear-gradient(135deg,#2471a3,#2e86c1);color:white;border:none;border-radius:8px;font-weight:bold;font-size:15px;cursor:pointer;">
+      🏦 예금 가입하기
+    </button>
+  </div>
+
+  <!-- 상품 없을 때 안내 -->
+  <div id="depositNoProduct" style="display:none;text-align:center;padding:20px;color:#aaa;font-size:13px;">
+    현재 가입 가능한 예금 상품이 없습니다.
+  </div>
+</div>
+
+<!-- ── 예금 현황 모달 ── -->
+<div id="depositHistoryModal"
+  style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1001;justify-content:center;align-items:center;">
+  <div style="background:white;border-radius:15px;width:92%;max-width:500px;max-height:88vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,0.3);">
+    <div style="background:linear-gradient(135deg,#2471a3,#2e86c1);color:white;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
+      <div style="font-size:17px;font-weight:bold;">📋 나의 예금 현황</div>
+      <button onclick="closeDepositHistoryModal()" style="background:rgba(255,255,255,0.2);border:none;color:white;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:15px;">✕</button>
+    </div>
+    <div id="depositHistoryList" style="overflow-y:auto;flex:1;padding:12px;">
+      <div style="text-align:center;padding:30px;color:#bbb;">로딩 중...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     아래 <script> 블록은 기존 </script> 안에 추가하거나
+     별도 <script> 태그로 추가하세요.
+     ══════════════════════════════════════════════════════════ -->
+<script>
+// ── 예금 전역 상태 ────────────────────────────────────────────
+var _depositProd    = null;   // 현재 활성 상품
+var _selectedWeeks  = 0;      // 선택된 주수
+
+// ── 대시보드 로드 시 예금 상품 불러오기 (showDashboard에서 호출) ─
+// showDashboard 함수 내 loadP2PReceiverList(); 바로 아래에 추가:
+// loadDepositProduct();
+function loadDepositProduct() {
+  google.script.run
+    .withSuccessHandler(function(prod) {
+      _depositProd = prod;
+      renderDepositCard(prod);
+    })
+    .withFailureHandler(function(err) {
+      console.log('예금 상품 로드 실패: ' + err.message);
+      document.getElementById('depositProdName').innerText = '상품 정보를 불러올 수 없습니다.';
+    })
+    .getActiveDepositProduct();
+}
+
+// ── 예금 카드 렌더링 ──────────────────────────────────────────
+function renderDepositCard(prod) {
+  var formWrap   = document.getElementById('depositFormWrap');
+  var noProduct  = document.getElementById('depositNoProduct');
+  var prodInfo   = document.getElementById('depositProdInfo');
+
+  if (!prod) {
+    if (formWrap)  formWrap.style.display  = 'none';
+    if (noProduct) noProduct.style.display = 'block';
+    document.getElementById('depositProdName').innerText  = '현재 가입 가능한 상품이 없습니다.';
+    document.getElementById('depositProdRates').innerText = '';
+    return;
+  }
+
+  if (formWrap)  formWrap.style.display  = 'block';
+  if (noProduct) noProduct.style.display = 'none';
+
+  document.getElementById('depositProdName').innerText =
+    '📌 ' + prod.prodName + ' (론칭일: ' + prod.launchDate + ')';
+  document.getElementById('depositProdRates').innerText =
+    '1주 ' + prod.rate1 + '% / 2주 ' + prod.rate2 + '% / 3주 ' + prod.rate3 + '% / 4주 ' + prod.rate4 + '%';
+
+  // 금액 한도 표시
+  document.getElementById('depositMin').innerText = '$' + prod.minAmount.toLocaleString();
+  document.getElementById('depositMax').innerText = '$' + prod.maxAmount.toLocaleString();
+
+  // 기간 버튼 이자율 업데이트
+  document.getElementById('drate1').innerText = prod.rate1 + '%';
+  document.getElementById('drate2').innerText = prod.rate2 + '%';
+  document.getElementById('drate3').innerText = prod.rate3 + '%';
+  document.getElementById('drate4').innerText = prod.rate4 + '%';
+
+  // input 한도 업데이트
+  var amtInput = document.getElementById('depositAmount');
+  if (amtInput) {
+    amtInput.min  = prod.minAmount;
+    amtInput.max  = prod.maxAmount;
+  }
+}
+
+// ── 금액 빠른 추가 버튼 ──────────────────────────────────────
+function addDepositAmount(val) {
+  var input   = document.getElementById('depositAmount');
+  var current = parseInt(input.value) || 0;
+  input.value = current + val;
+  calcDepositPreview();
+}
+
+// ── 기간 버튼 선택 ────────────────────────────────────────────
+function selectDepositWeek(btn, weeks) {
+  _selectedWeeks = weeks;
+  // 버튼 스타일 초기화
+  var btns = document.querySelectorAll('#depositWeekBtns button');
+  btns.forEach(function(b) {
+    b.style.borderColor = '#ddd';
+    b.style.background  = 'white';
+    b.style.color       = '#333';
+  });
+  // 선택된 버튼 강조
+  btn.style.borderColor = '#2471a3';
+  btn.style.background  = '#eaf4fb';
+  btn.style.color       = '#2471a3';
+  calcDepositPreview();
+}
+
+// ── 예상 수령액 계산 및 표시 ─────────────────────────────────
+function calcDepositPreview() {
+  if (!_depositProd || !_selectedWeeks) {
+    document.getElementById('depositPreview').style.display = 'none';
+    return;
+  }
+  var amount = parseInt(document.getElementById('depositAmount').value) || 0;
+  if (amount <= 0) {
+    document.getElementById('depositPreview').style.display = 'none';
+    return;
+  }
+
+  var rateMap = {1: _depositProd.rate1, 2: _depositProd.rate2,
+                 3: _depositProd.rate3, 4: _depositProd.rate4};
+  var rate     = rateMap[_selectedWeeks] || 0;
+  var grossInt = Math.floor(amount * rate / 100);
+  var tax      = Math.floor(grossInt * 0.1);
+  var netInt   = grossInt - tax;
+  var total    = amount + netInt;
+
+  document.getElementById('prevPrincipal').innerText  = '$ ' + amount.toLocaleString();
+  document.getElementById('prevRateLabel').innerText  = '이자 (' + rate + '%)';
+  document.getElementById('prevGrossInt').innerText   = '+ $ ' + grossInt.toLocaleString();
+  document.getElementById('prevTax').innerText        = '- $ ' + tax.toLocaleString();
+  document.getElementById('prevTotal').innerText      = '$ ' + total.toLocaleString();
+  document.getElementById('depositPreview').style.display = 'block';
+}
+
+// ── 예금 가입 제출 ────────────────────────────────────────────
+function submitDeposit() {
+  if (!_depositProd) { alert('현재 가입 가능한 상품이 없습니다.'); return; }
+  var amount = parseInt(document.getElementById('depositAmount').value) || 0;
+  var weeks  = _selectedWeeks;
+
+  if (!amount || amount <= 0)  { alert('금액을 입력해주세요.'); return; }
+  if (amount % 100 !== 0)      { alert('금액은 100 단위로 입력해주세요. (예: 500, 1000)'); return; }
+  if (amount < _depositProd.minAmount) {
+    alert('최소 가입 금액은 $' + _depositProd.minAmount.toLocaleString() + '입니다.'); return;
+  }
+  if (amount > _depositProd.maxAmount) {
+    alert('최대 가입 금액은 $' + _depositProd.maxAmount.toLocaleString() + '입니다.'); return;
+  }
+  if (!weeks) { alert('거치 기간을 선택해주세요.'); return; }
+
+  var rateMap  = {1: _depositProd.rate1, 2: _depositProd.rate2,
+                  3: _depositProd.rate3, 4: _depositProd.rate4};
+  var grossInt = Math.floor(amount * rateMap[weeks] / 100);
+  var tax      = Math.floor(grossInt * 0.1);
+  var total    = amount + grossInt - tax;
+
+  if (!confirm(
+    weeks + '주 정기예금 가입\n\n' +
+    '예치 금액: $' + amount.toLocaleString() + '\n' +
+    '만기 실수령: $' + total.toLocaleString() + '\n\n' +
+    '가입하시겠습니까?'
+  )) return;
+
+  var btn = document.getElementById('depositSubmitBtn');
+  btn.disabled = true; btn.innerText = '처리 중...';
+
+  google.script.run
+    .withSuccessHandler(function(res) {
+      btn.disabled = false; btn.innerText = '🏦 예금 가입하기';
+      if (res.success) {
+        alert(res.msg);
+        // 잔액 즉시 반영
+        var balEl = document.getElementById('myBalance');
+        if (balEl) balEl.innerText = '$ ' + Number(res.newBalance).toLocaleString();
+        if (window._lastDashboardData)
+          window._lastDashboardData.personal.balance = res.newBalance;
+        // 입력 초기화
+        document.getElementById('depositAmount').value = '';
+        _selectedWeeks = 0;
+        var btns = document.querySelectorAll('#depositWeekBtns button');
+        btns.forEach(function(b) {
+          b.style.borderColor = '#ddd';
+          b.style.background  = 'white';
+          b.style.color       = '#333';
+        });
+        document.getElementById('depositPreview').style.display = 'none';
+      } else {
+        alert('가입 실패: ' + res.msg);
+      }
+    })
+    .withFailureHandler(function(err) {
+      btn.disabled = false; btn.innerText = '🏦 예금 가입하기';
+      alert('서버 오류: ' + err.message);
+    })
+    .createDeposit(window._currentStudentName, amount, weeks);
+}
+
+// ── 예금 현황 모달 열기 ──────────────────────────────────────
+function openDepositHistoryModal() {
+  document.getElementById('depositHistoryModal').style.display = 'flex';
+  document.getElementById('depositHistoryList').innerHTML =
+    '<div style="text-align:center;padding:30px;color:#bbb;">로딩 중...</div>';
+  google.script.run
+    .withSuccessHandler(renderDepositHistory)
+    .withFailureHandler(function(err) {
+      document.getElementById('depositHistoryList').innerHTML =
+        '<div style="color:#e74c3c;padding:16px;">오류: ' + err.message + '</div>';
+    })
+    .getMyDeposits(window._currentStudentName);
+}
+
+function closeDepositHistoryModal() {
+  document.getElementById('depositHistoryModal').style.display = 'none';
+}
+
+// ── 예금 현황 렌더링 ──────────────────────────────────────────
+function renderDepositHistory(list) {
+  var container = document.getElementById('depositHistoryList');
+  if (!list || list.length === 0) {
+    container.innerHTML =
+      '<div style="text-align:center;padding:30px;color:#bbb;font-size:14px;">아직 예금 내역이 없습니다.</div>';
+    return;
+  }
+
+  var html = list.map(function(dep) {
+    var statusColor = dep.status === '진행중' ? '#2471a3'
+                    : dep.status === '만기'   ? '#27ae60'
+                    : '#e74c3c';
+    var statusBg    = dep.status === '진행중' ? '#eaf4fb'
+                    : dep.status === '만기'   ? '#f0fff4'
+                    : '#fff5f5';
+
+    var cancelBtn = '';
+    if (dep.status === '진행중') {
+      cancelBtn =
+        '<button onclick="requestCancelDeposit(\'' + dep.depId + '\',' + dep.amount + ')"' +
+        ' style="margin-top:8px;width:100%;padding:7px;background:#fff5f5;border:1px solid #e74c3c;' +
+        'color:#e74c3c;border-radius:6px;font-size:12px;font-weight:bold;cursor:pointer;">' +
+        '⚠️ 중도 해지' +
+        '</button>';
+    }
+
+    var paidLine = '';
+    if (dep.status === '만기' && dep.paidInt > 0) {
+      paidLine = '<div style="font-size:12px;color:#27ae60;margin-top:2px;">' +
+        '지급 이자 (세후): +$' + dep.paidInt.toLocaleString() + '</div>';
+    }
+
+    return '<div style="padding:12px;border-bottom:1px solid #f5f5f5;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">' +
+        '<div style="font-size:15px;font-weight:bold;color:#2c3e50;">' +
+          '$' + dep.amount.toLocaleString() + ' · ' + dep.weeks + '주 · ' + dep.rate + '%' +
+        '</div>' +
+        '<span style="background:' + statusBg + ';color:' + statusColor + ';' +
+          'border-radius:12px;padding:2px 10px;font-size:12px;font-weight:bold;">' +
+          dep.status +
+        '</span>' +
+      '</div>' +
+      '<div style="font-size:12px;color:#888;">' +
+        dep.startDate + ' ~ ' + dep.dueDate +
+      '</div>' +
+      paidLine +
+      cancelBtn +
+    '</div>';
+  }).join('');
+
+  container.innerHTML = html;
+}
+
+// ── 중도 해지 요청 ────────────────────────────────────────────
+function requestCancelDeposit(depId, amount) {
+  if (!_depositProd && !depId) { alert('오류가 발생했습니다.'); return; }
+
+  // 패널티 안내 (활성 상품 패널티율 기준으로 표시)
+  var penaltyRate = _depositProd ? _depositProd.penalty : 5;
+  var penalty     = Math.floor(amount * penaltyRate / 100);
+  var refund      = amount - penalty;
+
+  if (!confirm(
+    '⚠️ 중도 해지 안내\n\n' +
+    '원금: $' + amount.toLocaleString() + '\n' +
+    '패널티 (' + penaltyRate + '%): -$' + penalty.toLocaleString() + '\n' +
+    '반환액: $' + refund.toLocaleString() + '\n\n' +
+    '중도 해지하시겠습니까?'
+  )) return;
+
+  if (!confirm('⚠️ 이 작업은 되돌릴 수 없습니다.\n정말 해지하시겠습니까?')) return;
+
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (res.success) {
+        alert(res.msg);
+        var balEl = document.getElementById('myBalance');
+        if (balEl) balEl.innerText = '$ ' + Number(res.newBalance).toLocaleString();
+        if (window._lastDashboardData)
+          window._lastDashboardData.personal.balance = res.newBalance;
+        openDepositHistoryModal(); // 목록 새로고침
+      } else {
+        alert('해지 실패: ' + res.msg);
+      }
+    })
+    .withFailureHandler(function(err) {
+      alert('서버 오류: ' + err.message);
+    })
+    .cancelDeposit(window._currentStudentName, depId);
+}
+</script>
+
+   
+    <!-- ── P2P거래 카드 ── -->
+    <!-- job2Locked div 바로 아래, Wall of Fame 바로 위에 삽입 -->
+    <div id="p2pCard" class="card" style="border-left:6px solid #16a085; display:none;">
+      <div class="card-title">
+        <span>🤝 P2P 거래 (학생 간 직접 거래)</span>
+        <button onclick="openP2PHistoryModal()"
+        style="padding:4px 10px;background:#16a085;color:white;border:none;border-radius:6px;font-size:12px;font-weight:bold;cursor:pointer;">
+        📋 내 거래 내역
+        </button>
+      </div>
+
+    <!-- P2P 잠금 카드 (금 광석 미만일 때 표시) -->
+    <div id="p2pLocked" class="card" style="text-align:center;opacity:0.6;">
+      <div style="font-size:30px;">🔒</div>
+      <div style="font-size:14px;color:#888;margin-top:6px;">금 광석 이상 달성 시 P2P 거래 시스템이 해금됩니다.</div>
+    </div>
+
+  <!-- 받는 학생 -->
+  <div style="margin-bottom:8px;">
+    <label style="font-size:12px;color:#555;display:block;margin-bottom:4px;">받는 학생</label>
+    <select id="p2pReceiver"
+      style="width:100%;padding:9px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;box-sizing:border-box;">
+      <option value="">-- 학생 선택 --</option>
+    </select>
+  </div>
+
+  <!-- 금액 -->
+  <div style="margin-bottom:8px;">
+    <label style="font-size:12px;color:#555;display:block;margin-bottom:4px;">금액 (최대 $10,000)</label>
+    <div style="display:flex;gap:6px;align-items:center;">
+      <input type="number" id="p2pAmount" min="1" max="10000" placeholder="예: 500"
+        style="flex:1;padding:9px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;box-sizing:border-box;">
+      <button onclick="setP2PAmount(100)"  style="padding:7px 10px;background:#ecf0f1;border:1px solid #ddd;border-radius:6px;font-size:12px;cursor:pointer;white-space:nowrap;">+100</button>
+      <button onclick="setP2PAmount(500)"  style="padding:7px 10px;background:#ecf0f1;border:1px solid #ddd;border-radius:6px;font-size:12px;cursor:pointer;white-space:nowrap;">+500</button>
+      <button onclick="setP2PAmount(1000)" style="padding:7px 10px;background:#ecf0f1;border:1px solid #ddd;border-radius:6px;font-size:12px;cursor:pointer;white-space:nowrap;">+1000</button>
+    </div>
+  </div>
+
+  <!-- 태그 -->
+  <div style="margin-bottom:8px;">
+    <label style="font-size:12px;color:#555;display:block;margin-bottom:4px;">거래 태그 (필수)</label>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;">
+      <label style="cursor:pointer;"><input type="radio" name="p2pTag" value="#학습도움"> #학습도움</label>
+      <label style="cursor:pointer;"><input type="radio" name="p2pTag" value="#정서적지지"> #정서적지지</label>
+      <label style="cursor:pointer;"><input type="radio" name="p2pTag" value="#재능판매"> #재능판매</label>
+      <label style="cursor:pointer;"><input type="radio" name="p2pTag" value="#권리 및 기회"> #권리 및 기회</label>
+      <label style="cursor:pointer;"><input type="radio" name="p2pTag" value="#기타"> #기타</label>
+    </div>
+  </div>
+
+  <!-- 거래 설명 -->
+  <div style="margin-bottom:12px;">
+    <label style="font-size:12px;color:#555;display:block;margin-bottom:4px;">❗거래 설명 (필수)</label>
+    <input type="text" id="p2pDesc" placeholder="그림 그려주기, 1인1역 대신해주기 등. ⚠️실제 물건이나 돈은 절대 거래 금지"
+      style="width:100%;padding:9px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;box-sizing:border-box;">
+  </div>
+
+  <!-- 세금 안내 -->
+  <div style="background:#fff8e1;border-radius:8px;padding:8px 12px;font-size:12px;color:#888;margin-bottom:12px;">
+    💡 받는 학생에게 소득세 10%가 자동 차감됩니다. 거래 후 상대방 우편함에 알림이 발송됩니다.
+  </div>
+
+  <button onclick="submitP2P()"
+    style="width:100%;padding:11px;background:linear-gradient(135deg,#16a085,#1abc9c);color:white;border:none;border-radius:8px;font-weight:bold;font-size:15px;cursor:pointer;">
+    🤝 거래 실행하기
+  </button>
+</div>
+
+<!-- ── P2P 거래 내역 모달 ── -->
+<div id="p2pHistoryModal"
+  style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1001;justify-content:center;align-items:center;">
+  <div style="background:white;border-radius:15px;width:92%;max-width:500px;max-height:88vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,0.3);">
+    <div style="background:linear-gradient(135deg,#16a085,#1abc9c);color:white;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
+      <div style="font-size:17px;font-weight:bold;">📋 나의 P2P 거래 내역</div>
+      <button onclick="closeP2PHistoryModal()" style="background:rgba(255,255,255,0.2);border:none;color:white;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:15px;">✕</button>
+    </div>
+    <div id="p2pHistoryList" style="overflow-y:auto;flex:1;padding:12px;">
+      <div style="text-align:center;padding:30px;color:#bbb;">로딩 중...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── P2P: 받는 학생 목록 로드 (showDashboard 이후 호출) ──────────
+function loadP2PReceiverList() {
+  google.script.run
+    .withSuccessHandler(function(list) {
+      var sel = document.getElementById('p2pReceiver');
+      if (!sel) return;
+      sel.innerHTML = '<option value="">-- 학생 선택 --</option>';
+      list.forEach(function(s) {
+        var opt = document.createElement('option');
+        opt.value = s.name;
+        opt.textContent = s.name + ' (' + s.brand + ')';
+        sel.appendChild(opt);
+      });
+    })
+    .withFailureHandler(function(err) {
+      console.log('P2P 수신자 목록 로드 실패: ' + err.message);
+    })
+    .getP2PReceiverList(window._currentStudentName);
+}
+
+// ── 금액 빠른 입력 버튼 ───────────────────────────────────────
+function setP2PAmount(amount) {
+  var input = document.getElementById('p2pAmount');
+  if (!input) return;
+  var current = parseInt(input.value) || 0;
+  input.value = current + amount;
+}
+
+// ── P2P 거래 실행 ────────────────────────────────────────────
+function submitP2P() {
+  var receiver = document.getElementById('p2pReceiver').value;
+  var amount   = parseInt(document.getElementById('p2pAmount').value);
+  var tagEl    = document.querySelector('input[name="p2pTag"]:checked');
+  var tag      = tagEl ? tagEl.value : '';
+  var desc     = document.getElementById('p2pDesc').value.trim();
+
+  if (!receiver) return alert('받는 학생을 선택해주세요.');
+  if (!amount || amount <= 0) return alert('금액을 입력해주세요.');
+  if (!tag) return alert('거래 태그를 선택해주세요.');
+  if (!desc) return alert('거래 설명을 입력해주세요.');
+
+  if (!confirm(receiver + ' 학생에게 $' + amount.toLocaleString() + ' 거래하시겠습니까?\n(상대방은 소득세 10% 차감 후 수령)')) return;
+
+  // 버튼 비활성화 (중복 클릭 방지)
+  var btn = document.querySelector('[onclick="submitP2P()"]');
+  if (btn) { btn.disabled = true; btn.innerText = '처리 중...'; }
+
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (btn) { btn.disabled = false; btn.innerText = '🤝 거래 실행하기'; }
+      if (res.success) {
+        alert(res.msg + (res.isAnomaly ? '\n\n⚠️ 이상 거래로 기록됩니다: ' + res.anomalyReason : ''));
+        // 잔액 즉시 반영
+        var balEl = document.getElementById('myBalance');
+        if (balEl) balEl.innerText = '$ ' + Number(res.newBalance).toLocaleString();
+        // 입력창 초기화
+        document.getElementById('p2pAmount').value = '';
+        document.getElementById('p2pDesc').value = '';
+        document.getElementById('p2pReceiver').value = '';
+        var checkedTag = document.querySelector('input[name="p2pTag"]:checked');
+        if (checkedTag) checkedTag.checked = false;
+        // 대시보드 캐시 갱신
+        if (window._lastDashboardData) {
+          window._lastDashboardData.personal.balance = res.newBalance;
+        }
+      } else {
+        alert('거래 실패: ' + res.msg);
+      }
+    })
+    .withFailureHandler(function(err) {
+      if (btn) { btn.disabled = false; btn.innerText = '🤝 거래 실행하기'; }
+      alert('서버 오류: ' + err.message);
+    })
+    .p2pTransfer(window._currentStudentName, receiver, amount, tag, desc);
+}
+
+// ── P2P 거래 내역 모달 열기 ──────────────────────────────────
+function openP2PHistoryModal() {
+  document.getElementById('p2pHistoryModal').style.display = 'flex';
+  document.getElementById('p2pHistoryList').innerHTML = '<div style="text-align:center;padding:30px;color:#bbb;">로딩 중...</div>';
+  google.script.run
+    .withSuccessHandler(renderP2PHistory)
+    .withFailureHandler(function(err) {
+      document.getElementById('p2pHistoryList').innerHTML = '<div style="color:#e74c3c;padding:16px;">오류: ' + err.message + '</div>';
+    })
+    .getMyP2PHistory(window._currentStudentName);
+}
+
+function closeP2PHistoryModal() {
+  document.getElementById('p2pHistoryModal').style.display = 'none';
+}
+
+// ── P2P 내역 렌더링 ──────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════
+  function renderP2PHistory(list) {
+    var container = document.getElementById('p2pHistoryList');
+    if (!list || list.length === 0) {
+      container.innerHTML =
+        '<div style="text-align:center;padding:30px;color:#bbb;font-size:14px;">아직 거래 내역이 없습니다.</div>';
+      return;
+    }
+
+    var html = list.map(function(tx) {
+      var isSent    = tx.isSent;
+      var color     = isSent ? '#e74c3c' : '#27ae60';
+      var icon      = isSent ? '↑ 송금' : '↓ 수령';
+      var partner   = isSent ? tx.receiver : tx.sender;
+      var amtStr    = (isSent ? '-' : '+') + '$' + Number(tx.amount).toLocaleString();
+      var anomaly   = tx.status === '이상거래'
+        ? '<span style="background:#e74c3c;color:white;font-size:10px;padding:1px 5px;border-radius:3px;margin-left:4px;">이상거래</span>'
+        : '';
+
+      // ── 평점 영역 ──────────────────────────────────────────
+      var ratingHtml = '';
+
+      if (isSent) {
+        // 받은 거래 → 판매자에게 평점 입력 UI
+        if (tx.rating > 0) {
+          // 이미 평가함: 별 표시
+          var stars = '';
+          for (var s = 1; s <= 10; s++) {
+            stars += '<span style="color:' + (s <= tx.rating ? '#f39c12' : '#ddd') + ';font-size:14px;">★</span>';
+          }
+          ratingHtml =
+            '<div style="margin-top:6px;display:flex;align-items:center;gap:4px;">' +
+              '<span style="font-size:11px;color:#888;">내 평점:</span>' +
+              stars +
+              '<span style="font-size:12px;color:#f39c12;font-weight:bold;margin-left:2px;">' + tx.rating + '/10</span>' +
+            '</div>';
+        } else {
+          // 미평가: 별점 선택 UI
+          var starBtns = '';
+          for (var s2 = 1; s2 <= 10; s2++) {
+            // onclick에서 따옴표 충돌 방지: 변수 escaping
+            starBtns +=
+              '<button onclick="selectRating(\'' + tx.txnId + '\',' + s2 + ',this)" ' +
+              'data-val="' + s2 + '" ' +
+              'style="background:none;border:none;font-size:18px;cursor:pointer;padding:1px;color:#ddd;line-height:1;" ' +
+              'title="' + s2 + '점">★</button>';
+          }
+          ratingHtml =
+            '<div style="margin-top:8px;">' +
+              '<div style="font-size:11px;color:#888;margin-bottom:4px;">거래 평가 (판매자에게 별점을 남겨주세요)</div>' +
+              '<div id="stars_' + tx.txnId + '" style="display:flex;align-items:center;gap:0;">' +
+                starBtns +
+              '</div>' +
+              '<button id="rateBtn_' + tx.txnId + '" onclick="submitRating(\'' + tx.txnId + '\')" ' +
+              'style="display:none;margin-top:6px;padding:4px 14px;background:#f39c12;color:white;' +
+              'border:none;border-radius:6px;font-size:12px;font-weight:bold;cursor:pointer;">' +
+              '평점 제출' +
+              '</button>' +
+            '</div>';
+        }
+      } else {
+        // 받은 거래(서비스 판매자) → 구매자가 남긴 평점 읽기 전용 표시 -> 기능 삭제 4월 6일
+      }
+
+      // ──────────────────────────────────────────────────────
+
+      return '<div style="padding:10px 12px;border-bottom:1px solid #f5f5f5;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">' +
+          '<div style="font-size:13px;font-weight:bold;color:#2c3e50;">' +
+            '<span style="color:' + color + ';margin-right:4px;">' + icon + '</span>' +
+            partner + anomaly +
+          '</div>' +
+          '<div style="font-size:15px;font-weight:bold;color:' + color + ';">' + amtStr + '</div>' +
+        '</div>' +
+        '<div style="font-size:11px;color:#888;">' +
+          tx.date + ' · ' +
+          '<span style="background:#eaf4ff;color:#3d85c8;padding:1px 6px;border-radius:3px;">' + tx.tag + '</span>' +
+        '</div>' +
+        '<div style="font-size:12px;color:#555;margin-top:3px;">' + tx.description + '</div>' +
+        ratingHtml +
+      '</div>';
+    }).join('');
+
+    container.innerHTML = html;
+  }
+
+  // ── 별점 선택 시 하이라이트 ──────────────────────────────────
+  function selectRating(txnId, val, clickedBtn) {
+    var starsContainer = document.getElementById('stars_' + txnId);
+    if (!starsContainer) return;
+
+    // 모든 별 색상 초기화 후 선택된 것까지 노란색으로
+    var btns = starsContainer.querySelectorAll('button');
+    btns.forEach(function(btn) {
+      var bVal = parseInt(btn.getAttribute('data-val'));
+      btn.style.color = bVal <= val ? '#f39c12' : '#ddd';
+    });
+
+    // 선택값 저장 (컨테이너 data 속성 활용)
+    starsContainer.setAttribute('data-selected', val);
+
+    // 제출 버튼 표시
+    var rateBtn = document.getElementById('rateBtn_' + txnId);
+    if (rateBtn) rateBtn.style.display = 'inline-block';
+  }
+
+  // ── 평점 제출 ────────────────────────────────────────────────
+  function submitRating(txnId) {
+    var starsContainer = document.getElementById('stars_' + txnId);
+    if (!starsContainer) return;
+
+    var selected = parseInt(starsContainer.getAttribute('data-selected') || '0');
+    if (!selected || selected < 1 || selected > 10) {
+      alert('별점을 선택해주세요.'); return;
+    }
+
+    var btn = document.getElementById('rateBtn_' + txnId);
+    if (btn) { btn.disabled = true; btn.innerText = '저장 중...'; }
+
+    google.script.run
+      .withSuccessHandler(function(res) {
+        if (res.success) {
+          // 모달 새로고침
+          openP2PHistoryModal();
+        } else {
+          alert('평점 저장 실패: ' + res.msg);
+          if (btn) { btn.disabled = false; btn.innerText = '평점 제출'; }
+        }
+      })
+      .withFailureHandler(function(err) {
+        alert('서버 오류: ' + err.message);
+        if (btn) { btn.disabled = false; btn.innerText = '평점 제출'; }
+      })
+      .rateP2PTransaction(txnId, window._currentStudentName, selected);
+  }
+
+</script>
+
 
     <!-- ── Wall of Fame (업적 현황판) ── -->
     <div class="wof-card">
@@ -1025,7 +1743,7 @@
   // ═══════════════════════════════════════════════════════════════
   
   // 1. 다음 티어를 자동으로 계산하기 위한 티어 순서
-  var TIER_ORDER = ['새싹', '브론즈', '빛나는 브론즈', '거친 실버', '성장한 실버', '진화한 실버', '은빛 극점', '금 광석', '제련된 골드', '정련된 골드', '태양의 황금', '루비 원석', '연마된 루비', '각성한 루비', '홍염의 정점', '다이아 원석', '고순도 다이아', '무결 다이아', '영원의 결정', '마스터', '천상의 마스터', '그랜드마스터'];
+  var TIER_ORDER = ['새싹', '브론즈', '빛나는 브론즈', '거친 실버', '성장한 실버', '진화한 실버', '은빛 극점', '금 광석', '제련된 골드', '정련된 골드', '태양의 황금', '루비 원석', '연마된 루비', '각성한 루비', '홍염의 정점', '다이아 원석', '세공된 다이아', '무결 다이아', '영원의 결정', '마스터', '천상의 마스터', '그랜드마스터'];
 
   // 2. 각 티어별 응원 문구 (원하시는 문구로 자유롭게 수정하세요!)
   var TIER_MESSAGES = {
@@ -1045,7 +1763,7 @@
     '각성한 루비': '잠들어 있던 붉은 불꽃이 깨어났다. 이제 멈출 수 없다',
     '홍염의 정점': '타오르는 붉은 정점, 루비 등급의 최고 경지에 도달',
     '다이아 원석': '이 자리는 충분히 빛나고 있는 위치, 그럼에도 더 위를 본다면',
-    '고순도 다이아': '불순물 없이 정화된 결정, 진정한 강자의 반열에 올랐다',
+    '세공된 다이아': '불순물 없이 정화된 결정, 진정한 강자의 반열에 올랐다',
     '무결 다이아': '흠 하나 없는 완벽한 결정체, 이 경지에 닿은 자는 드물다',
     '영원의 결정': '다이아몬드의 정점, 시간이 지나도 빛을 잃지 않는 영원한 존재',
     '마스터': '노력만으로 닿기에는 부족한 선택받은 소수의 영역에 도달하다',
@@ -1071,7 +1789,7 @@
     '각성한 루비':     'https://lh3.googleusercontent.com/d/1MDwOHkjH0u50P5gkB1WrfXrvkpRCNLcS=s200',
     '홍염의 정점':     'https://lh3.googleusercontent.com/d/1EfCQf-t_gBpIohmamSb3yOCbeOzISMJc=s200',
     '다이아 원석':     'https://lh3.googleusercontent.com/d/1Q407DyyD5wndI-rVvKjt6981cRGXxIqN=s200',
-    '고순도 다이아':   'https://lh3.googleusercontent.com/d/1XYMWlQ3QWFeIf0bO_z2Kn8CxJpmPq4Gb=s200',
+    '세공된 다이아':   'https://lh3.googleusercontent.com/d/1XYMWlQ3QWFeIf0bO_z2Kn8CxJpmPq4Gb=s200',
     '무결 다이아':     'https://lh3.googleusercontent.com/d/1Wdb5TSQ3HH_c4Ea0lSBMt7iH4m5L9dlU=s200',
     '영원의 결정':     'https://lh3.googleusercontent.com/d/12KsCvjljkzBP1aMEKN1lFDTshliUNMFp=s200',
     '마스터':          'https://lh3.googleusercontent.com/d/1aLJ93TjnCrfIw9qNIqHbx2i7NV_xk97w=s200',
@@ -1139,7 +1857,7 @@
     var silverTiers      = ['거친 실버','성장한 실버','진화한 실버','은빛 극점'];
     var goldTiers        = ['금 광석','제련된 골드','정련된 골드','태양의 황금'];
     var rubyTiers        = ['루비 원석','연마된 루비','각성한 루비','홍염의 정점'];
-    var diamondTiers     = ['다이아 원석','고순도 다이아','무결 다이아','영원의 결정'];
+    var diamondTiers     = ['다이아 원석','세공된 다이아','무결 다이아','영원의 결정'];
     var masterTiers      = ['마스터','천상의 마스터'];
     var grandmasterTiers = ['그랜드마스터'];
 
@@ -1485,6 +2203,12 @@
     // Wall of Fame 로드
     loadWallOfFame();
 
+    // P2P 받는 사람 리스트 로드
+    loadP2PReceiverList();
+
+    //예금상품 로드
+    loadDepositProduct();
+
     // 전광판 폴링 시작
     startAlertPolling();
 
@@ -1512,7 +2236,7 @@
   function renderJob2Section(data) {
     var GOLD_TIERS = ['금 광석','제련된 골드','정련된 골드','태양의 황금',
                       '루비 원석','연마된 루비','각성한 루비','홍염의 정점',
-                      '다이아 원석','고순도 다이아','무결 다이아','영원의 결정',
+                      '다이아 원석','세공된 다이아','무결 다이아','영원의 결정',
                       '마스터','천상의 마스터','그랜드마스터'];
     var tierName = data.tierData ? data.tierData.name : '';
     var unlocked = GOLD_TIERS.indexOf(tierName) !== -1;
@@ -1521,17 +2245,48 @@
     document.getElementById('job2Locked').style.display   = unlocked ? 'none'  : 'block';
     document.getElementById('job2Btn').style.display      = unlocked ? 'inline-block' : 'none';
     document.getElementById('job2BtnLocked').style.display = unlocked ? 'none' : 'inline-block';
+        // P2P 거래 카드도 동일 조건으로 표시/숨김
+    document.getElementById('p2pCard').style.display   = unlocked ? 'block' : 'none';
+    document.getElementById('p2pLocked').style.display = unlocked ? 'none'  : 'block';
 
     if (!unlocked) return;
 
     // 나의 2차 직업 상태
     if (data.job2) {
       document.getElementById('job2MyName').innerText = data.job2.jobName;
-      document.getElementById('job2ApplyForm').style.display = 'none'; // 이미 있으면 신청폼 숨김
+      document.getElementById('job2ApplyForm').style.display = 'none';
+
+      // 나의 서비스 평점 표시
+      var ratingEl = document.getElementById('job2MyRating');
+      if (ratingEl) {
+        if (data.job2.ratingAvg !== null) {
+          var stars = '';
+          var avg = data.job2.ratingAvg;
+          for (var s = 1; s <= 10; s++) {
+            stars += '<span style="color:' + (s <= Math.round(avg) ? '#f39c12' : '#ddd') + ';font-size:13px;">★</span>';
+          }
+          ratingEl.innerHTML =
+            '<div style="margin-top:8px;padding:8px 10px;background:#fff8e1;border-radius:8px;font-size:12px;">' +
+              '⭐ 나의 서비스 품질: ' + stars +
+              '<span style="color:#f39c12;font-weight:bold;margin-left:4px;">' + avg + '/10</span>' +
+              '<span style="color:#bbb;font-size:11px;margin-left:6px;">(' + data.job2.ratingCount + '명 평가)</span>' +
+            '</div>';
+        } else {
+          ratingEl.innerHTML =
+            '<div style="margin-top:8px;padding:8px 10px;background:#f8f9fa;border-radius:8px;font-size:12px;color:#aaa;">' +
+              '⭐ 나의 서비스 품질: 평가 5건 이상 시 공개됩니다.' +
+              (data.job2.ratingCount > 0
+                ? ' (현재 ' + data.job2.ratingCount + '건)'
+                : '') +
+            '</div>';
+        }
+      } // 이미 있으면 신청폼 숨김
     } else {
       document.getElementById('job2MyName').innerText = '없음';
       document.getElementById('job2ApplyForm').style.display = 'block';
     }
+
+
 
     // 직업 현황판 렌더링
     var tbody = document.getElementById('jobMarketBody');
@@ -2262,7 +3017,29 @@
       .donateToWelfare(window._currentStudentName, amount, msg);
   }
 
+// ── P2P: 받는 학생 목록 로드 ─────────────────────────────────
+  function loadP2PReceiverList() {
+    google.script.run
+      .withSuccessHandler(function(list) {
+        var sel = document.getElementById('p2pReceiver');
+        if (!sel) return;
+        sel.innerHTML = '<option value="">-- 학생 선택 --</option>';
+        (list || []).forEach(function(s) {
+          var opt = document.createElement('option');
+          opt.value       = s.name;
+          opt.textContent = s.name + ' (' + s.brand + ')';
+          sel.appendChild(opt);
+        });
+      })
+      .withFailureHandler(function(err) {
+        console.log('P2P 수신자 목록 로드 실패: ' + err.message);
+      })
+      .getP2PReceiverList(window._currentStudentName);
+  }
+
 </script>
+
+
 
 </body>
 </html>

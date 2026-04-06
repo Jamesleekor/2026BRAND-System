@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>경제 수호대 대시보드</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:       #0d1117;
+      --surface:  #161b22;
+      --border:   #30363d;
+      --accent:   #58a6ff;
+      --green:    #3fb950;
+      --red:      #f85149;
+      --yellow:   #d29922;
+      --purple:   #bc8cff;
+      --text:     #e6edf3;
+      --muted:    #8b949e;
+      --tag-bg:   #1c2128;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 14px;
+      min-height: 100vh;
+    }
+
+    /* ── 로그인 ── */
+    #loginScreen {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; min-height: 100vh; padding: 24px;
+    }
+    .login-box {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 40px 32px; width: 100%; max-width: 380px;
+      text-align: center;
+    }
+    .login-badge {
+      display: inline-block; background: rgba(88,166,255,0.15);
+      border: 1px solid var(--accent); color: var(--accent);
+      border-radius: 20px; padding: 4px 14px; font-size: 12px;
+      font-weight: bold; letter-spacing: 2px; margin-bottom: 20px;
+    }
+    .login-title { font-size: 22px; font-weight: 900; margin-bottom: 6px; }
+    .login-sub   { font-size: 13px; color: var(--muted); margin-bottom: 28px; }
+    .login-input {
+      width: 100%; padding: 12px 14px; background: var(--bg);
+      border: 1px solid var(--border); border-radius: 8px;
+      color: var(--text); font-size: 15px; margin-bottom: 12px;
+      font-family: 'Noto Sans KR', sans-serif;
+    }
+    .login-input:focus { outline: none; border-color: var(--accent); }
+    .login-btn {
+      width: 100%; padding: 12px; background: var(--accent);
+      color: #0d1117; border: none; border-radius: 8px;
+      font-weight: 900; font-size: 15px; cursor: pointer;
+      font-family: 'Noto Sans KR', sans-serif;
+    }
+    .login-btn:hover { opacity: 0.88; }
+    .login-err { color: var(--red); font-size: 13px; margin-top: 10px; min-height: 20px; }
+
+    /* ── 메인 대시보드 ── */
+    #mainScreen { display: none; }
+
+    /* 헤더 */
+    .header {
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      padding: 14px 20px; display: flex; align-items: center;
+      justify-content: space-between; position: sticky; top: 0; z-index: 100;
+    }
+    .header-left { display: flex; align-items: center; gap: 10px; }
+    .header-badge {
+      background: rgba(88,166,255,0.15); border: 1px solid var(--accent);
+      color: var(--accent); border-radius: 6px; padding: 3px 10px;
+      font-size: 11px; font-weight: bold; letter-spacing: 1px;
+    }
+    .header-title { font-size: 17px; font-weight: 900; }
+    .header-right { display: flex; align-items: center; gap: 10px; }
+    .period-btn {
+      padding: 5px 12px; border-radius: 6px; border: 1px solid var(--border);
+      background: transparent; color: var(--muted); cursor: pointer;
+      font-size: 12px; font-family: 'Noto Sans KR', sans-serif;
+      transition: all 0.15s;
+    }
+    .period-btn.active {
+      background: var(--accent); border-color: var(--accent);
+      color: #0d1117; font-weight: bold;
+    }
+    .logout-btn {
+      padding: 5px 12px; border-radius: 6px; border: 1px solid var(--border);
+      background: transparent; color: var(--muted); cursor: pointer;
+      font-size: 12px; font-family: 'Noto Sans KR', sans-serif;
+    }
+
+    /* 탭 */
+    .tabs {
+      display: flex; border-bottom: 1px solid var(--border);
+      padding: 0 20px; background: var(--surface);
+    }
+    .tab {
+      padding: 12px 20px; cursor: pointer; font-size: 13px; font-weight: bold;
+      color: var(--muted); border-bottom: 2px solid transparent;
+      transition: all 0.15s; white-space: nowrap;
+    }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-content { display: none; padding: 20px; }
+    .tab-content.active { display: block; }
+
+    /* 통계 카드 행 */
+    .stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+    .stat-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 16px;
+    }
+    .stat-label { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+    .stat-value { font-size: 22px; font-weight: 900; }
+    .stat-value.blue   { color: var(--accent); }
+    .stat-value.green  { color: var(--green); }
+    .stat-value.red    { color: var(--red); }
+
+    /* 거래 카드 */
+    .tx-list { display: flex; flex-direction: column; gap: 8px; }
+    .tx-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 14px 16px;
+      transition: border-color 0.15s;
+    }
+    .tx-card.anomaly {
+      border-color: var(--red);
+      background: rgba(248, 81, 73, 0.06);
+    }
+    .tx-top {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 6px;
+    }
+    .tx-parties { font-size: 14px; font-weight: bold; }
+    .tx-amount  { font-size: 16px; font-weight: 900; color: var(--accent); }
+    .tx-meta    { font-size: 12px; color: var(--muted); display: flex; gap: 10px; flex-wrap: wrap; }
+    .tag-pill {
+      background: var(--tag-bg); border: 1px solid var(--border);
+      border-radius: 20px; padding: 2px 10px; font-size: 11px; color: var(--accent);
+    }
+    .anomaly-badges { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 6px; }
+    .anomaly-badge {
+      background: rgba(248,81,73,0.15); border: 1px solid rgba(248,81,73,0.4);
+      color: var(--red); border-radius: 4px; padding: 1px 7px; font-size: 11px; font-weight: bold;
+    }
+
+    /* 필터 바 */
+    .filter-bar {
+      display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; align-items: center;
+    }
+    .filter-select {
+      padding: 6px 10px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 6px; color: var(--text); font-size: 12px;
+      font-family: 'Noto Sans KR', sans-serif; cursor: pointer;
+    }
+    .filter-label { font-size: 12px; color: var(--muted); }
+    .anomaly-only-btn {
+      padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: bold;
+      cursor: pointer; font-family: 'Noto Sans KR', sans-serif; transition: all 0.15s;
+      border: 1px solid var(--red); background: transparent; color: var(--red);
+    }
+    .anomaly-only-btn.active { background: var(--red); color: white; }
+
+    /* 주간 요약 */
+    .summary-box {
+      background: rgba(88,166,255,0.08); border: 1px solid rgba(88,166,255,0.3);
+      border-radius: 10px; padding: 14px 16px; margin-bottom: 16px;
+      font-size: 13px; color: var(--text); line-height: 1.7;
+    }
+    .summary-copy-btn {
+      margin-top: 8px; padding: 6px 14px; border-radius: 6px;
+      border: 1px solid var(--accent); background: transparent; color: var(--accent);
+      font-size: 12px; cursor: pointer; font-family: 'Noto Sans KR', sans-serif;
+    }
+
+    /* 차트 */
+    .chart-section { margin-bottom: 24px; }
+    .chart-title {
+      font-size: 14px; font-weight: bold; color: var(--text);
+      margin-bottom: 12px; padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .bar-row {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 8px;
+    }
+    .bar-label { font-size: 12px; color: var(--muted); width: 80px; flex-shrink: 0; text-align: right; }
+    .bar-track { flex: 1; background: var(--border); border-radius: 4px; height: 20px; overflow: hidden; }
+    .bar-fill  { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
+    .bar-val   { font-size: 12px; color: var(--text); width: 60px; flex-shrink: 0; }
+
+    /* Top 테이블 */
+    .top-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+    .top-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px;
+    }
+    .top-card-title { font-size: 12px; color: var(--muted); margin-bottom: 10px; font-weight: bold; }
+    .top-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 13px;
+    }
+    .top-item:last-child { border-bottom: none; }
+    .top-rank { color: var(--yellow); font-weight: bold; width: 20px; flex-shrink: 0; }
+    .top-name { flex: 1; padding: 0 8px; }
+    .top-count { color: var(--accent); font-weight: bold; font-size: 12px; }
+
+    /* 네트워크 */
+    #networkCanvas {
+      width: 100%; border-radius: 10px;
+      background: var(--surface); border: 1px solid var(--border);
+      display: block; cursor: grab;
+    }
+    #networkCanvas:active { cursor: grabbing; }
+    .network-legend {
+      display: flex; gap: 16px; flex-wrap: wrap; margin-top: 10px; font-size: 12px; color: var(--muted);
+    }
+    .legend-item { display: flex; align-items: center; gap: 5px; }
+    .legend-dot  { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+    /* 알림 센터 */
+    .alert-card {
+      background: var(--surface); border: 1px solid rgba(248,81,73,0.4);
+      border-radius: 10px; padding: 14px 16px; margin-bottom: 10px;
+    }
+    .alert-top {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      margin-bottom: 8px;
+    }
+    .alert-names { font-size: 14px; font-weight: bold; }
+    .alert-amount { font-size: 15px; font-weight: 900; color: var(--red); }
+    .alert-meta   { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+    .memo-area {
+      width: 100%; padding: 8px 10px; background: var(--bg);
+      border: 1px solid var(--border); border-radius: 6px;
+      color: var(--text); font-size: 13px; resize: none; height: 54px;
+      font-family: 'Noto Sans KR', sans-serif; margin-bottom: 6px;
+    }
+    .memo-area:focus { outline: none; border-color: var(--accent); }
+    .memo-save-btn {
+      padding: 5px 14px; background: var(--accent); color: #0d1117;
+      border: none; border-radius: 6px; font-weight: bold; cursor: pointer;
+      font-size: 12px; font-family: 'Noto Sans KR', sans-serif;
+    }
+    .memo-save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* 최종 적발 UI */
+    .penalty-zone {
+      margin-top: 10px; padding: 10px 12px;
+      background: rgba(248,81,73,0.08); border: 1px dashed rgba(248,81,73,0.5);
+      border-radius: 8px;
+    }
+    .penalty-zone summary {
+      font-size: 12px; font-weight: bold; color: var(--red);
+      cursor: pointer; user-select: none; list-style: none;
+    }
+    .penalty-zone summary::-webkit-details-marker { display: none; }
+    .penalty-zone[open] summary { margin-bottom: 8px; }
+    .penalty-select {
+      width: 100%; padding: 6px 8px; background: var(--bg);
+      border: 1px solid var(--border); border-radius: 6px;
+      color: var(--text); font-size: 12px; margin-bottom: 6px;
+      font-family: 'Noto Sans KR', sans-serif;
+    }
+    .penalty-btn {
+      padding: 5px 14px; background: var(--red); color: #fff;
+      border: none; border-radius: 6px; font-weight: bold; cursor: pointer;
+      font-size: 12px; font-family: 'Noto Sans KR', sans-serif;
+    }
+    .penalty-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .penalty-done {
+      font-size: 12px; color: var(--muted); font-style: italic;
+      padding: 4px 0;
+    }
+
+    /* 로딩 */
+    .loading {
+      text-align: center; padding: 40px; color: var(--muted); font-size: 14px;
+    }
+    .empty { text-align: center; padding: 32px; color: var(--muted); font-size: 13px; }
+
+    /* 스크롤바 */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- 로그인 화면 -->
+<!-- ══════════════════════════════════════════ -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-badge">GUARD SYSTEM</div>
+    <div class="login-title">🛡️ 경제 수호대</div>
+    <div class="login-sub">수호대 전용 대시보드입니다.<br>비밀번호를 입력하세요.</div>
+    <input type="password" id="guardPw" class="login-input"
+      placeholder="수호대 비밀번호"
+      onkeydown="if(event.key==='Enter') doLogin()">
+    <button class="login-btn" onclick="doLogin()">🔓 입장하기</button>
+    <div class="login-err" id="loginErr"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════ -->
+<!-- 메인 대시보드 -->
+<!-- ══════════════════════════════════════════ -->
+<div id="mainScreen">
+
+  <!-- 헤더 -->
+  <div class="header">
+    <div class="header-left">
+      <div class="header-badge">GUARD</div>
+      <div class="header-title">🛡️ 경제 수호대 대시보드</div>
+    </div>
+    <div class="header-right">
+      <button class="period-btn active" id="btnWeek"  onclick="setPeriod('week')">이번 주</button>
+      <button class="period-btn"        id="btnMonth" onclick="setPeriod('month')">이번 달</button>
+      <button class="period-btn"        id="btnAll"   onclick="setPeriod('all')">전체</button>
+      <button class="logout-btn" onclick="doLogout()">로그아웃</button>
+    </div>
+  </div>
+
+  <!-- 탭 -->
+  <div class="tabs">
+    <div class="tab active" id="tab0" onclick="switchTab(0)">📡 실시간 스트리밍</div>
+    <div class="tab"        id="tab1" onclick="switchTab(1)">📊 카테고리 통계</div>
+    <div class="tab"        id="tab2" onclick="switchTab(2)">🌐 거래 네트워크</div>
+    <div class="tab"        id="tab3" onclick="switchTab(3)" id="tab3">⚠️ 알림 센터 <span id="alertBadge" style="display:none;background:var(--red);color:white;border-radius:10px;padding:1px 7px;font-size:11px;margin-left:4px;"></span></div>
+  </div>
+
+  <!-- ── 탭 0: 실시간 스트리밍 ── -->
+  <div class="tab-content active" id="content0">
+    <div class="filter-bar">
+      <span class="filter-label">태그 필터:</span>
+      <select class="filter-select" id="tagFilter" onchange="applyFilters()">
+        <option value="all">전체 태그</option>
+        <option value="#학습도움">#학습도움</option>
+        <option value="#정서적지지">#정서적지지</option>
+        <option value="#재능판매">#재능판매</option>
+        <option value="#권리 및 기회">#권리 및 기회</option>
+        <option value="#기타">#기타</option>
+      </select>
+      <button class="anomaly-only-btn" id="anomalyOnlyBtn" onclick="toggleAnomalyOnly()">⚠️ 이상 거래만 보기</button>
+    </div>
+    <div id="txList" class="tx-list"><div class="loading">데이터 로딩 중...</div></div>
+  </div>
+
+  <!-- ── 탭 1: 카테고리 통계 ── -->
+  <div class="tab-content" id="content1">
+    <div class="stat-row" id="statRow"><div class="loading">로딩 중...</div></div>
+    <div class="summary-box" id="summaryBox" style="display:none;">
+      <div id="summaryText"></div>
+      <button class="summary-copy-btn" onclick="copySummary()">📋 리포트용 복사</button>
+    </div>
+    <div class="chart-section">
+      <div class="chart-title">📌 태그별 거래 건수</div>
+      <div id="tagCountChart"></div>
+    </div>
+    <div class="chart-section">
+      <div class="chart-title">💰 태그별 거래 금액</div>
+      <div id="tagAmountChart"></div>
+    </div>
+    <div class="top-grid" id="topGrid"></div>
+  </div>
+
+  <!-- ── 탭 2: 거래 네트워크 ── -->
+  <div class="tab-content" id="content2">
+    <div style="margin-bottom:12px;font-size:13px;color:var(--muted);">
+      원의 크기 = 거래 참여 횟수 · 선의 굵기 = 거래 빈도 · 빨간 선 = 이상거래 포함 관계
+    </div>
+    <canvas id="networkCanvas" height="480"></canvas>
+    <div class="network-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--accent);"></div> 일반 학생</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--yellow);"></div> 거래 활발 (5건↑)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--red);"></div> 이상거래 포함</div>
+    </div>
+  </div>
+
+  <!-- ── 탭 3: 알림 센터 ── -->
+  <div class="tab-content" id="content3">
+    <div id="alertList"><div class="loading">로딩 중...</div></div>
+  </div>
+
+</div><!-- /mainScreen -->
+
+<script>
+// ══════════════════════════════════════════════════════════
+// 전역 상태
+// ══════════════════════════════════════════════════════════
+var _currentPeriod   = 'week';
+var _dashData        = null;   // getGuardDashboardData 결과
+var _alertData       = [];     // getP2PAlertsForGuard 결과
+var _anomalyOnly     = false;
+var _currentTab      = 0;
+var _pollInterval    = null;
+
+// ══════════════════════════════════════════════════════════
+// 로그인
+// ══════════════════════════════════════════════════════════
+function doLogin() {
+  var pw  = document.getElementById('guardPw').value;
+  var err = document.getElementById('loginErr');
+  if (!pw) { err.innerText = '비밀번호를 입력해주세요.'; return; }
+  err.innerText = '확인 중...';
+
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (res.success) {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('mainScreen').style.display  = 'block';
+        loadData();
+        // 30초마다 자동 갱신
+        _pollInterval = setInterval(function() {
+          if (_currentTab === 0 || _currentTab === 3) loadData();
+        }, 30000);
+      } else {
+        err.innerText = res.msg;
+      }
+    })
+    .withFailureHandler(function(e) { err.innerText = '오류: ' + e.message; })
+    .verifyGuardPassword(pw);
+}
+
+function doLogout() {
+  if (_pollInterval) clearInterval(_pollInterval);
+  _dashData = null; _alertData = [];
+  document.getElementById('mainScreen').style.display  = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('guardPw').value = '';
+  document.getElementById('loginErr').innerText = '';
+}
+
+// ══════════════════════════════════════════════════════════
+// 데이터 로드
+// ══════════════════════════════════════════════════════════
+function loadData() {
+  google.script.run
+    .withSuccessHandler(function(data) {
+      _dashData = data;
+      renderAll();
+    })
+    .withFailureHandler(function(e) {
+      console.log('대시보드 데이터 로드 실패: ' + e.message);
+    })
+    .getGuardDashboardData(_currentPeriod);
+
+  google.script.run
+    .withSuccessHandler(function(alerts) {
+      _alertData = alerts || [];
+      renderAlertBadge();
+      if (_currentTab === 3) renderAlerts();
+    })
+    .withFailureHandler(function(e) {
+      console.log('알림 데이터 로드 실패: ' + e.message);
+    })
+    .getP2PAlertsForGuard();
+}
+
+function renderAll() {
+  if (!_dashData) return;
+  renderTxList();
+  renderStats();
+  renderNetwork();
+}
+
+// ══════════════════════════════════════════════════════════
+// 기간 전환
+// ══════════════════════════════════════════════════════════
+function setPeriod(p) {
+  _currentPeriod = p;
+  ['week','month','all'].forEach(function(k) {
+    var id = k === 'week' ? 'btnWeek' : k === 'month' ? 'btnMonth' : 'btnAll';
+    document.getElementById(id).classList.toggle('active', k === p);
+  });
+  loadData();
+}
+
+// ══════════════════════════════════════════════════════════
+// 탭 전환
+// ══════════════════════════════════════════════════════════
+function switchTab(n) {
+  _currentTab = n;
+  for (var i = 0; i < 4; i++) {
+    document.getElementById('tab'     + i).classList.toggle('active', i === n);
+    document.getElementById('content' + i).classList.toggle('active', i === n);
+  }
+  if (n === 2 && _dashData) renderNetwork();
+  if (n === 3) renderAlerts();
+}
+
+// ══════════════════════════════════════════════════════════
+// 탭 0: 거래 스트리밍
+// ══════════════════════════════════════════════════════════
+function applyFilters() { renderTxList(); }
+
+function toggleAnomalyOnly() {
+  _anomalyOnly = !_anomalyOnly;
+  document.getElementById('anomalyOnlyBtn').classList.toggle('active', _anomalyOnly);
+  renderTxList();
+}
+
+function renderTxList() {
+  var container = document.getElementById('txList');
+  if (!_dashData || !_dashData.transactions) {
+    container.innerHTML = '<div class="empty">거래 데이터가 없습니다.</div>';
+    return;
+  }
+
+  var tagFilter = document.getElementById('tagFilter').value;
+  var list = _dashData.transactions.filter(function(tx) {
+    if (tagFilter !== 'all' && tx.tag !== tagFilter) return false;
+    if (_anomalyOnly && tx.anomalyReasons.length === 0 && tx.status !== '이상거래') return false;
+    return true;
+  });
+
+  if (list.length === 0) {
+    container.innerHTML = '<div class="empty">해당 조건의 거래가 없습니다.</div>';
+    return;
+  }
+
+  container.innerHTML = list.map(function(tx) {
+    var isAnom = tx.anomalyReasons.length > 0 || tx.status === '이상거래';
+    var anomBadges = '';
+    if (isAnom) {
+      var reasons = tx.anomalyReasons.length > 0 ? tx.anomalyReasons : ['이상거래'];
+      anomBadges = '<div class="anomaly-badges">' +
+        reasons.map(function(r) { return '<span class="anomaly-badge">⚠️ ' + r + '</span>'; }).join('') +
+      '</div>';
+    }
+    var statusDot = tx.status === '정상 확인됨'
+      ? '<span style="color:var(--green);font-size:11px;margin-left:6px;">✔ 확인됨</span>'
+      : '';
+    return '<div class="tx-card' + (isAnom ? ' anomaly' : '') + '">' +
+      '<div class="tx-top">' +
+        '<div class="tx-parties">' + esc(tx.sender) + ' → ' + esc(tx.receiver) + statusDot + '</div>' +
+        '<div class="tx-amount">$' + tx.amount.toLocaleString() + '</div>' +
+      '</div>' +
+      '<div class="tx-meta">' +
+        '<span>' + tx.date + '</span>' +
+        '<span class="tag-pill">' + esc(tx.tag) + '</span>' +
+        '<span>' + esc(tx.description) + '</span>' +
+      '</div>' +
+      anomBadges +
+    '</div>';
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════════
+// 탭 1: 카테고리 통계
+// ══════════════════════════════════════════════════════════
+function renderStats() {
+  if (!_dashData || !_dashData.stats) return;
+  var s = _dashData.stats;
+
+  // 통계 카드
+  document.getElementById('statRow').innerHTML =
+    statCard('총 거래 건수', s.totalCount + '건', 'blue') +
+    statCard('총 거래 금액', '$' + (s.totalAmount || 0).toLocaleString(), 'green') +
+    statCard('이상 거래', s.anomalyCount + '건', s.anomalyCount > 0 ? 'red' : 'green');
+
+  // 주간 요약
+  if (s.weekSummary) {
+    document.getElementById('summaryBox').style.display = 'block';
+    document.getElementById('summaryText').innerText    = s.weekSummary;
+  }
+
+  // 태그별 건수 차트
+  renderBarChart('tagCountChart', s.tagStats || [], 'count', '#58a6ff');
+  // 태그별 금액 차트
+  renderBarChart('tagAmountChart', s.tagStats || [], 'amount', '#3fb950', true);
+
+  // Top 판매자 / 구매자
+  document.getElementById('topGrid').innerHTML =
+    topCard('🏆 최다 판매자 Top 3', s.topSellers || [], '건') +
+    topCard('💸 최다 구매자 Top 3', s.topBuyers  || [], '건');
+}
+
+function statCard(label, val, color) {
+  return '<div class="stat-card">' +
+    '<div class="stat-label">' + label + '</div>' +
+    '<div class="stat-value ' + color + '">' + val + '</div>' +
+  '</div>';
+}
+
+function renderBarChart(containerId, tagStats, field, color, isMoney) {
+  var el = document.getElementById(containerId);
+  if (!tagStats || tagStats.length === 0) {
+    el.innerHTML = '<div class="empty">데이터 없음</div>';
+    return;
+  }
+  var maxVal = Math.max.apply(null, tagStats.map(function(t) { return t[field] || 0; }));
+  if (maxVal === 0) { el.innerHTML = '<div class="empty">데이터 없음</div>'; return; }
+
+  el.innerHTML = tagStats.map(function(t) {
+    var val   = t[field] || 0;
+    var pct   = Math.round((val / maxVal) * 100);
+    var label = isMoney ? '$' + val.toLocaleString() : val + '건';
+    return '<div class="bar-row">' +
+      '<div class="bar-label">' + esc(t.tag) + '</div>' +
+      '<div class="bar-track"><div class="bar-fill" style="width:' + pct + '%;background:' + color + ';"></div></div>' +
+      '<div class="bar-val">' + label + '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function topCard(title, list, unit) {
+  var ranks = ['🥇','🥈','🥉'];
+  var rows = list.length === 0
+    ? '<div style="color:var(--muted);font-size:13px;padding:8px 0;">데이터 없음</div>'
+    : list.map(function(item, i) {
+        return '<div class="top-item">' +
+          '<span class="top-rank">' + (ranks[i] || (i+1) + '.') + '</span>' +
+          '<span class="top-name">' + esc(item.name) + '</span>' +
+          '<span class="top-count">' + item.count + unit + '</span>' +
+        '</div>';
+      }).join('');
+  return '<div class="top-card"><div class="top-card-title">' + title + '</div>' + rows + '</div>';
+}
+
+function copySummary() {
+  var text = document.getElementById('summaryText').innerText;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(function() { alert('클립보드에 복사되었습니다!'); });
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+    alert('복사되었습니다!');
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// 탭 2: 거래 네트워크 (Canvas 기반 - 외부 라이브러리 없음)
+// ══════════════════════════════════════════════════════════
+var _netNodes   = [];   // { name, x, y, r, color, sellCount, totalActivity }
+var _netEdges   = [];   // { from, to, count, total, hasAnomaly, x1,y1,x2,y2 }
+var _dragging   = null; // 드래그 중인 노드 인덱스
+var _dragOffX   = 0;
+var _dragOffY   = 0;
+var _hoverNode  = -1;
+
+function renderNetwork() {
+  if (!_dashData || !_dashData.network) return;
+  var net = _dashData.network;
+
+  var canvas  = document.getElementById('networkCanvas');
+  var W       = canvas.parentElement.clientWidth || 600;
+  canvas.width  = W;
+  canvas.height = 480;
+
+  var nodes  = net.nodes  || [];
+  var edges  = net.edges  || [];
+
+  if (nodes.length === 0) {
+    var ctx0 = canvas.getContext('2d');
+    ctx0.fillStyle = '#8b949e';
+    ctx0.font      = '14px Noto Sans KR, sans-serif';
+    ctx0.textAlign = 'center';
+    ctx0.fillText('거래 데이터가 없습니다.', W / 2, 240);
+    return;
+  }
+
+  // ── 이상거래 포함 노드 집합 ────────────────────────────────
+  var anomalyNodes = new Set();
+  (_dashData.transactions || []).forEach(function(tx) {
+    if (tx.anomalyReasons.length > 0 || tx.status === '이상거래') {
+      anomalyNodes.add(tx.sender);
+      anomalyNodes.add(tx.receiver);
+    }
+  });
+
+  // ── 원형 배치 초기 좌표 계산 ─────────────────────────────
+  var cx = W / 2, cy = 230;
+  var R  = Math.min(W * 0.35, 170);
+  var n  = nodes.length;
+
+  _netNodes = nodes.map(function(node, i) {
+    var angle = (2 * Math.PI * i / n) - Math.PI / 2;
+    var x     = cx + R * Math.cos(angle);
+    var y     = cy + R * Math.sin(angle);
+    // 노드 반지름: 거래 활동량에 비례 (최소 14, 최대 30)
+    var r = Math.min(30, Math.max(14, 14 + node.totalActivity * 1.5));
+    // 색상
+    var color = anomalyNodes.has(node.name)  ? '#f85149'
+              : node.totalActivity >= 5      ? '#d29922'
+              : '#58a6ff';
+    return { name: node.name, x: x, y: y, r: r, color: color,
+             sellCount: node.sellCount, totalActivity: node.totalActivity };
+  });
+
+  // ── 엣지 데이터 준비 ─────────────────────────────────────
+  // 이상거래 포함 엣지 여부 판단
+  var anomalyEdgeKeys = new Set();
+  (_dashData.transactions || []).forEach(function(tx) {
+    if (tx.anomalyReasons.length > 0 || tx.status === '이상거래') {
+      anomalyEdgeKeys.add(tx.sender + '→' + tx.receiver);
+    }
+  });
+
+  _netEdges = edges.map(function(e) {
+    var fromNode = _netNodes.find(function(n) { return n.name === e.from; });
+    var toNode   = _netNodes.find(function(n) { return n.name === e.to; });
+    if (!fromNode || !toNode) return null;
+    return {
+      from: e.from, to: e.to,
+      count: e.count, total: e.total,
+      hasAnomaly: anomalyEdgeKeys.has(e.from + '→' + e.to)
+    };
+  }).filter(function(e) { return e !== null; });
+
+  drawNetwork(canvas);
+  setupNetworkInteraction(canvas);
+}
+
+function drawNetwork(canvas) {
+  var ctx = canvas.getContext('2d');
+  var W   = canvas.width;
+  var H   = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  // 배경
+  ctx.fillStyle = '#161b22';
+  ctx.fillRect(0, 0, W, H);
+
+  if (_netEdges.length === 0 && _netNodes.length === 0) return;
+
+  // ── 엣지 그리기 ───────────────────────────────────────────
+  _netEdges.forEach(function(e) {
+    var fromNode = _netNodes.find(function(n) { return n.name === e.from; });
+    var toNode   = _netNodes.find(function(n) { return n.name === e.to; });
+    if (!fromNode || !toNode) return;
+
+    // 선 굵기: 거래 건수 비례 (최소 1, 최대 6)
+    var lw = Math.min(6, Math.max(1, e.count));
+    ctx.beginPath();
+    ctx.moveTo(fromNode.x, fromNode.y);
+    ctx.lineTo(toNode.x,   toNode.y);
+    ctx.lineWidth   = lw;
+    ctx.strokeStyle = e.hasAnomaly
+      ? 'rgba(248,81,73,0.7)'
+      : 'rgba(88,166,255,0.35)';
+    ctx.stroke();
+
+    // 화살표 (방향 표시)
+    var angle = Math.atan2(toNode.y - fromNode.y, toNode.x - fromNode.x);
+    var arrowX = toNode.x - Math.cos(angle) * (toNode.r + 4);
+    var arrowY = toNode.y - Math.sin(angle) * (toNode.r + 4);
+    ctx.beginPath();
+    ctx.moveTo(arrowX, arrowY);
+    ctx.lineTo(arrowX - 10 * Math.cos(angle - 0.4), arrowY - 10 * Math.sin(angle - 0.4));
+    ctx.lineTo(arrowX - 10 * Math.cos(angle + 0.4), arrowY - 10 * Math.sin(angle + 0.4));
+    ctx.closePath();
+    ctx.fillStyle = e.hasAnomaly ? 'rgba(248,81,73,0.8)' : 'rgba(88,166,255,0.5)';
+    ctx.fill();
+  });
+
+  // ── 노드 그리기 ───────────────────────────────────────────
+  _netNodes.forEach(function(node, i) {
+    var isHover = i === _hoverNode;
+
+    // 외곽 글로우
+    ctx.beginPath();
+    ctx.arc(node.x, node.y, node.r + (isHover ? 6 : 3), 0, 2 * Math.PI);
+    ctx.fillStyle = node.color.replace(')', ',0.2)').replace('rgb', 'rgba');
+    // 16진수 색상 → rgba 변환 헬퍼
+    ctx.fillStyle = hexToRgba(node.color, isHover ? 0.3 : 0.15);
+    ctx.fill();
+
+    // 노드 원
+    ctx.beginPath();
+    ctx.arc(node.x, node.y, node.r, 0, 2 * Math.PI);
+    ctx.fillStyle   = hexToRgba(node.color, 0.9);
+    ctx.fill();
+    ctx.strokeStyle = node.color;
+    ctx.lineWidth   = isHover ? 3 : 1.5;
+    ctx.stroke();
+
+    // 이름 텍스트
+    ctx.fillStyle = '#e6edf3';
+    ctx.font      = 'bold ' + Math.max(10, node.r * 0.55) + 'px Noto Sans KR, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    // 이름이 길면 성만 표시
+    var label = node.name.length <= 3 ? node.name : node.name.substring(0, 2);
+    ctx.fillText(label, node.x, node.y);
+
+    // 호버 시 툴팁
+    if (isHover) {
+      drawTooltip(ctx, node);
+    }
+  });
+}
+
+function drawTooltip(ctx, node) {
+  var lines   = [node.name, '판매: ' + node.sellCount + '건', '총 활동: ' + node.totalActivity + '건'];
+  var padding = 8;
+  var lineH   = 18;
+  var boxW    = 110;
+  var boxH    = lines.length * lineH + padding * 2;
+
+  var tx = node.x + node.r + 8;
+  var ty = node.y - boxH / 2;
+  // 화면 밖으로 나가면 반대쪽
+  var canvasW = document.getElementById('networkCanvas').width;
+  if (tx + boxW > canvasW - 10) tx = node.x - node.r - boxW - 8;
+
+  ctx.fillStyle   = 'rgba(22,27,34,0.95)';
+  ctx.strokeStyle = '#58a6ff';
+  ctx.lineWidth   = 1;
+  roundRect(ctx, tx, ty, boxW, boxH, 6);
+  ctx.fill(); ctx.stroke();
+
+  ctx.fillStyle    = '#e6edf3';
+  ctx.font         = '12px Noto Sans KR, sans-serif';
+  ctx.textAlign    = 'left';
+  ctx.textBaseline = 'top';
+  lines.forEach(function(line, i) {
+    ctx.fillText(line, tx + padding, ty + padding + i * lineH);
+  });
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y,     x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h,     x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y,         x + r, y);
+  ctx.closePath();
+}
+
+function hexToRgba(hex, alpha) {
+  // '#f85149' → rgba(248,81,73,alpha)
+  var r = parseInt(hex.slice(1,3),16);
+  var g = parseInt(hex.slice(3,5),16);
+  var b = parseInt(hex.slice(5,7),16);
+  return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
+}
+
+function setupNetworkInteraction(canvas) {
+  // 기존 리스너 제거 후 재등록 (중복 방지)
+  canvas.onmousedown  = null;
+  canvas.onmousemove  = null;
+  canvas.onmouseup    = null;
+  canvas.onmouseleave = null;
+  canvas.ontouchstart = null;
+  canvas.ontouchmove  = null;
+  canvas.ontouchend   = null;
+
+  function getPos(e) {
+    var rect = canvas.getBoundingClientRect();
+    var scaleX = canvas.width  / rect.width;
+    var scaleY = canvas.height / rect.height;
+    var clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    var clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+  }
+
+  function hitNode(pos) {
+    for (var i = 0; i < _netNodes.length; i++) {
+      var n  = _netNodes[i];
+      var dx = pos.x - n.x, dy = pos.y - n.y;
+      if (dx*dx + dy*dy <= (n.r + 6) * (n.r + 6)) return i;
+    }
+    return -1;
+  }
+
+  canvas.onmousedown = canvas.ontouchstart = function(e) {
+    e.preventDefault();
+    var pos = getPos(e);
+    var idx = hitNode(pos);
+    if (idx !== -1) {
+      _dragging = idx;
+      _dragOffX = pos.x - _netNodes[idx].x;
+      _dragOffY = pos.y - _netNodes[idx].y;
+    }
+  };
+
+  canvas.onmousemove = canvas.ontouchmove = function(e) {
+    e.preventDefault();
+    var pos   = getPos(e);
+    var hover = hitNode(pos);
+    if (_dragging !== null) {
+      _netNodes[_dragging].x = pos.x - _dragOffX;
+      _netNodes[_dragging].y = pos.y - _dragOffY;
+      drawNetwork(canvas);
+    } else if (hover !== _hoverNode) {
+      _hoverNode = hover;
+      drawNetwork(canvas);
+    }
+  };
+
+  canvas.onmouseup = canvas.ontouchend = function(e) {
+    _dragging = null;
+  };
+
+  canvas.onmouseleave = function() {
+    _dragging  = null;
+    _hoverNode = -1;
+    drawNetwork(canvas);
+  };
+}
+
+// ══════════════════════════════════════════════════════════
+// 탭 3: 알림 센터
+// ══════════════════════════════════════════════════════════
+function renderAlertBadge() {
+  var badge = document.getElementById('alertBadge');
+  if (_alertData.length > 0) {
+    badge.style.display = 'inline';
+    badge.innerText     = _alertData.length;
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function renderAlerts() {
+  var container = document.getElementById('alertList');
+  if (!_alertData || _alertData.length === 0) {
+    container.innerHTML = '<div class="empty">🎉 현재 이상 거래가 없습니다.</div>';
+    return;
+  }
+
+  container.innerHTML = _alertData.map(function(tx) {
+    var memoId    = 'memo_'    + tx.rowNum;
+    var selectId  = 'reason_'  + tx.rowNum;
+    var penBtnId  = 'penBtn_'  + tx.rowNum;
+    // 이미 최종적발된 거래는 적발 UI 대신 완료 표시
+    var alreadyDone = (tx.status === '최종적발');
+    var penaltyZone = alreadyDone
+      ? '<div class="penalty-done">🔒 최종 적발 완료된 거래입니다.</div>'
+      : '<details class="penalty-zone">' +
+          '<summary>🚨 최종 적발하기 ▸</summary>' +
+          '<select id="' + selectId + '" class="penalty-select">' +
+            '<option value="">-- 적발 사유 선택 --</option>' +
+            '<option value="사유 허위 기재">사유 허위 기재</option>' +
+            '<option value="실물 거래 의심">실물 거래 의심</option>' +
+            '<option value="강압적 거래">강압적 거래</option>' +
+            '<option value="소명 거부">소명 거부</option>' +
+            '<option value="기타">기타 (메모란에 직접 입력)</option>' +
+          '</select>' +
+          '<button class="penalty-btn" id="' + penBtnId + '" ' +
+            'onclick="confirmPenalty(' + tx.rowNum + ')">' +
+            '🚨 최종 적발 확정' +
+          '</button>' +
+        '</details>';
+
+    return '<div class="alert-card" id="alertCard_' + tx.rowNum + '">' +
+      '<div class="alert-top">' +
+        '<div class="alert-names">' + esc(tx.sender) + ' → ' + esc(tx.receiver) + '</div>' +
+        '<div class="alert-amount">$' + tx.amount.toLocaleString() + '</div>' +
+      '</div>' +
+      '<div class="alert-meta">' +
+        tx.date + ' · <span class="tag-pill">' + esc(tx.tag) + '</span>' +
+        ' · ' + esc(tx.description) +
+      '</div>' +
+      '<textarea id="' + memoId + '" class="memo-area" placeholder="수호대 확인 메모 (예: 당사자 확인 완료, 정상 거래 확인됨)">' +
+        esc(tx.memo) +
+      '</textarea>' +
+      '<button class="memo-save-btn" id="memoBtn_' + tx.rowNum + '" ' +
+        'onclick="saveMemo(' + tx.rowNum + ')">' +
+        '💾 메모 저장' +
+      '</button>' +
+      penaltyZone +
+    '</div>';
+  }).join('');
+}
+
+function saveMemo(rowNum) {
+  var memo    = document.getElementById('memo_'    + rowNum).value;
+  var btn     = document.getElementById('memoBtn_' + rowNum);
+  btn.disabled    = true;
+  btn.innerText   = '저장 중...';
+
+  google.script.run
+    .withSuccessHandler(function(res) {
+      btn.disabled  = false;
+      btn.innerText = res.success ? '✅ 저장됨' : '❌ 실패';
+      setTimeout(function() { btn.innerText = '💾 메모 저장'; }, 2000);
+    })
+    .withFailureHandler(function(e) {
+      btn.disabled  = false;
+      btn.innerText = '❌ 오류';
+      setTimeout(function() { btn.innerText = '💾 메모 저장'; }, 2000);
+    })
+    .saveGuardMemo(rowNum, memo);
+}
+
+// ══════════════════════════════════════════════════════════
+// 최종 적발 확정
+// ══════════════════════════════════════════════════════════
+function confirmPenalty(rowNum) {
+  var reasonEl = document.getElementById('reason_' + rowNum);
+  var penBtn   = document.getElementById('penBtn_'  + rowNum);
+  var memo     = document.getElementById('memo_'    + rowNum).value;
+
+  var reason = reasonEl ? reasonEl.value : '';
+  if (!reason) {
+    alert('적발 사유를 선택해주세요.');
+    return;
+  }
+
+  if (!confirm('정말 최종 적발 처리하시겠습니까?\n사유: ' + reason + '\n\n이 작업은 되돌릴 수 없습니다.')) {
+    return;
+  }
+
+  penBtn.disabled  = true;
+  penBtn.innerText = '처리 중...';
+
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (res.success) {
+        // 카드 내 적발 구역을 완료 표시로 교체
+        var card = document.getElementById('alertCard_' + rowNum);
+        if (card) {
+          var zone = card.querySelector('.penalty-zone');
+          if (zone) {
+            zone.outerHTML = '<div class="penalty-done">🔒 최종 적발 완료된 거래입니다.</div>';
+          }
+        }
+      } else {
+        penBtn.disabled  = false;
+        penBtn.innerText = '🚨 최종 적발 확정';
+        alert('❌ 오류: ' + res.msg);
+      }
+    })
+    .withFailureHandler(function(e) {
+      penBtn.disabled  = false;
+      penBtn.innerText = '🚨 최종 적발 확정';
+      alert('❌ 서버 오류: ' + e.message);
+    })
+    .recordGuardPenalty(rowNum, reason, memo);
+}
+
+// ══════════════════════════════════════════════════════════
+// 유틸
+// ══════════════════════════════════════════════════════════
+function esc(str) {
+  // XSS 방지용 HTML 이스케이프
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+</script>
+</body>
+</html>

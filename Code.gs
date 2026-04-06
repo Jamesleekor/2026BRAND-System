@@ -42,6 +42,11 @@ function doGet(e) {
       .setTitle('경매 실시간 중계')
       .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
   }
+  if (page === 'guard') {
+    return HtmlService.createTemplateFromFile('GuardDashboard').evaluate()
+      .setTitle('경제 수호대 대시보드')
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  }
   return HtmlService.createTemplateFromFile('Index').evaluate()
     .setTitle('우리 반 경제 대시보드')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
@@ -164,21 +169,21 @@ function getStudentData(studentName, password) {
   const honor = Number(studentRow[COL_VALUE - 1]) || 0;
   let tier = { name: '새싹', icon: '🌱', min: 0, max: 5000 };
   if      (honor >= 100000) tier = { name: '그랜드마스터', icon: '🏆', min: 100000, max: 100000 };
-  else if (honor >= 85000)  tier = { name: '완성된 마스터',       icon: '👑', min: 85000,  max: 100000 };
+  else if (honor >= 85000)  tier = { name: '천상의 마스터',       icon: '👑', min: 85000,  max: 100000 };
   else if (honor >= 75000)  tier = { name: '마스터',       icon: '👑', min: 75000,  max: 85000 };
-  else if (honor >= 65000)  tier = { name: '찬란한 다이아몬드',   icon: '💠', min: 50000,  max: 75000  };
-  else if (honor >= 60000)  tier = { name: '진화한 다이아몬드',   icon: '💠', min: 50000,  max: 65000  };
-  else if (honor >= 55000)  tier = { name: '성장한 다이아몬드',   icon: '💠', min: 50000,  max: 60000  };
-  else if (honor >= 50000)  tier = { name: '거친 다이아몬드',   icon: '💠', min: 50000,  max: 55000  };
-  else if (honor >= 45000)  tier = { name: '찬란한 루비',     icon: '💎', min: 30000,  max: 50000  };
-  else if (honor >= 40000)  tier = { name: '진화한 루비',     icon: '💎', min: 30000,  max: 45000  };
-  else if (honor >= 35000)  tier = { name: '성장한 루비',     icon: '💎', min: 30000,  max: 40000  };
+  else if (honor >= 65000)  tier = { name: '영원의 결정',   icon: '💠', min: 50000,  max: 75000  };
+  else if (honor >= 60000)  tier = { name: '무결 다이아',   icon: '💠', min: 50000,  max: 65000  };
+  else if (honor >= 55000)  tier = { name: '세공된 다이아',   icon: '💠', min: 50000,  max: 60000  };
+  else if (honor >= 50000)  tier = { name: '다이아 원석',   icon: '💠', min: 50000,  max: 55000  };
+  else if (honor >= 45000)  tier = { name: '홍염의 정점',     icon: '💎', min: 30000,  max: 50000  };
+  else if (honor >= 40000)  tier = { name: '각성한 루비',     icon: '💎', min: 30000,  max: 45000  };
+  else if (honor >= 35000)  tier = { name: '연마된 루비',     icon: '💎', min: 30000,  max: 40000  };
   else if (honor >= 30000)  tier = { name: '루비 원석',     icon: '💎', min: 30000,  max: 35000  };
-  else if (honor >= 27500)  tier = { name: '찬란한 골드',         icon: '🥇', min: 20000,  max: 30000  };
-  else if (honor >= 25000)  tier = { name: '진화한 골드',         icon: '🥇', min: 20000,  max: 27500  };
-  else if (honor >= 22500)  tier = { name: '성장한 골드',         icon: '🥇', min: 20000,  max: 25000  };
+  else if (honor >= 27500)  tier = { name: '태양의 황금',         icon: '🥇', min: 20000,  max: 30000  };
+  else if (honor >= 25000)  tier = { name: '정련된 골드',         icon: '🥇', min: 20000,  max: 27500  };
+  else if (honor >= 22500)  tier = { name: '제련된 골드',         icon: '🥇', min: 20000,  max: 25000  };
   else if (honor >= 20000)  tier = { name: '금 광석',         icon: '🥇', min: 20000,  max: 22500  };
-  else if (honor >= 17500)  tier = { name: '찬란한 실버',         icon: '🥈', min: 10000,  max: 20000  };
+  else if (honor >= 17500)  tier = { name: '은빛 극점',         icon: '🥈', min: 17500,  max: 20000  };
   else if (honor >= 15000)  tier = { name: '진화한 실버',         icon: '🥈', min: 10000,  max: 17500  };
   else if (honor >= 12500)  tier = { name: '성장한 실버',         icon: '🥈', min: 10000,  max: 15000  };
   else if (honor >= 10000)  tier = { name: '거친 실버',         icon: '🥈', min: 10000,  max: 12500  };
@@ -1170,7 +1175,7 @@ function checkAndGrantAchievements(studentName, balance, totalTax, honor) {
     'RANK-001': ['거친 실버'],
     'RANK-002': ['금 광석'],
     'RANK-003': ['루비 원석'],
-    'RANK-004': ['거친 다이아몬드'],
+    'RANK-004': ['다이아 원석'],
     'RANK-005': ['마스터'],
     'RANK-006': ['그랜드마스터']
   };
@@ -1178,21 +1183,21 @@ function checkAndGrantAchievements(studentName, balance, totalTax, honor) {
   const h = Number(honor) || 0;
   let currentTierName = '새싹';
   if      (h >= 100000) currentTierName = '그랜드마스터';
-  else if (h >= 85000)  currentTierName = '완성된 마스터';
+  else if (h >= 85000)  currentTierName = '천상의 마스터';
   else if (h >= 75000)  currentTierName = '마스터';
-  else if (h >= 65000)  currentTierName = '찬란한 다이아몬드';
-  else if (h >= 60000)  currentTierName = '진화한 다이아몬드';
-  else if (h >= 55000)  currentTierName = '성장한 다이아몬드';
-  else if (h >= 50000)  currentTierName = '거친 다이아몬드';
-  else if (h >= 45000)  currentTierName = '찬란한 루비';
-  else if (h >= 40000)  currentTierName = '진화한 루비';
-  else if (h >= 35000)  currentTierName = '성장한 루비';
+  else if (h >= 65000)  currentTierName = '영원의 결정';
+  else if (h >= 60000)  currentTierName = '무결 다이아';
+  else if (h >= 55000)  currentTierName = '세공된 다이아';
+  else if (h >= 50000)  currentTierName = '다이아 원석';
+  else if (h >= 45000)  currentTierName = '홍염의 정점';
+  else if (h >= 40000)  currentTierName = '각성한 루비';
+  else if (h >= 35000)  currentTierName = '연마된 루비';
   else if (h >= 30000)  currentTierName = '루비 원석';
-  else if (h >= 27500)  currentTierName = '찬란한 골드';
-  else if (h >= 25000)  currentTierName = '진화한 골드';
-  else if (h >= 22500)  currentTierName = '성장한 골드';
+  else if (h >= 27500)  currentTierName = '태양의 황금';
+  else if (h >= 25000)  currentTierName = '정련된 골드';
+  else if (h >= 22500)  currentTierName = '제련된 골드';
   else if (h >= 20000)  currentTierName = '금 광석';
-  else if (h >= 17500)  currentTierName = '찬란한 실버';
+  else if (h >= 17500)  currentTierName = '은빛 극점';
   else if (h >= 15000)  currentTierName = '진화한 실버';
   else if (h >= 12500)  currentTierName = '성장한 실버';
   else if (h >= 10000)  currentTierName = '거친 실버';
@@ -1682,9 +1687,36 @@ function getSecondaryJobForStudent(studentName) {
   if (!sheet) return null;
   const data = sheet.getDataRange().getValues();
   for (let i = 1; i < data.length; i++) {
-    if (String(data[i][0]).trim() === String(studentName).trim()) {
-      return { jobName: String(data[i][1]), jobDesc: String(data[i][2]) };
+    if (String(data[i][0]).trim() !== String(studentName).trim()) continue;
+
+    // ── 평균 평점 계산 (구매자 5명 이상일 때만 공개) ──────────
+    let ratingAvg    = null;
+    let ratingCount  = 0;
+    const p2pSheet   = ss.getSheetByName(SHEET_P2P);
+    if (p2pSheet) {
+      const p2pData = p2pSheet.getDataRange().getValues();
+      let ratingSum = 0;
+      for (let j = 1; j < p2pData.length; j++) {
+        // receiver가 본인 = 판매자로서 받은 거래
+        if (String(p2pData[j][3]).trim() !== String(studentName).trim()) continue;
+        const r = Number(p2pData[j][9]) || 0;  // J열: 평점
+        if (r > 0) {
+          ratingSum += r;
+          ratingCount++;
+        }
+      }
+      // 5명 이상 평가한 경우만 평균 공개
+      if (ratingCount >= 5) {
+        ratingAvg = Math.round((ratingSum / ratingCount) * 10) / 10; // 소수점 1자리
+      }
     }
+
+    return {
+      jobName:     String(data[i][1]),
+      jobDesc:     String(data[i][2]),
+      ratingAvg:   ratingAvg,
+      ratingCount: ratingCount
+    };
   }
   return null;
 }
@@ -2588,4 +2620,1143 @@ function testWallOfFame2() {
     Logger.log('오류 발생: ' + e.toString());
     Logger.log('오류 위치: ' + e.stack);
   }
+}
+
+// ════════════════════════════════════════════════════════════════
+// ██ P2P 거래 시스템 추가
+// 시트: P2P거래로그
+//   A=거래ID, B=날짜, C=보내는학생, D=받는학생, E=금액,
+//   F=태그, G=거래설명, H=상태(정상/이상거래)
+// ════════════════════════════════════════════════════════════════
+
+const SHEET_P2P = 'P2P거래로그';
+
+// ── 거래 가능한 학생 목록 반환 (본인 제외) ───────────────────────
+function getP2PReceiverList(studentName) {
+  const ss       = SpreadsheetApp.getActiveSpreadsheet();
+  const mainData = ss.getSheetByName(SHEET_MAIN).getDataRange().getValues();
+  const result   = [];
+  for (let i = 1; i < mainData.length; i++) {
+    const name = String(mainData[i][COL_NAME - 1]).trim();
+    if (!name) continue;
+    if (name === String(studentName).trim()) continue;  // 본인 제외
+    result.push({
+      name:    name,
+      brand:   String(mainData[i][COL_BRAND - 1]).trim(),
+      balance: Number(mainData[i][COL_ASSET - 1]) || 0
+    });
+  }
+  return result;
+}
+
+// ── P2P 거래 실행 ────────────────────────────────────────────────
+// senderName   : 보내는 학생 이름
+// receiverName : 받는 학생 이름
+// amount       : 거래 금액
+// tag          : 태그 (#학습도움 / #정서적지지 / #재능판매 / #권리 및 기회 / #기타)
+// description  : 거래 설명
+function p2pTransfer(senderName, receiverName, amount, tag, description) {
+  // ── 기본 유효성 검사 ─────────────────────────────────────────
+  if (!receiverName || !receiverName.trim()) {
+    return { success: false, msg: '받는 학생을 선택해주세요.' };
+  }
+  if (String(senderName).trim() === String(receiverName).trim()) {
+    return { success: false, msg: '자기 자신에게는 거래할 수 없습니다.' };
+  }
+  amount = Number(amount);
+  if (!amount || amount <= 0 || !Number.isInteger(amount)) {
+    return { success: false, msg: '금액은 1 이상의 정수로 입력해주세요.' };
+  }
+  if (amount > 10000) {
+    return { success: false, msg: '1회 거래 한도는 $10,000 입니다.' };
+  }
+  if (!tag) {
+    return { success: false, msg: '거래 태그를 선택해주세요.' };
+  }
+  if (!description || !description.trim()) {
+    return { success: false, msg: '거래 설명을 입력해주세요.' };
+  }
+
+  const ss        = SpreadsheetApp.getActiveSpreadsheet();
+  const mainSheet = ss.getSheetByName(SHEET_MAIN);
+  if (!mainSheet) return { success: false, msg: '메인 시트를 찾을 수 없습니다.' };
+
+  const mainData = mainSheet.getDataRange().getValues();
+
+  // 보내는 학생 행 찾기
+  let senderIdx = -1, receiverIdx = -1;
+  for (let i = 1; i < mainData.length; i++) {
+    const name = String(mainData[i][COL_NAME - 1]).trim();
+    if (name === String(senderName).trim())   senderIdx   = i;
+    if (name === String(receiverName).trim()) receiverIdx = i;
+  }
+
+  if (senderIdx   === -1) return { success: false, msg: '보내는 학생을 찾을 수 없습니다.' };
+  if (receiverIdx === -1) return { success: false, msg: '받는 학생을 찾을 수 없습니다.' };
+
+  const senderBalance = Number(mainData[senderIdx][COL_ASSET - 1]) || 0;
+  if (senderBalance < amount) {
+    return { success: false, msg: `잔액이 부족합니다. (현재: $${senderBalance.toLocaleString()})` };
+  }
+
+  // ── 이상 거래 감지 ───────────────────────────────────────────
+  // 기준: 오늘 동일인에게 3회 이상 / 단일 거래 $2000 초과
+  const p2pSheet = ss.getSheetByName(SHEET_P2P);
+  let isAnomaly  = false;
+  let anomalyReason = '';
+
+  if (p2pSheet) {
+    const p2pData  = p2pSheet.getDataRange().getValues();
+    const today    = _todayStr();
+    let todaySameCount = 0;
+    let todaySameTotal = 0;
+
+    for (let i = 1; i < p2pData.length; i++) {
+      const rowDate   = String(p2pData[i][1]).substring(0, 10); // B열: 날짜
+      const rowSender = String(p2pData[i][2]).trim();           // C열: 보내는 학생
+      const rowRecv   = String(p2pData[i][3]).trim();           // D열: 받는 학생
+      if (rowDate === today && rowSender === String(senderName).trim() && rowRecv === String(receiverName).trim()) {
+        todaySameCount++;
+        todaySameTotal += Number(p2pData[i][4]) || 0;
+      }
+    }
+
+    if (todaySameCount >= 3) {
+      isAnomaly     = true;
+      anomalyReason = `오늘 동일인 ${todaySameCount + 1}회 거래`;
+    }
+    if (amount >= 2000) {
+      isAnomaly     = true;
+      anomalyReason = (anomalyReason ? anomalyReason + ' / ' : '') + `단일 거래 $${amount.toLocaleString()}`;
+    }
+  }
+
+  // ── 자산 이동 ────────────────────────────────────────────────
+  const newSenderBalance   = senderBalance - amount;
+  const receiverBalance    = Number(mainData[receiverIdx][COL_ASSET - 1]) || 0;
+  const newReceiverBalance = receiverBalance + amount;
+
+  // 소득세 계산 (받는 학생 기준 10%)
+  const taxAmount      = Math.floor(amount * 0.1);
+  const netReceived    = amount - taxAmount;
+  const afterTaxBalance = receiverBalance + netReceived;
+  const receiverTax    = Number(mainData[receiverIdx][COL_TAX - 1]) || 0;
+
+  mainSheet.getRange(senderIdx   + 1, COL_ASSET).setValue(newSenderBalance);
+  mainSheet.getRange(receiverIdx + 1, COL_ASSET).setValue(afterTaxBalance);
+  mainSheet.getRange(receiverIdx + 1, COL_TAX  ).setValue(receiverTax + taxAmount);
+
+  // ── 히스토리 기록 (보내는 쪽) ───────────────────────────────
+  const today     = _todayStr();
+  const histSheet = ss.getSheetByName(SHEET_HISTORY);
+  if (histSheet) {
+    histSheet.appendRow([
+      today,
+      senderName,
+      mainData[senderIdx][COL_BRAND - 1],
+      0,           // 브랜드가치 변동 없음
+      -amount,
+      mainData[senderIdx][COL_VALUE - 1],
+      newSenderBalance,
+      `[P2P송금→${receiverName}] ${tag} ${description}`
+    ]);
+    histSheet.appendRow([
+      today,
+      receiverName,
+      mainData[receiverIdx][COL_BRAND - 1],
+      0,
+      netReceived,  // 세후 수령액
+      mainData[receiverIdx][COL_VALUE - 1],
+      afterTaxBalance,
+      `[P2P수령←${senderName}] ${tag} ${description} (세금 $${taxAmount} 자동 차감)`
+    ]);
+  }
+
+  // ── 자산사용 시트 기록 (보내는 쪽) ──────────────────────────
+  const spendSheet = ss.getSheetByName(SHEET_SPEND);
+  if (spendSheet) {
+    spendSheet.appendRow([
+      today, senderName, mainData[senderIdx][COL_BRAND - 1],
+      `[P2P송금] ${tag}`, amount, newSenderBalance,
+      `→${receiverName}: ${description}`
+    ]);
+  }
+
+  // ── P2P 거래 로그 기록 ───────────────────────────────────────
+  if (p2pSheet) {
+    const txnId = 'TXN_' + new Date().getTime() + '_' + Math.random().toString(36).substr(2, 4);
+    p2pSheet.appendRow([
+      txnId,
+      today,
+      senderName,
+      receiverName,
+      amount,
+      tag,
+      description.trim(),
+      isAnomaly ? '이상거래' : '정상'
+    ]);
+  }
+
+  // ── 우편함 알림 (받는 학생에게) ──────────────────────────────
+  _sendMail(
+    receiverName,
+    `💸 P2P 거래 수령 알림`,
+    `[${senderName}] 학생에게 $${amount.toLocaleString()}을 받았습니다.\n태그: ${tag}\n내용: ${description}\n\n소득세 $${taxAmount} 자동 차감 후 실수령액: $${netReceived.toLocaleString()}`,
+    '거래'
+  );
+
+  // ── 랭킹 갱신 + 캐시 무효화 ─────────────────────────────────
+  updateRankings();
+  const cache = CacheService.getScriptCache();
+  cache.remove('student_' + senderName);
+  cache.remove('student_' + receiverName);
+
+  return {
+    success:        true,
+    msg:            `거래 완료! $${amount.toLocaleString()} 송금 (상대방 세후 수령: $${netReceived.toLocaleString()})`,
+    newBalance:     newSenderBalance,
+    isAnomaly:      isAnomaly,
+    anomalyReason:  anomalyReason
+  };
+}
+
+// ── 나의 P2P 거래 내역 반환 ──────────────────────────────────────
+// ██ getMyP2PHistory 함수 교체본
+// 기존 함수 전체를 아래로 교체하세요.
+// 변경 내용: rating(J열) 필드 추가, canRate 필드 추가
+// ════════════════════════════════════════════════════════════════
+
+// ── 나의 P2P 거래 내역 반환 ──────────────────────────────────────
+function getMyP2PHistory(studentName) {
+  const ss      = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet   = ss.getSheetByName(SHEET_P2P);
+  if (!sheet) return [];
+
+  const data   = sheet.getDataRange().getValues();
+  const result = [];
+  const name   = String(studentName).trim();
+
+  for (let i = 1; i < data.length; i++) {
+    const sender   = String(data[i][2]).trim();
+    const receiver = String(data[i][3]).trim();
+    if (sender !== name && receiver !== name) continue;
+
+    const isSent = sender === name;
+    const rating = Number(data[i][9]) || 0;  // J열: 평점 (0=미평가)
+
+    result.push({
+      txnId:       String(data[i][0]).trim(),
+      date:        String(data[i][1]).substring(0, 10),
+      sender:      sender,
+      receiver:    receiver,
+      amount:      Number(data[i][4]) || 0,
+      tag:         String(data[i][5]).trim(),
+      description: String(data[i][6]).trim(),
+      status:      String(data[i][7]).trim(),
+      isSent:      isSent,
+      rating:      rating,
+      // 평점 가능 여부: sender(서비스 구매자)이고 아직 미평가인 경우만 true
+      canRate:     (isSent && rating === 0)
+    });
+  }
+  return result.reverse(); // 최신순
+}
+
+
+// ── 교사용: 이상 거래 목록 반환 ──────────────────────────────────
+function getP2PAlerts() {
+  const ss    = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_P2P);
+  if (!sheet) return [];
+
+  const data   = sheet.getDataRange().getValues();
+  const result = [];
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][7]).trim() !== '이상거래') continue;
+    result.push({
+      rowNum:      i + 1,
+      txnId:       String(data[i][0]),
+      date:        String(data[i][1]),
+      sender:      String(data[i][2]),
+      receiver:    String(data[i][3]),
+      amount:      Number(data[i][4]) || 0,
+      tag:         String(data[i][5]),
+      description: String(data[i][6])
+    });
+  }
+  return result.reverse(); // 최신순
+}
+
+// ── 교사용: 이상 거래 상태 수동 변경 ('이상거래' → '정상 확인됨') ─
+function resolveP2PAlert(rowNum) {
+  const ss    = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_P2P);
+  if (!sheet) return { success: false, msg: 'P2P거래로그 시트를 찾을 수 없습니다.' };
+  sheet.getRange(rowNum, 8).setValue('정상 확인됨');
+  return { success: true, msg: '정상 확인 처리되었습니다.' };
+}
+
+// ════════════════════════════════════════════════════════════════
+// ██ 경제 수호대 시스템
+// P2P거래로그 시트 I열(수호대메모) 추가 필요
+// ════════════════════════════════════════════════════════════════
+
+// ── 수호대 비밀번호 설정 (AuctionAdmin에서 호출) ─────────────────
+function setGuardPassword(pw) {
+  if (!pw || !String(pw).trim()) return { success: false, msg: '비밀번호를 입력해주세요.' };
+  PropertiesService.getScriptProperties().setProperty('GUARD_PASSWORD', String(pw).trim());
+  return { success: true, msg: '✅ 수호대 비밀번호가 설정되었습니다.' };
+}
+
+// ── 수호대 비밀번호 검증 (GuardDashboard 로그인 시 호출) ─────────
+function verifyGuardPassword(pw) {
+  const stored = PropertiesService.getScriptProperties().getProperty('GUARD_PASSWORD');
+  if (!stored) return { success: false, msg: '비밀번호가 설정되지 않았습니다. 선생님께 문의하세요.' };
+  if (String(pw).trim() === stored) return { success: true };
+  return { success: false, msg: '비밀번호가 올바르지 않습니다.' };
+}
+
+// ── 수호대 대시보드 통합 데이터 반환 ────────────────────────────
+// period: 'week'(이번 주) | 'month'(이번 달) | 'all'(전체)
+function getGuardDashboardData(period) {
+  const ss       = SpreadsheetApp.getActiveSpreadsheet();
+  const p2pSheet = ss.getSheetByName(SHEET_P2P);
+  if (!p2pSheet) return { transactions: [], stats: {}, network: [] };
+
+  const allData = p2pSheet.getDataRange().getValues();
+
+  // ── 기간 필터 기준일 계산 ────────────────────────────────────
+  const now   = new Date();
+  let cutoff  = null;
+  if (period === 'week') {
+    const day  = now.getDay(); // 0=일, 1=월
+    const diff = (day === 0 ? -6 : 1 - day);
+    cutoff = new Date(now);
+    cutoff.setDate(now.getDate() + diff);
+  } else if (period === 'month') {
+    cutoff = new Date(now.getFullYear(), now.getMonth(), 1);
+  }
+  // cutoffStr은 루프 안에서 매번 계산하므로 여기선 cutoff 객체만 유지
+
+  // ── 거래 데이터 파싱 ─────────────────────────────────────────
+  const transactions = [];
+  const tagCount     = {};  // 태그별 건수
+  const tagAmount    = {};  // 태그별 금액
+  const sellerMap    = {};  // 학생별 판매 건수 및 금액 (sender)
+  const buyerMap     = {};  // 학생별 구매 건수 (receiver)
+  // 네트워크: { "A→B": { from, to, count, total } }
+  const edgeMap      = {};
+
+  for (let i = 1; i < allData.length; i++) {
+    const row = allData[i];
+    if (!row[0]) continue; // 빈 행 스킵
+
+    const dateStr = String(row[1]).substring(0, 10);
+    // 기간 필터 적용
+    // 기간 필터 적용 (문자열 비교 — timezone 문제 없음)
+    if (cutoff) {
+      const cutoffStr = Utilities.formatDate(cutoff, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+      if (dateStr < cutoffStr) continue;
+    }
+
+    const sender  = String(row[2]).trim();
+    const recv    = String(row[3]).trim();
+    const amount  = Number(row[4]) || 0;
+    const tag     = String(row[5]).trim();
+    const desc    = String(row[6]).trim();
+    const status  = String(row[7]).trim();
+    const memo    = row[8] ? String(row[8]).trim() : '';
+
+    // 이상거래 사유 재계산 (프론트에서 강조 표시용)
+    const anomalyReasons = [];
+    if (amount >= 2000)        anomalyReasons.push('고액 거래');
+    if (desc.length < 10)      anomalyReasons.push('사유 불충분');
+    if (tag === '#기타' && desc.length < 20) anomalyReasons.push('태그 불일치 의심');
+
+    transactions.push({
+      rowNum:    i + 1,
+      txnId:     String(row[0]),
+      date:      dateStr,
+      sender,
+      receiver:  recv,
+      amount,
+      tag,
+      description: desc,
+      status,
+      memo,
+      anomalyReasons  // 빈 배열이면 강조 없음
+    });
+
+    // 태그 통계
+    tagCount[tag]  = (tagCount[tag]  || 0) + 1;
+    tagAmount[tag] = (tagAmount[tag] || 0) + amount;
+
+    // 판매자(sender) 통계
+    if (!sellerMap[sender]) sellerMap[sender] = { count: 0, total: 0 };
+    sellerMap[sender].count++;
+    sellerMap[sender].total += amount;
+
+    // 구매자(receiver) 통계
+    if (!buyerMap[recv]) buyerMap[recv] = { count: 0, total: 0 };
+    buyerMap[recv].count++;
+    buyerMap[recv].total += amount;
+
+    // 네트워크 엣지
+    const edgeKey = sender + '→' + recv;
+    if (!edgeMap[edgeKey]) edgeMap[edgeKey] = { from: sender, to: recv, count: 0, total: 0 };
+    edgeMap[edgeKey].count++;
+    edgeMap[edgeKey].total += amount;
+  }
+
+  // ── 이번 주 동일인 간 반복 거래 감지 (별도 패스) ─────────────
+  // 현재 필터 기간 내 sender+receiver 조합별 건수 집계
+  const pairCount = {};
+  transactions.forEach(function(tx) {
+    const key = tx.sender + '|' + tx.receiver;
+    pairCount[key] = (pairCount[key] || 0) + 1;
+  });
+  // 3회 이상인 거래에 '반복 거래' 사유 추가
+  transactions.forEach(function(tx) {
+    const key = tx.sender + '|' + tx.receiver;
+    if (pairCount[key] >= 3 && tx.anomalyReasons.indexOf('반복 거래') === -1) {
+      tx.anomalyReasons.push('반복 거래');
+    }
+    // status가 이상거래인데 anomalyReasons가 비어있으면 원본 상태 반영
+    if (tx.status === '이상거래' && tx.anomalyReasons.length === 0) {
+      tx.anomalyReasons.push('시스템 감지');
+    }
+  });
+
+  // ── 통계 요약 ────────────────────────────────────────────────
+  const totalCount  = transactions.length;
+  const totalAmount = transactions.reduce(function(s, t) { return s + t.amount; }, 0);
+  const anomalyCount = transactions.filter(function(t) {
+    return t.status === '이상거래' || t.anomalyReasons.length > 0;
+  }).length;
+
+  // Top 판매자 3명
+  const topSellers = Object.keys(sellerMap)
+    .map(function(name) { return { name, count: sellerMap[name].count, total: sellerMap[name].total }; })
+    .sort(function(a, b) { return b.count - a.count; })
+    .slice(0, 3);
+
+  // Top 구매자 3명
+  const topBuyers = Object.keys(buyerMap)
+    .map(function(name) { return { name, count: buyerMap[name].count, total: buyerMap[name].total }; })
+    .sort(function(a, b) { return b.count - a.count; })
+    .slice(0, 3);
+
+  // 태그별 통계 배열
+  const tagStats = Object.keys(tagCount).map(function(tag) {
+    return { tag, count: tagCount[tag], amount: tagAmount[tag] };
+  }).sort(function(a, b) { return b.count - a.count; });
+
+  // 주간 요약 텍스트 자동 생성
+  const topTag   = tagStats.length > 0 ? tagStats[0].tag : '-';
+  const weekSummary = `이번 기간 총 ${totalCount}건, 총 $${totalAmount.toLocaleString()} 거래 발생. ` +
+    `최다 태그: ${topTag}. 이상 거래 ${anomalyCount}건 감지. ` +
+    (topSellers.length > 0 ? `최다 판매자: ${topSellers[0].name}(${topSellers[0].count}건).` : '');
+
+  // ── 네트워크 노드/엣지 (시각화용) ───────────────────────────
+  // 노드: 거래에 등장한 모든 학생
+  const nodeSet = new Set();
+  transactions.forEach(function(tx) {
+    nodeSet.add(tx.sender);
+    nodeSet.add(tx.receiver);
+  });
+  const nodes = Array.from(nodeSet).map(function(name) {
+    const sell  = sellerMap[name]  || { count: 0, total: 0 };
+    const buy   = buyerMap[name]   || { count: 0, total: 0 };
+    return {
+      name,
+      sellCount: sell.count,
+      buyCount:  buy.count,
+      totalActivity: sell.count + buy.count
+    };
+  });
+  const edges = Object.values(edgeMap);
+
+  return {
+    transactions: transactions.reverse(), // 최신순
+    stats: {
+      totalCount,
+      totalAmount,
+      anomalyCount,
+      topSellers,
+      topBuyers,
+      tagStats,
+      weekSummary
+    },
+    network: { nodes, edges }
+  };
+}
+
+// ── 수호대: 이상 거래 목록 반환 (메모 포함) ─────────────────────
+function getP2PAlertsForGuard() {
+  const ss    = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_P2P);
+  if (!sheet) return [];
+
+  const data   = sheet.getDataRange().getValues();
+  const result = [];
+  for (let i = 1; i < data.length; i++) {
+    const status = String(data[i][7]).trim();
+    if (status !== '이상거래') continue;
+    result.push({
+      rowNum:      i + 1,
+      txnId:       String(data[i][0]),
+      date:        String(data[i][1]).substring(0, 10),
+      sender:      String(data[i][2]).trim(),
+      receiver:    String(data[i][3]).trim(),
+      amount:      Number(data[i][4]) || 0,
+      tag:         String(data[i][5]).trim(),
+      description: String(data[i][6]).trim(),
+      memo:        data[i][8] ? String(data[i][8]).trim() : ''
+    });
+  }
+  return result.reverse();
+}
+
+// ── 수호대: 이상 거래에 메모 저장 (I열) ─────────────────────────
+function saveGuardMemo(rowNum, memo) {
+  const ss    = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_P2P);
+  if (!sheet) return { success: false, msg: 'P2P거래로그 시트를 찾을 수 없습니다.' };
+  if (rowNum < 2) return { success: false, msg: '유효하지 않은 행 번호입니다.' };
+  try {
+    sheet.getRange(rowNum, 9).setValue(String(memo || '').trim()); // I열
+    return { success: true, msg: '메모가 저장되었습니다.' };
+  } catch(e) {
+    return { success: false, msg: '저장 오류: ' + e.message };
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+// ██ 정기 예금 시스템
+// 시트: 예금상품 (A=상품ID, B=상품명, C=1주이자율, D=2주이자율,
+//                E=3주이자율, F=4주이자율, G=최소금액, H=최대금액,
+//                I=패널티율, J=상태, K=론칭일)
+//       학생별가입예금 (A=예금ID, B=학생명, C=원금, D=이자율,
+//                      E=거치기간(주), F=시작일, G=만기일,
+//                      H=상태, I=지급이자액, J=처리일, K=상품ID)
+// ════════════════════════════════════════════════════════════════
+
+const SHEET_DEPOSIT_PROD = '예금상품';
+const SHEET_DEPOSIT_LOG  = '학생별가입예금';
+
+// ── 현재 활성 예금 상품 반환 ──────────────────────────────────────
+function getActiveDepositProduct() {
+  const ss    = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_DEPOSIT_PROD);
+  if (!sheet) return null;
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][9]).trim() === '활성') {  // J열: 상태
+      return {
+        prodId:    String(data[i][0]).trim(),   // A
+        prodName:  String(data[i][1]).trim(),   // B
+        rate1:     Number(data[i][2]) || 0,     // C
+        rate2:     Number(data[i][3]) || 0,     // D
+        rate3:     Number(data[i][4]) || 0,     // E
+        rate4:     Number(data[i][5]) || 0,     // F
+        minAmount: Number(data[i][6]) || 500,   // G
+        maxAmount: Number(data[i][7]) || 5000,  // H
+        penalty:   Number(data[i][8]) || 5,     // I
+        launchDate: String(data[i][10]).trim()  // K
+      };
+    }
+  }
+  return null;
+}
+
+// ── 신규 예금 상품 론칭 (AuctionAdmin에서 호출) ───────────────────
+// rates: { r1, r2, r3, r4 } — 각 주별 이자율(%)
+function launchDepositProduct(prodName, rates, penalty, minAmount, maxAmount) {
+  // 유효성 검사
+  if (!prodName || !prodName.trim())
+    return { success: false, msg: '상품명을 입력해주세요.' };
+  if (!rates.r1 || !rates.r2 || !rates.r3 || !rates.r4)
+    return { success: false, msg: '이자율 4개를 모두 입력해주세요.' };
+  penalty   = Number(penalty)   || 5;
+  minAmount = Number(minAmount) || 500;
+  maxAmount = Number(maxAmount) || 5000;
+
+  const ss        = SpreadsheetApp.getActiveSpreadsheet();
+  const prodSheet = ss.getSheetByName(SHEET_DEPOSIT_PROD);
+  if (!prodSheet) return { success: false, msg: '예금상품 시트를 찾을 수 없습니다.' };
+
+  // 기존 활성 상품 → 종료 처리
+  const prodData = prodSheet.getDataRange().getValues();
+  for (let i = 1; i < prodData.length; i++) {
+    if (String(prodData[i][9]).trim() === '활성') {
+      prodSheet.getRange(i + 1, 10).setValue('종료');
+    }
+  }
+
+  // 신규 상품 행 추가
+  const today  = _todayStr();
+  const prodId = 'PROD_' + today.replace(/-/g, '');
+  prodSheet.appendRow([
+    prodId,
+    prodName.trim(),
+    Number(rates.r1),
+    Number(rates.r2),
+    Number(rates.r3),
+    Number(rates.r4),
+    minAmount,
+    maxAmount,
+    penalty,
+    '활성',
+    today
+  ]);
+
+  // 전체 학생에게 우편 발송
+  const mainSheet = ss.getSheetByName(SHEET_MAIN);
+  if (mainSheet) {
+    const mainData = mainSheet.getDataRange().getValues();
+    for (let i = 1; i < mainData.length; i++) {
+      const name = String(mainData[i][COL_NAME - 1]).trim();
+      if (!name) continue;
+      _sendMail(
+        name,
+        `🏦 새 예금 상품 출시: ${prodName}`,
+        `새로운 정기예금 상품이 출시되었습니다!\n\n` +
+        `📌 상품명: ${prodName}\n` +
+        `💰 이자율: 1주 ${rates.r1}% / 2주 ${rates.r2}% / 3주 ${rates.r3}% / 4주 ${rates.r4}%\n` +
+        `💵 가입 한도: 최소 $${minAmount} ~ 최대 $${maxAmount} (100단위)\n` +
+        `⚠️ 중도해지 패널티: 원금의 ${penalty}%\n\n` +
+        `지금 대시보드에서 가입하세요!`,
+        '공지'
+      );
+    }
+  }
+
+  return { success: true, msg: `✅ [${prodName}] 상품이 론칭되었습니다. 전체 학생에게 우편이 발송되었습니다.` };
+}
+
+// ── 현재 활성 상품 패널티율 수정 (AuctionAdmin에서 호출) ──────────
+function setPenaltyRate(rate) {
+  rate = Number(rate);
+  if (isNaN(rate) || rate < 0 || rate > 100)
+    return { success: false, msg: '0~100 사이의 숫자를 입력해주세요.' };
+
+  const ss        = SpreadsheetApp.getActiveSpreadsheet();
+  const prodSheet = ss.getSheetByName(SHEET_DEPOSIT_PROD);
+  if (!prodSheet) return { success: false, msg: '예금상품 시트를 찾을 수 없습니다.' };
+
+  const data = prodSheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][9]).trim() === '활성') {
+      prodSheet.getRange(i + 1, 9).setValue(rate);  // I열
+      return { success: true, msg: `✅ 패널티율이 ${rate}%로 변경되었습니다.` };
+    }
+  }
+  return { success: false, msg: '현재 활성 상품이 없습니다.' };
+}
+
+// ── 예금 가입 (학생 → Index.html에서 호출) ───────────────────────
+function createDeposit(studentName, amount, weeks) {
+  amount = Number(amount);
+  weeks  = Number(weeks);
+
+  // ── 유효성 검사 ──────────────────────────────────────────────
+  if (!studentName) return { success: false, msg: '학생 정보가 없습니다.' };
+  if (![1, 2, 3, 4].includes(weeks))
+    return { success: false, msg: '거치 기간은 1~4주 중 선택해주세요.' };
+  if (!amount || amount <= 0)
+    return { success: false, msg: '금액을 입력해주세요.' };
+  if (amount % 100 !== 0)
+    return { success: false, msg: '금액은 100 단위로 입력해주세요. (예: 500, 1000)' };
+
+  // 활성 상품 조회
+  const prod = getActiveDepositProduct();
+  if (!prod) return { success: false, msg: '현재 가입 가능한 예금 상품이 없습니다.' };
+
+  if (amount < prod.minAmount)
+    return { success: false, msg: `최소 가입 금액은 $${prod.minAmount.toLocaleString()}입니다.` };
+  if (amount > prod.maxAmount)
+    return { success: false, msg: `1회 최대 가입 금액은 $${prod.maxAmount.toLocaleString()}입니다.` };
+
+  // ── 상품당 누적 한도 체크 ─────────────────────────────────
+  // 현재 활성 상품에 진행중인 예금 합산액이 maxAmount를 초과하지 않도록
+  const logSheetCheck = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_DEPOSIT_LOG);
+  if (logSheetCheck) {
+    const logCheck = logSheetCheck.getDataRange().getValues();
+    let alreadyDeposited = 0;
+    for (let i = 1; i < logCheck.length; i++) {
+      if (String(logCheck[i][1]).trim() === String(studentName).trim() &&
+          String(logCheck[i][10]).trim() === prod.prodId &&
+          String(logCheck[i][7]).trim() === '진행중') {
+        alreadyDeposited += Number(logCheck[i][2]) || 0;
+      }
+    }
+    const remaining = prod.maxAmount - alreadyDeposited;
+    if (remaining <= 0)
+      return { success: false, msg: `이번 상품의 최대 한도 $${prod.maxAmount.toLocaleString()}에 이미 도달했습니다.` };
+    if (amount > remaining)
+      return { success: false, msg: `이번 상품에 추가 가입 가능한 금액은 $${remaining.toLocaleString()}입니다. (한도: $${prod.maxAmount.toLocaleString()})` };
+  }
+
+  const ss        = SpreadsheetApp.getActiveSpreadsheet();
+  const mainSheet = ss.getSheetByName(SHEET_MAIN);
+  if (!mainSheet) return { success: false, msg: '메인 시트를 찾을 수 없습니다.' };
+
+  // 학생 행 찾기
+  const mainData = mainSheet.getDataRange().getValues();
+  let studentIdx = -1;
+  for (let i = 1; i < mainData.length; i++) {
+    if (String(mainData[i][COL_NAME - 1]).trim() === String(studentName).trim()) {
+      studentIdx = i; break;
+    }
+  }
+  if (studentIdx === -1) return { success: false, msg: '학생을 찾을 수 없습니다.' };
+
+  const curAsset = Number(mainData[studentIdx][COL_ASSET - 1]) || 0;
+  if (curAsset < amount)
+    return { success: false, msg: `잔액이 부족합니다. (현재: $${curAsset.toLocaleString()})` };
+
+  // 이자율 결정
+  const rateMap = { 1: prod.rate1, 2: prod.rate2, 3: prod.rate3, 4: prod.rate4 };
+  const rate    = rateMap[weeks];
+
+  // 만기일 계산 (시작일 + weeks*7일)
+  const today     = _todayStr();
+  const dueDate = new Date();
+  dueDate.setDate(dueDate.getDate() + weeks * 7);
+  dueDate.setHours(12, 0, 0, 0);  // 정오 12:00 고정
+  const dueDateStr = Utilities.formatDate(dueDate, Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
+
+  // 자산 차감
+  const newAsset = curAsset - amount;
+  mainSheet.getRange(studentIdx + 1, COL_ASSET).setValue(newAsset);
+
+  // 학생별가입예금 시트에 기록
+  const logSheet = ss.getSheetByName(SHEET_DEPOSIT_LOG);
+  if (!logSheet) {
+    // 차감 롤백
+    mainSheet.getRange(studentIdx + 1, COL_ASSET).setValue(curAsset);
+    return { success: false, msg: '학생별가입예금 시트를 찾을 수 없습니다.' };
+  }
+  const depId = 'DEP_' + new Date().getTime() + '_' + Math.random().toString(36).substr(2, 4);
+  logSheet.appendRow([
+    depId,          // A: 예금ID
+    studentName,    // B: 학생명
+    amount,         // C: 원금
+    rate,           // D: 이자율
+    weeks,          // E: 거치기간
+    today,          // F: 시작일
+    dueDateStr,     // G: 만기일
+    '진행중',        // H: 상태
+    0,              // I: 지급이자액 (미정)
+    '',             // J: 처리일
+    prod.prodId     // K: 상품ID
+  ]);
+
+  // 히스토리 기록
+  const histSheet = ss.getSheetByName(SHEET_HISTORY);
+  if (histSheet) {
+    histSheet.appendRow([
+      today, studentName, mainData[studentIdx][COL_BRAND - 1],
+      0, -amount,
+      mainData[studentIdx][COL_VALUE - 1], newAsset,
+      `[예금가입] ${prod.prodName} ${weeks}주 $${amount.toLocaleString()} (만기: ${dueDateStr})`
+    ]);
+  }
+
+  /// 캐시 무효화
+  CacheService.getScriptCache().remove('student_' + studentName);
+  updateRankings();
+
+  return {
+    success:    true,
+    msg:        `✅ 예금 가입 완료! $${amount.toLocaleString()} 예치 (만기일: ${dueDateStr})`,
+    newBalance: newAsset,
+    dueDate:    dueDateStr
+  };
+}
+
+// ── 나의 예금 목록 반환 (Index.html에서 호출) ────────────────────
+function getMyDeposits(studentName) {
+  const ss    = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_DEPOSIT_LOG);
+  if (!sheet) return [];
+  const data   = sheet.getDataRange().getValues();
+  const result = [];
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][1]).trim() !== String(studentName).trim()) continue;
+    let startVal = data[i][5];
+    let dueVal   = data[i][6];
+    let procVal  = data[i][9];
+    if (startVal instanceof Date)
+      startVal = Utilities.formatDate(startVal, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+    if (dueVal instanceof Date)
+      dueVal = Utilities.formatDate(dueVal, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+    if (procVal instanceof Date)
+      procVal = Utilities.formatDate(procVal, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+    result.push({
+      rowNum:    i + 1,
+      depId:     String(data[i][0]).trim(),
+      amount:    Number(data[i][2]) || 0,
+      rate:      Number(data[i][3]) || 0,
+      weeks:     Number(data[i][4]) || 0,
+      startDate: String(startVal),
+      dueDate:   String(dueVal),
+      status:    String(data[i][7]).trim(),
+      paidInt:   Number(data[i][8]) || 0,
+      procDate:  String(procVal),
+      prodId:    String(data[i][10]).trim()
+    });
+  }
+  // 진행중 먼저, 나머지는 최신순
+  result.sort(function(a, b) {
+    if (a.status === '진행중' && b.status !== '진행중') return -1;
+    if (a.status !== '진행중' && b.status === '진행중') return 1;
+    return b.rowNum - a.rowNum;
+  });
+  return result;
+}
+
+// ── 중도 해지 (학생 → Index.html에서 호출) ───────────────────────
+function cancelDeposit(studentName, depId) {
+  const ss       = SpreadsheetApp.getActiveSpreadsheet();
+  const logSheet = ss.getSheetByName(SHEET_DEPOSIT_LOG);
+  if (!logSheet) return { success: false, msg: '학생별가입예금 시트를 찾을 수 없습니다.' };
+
+  const data = logSheet.getDataRange().getValues();
+  let targetIdx = -1;
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]).trim() === String(depId).trim() &&
+        String(data[i][1]).trim() === String(studentName).trim() &&
+        String(data[i][7]).trim() === '진행중') {
+      targetIdx = i; break;
+    }
+  }
+  if (targetIdx === -1)
+    return { success: false, msg: '해당 예금을 찾을 수 없거나 이미 처리된 예금입니다.' };
+
+  const amount = Number(data[targetIdx][2]) || 0;
+
+  // 패널티율 — 가입 당시 상품에서 조회, 없으면 현재 활성 상품, 없으면 5%
+  let penaltyRate = 5;
+  const prodId    = String(data[targetIdx][10]).trim();
+  const prodSheet = ss.getSheetByName(SHEET_DEPOSIT_PROD);
+  if (prodSheet && prodId) {
+    const prodData = prodSheet.getDataRange().getValues();
+    for (let p = 1; p < prodData.length; p++) {
+      if (String(prodData[p][0]).trim() === prodId) {
+        penaltyRate = Number(prodData[p][8]) || 5; break;
+      }
+    }
+  }
+
+  const penalty   = Math.floor(amount * penaltyRate / 100);
+  const refund    = amount - penalty;
+  const today     = _todayStr();
+
+  // 메인 시트에서 학생 자산 증가
+  const mainSheet = ss.getSheetByName(SHEET_MAIN);
+  if (!mainSheet) return { success: false, msg: '메인 시트를 찾을 수 없습니다.' };
+  const mainData = mainSheet.getDataRange().getValues();
+  let studentIdx = -1;
+  for (let i = 1; i < mainData.length; i++) {
+    if (String(mainData[i][COL_NAME - 1]).trim() === String(studentName).trim()) {
+      studentIdx = i; break;
+    }
+  }
+  if (studentIdx === -1) return { success: false, msg: '학생을 찾을 수 없습니다.' };
+
+  const curAsset = Number(mainData[studentIdx][COL_ASSET - 1]) || 0;
+  const newAsset = curAsset + refund;
+  mainSheet.getRange(studentIdx + 1, COL_ASSET).setValue(newAsset);
+
+  // 예금 상태 업데이트
+  logSheet.getRange(targetIdx + 1, 8).setValue('중도해지');   // H: 상태
+  logSheet.getRange(targetIdx + 1, 9).setValue(0);            // I: 지급이자액
+  logSheet.getRange(targetIdx + 1, 10).setValue(today);       // J: 처리일
+
+  // 히스토리 기록
+  const histSheet = ss.getSheetByName(SHEET_HISTORY);
+  if (histSheet) {
+    histSheet.appendRow([
+      today, studentName, mainData[studentIdx][COL_BRAND - 1],
+      0, refund,
+      mainData[studentIdx][COL_VALUE - 1], newAsset,
+      `[예금중도해지] 원금 $${amount.toLocaleString()} → 패널티 $${penalty.toLocaleString()} 차감 → 반환 $${refund.toLocaleString()}`
+    ]);
+  }
+
+  // 우편함 알림
+  _sendMail(
+    studentName,
+    '❌ 예금 중도 해지 처리',
+    `예금이 중도 해지되었습니다.\n\n` +
+    `원금: $${amount.toLocaleString()}\n` +
+    `패널티 (${penaltyRate}%): -$${penalty.toLocaleString()}\n` +
+    `반환액: $${refund.toLocaleString()}\n\n` +
+    `반환금이 자산에 추가되었습니다.`,
+    '알림'
+  );
+
+  CacheService.getScriptCache().remove('student_' + studentName);
+  updateRankings();
+
+  return {
+    success:    true,
+    msg:        `중도 해지 완료. 패널티 $${penalty.toLocaleString()} 차감 후 $${refund.toLocaleString()} 반환되었습니다.`,
+    newBalance: newAsset,
+    penalty,
+    refund
+  };
+}
+
+// ── 만기 체크 및 이자 지급 (트리거 + getStudentData에서 호출) ─────
+// studentName 지정 시 해당 학생만, null 이면 전체 처리
+function checkAndPayDeposits(studentName) {
+  const ss       = SpreadsheetApp.getActiveSpreadsheet();
+  const logSheet = ss.getSheetByName(SHEET_DEPOSIT_LOG);
+  if (!logSheet) return;
+
+  const data      = logSheet.getDataRange().getValues();
+  const today     = _todayStr();
+  let   processed = 0;
+
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][7]).trim() !== '진행중') continue;
+    if (studentName && String(data[i][1]).trim() !== String(studentName).trim()) continue;
+
+    // 만기일 문자열로 비교
+    let dueVal = data[i][6];
+    if (dueVal instanceof Date)
+      dueVal = Utilities.formatDate(dueVal, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+    const dueStr = String(dueVal).substring(0, 10);
+
+    const nowTs = new Date().getTime();
+    const dueTs = new Date(dueStr).getTime();
+    if (dueTs <= nowTs) {
+      _payOneDeposit(ss, logSheet, i, data[i]);
+      processed++;
+    }
+  }
+  return processed;
+}
+
+// ── 내부 헬퍼: 만기 이자 지급 ────────────────────────────────────
+function _payOneDeposit(ss, logSheet, rowIdx, row) {
+  // 이중 처리 방지: 다시 확인
+  const freshStatus = String(logSheet.getRange(rowIdx + 1, 8).getValue()).trim();
+  if (freshStatus !== '진행중') return;
+
+  const studentName = String(row[1]).trim();
+  const amount      = Number(row[2]) || 0;
+  const rate        = Number(row[3]) || 0;
+  const today       = _todayStr();
+
+  // 이자 계산
+  const grossInt  = Math.floor(amount * rate / 100);   // 세전 이자
+  const taxAmount = Math.floor(grossInt * 0.1);        // 소득세 10%
+  const netInt    = grossInt - taxAmount;               // 세후 이자
+  const totalBack = amount + netInt;                    // 원금 + 세후 이자
+
+  // 메인 시트 업데이트
+  const mainSheet = ss.getSheetByName(SHEET_MAIN);
+  if (!mainSheet) return;
+  const mainData = mainSheet.getDataRange().getValues();
+  let studentIdx = -1;
+  for (let i = 1; i < mainData.length; i++) {
+    if (String(mainData[i][COL_NAME - 1]).trim() === studentName) {
+      studentIdx = i; break;
+    }
+  }
+  if (studentIdx === -1) return;
+
+  const curAsset  = Number(mainData[studentIdx][COL_ASSET - 1]) || 0;
+  const curTax    = Number(mainData[studentIdx][COL_TAX - 1])   || 0;
+  const newAsset  = curAsset + totalBack;
+  const newTax    = curTax + taxAmount;
+
+  mainSheet.getRange(studentIdx + 1, COL_ASSET).setValue(newAsset);
+  mainSheet.getRange(studentIdx + 1, COL_TAX  ).setValue(newTax);
+
+  // 예금 상태 업데이트
+  logSheet.getRange(rowIdx + 1, 8).setValue('만기');        // H
+  logSheet.getRange(rowIdx + 1, 9).setValue(netInt);        // I: 지급이자액(세후)
+  logSheet.getRange(rowIdx + 1, 10).setValue(today);        // J: 처리일
+
+  // 히스토리 기록
+  const histSheet = ss.getSheetByName(SHEET_HISTORY);
+  if (histSheet) {
+    histSheet.appendRow([
+      today, studentName, mainData[studentIdx][COL_BRAND - 1],
+      0, totalBack,
+      mainData[studentIdx][COL_VALUE - 1], newAsset,
+      `[예금만기] 원금 $${amount.toLocaleString()} + 세후이자 $${netInt.toLocaleString()} (세금 $${taxAmount.toLocaleString()} 복지기금 납부)`
+    ]);
+  }
+
+  // 예금 만기 우편함 알림
+  _sendMail(
+    studentName,
+    '🎉 예금 만기 지급 완료!',
+    `예금이 만기되어 원금과 이자가 지급되었습니다.\n\n` +
+    `원금:         $${amount.toLocaleString()}\n` +
+    `세전 이자 (${rate}%): $${grossInt.toLocaleString()}\n` +
+    `소득세 (10%): -$${taxAmount.toLocaleString()}\n` +
+    `─────────────────\n` +
+    `실수령액:      $${totalBack.toLocaleString()}\n\n` +
+    `수고하셨습니다! 💰`,
+    '보상'
+  );
+
+  CacheService.getScriptCache().remove('student_' + studentName);
+}
+
+// ════════════════════════════════════════════════════════════════
+// ██ P2P 거래 평점 시스템
+// J열: 0 = 미평가, 1~10 = 평점
+// ════════════════════════════════════════════════════════════════
+
+// ── P2P 거래 평점 저장 ───────────────────────────────────────────
+// txnId   : 거래ID (A열 값)
+// rater   : 평점을 남기는 학생 (반드시 receiver여야 함)
+// rating  : 1~10 정수
+function rateP2PTransaction(txnId, rater, rating) {
+  rating = Number(rating);
+  if (!txnId || !rater) return { success: false, msg: '거래 정보가 올바르지 않습니다.' };
+  if (!Number.isInteger(rating) || rating < 1 || rating > 10)
+    return { success: false, msg: '평점은 1~10 사이의 정수로 입력해주세요.' };
+
+  const ss    = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_P2P);
+  if (!sheet) return { success: false, msg: 'P2P거래로그 시트를 찾을 수 없습니다.' };
+
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    const rowTxnId   = String(data[i][0]).trim();
+    const rowSender = String(data[i][2]).trim();  // C열: 보낸 학생 = 서비스 구매자
+
+    if (rowTxnId !== String(txnId).trim()) continue;
+
+    // 평점 권한 확인: 돈을 보낸 쪽(sender = 서비스 구매자)만 평가 가능
+    if (rowSender !== String(rater).trim())
+      return { success: false, msg: '서비스 구매자(송금한 학생)만 평점을 남길 수 있습니다.' };
+
+    // 이미 평가한 경우 중복 방지
+    const existing = Number(data[i][9]) || 0;  // J열: 인덱스 9
+    if (existing > 0)
+      return { success: false, msg: '이미 평점을 남긴 거래입니다.' };
+
+    // J열(10번째 열)에 평점 저장
+    sheet.getRange(i + 1, 10).setValue(rating);
+    return { success: true, msg: `⭐ 평점 ${rating}점이 저장되었습니다.` };
+  }
+  return { success: false, msg: '해당 거래를 찾을 수 없습니다.' };
+}
+
+
+
+// ════════════════════════════════════════════════════════════════
+// ██ 수호대 최종 적발 시스템
+// 시트: 수호대적발로그
+//   A=적발ID, B=적발일, C=피적발학생, D=거래ID,
+//   E=적발사유, F=수호대메모, G=처리일
+// ════════════════════════════════════════════════════════════════
+
+const SHEET_GUARD_PENALTY = '수호대적발로그';
+
+// ── 수호대적발로그 시트가 없으면 자동 생성 ───────────────────────
+function _ensureGuardPenaltySheet(ss) {
+  let sheet = ss.getSheetByName(SHEET_GUARD_PENALTY);
+  if (!sheet) {
+    sheet = ss.insertSheet(SHEET_GUARD_PENALTY);
+    sheet.appendRow(['적발ID', '적발일', '피적발학생', '거래ID', '적발사유', '수호대메모', '처리일']);
+  }
+  return sheet;
+}
+
+// ── 수호대 최종 적발 기록 ────────────────────────────────────────
+// txnRowNum : P2P거래로그의 행 번호 (2 이상)
+// reason    : 적발 사유 문자열
+// memo      : 수호대 추가 메모
+function recordGuardPenalty(txnRowNum, reason, memo) {
+  if (!txnRowNum || txnRowNum < 2) {
+    return { success: false, msg: '유효하지 않은 거래 행 번호입니다.' };
+  }
+  if (!reason || !String(reason).trim()) {
+    return { success: false, msg: '적발 사유를 선택해주세요.' };
+  }
+
+  try {
+    const ss       = SpreadsheetApp.getActiveSpreadsheet();
+    const p2pSheet = ss.getSheetByName(SHEET_P2P);
+    if (!p2pSheet) return { success: false, msg: 'P2P거래로그 시트를 찾을 수 없습니다.' };
+
+    // ── P2P거래로그에서 해당 행 정보 읽기 ──────────────────────
+    const p2pRow    = p2pSheet.getRange(txnRowNum, 1, 1, 10).getValues()[0];
+    const txnId     = String(p2pRow[0]).trim();   // A: 거래ID
+    const victim    = String(p2pRow[2]).trim();   // C: 보내는학생(서비스 판매자 = 피적발 대상)
+    const curStatus = String(p2pRow[7]).trim();   // H: 현재 상태
+
+    if (!txnId) return { success: false, msg: '해당 행에 거래 데이터가 없습니다.' };
+
+    // 이미 최종 적발된 거래는 중복 처리 방지
+    if (curStatus === '최종적발') {
+      return { success: false, msg: '이미 최종 적발 처리된 거래입니다.' };
+    }
+
+    const now     = new Date();
+    const nowStr  = Utilities.formatDate(now, Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
+    const dateStr = Utilities.formatDate(now, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+
+    // ── P2P거래로그 H열 상태를 '최종적발'로 변경 ───────────────
+    p2pSheet.getRange(txnRowNum, 8).setValue('최종적발');
+
+    // ── 수호대적발로그에 기록 ───────────────────────────────────
+    const penaltySheet = _ensureGuardPenaltySheet(ss);
+    const penaltyId    = 'PNL_' + new Date().getTime() + '_' + Math.random().toString(36).substr(2, 5);
+    penaltySheet.appendRow([
+      penaltyId,                    // A: 적발ID
+      dateStr,                      // B: 적발일
+      victim,                       // C: 피적발학생
+      txnId,                        // D: 거래ID
+      String(reason).trim(),        // E: 적발사유
+      String(memo || '').trim(),    // F: 수호대메모
+      nowStr                        // G: 처리일
+    ]);
+
+    // ── 피적발 학생에게 우편 발송 ───────────────────────────────
+    _sendMail(
+      victim,
+      '🚨 경제 수호대 적발 통보',
+      '경제 수호대에 의해 거래(ID: ' + txnId + ')가 최종 적발되었습니다.\n사유: ' + String(reason).trim() + '\n이의가 있을 경우 선생님께 문의하세요.',
+      'penalty'
+    );
+
+    return { success: true, msg: '✅ 최종 적발이 기록되었습니다.' };
+
+  } catch (e) {
+    return { success: false, msg: '오류가 발생했습니다: ' + e.message };
+  }
+}
+
+// ── 수호대: 적발 로그 전체 반환 (신용점수 계산용 + 관리용) ────────
+function getGuardPenaltyLog() {
+  const ss    = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_GUARD_PENALTY);
+  if (!sheet) return [];
+
+  const data   = sheet.getDataRange().getValues();
+  const result = [];
+  for (let i = 1; i < data.length; i++) {
+    if (!data[i][0]) continue;
+    result.push({
+      penaltyId:   String(data[i][0]),
+      date:        String(data[i][1]),
+      victim:      String(data[i][2]).trim(),
+      txnId:       String(data[i][3]).trim(),
+      reason:      String(data[i][4]).trim(),
+      memo:        String(data[i][5]).trim(),
+      processedAt: String(data[i][6])
+    });
+  }
+  return result.reverse(); // 최신순
 }

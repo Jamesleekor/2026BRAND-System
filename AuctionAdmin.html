@@ -270,6 +270,14 @@
       ✏️ 패널티율 수정</button>
     <button onclick="setGuardPw()"
      style="background:#0d1117;color:#58a6ff;border:1px solid #58a6ff;padding:8px 16px;border-radius:6px;font-weight:bold;cursor:pointer;">🛡️ 수호대 비밀번호 설정</button>
+    <button onclick="loadPendingLoans()"
+     style="background:#6c3483;color:white;border:none;padding:8px 16px;border-radius:6px;font-weight:bold;cursor:pointer;">💳 대출 승인 대기함</button>
+  </div>
+
+  <!-- 대출 대기함 -->
+  <div id="loanPendingArea" style="display:none;margin-top:10px;border:1px solid #ddd;border-radius:8px;padding:12px;">
+    <h3 style="margin:0 0 10px;color:#6c3483;">💳 대출 승인 대기함</h3>
+    <div id="loanPendingList"><div style="color:#aaa;font-size:13px;">불러오는 중...</div></div>
   </div>
 
   <!-- 업적 대기함 -->
@@ -701,6 +709,67 @@ function doLaunchDeposit() {
 }
 
 // ── 패널티율 단독 수정 ──────────────────────────────────────────
+// ── 대출 승인 대기함 ──────────────────────────────────────────
+function loadPendingLoans() {
+  var area = document.getElementById('loanPendingArea');
+  var list = document.getElementById('loanPendingList');
+  area.style.display = 'block';
+  list.innerHTML = '<div style="color:#aaa;font-size:13px;">불러오는 중...</div>';
+
+  google.script.run
+    .withSuccessHandler(function(rows) {
+      if (!rows || rows.length === 0) {
+        list.innerHTML = '<div style="color:#aaa;font-size:13px;">대기 중인 대출 신청이 없습니다.</div>';
+        return;
+      }
+      list.innerHTML = rows.map(function(r) {
+        return '<div style="border:1px solid #ddd;border-radius:8px;padding:10px 12px;margin-bottom:8px;">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">' +
+            '<b style="font-size:14px;">' + r.name + '</b>' +
+            '<span style="font-size:13px;color:#6c3483;font-weight:bold;">$' + r.amount.toLocaleString() + '</span>' +
+          '</div>' +
+          '<div style="font-size:12px;color:#666;margin-bottom:4px;">용도: ' + r.purpose + '</div>' +
+          '<div style="font-size:12px;color:#666;margin-bottom:8px;">' +
+            '신용등급: <b>' + r.grade + '</b> (' + r.score + '점) · 한도: $' + r.maxLoan.toLocaleString() +
+          '</div>' +
+          '<div style="display:flex;gap:8px;">' +
+            '<button onclick="doApproveLoan(' + r.rowNum + ', true, \'\')" ' +
+              'style="flex:1;padding:6px;background:#27ae60;color:white;border:none;border-radius:6px;font-weight:bold;cursor:pointer;font-size:13px;">' +
+              '✅ 승인' +
+            '</button>' +
+            '<button onclick="doRejectLoan(' + r.rowNum + ')" ' +
+              'style="flex:1;padding:6px;background:#e74c3c;color:white;border:none;border-radius:6px;font-weight:bold;cursor:pointer;font-size:13px;">' +
+              '❌ 반려' +
+            '</button>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    })
+    .withFailureHandler(function(e) {
+      list.innerHTML = '<div style="color:#e74c3c;font-size:13px;">오류: ' + e.message + '</div>';
+    })
+    .getPendingLoans();
+}
+
+function doApproveLoan(rowNum, isApproved, rejectReason) {
+  google.script.run
+    .withSuccessHandler(function(res) {
+      alert(res.msg);
+      loadPendingLoans(); // 목록 새로고침
+    })
+    .withFailureHandler(function(e) {
+      alert('오류: ' + e.message);
+    })
+    .approveLoan(rowNum, isApproved, rejectReason);
+}
+
+function doRejectLoan(rowNum) {
+  var reason = prompt('반려 사유를 입력해주세요:');
+  if (reason === null) return; // 취소
+  if (!reason.trim()) { alert('반려 사유를 입력해주세요.'); return; }
+  doApproveLoan(rowNum, false, reason.trim());
+}
+
 function doSetPenaltyRate() {
   var rate = prompt('현재 활성 상품의 중도해지 패널티율을 입력하세요 (숫자만, 예: 5)');
   if (rate === null) return;

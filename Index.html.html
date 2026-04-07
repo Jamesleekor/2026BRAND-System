@@ -738,19 +738,57 @@
 
     </div>
 
-    <div class="card" style="border-left:6px solid var(--secondary-color);">
-      <div class="card-title"><span><i class="fas fa-medal"></i> 나의 브랜드 가치 (누적 명예)</span></div>
-      <div class="value-group">
-        <div class="card-value" id="myHonor">0 P</div>
-        <div class="card-rank"  id="honorRank">순위: -위</div>
+    <!-- ── 브랜드가치 + 자산 가로 2열 ── -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px;">
+      <div class="card" style="border-left:6px solid var(--secondary-color); margin-bottom:0;">
+        <div class="card-title"><span><i class="fas fa-medal"></i> 브랜드 가치</span></div>
+        <div class="value-group">
+          <div class="card-value" id="myHonor" style="font-size:20px;">0 P</div>
+          <div class="card-rank"  id="honorRank">-위</div>
+        </div>
+      </div>
+      <div class="card" style="border-left:6px solid var(--primary-color); margin-bottom:0;">
+        <div class="card-title"><span><i class="fas fa-wallet"></i> 자산 보유량</span></div>
+        <div class="value-group">
+          <div class="card-value" id="myBalance" style="font-size:20px;">$ 0</div>
+          <div class="card-rank"  id="balanceRank">-위</div>
+        </div>
       </div>
     </div>
 
-    <div class="card" style="border-left:6px solid var(--primary-color);">
-      <div class="card-title"><span><i class="fas fa-wallet"></i> 현재 자산 보유량 (현재 잔액)</span></div>
-      <div class="value-group">
-        <div class="card-value" id="myBalance">$ 0</div>
-        <div class="card-rank"  id="balanceRank">순위: -위</div>
+    <!-- ── 신용등급 카드 ── -->
+    <div class="card" id="creditCard" style="margin-bottom:20px; cursor:pointer; border-left:6px solid #8e44ad;" onclick="openCreditModal()">
+      <div class="card-title">
+        <span><i class="fas fa-star"></i> 나의 신용등급</span>
+        <span style="font-size:11px; color:#aaa;">클릭하면 상세 확인 ▸</span>
+      </div>
+      <div style="display:flex; align-items:center; justify-content:space-between;">
+        <div style="display:flex; align-items:center; gap:14px;">
+          <div id="creditGradeBadge" style="font-size:28px; font-weight:900; color:#8e44ad; min-width:40px;">-</div>
+          <div>
+            <div id="creditScoreText" style="font-size:20px; font-weight:bold; color:#2c3e50;">- / 1000</div>
+            <div id="creditDeltaText" style="font-size:12px; color:#aaa; margin-top:2px;">이력 없음</div>
+          </div>
+        </div>
+        <div id="creditBarWrap" style="flex:1; max-width:120px; margin-left:16px;">
+          <div style="width:100%; background:#e0e0e0; border-radius:6px; height:8px; overflow:hidden;">
+            <div id="creditBar" style="height:8px; border-radius:6px; background:#8e44ad; width:0%; transition:width 0.5s;"></div>
+          </div>
+        </div>
+      </div>
+      <!-- 대출 신청 버튼: 신용등급 로드 후 updateCreditCard에서 표시/숨김 제어 -->
+      <div id="loanBtnArea" style="margin-top:12px; border-top:1px solid #eee; padding-top:10px; display:none;">
+        <div id="loanStatusArea" style="font-size:13px; color:#555; margin-bottom:8px;"></div>
+        <button id="loanApplyBtn"
+          onclick="openLoanModal()"
+          style="width:100%; padding:9px; background:#8e44ad; color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer; font-size:14px;">
+          💳 대출 신청하기
+        </button>
+        <button id="loanRepayBtn"
+          onclick="confirmRepay()"
+          style="width:100%; padding:9px; background:#e74c3c; color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer; font-size:14px; display:none;">
+          💰 대출 상환하기
+        </button>
       </div>
     </div>
 
@@ -863,8 +901,8 @@
           <div id="job2MyRating"></div>
         </div>
         <div id="job2ApplyForm">
-          <input type="text" id="job2Name" placeholder="직업명 (예: 수학 과외 선생님)" style="width:100%;box-sizing:border-box;padding:9px;border:1px solid #ddd;border-radius:6px;font-size:14px;margin-bottom:8px;">
-          <textarea id="job2Desc" placeholder="제공할 서비스 설명 (예: 수학 문제 1개당 $50에 풀어드립니다)" style="width:100%;height:70px;padding:9px;border:1px solid #ddd;border-radius:6px;font-size:14px;box-sizing:border-box;resize:none;margin-bottom:8px;"></textarea>
+          <input type="text" id="job2Name" placeholder="직업명 (예: 캐릭터디자이너)" style="width:100%;box-sizing:border-box;padding:9px;border:1px solid #ddd;border-radius:6px;font-size:14px;margin-bottom:8px;">
+          <textarea id="job2Desc" placeholder="제공할 서비스 설명 (예: 원하는 캐릭터 $100에 그려드립니다.)" style="width:100%;height:70px;padding:9px;border:1px solid #ddd;border-radius:6px;font-size:14px;box-sizing:border-box;resize:none;margin-bottom:8px;"></textarea>
           <button onclick="applyJob2()" style="background:#8e44ad;color:white;border:none;border-radius:6px;padding:10px 0;width:100%;font-weight:bold;cursor:pointer;">📨 2차 직업 신청하기</button>
         </div>
       </div>
@@ -2209,6 +2247,12 @@ function closeP2PHistoryModal() {
     //예금상품 로드
     loadDepositProduct();
 
+    // 신용점수 카드 로드
+    loadCreditScore();
+
+    // 대출 상태 로드
+    loadLoanStatus();
+
     // 전광판 폴링 시작
     startAlertPolling();
 
@@ -3037,9 +3081,407 @@ function closeP2PHistoryModal() {
       .getP2PReceiverList(window._currentStudentName);
   }
 
+  // ══════════════════════════════════════════════════════════
+  // 신용등급 카드 / 모달
+  // ══════════════════════════════════════════════════════════
+
+  // 신용점수 로드 및 카드 업데이트
+  function loadCreditScore() {
+    google.script.run
+      .withSuccessHandler(function(res) {
+        if (!res) return;
+        updateCreditCard(res);
+        window._creditData = res; // 모달에서 재사용
+      })
+      .withFailureHandler(function(e) {
+        console.log('신용점수 로드 실패: ' + e.message);
+      })
+      .getCreditScoreForStudent(window._currentStudentName);
+  }
+
+  // 신용등급 카드 DOM 업데이트
+  function updateCreditCard(data) {
+    // 등급 배지 색상 매핑
+    var gradeColors = { 'S':'#e74c3c', 'A+':'#e67e22', 'A':'#f39c12',
+                        'B+':'#27ae60', 'B':'#2980b9', 'C':'#7f8c8d', '대출불가':'#bdc3c7' };
+    var grade = data.grade || '-';
+    var color = gradeColors[grade] || '#8e44ad';
+
+    document.getElementById('creditGradeBadge').innerText   = grade;
+    document.getElementById('creditGradeBadge').style.color = color;
+    document.getElementById('creditScoreText').innerText    = (data.score || 0) + ' / 1000';
+    document.getElementById('creditCard').style.borderLeftColor = color;
+
+    // 7일 변동
+    var deltaEl = document.getElementById('creditDeltaText');
+    if (data.delta !== null && data.delta !== undefined) {
+      if (data.delta > 0)       { deltaEl.innerText = '▲ +' + data.delta + ' (7일 전 대비)'; deltaEl.style.color = '#27ae60'; }
+      else if (data.delta < 0)  { deltaEl.innerText = '▼ ' + data.delta + ' (7일 전 대비)';  deltaEl.style.color = '#e74c3c'; }
+      else                      { deltaEl.innerText = '변동 없음 (7일 전 대비)';               deltaEl.style.color = '#aaa'; }
+    } else {
+      deltaEl.innerText = '이력 없음'; deltaEl.style.color = '#aaa';
+    }
+
+    // 프로그레스 바
+    var pct = Math.min(100, Math.round(((data.score || 0) / 1000) * 100));
+    document.getElementById('creditBar').style.width      = pct + '%';
+    document.getElementById('creditBar').style.background = color;
+  }
+
+  // 모달 열기
+  function openCreditModal() {
+    var modal = document.getElementById('creditModal');
+    modal.style.display = 'flex';
+
+    var body = document.getElementById('creditModalBody');
+    var data = window._creditData;
+    if (!data) {
+      body.innerHTML = '<div style="text-align:center;padding:30px;color:#bbb;">데이터 로딩 중...</div>';
+      return;
+    }
+    renderCreditModalBody(data);
+  }
+
+  // 모달 닫기
+  function closeCreditModal() {
+    document.getElementById('creditModal').style.display = 'none';
+  }
+
+  // 모달 본문 렌더링
+  function renderCreditModalBody(data) {
+    var gradeColors = { 'S':'#e74c3c', 'A+':'#e67e22', 'A':'#f39c12',
+                        'B+':'#27ae60', 'B':'#2980b9', 'C':'#7f8c8d', '대출불가':'#bdc3c7' };
+    var grade = data.grade || '-';
+    var color = gradeColors[grade] || '#8e44ad';
+    var score = data.score || 0;
+
+    // 대출 한도 계산 (현재 자산 기준)
+    var gradeRates = { 'S':1.2, 'A+':1.0, 'A':0.8, 'B+':0.6, 'B':0.4, 'C':0.2, '대출불가':0 };
+    var weeklyRates = { 'S':3, 'A+':4, 'A':5, 'B+':7, 'B':9, 'C':12, '대출불가':0 };
+    var loanRate = gradeRates[grade] || 0;
+    var weeklyRate = weeklyRates[grade] || 0;
+    var curBalance = 0;
+    try { curBalance = Number(document.getElementById('myBalance').innerText.replace(/[^0-9]/g,'')) || 0; } catch(e) {}
+    var maxLoan = Math.floor(curBalance * loanRate);
+
+    // 점수 항목 바 렌더링 헬퍼
+    function scoreBar(label, val, max, color2) {
+      var pct = max > 0 ? Math.min(100, Math.round((val / max) * 100)) : 0;
+      return '<div style="margin-bottom:10px;">' +
+        '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px;">' +
+          '<span>' + label + '</span>' +
+          '<span style="font-weight:bold;">' + val + ' / ' + max + '</span>' +
+        '</div>' +
+        '<div style="background:#e0e0e0;border-radius:4px;height:8px;overflow:hidden;">' +
+          '<div style="height:8px;border-radius:4px;background:' + color2 + ';width:' + pct + '%;transition:width 0.5s;"></div>' +
+        '</div>' +
+      '</div>';
+    }
+
+    var html = '';
+
+    // 등급 + 총점 헤더
+    html += '<div style="text-align:center;margin-bottom:16px;">' +
+      '<div style="font-size:48px;font-weight:900;color:' + color + ';">' + grade + '</div>' +
+      '<div style="font-size:22px;font-weight:bold;color:#2c3e50;">' + score + ' / 1000점</div>' +
+    '</div>';
+
+    // 점수 분해
+    html += '<div style="background:#f8f9fa;border-radius:10px;padding:14px;margin-bottom:14px;">';
+    html += '<div style="font-size:13px;font-weight:bold;color:#555;margin-bottom:10px;">📊 점수 구성</div>';
+    html += scoreBar('트랙A — 브랜드가치 상대점수', data.trackA || 0, 400, '#8e44ad');
+    html += scoreBar('투자 성실도 (예금 유지)', data.invest || 0, 200, '#2471a3');
+    html += scoreBar('사회적 기여 (기부 + 평판)', data.social || 0, 200, '#1e8449');
+    html += scoreBar('경제적 규범 준수', data.compliance || 0, 200, '#d35400');
+    html += '</div>';
+
+    // 세부 정보
+    if (data.detail) {
+      var d = data.detail;
+      html += '<div style="background:#f8f9fa;border-radius:10px;padding:14px;margin-bottom:14px;">';
+      html += '<div style="font-size:13px;font-weight:bold;color:#555;margin-bottom:8px;">🔍 세부 내역</div>';
+      html += '<div style="font-size:12px;color:#666;line-height:2;">' +
+        '기부 점수: <b>' + (d.donationScore || 0) + '점</b> &nbsp;|&nbsp; ' +
+        'P2P 평판: <b>' + (d.ratingScore || 0) + '점</b> (평가 ' + (d.ratingCount || 0) + '건)<br>' +
+        '예금 유지 일수: <b>' + (d.totalDepositDays || 0) + '일</b><br>' +
+        '수호대 적발: <b>' + (d.penaltyCount || 0) + '회</b> &nbsp;|&nbsp; ' +
+        '이상거래 감지: <b>' + (d.anomalyCount || 0) + '건</b>' +
+      '</div>';
+      html += '</div>';
+    }
+
+    // 대출 조건
+    html += '<div style="background:#f8f9fa;border-radius:10px;padding:14px;margin-bottom:14px;">';
+    html += '<div style="font-size:13px;font-weight:bold;color:#555;margin-bottom:8px;">💳 대출 가능 조건</div>';
+    if (grade === '대출불가') {
+      html += '<div style="font-size:13px;color:#e74c3c;">현재 신용등급으로는 대출이 불가합니다.</div>';
+    } else {
+      html += '<div style="font-size:13px;color:#2c3e50;line-height:2;">' +
+        '최대 대출 한도: <b style="color:' + color + ';">$ ' + maxLoan.toLocaleString() + '</b> (현재 자산의 ' + Math.round(loanRate*100) + '%)<br>' +
+        '주간 금리: <b>' + weeklyRate + '%</b>' +
+      '</div>';
+    }
+    html += '</div>';
+
+    // 꺾은선 그래프 (이력이 있는 경우)
+    if (data.history && data.history.length >= 2) {
+      html += '<div style="background:#f8f9fa;border-radius:10px;padding:14px;">';
+      html += '<div style="font-size:13px;font-weight:bold;color:#555;margin-bottom:8px;">📈 신용점수 이력</div>';
+      html += renderCreditChart(data.history, color);
+      html += '</div>';
+    }
+
+    document.getElementById('creditModalBody').innerHTML = html;
+  }
+
+  // ══════════════════════════════════════════════════════════
+  // 대출 시스템
+  // ══════════════════════════════════════════════════════════
+
+  var _loanData = null; // getLoanStatus 결과 캐시
+
+  // 대출 상태 로드 및 카드 버튼 업데이트
+  function loadLoanStatus() {
+    google.script.run
+      .withSuccessHandler(function(res) {
+        _loanData = res;
+        updateLoanBtnArea(res);
+      })
+      .withFailureHandler(function(e) {
+        console.log('대출 상태 로드 실패: ' + e.message);
+      })
+      .getLoanStatus(window._currentStudentName);
+  }
+
+  // 신용등급 카드 내 대출 버튼 영역 업데이트
+  function updateLoanBtnArea(loan) {
+    var area      = document.getElementById('loanBtnArea');
+    var statusEl  = document.getElementById('loanStatusArea');
+    var applyBtn  = document.getElementById('loanApplyBtn');
+    var repayBtn  = document.getElementById('loanRepayBtn');
+    if (!area) return;
+
+    area.style.display = 'block';
+
+    if (!loan) {
+      // 대출 없음 → 신청 버튼만 표시
+      statusEl.innerText      = '현재 진행 중인 대출이 없습니다.';
+      applyBtn.style.display  = 'block';
+      repayBtn.style.display  = 'none';
+    } else if (loan.status === '정상') {
+      statusEl.innerHTML = '진행 중 대출: <b>$' + loan.remaining.toLocaleString() + '</b> · 상환기한: ' + loan.dueDate;
+      applyBtn.style.display  = 'none';
+      repayBtn.style.display  = 'block';
+      repayBtn.innerText      = '💰 대출 상환하기 ($' + loan.remaining.toLocaleString() + ')';
+    } else if (loan.status === '연체') {
+      statusEl.innerHTML = '<span style="color:#e74c3c;font-weight:bold;">⚠️ 연체 ' + loan.overdueWeeks + '주차</span> · 잔여: <b style="color:#e74c3c;">$' + loan.remaining.toLocaleString() + '</b>';
+      applyBtn.style.display  = 'none';
+      repayBtn.style.display  = 'block';
+      repayBtn.innerText      = '💰 즉시 상환하기 ($' + loan.remaining.toLocaleString() + ')';
+      repayBtn.style.background = '#c0392b';
+    }
+  }
+
+  // 대출 신청 모달 열기
+  function openLoanModal() {
+    var creditData = window._creditData;
+    if (!creditData) {
+      alert('신용등급 정보를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
+      return;
+    }
+    // 조건 요약 렌더링
+    var gradeColors = { 'S':'#e74c3c', 'A+':'#e67e22', 'A':'#f39c12',
+                        'B+':'#27ae60', 'B':'#2980b9', 'C':'#7f8c8d' };
+    var grade = creditData.grade;
+    var color = gradeColors[grade] || '#8e44ad';
+    var gradeRates = { 'S':1.2, 'A+':1.0, 'A':0.8, 'B+':0.6, 'B':0.4, 'C':0.2 };
+    var weeklyRates = { 'S':3, 'A+':4, 'A':5, 'B+':7, 'B':9, 'C':12 };
+    var loanRate   = gradeRates[grade] || 0;
+    var weeklyRate = weeklyRates[grade] || 0;
+    var curBalance = 0;
+    try { curBalance = Number(document.getElementById('myBalance').innerText.replace(/[^0-9]/g,'')) || 0; } catch(e2) {}
+    var maxLoan = Math.floor(curBalance * loanRate);
+
+    var summaryEl = document.getElementById('loanConditionSummary');
+    summaryEl.innerHTML =
+      '신용등급: <b style="color:' + color + ';">' + grade + '등급</b> (' + creditData.score + '점)<br>' +
+      '최대 대출 한도: <b>$' + maxLoan.toLocaleString() + '</b> (현재 자산의 ' + Math.round(loanRate*100) + '%)<br>' +
+      '주간 금리: <b>' + weeklyRate + '%</b> · 상환 기한: <b>28일 (일시 상환)</b>';
+
+    document.getElementById('loanAmountInput').value  = '';
+    document.getElementById('loanPurposeSelect').value = '';
+    document.getElementById('loanModalMsg').innerText  = '';
+    document.getElementById('loanSubmitBtn').disabled  = false;
+    document.getElementById('loanSubmitBtn').innerText = '신청하기';
+    document.getElementById('loanModal').style.display = 'flex';
+  }
+
+  // 대출 신청 모달 닫기
+  function closeLoanModal() {
+    document.getElementById('loanModal').style.display = 'none';
+  }
+
+  // 대출 신청 실행
+  function submitLoan() {
+    var amount  = Number(document.getElementById('loanAmountInput').value);
+    var purpose = document.getElementById('loanPurposeSelect').value;
+    var msgEl   = document.getElementById('loanModalMsg');
+    var btn     = document.getElementById('loanSubmitBtn');
+
+    if (!amount || amount <= 0) { msgEl.innerText = '금액을 입력해주세요.'; return; }
+    if (amount % 100 !== 0)     { msgEl.innerText = '금액은 100 단위로 입력해주세요.'; return; }
+    if (!purpose)               { msgEl.innerText = '대출 용도를 선택해주세요.'; return; }
+
+    btn.disabled  = true;
+    btn.innerText = '신청 중...';
+    msgEl.innerText = '';
+
+    google.script.run
+      .withSuccessHandler(function(res) {
+        btn.disabled  = false;
+        btn.innerText = '신청하기';
+        if (res.success) {
+          closeLoanModal();
+          alert(res.msg);
+          loadLoanStatus(); // 버튼 상태 갱신
+        } else {
+          msgEl.innerText = res.msg;
+        }
+      })
+      .withFailureHandler(function(e) {
+        btn.disabled  = false;
+        btn.innerText = '신청하기';
+        msgEl.innerText = '오류: ' + e.message;
+      })
+      .applyLoan(window._currentStudentName, amount, purpose);
+  }
+
+  // 상환 확인 및 실행
+  function confirmRepay() {
+    if (!_loanData) return;
+    var msg = '대출을 상환하시겠습니까?\n\n상환 금액: $' + _loanData.remaining.toLocaleString() +
+              '\n용도: ' + _loanData.purpose +
+              '\n\n상환 후에는 되돌릴 수 없습니다.';
+    if (!confirm(msg)) return;
+
+    var repayBtn = document.getElementById('loanRepayBtn');
+    repayBtn.disabled  = true;
+    repayBtn.innerText = '처리 중...';
+
+    google.script.run
+      .withSuccessHandler(function(res) {
+        repayBtn.disabled  = false;
+        if (res.success) {
+          alert(res.msg);
+          _loanData = null;
+          loadLoanStatus();  // 버튼 상태 갱신
+          loadCreditScore(); // 신용점수도 갱신
+        } else {
+          repayBtn.innerText = '💰 대출 상환하기';
+          alert('❌ ' + res.msg);
+        }
+      })
+      .withFailureHandler(function(e) {
+        repayBtn.disabled  = false;
+        repayBtn.innerText = '💰 대출 상환하기';
+        alert('서버 오류: ' + e.message);
+      })
+      .repayLoan(window._currentStudentName, _loanData.loanId);
+  }
+
+  // SVG 꺾은선 그래프 생성
+  function renderCreditChart(history, color) {
+    var W = 380, H = 100, padL = 36, padR = 10, padT = 10, padB = 24;
+    var scores = history.map(function(h) { return h.total; });
+    var minS = Math.min.apply(null, scores);
+    var maxS = Math.max.apply(null, scores);
+    if (maxS === minS) { minS = Math.max(0, minS - 50); maxS = maxS + 50; }
+    var n = history.length;
+    function px(i) { return padL + (i / (n - 1)) * (W - padL - padR); }
+    function py(s) { return padT + (1 - (s - minS) / (maxS - minS)) * (H - padT - padB); }
+
+    var points = history.map(function(h, i) { return px(i) + ',' + py(h.total); }).join(' ');
+    var labels = '';
+    // 첫/마지막 날짜만 표시
+    [0, n-1].forEach(function(i) {
+      labels += '<text x="' + px(i) + '" y="' + (H - 4) + '" text-anchor="middle" font-size="9" fill="#999">' +
+        history[i].date.substring(5) + '</text>';
+    });
+    // 최고/최저 y축 레이블
+    var yLabels = '<text x="' + (padL-4) + '" y="' + (padT+4) + '" text-anchor="end" font-size="9" fill="#999">' + maxS + '</text>' +
+                  '<text x="' + (padL-4) + '" y="' + (H-padB+4) + '" text-anchor="end" font-size="9" fill="#999">' + minS + '</text>';
+
+    return '<svg width="100%" viewBox="0 0 ' + W + ' ' + H + '" style="overflow:visible;">' +
+      '<polyline points="' + points + '" fill="none" stroke="' + color + '" stroke-width="2.5" stroke-linejoin="round"/>' +
+      history.map(function(h, i) {
+        return '<circle cx="' + px(i) + '" cy="' + py(h.total) + '" r="3" fill="' + color + '"/>';
+      }).join('') +
+      labels + yLabels +
+    '</svg>';
+  }
+
 </script>
 
 
+
+<!-- ══════════════════════════════════════════════════
+     대출 신청 모달
+     ══════════════════════════════════════════════════ -->
+<div id="loanModal"
+  style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1001;justify-content:center;align-items:center;">
+  <div style="background:white;border-radius:15px;width:92%;max-width:440px;max-height:88vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,0.3);">
+    <div style="background:linear-gradient(135deg,#6c3483,#8e44ad);color:white;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
+      <div style="font-size:17px;font-weight:bold;">💳 대출 신청</div>
+      <button onclick="closeLoanModal()" style="background:rgba(255,255,255,0.2);border:none;color:white;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:15px;">✕</button>
+    </div>
+    <div style="overflow-y:auto;flex:1;padding:16px;">
+      <!-- 신용 조건 요약 -->
+      <div id="loanConditionSummary" style="background:#f8f9fa;border-radius:10px;padding:12px;margin-bottom:14px;font-size:13px;color:#555;line-height:1.9;"></div>
+      <!-- 금액 입력 -->
+      <div style="margin-bottom:12px;">
+        <label style="font-size:13px;font-weight:bold;color:#555;display:block;margin-bottom:6px;">대출 금액 (100 단위)</label>
+        <input type="number" id="loanAmountInput" min="100" step="100"
+          style="width:100%;padding:9px 10px;border:1px solid #ddd;border-radius:8px;font-size:15px;box-sizing:border-box;"
+          placeholder="예: 1000">
+      </div>
+      <!-- 용도 선택 -->
+      <div style="margin-bottom:16px;">
+        <label style="font-size:13px;font-weight:bold;color:#555;display:block;margin-bottom:6px;">대출 용도</label>
+        <select id="loanPurposeSelect"
+          style="width:100%;padding:9px 10px;border:1px solid #ddd;border-radius:8px;font-size:14px;background:white;box-sizing:border-box;">
+          <option value="">-- 용도를 선택하세요 --</option>
+          <option value="경매 참여 자금">경매 참여 자금</option>
+          <option value="2차 직업 사업 자금">2차 직업 사업 자금</option>
+          <option value="정기 예금 가입">정기 예금 가입</option>
+          <option value="기타 생산적 용도">기타 생산적 용도 (선생님 검토)</option>
+        </select>
+      </div>
+      <div id="loanModalMsg" style="font-size:13px;color:#e74c3c;margin-bottom:10px;min-height:18px;"></div>
+      <button id="loanSubmitBtn" onclick="submitLoan()"
+        style="width:100%;padding:11px;background:#8e44ad;color:white;border:none;border-radius:8px;font-weight:bold;cursor:pointer;font-size:15px;">
+        신청하기
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     신용등급 상세 모달
+     ══════════════════════════════════════════════════ -->
+<div id="creditModal"
+  style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1001;justify-content:center;align-items:center;">
+  <div style="background:white;border-radius:15px;width:92%;max-width:480px;max-height:88vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,0.3);">
+    <!-- 모달 헤더 -->
+    <div style="background:linear-gradient(135deg,#6c3483,#8e44ad);color:white;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
+      <div style="font-size:17px;font-weight:bold;">⭐ 나의 신용등급 상세</div>
+      <button onclick="closeCreditModal()" style="background:rgba(255,255,255,0.2);border:none;color:white;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:15px;">✕</button>
+    </div>
+    <!-- 모달 본문 -->
+    <div id="creditModalBody" style="overflow-y:auto;flex:1;padding:16px;">
+      <div style="text-align:center;padding:30px;color:#bbb;">로딩 중...</div>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>

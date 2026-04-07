@@ -123,11 +123,16 @@
     .stat-value.red    { color: var(--red); }
 
     /* 거래 카드 */
-    .tx-list { display: flex; flex-direction: column; gap: 8px; }
+    .tx-list {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+    }
     .tx-card {
       background: var(--surface); border: 1px solid var(--border);
-      border-radius: 10px; padding: 14px 16px;
+      border-radius: 8px; padding: 8px 12px;
       transition: border-color 0.15s;
+      min-width: 0;
     }
     .tx-card.anomaly {
       border-color: var(--red);
@@ -135,11 +140,16 @@
     }
     .tx-top {
       display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
-    .tx-parties { font-size: 14px; font-weight: bold; }
-    .tx-amount  { font-size: 16px; font-weight: 900; color: var(--accent); }
-    .tx-meta    { font-size: 12px; color: var(--muted); display: flex; gap: 10px; flex-wrap: wrap; }
+    .tx-parties {
+      font-size: 13px; font-weight: bold;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      max-width: 62%;
+    }
+    .tx-amount  { font-size: 14px; font-weight: 900; color: var(--accent); flex-shrink: 0; }
+    .tx-meta    { font-size: 11px; color: var(--muted); display: flex; gap: 6px; flex-wrap: nowrap; overflow: hidden; }
+    .tx-desc    { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 1; }
     .tag-pill {
       background: var(--tag-bg); border: 1px solid var(--border);
       border-radius: 20px; padding: 2px 10px; font-size: 11px; color: var(--accent);
@@ -228,6 +238,19 @@
       background: var(--surface); border: 1px solid rgba(248,81,73,0.4);
       border-radius: 10px; padding: 14px 16px; margin-bottom: 10px;
     }
+
+    #alertList {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    @media (max-width: 768px) {
+      #alertList {
+        grid-template-columns: 1fr;
+      }
+    }
+
     .alert-top {
       display: flex; justify-content: space-between; align-items: flex-start;
       margin-bottom: 8px;
@@ -332,7 +355,7 @@
     <div class="tab active" id="tab0" onclick="switchTab(0)">📡 실시간 스트리밍</div>
     <div class="tab"        id="tab1" onclick="switchTab(1)">📊 카테고리 통계</div>
     <div class="tab"        id="tab2" onclick="switchTab(2)">🌐 거래 네트워크</div>
-    <div class="tab"        id="tab3" onclick="switchTab(3)" id="tab3">⚠️ 알림 센터 <span id="alertBadge" style="display:none;background:var(--red);color:white;border-radius:10px;padding:1px 7px;font-size:11px;margin-left:4px;"></span></div>
+    <div class="tab"        id="tab3" onclick="switchTab(3)">⚠️ 알림 센터 <span id="alertBadge" style="display:none;background:var(--red);color:white;border-radius:10px;padding:1px 7px;font-size:11px;margin-left:4px;"></span></div>
   </div>
 
   <!-- ── 탭 0: 실시간 스트리밍 ── -->
@@ -492,7 +515,10 @@ function switchTab(n) {
     document.getElementById('content' + i).classList.toggle('active', i === n);
   }
   if (n === 2 && _dashData) renderNetwork();
-  if (n === 3) renderAlerts();
+  if (n === 3) {
+    renderAlerts();  // 기존 데이터 즉시 표시
+    loadData();      // 최신 데이터 재요청
+  }
 }
 
 // ══════════════════════════════════════════════════════════
@@ -543,9 +569,9 @@ function renderTxList() {
         '<div class="tx-amount">$' + tx.amount.toLocaleString() + '</div>' +
       '</div>' +
       '<div class="tx-meta">' +
-        '<span>' + tx.date + '</span>' +
-        '<span class="tag-pill">' + esc(tx.tag) + '</span>' +
-        '<span>' + esc(tx.description) + '</span>' +
+        '<span style="flex-shrink:0;">' + tx.date + '</span>' +
+        '<span class="tag-pill" style="flex-shrink:0;">' + esc(tx.tag) + '</span>' +
+        '<span class="tx-desc">' + esc(tx.description) + '</span>' +
       '</div>' +
       anomBadges +
     '</div>';

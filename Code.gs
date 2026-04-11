@@ -2779,16 +2779,30 @@ const SHEET_P2P = 'P2P거래로그';
 function getP2PReceiverList(studentName) {
   const ss       = SpreadsheetApp.getActiveSpreadsheet();
   const mainData = ss.getSheetByName(SHEET_MAIN).getDataRange().getValues();
-  const result   = [];
+
+  // 2차직업현황 시트에서 승인된 학생 이름 집합 생성
+  const approvedSet = new Set();
+  const currSheet   = ss.getSheetByName(SHEET_JOB2_CURR);
+  if (currSheet) {
+    const currData = currSheet.getDataRange().getValues();
+    for (let i = 1; i < currData.length; i++) {
+      const n = String(currData[i][0]).trim();
+      if (n) approvedSet.add(n);
+    }
+  }
+
+  const result = [];
   for (let i = 1; i < mainData.length; i++) {
-    const name = String(mainData[i][COL_NAME - 1]).trim();
+    const name  = String(mainData[i][COL_NAME  - 1]).trim();
+    const honor = Number(mainData[i][COL_VALUE  - 1]) || 0;
+    const brand = String(mainData[i][COL_BRAND  - 1]).trim();
+
     if (!name) continue;
-    if (name === String(studentName).trim()) continue;  // 본인 제외
-    result.push({
-      name:    name,
-      brand:   String(mainData[i][COL_BRAND - 1]).trim(),
-      balance: Number(mainData[i][COL_ASSET - 1]) || 0
-    });
+    if (name === String(studentName).trim()) continue;   // 본인 제외
+    if (honor < 20000) continue;                         // 금 광석 미만 제외
+    if (!approvedSet.has(name)) continue;                // 2차 직업 미승인 제외
+
+    result.push({ name, brand });
   }
   return result;
 }

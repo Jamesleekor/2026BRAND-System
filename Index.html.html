@@ -1330,7 +1330,7 @@ function requestCancelDeposit(depId, amount) {
    
     <!-- ── P2P거래 카드 ── -->
     <!-- job2Locked div 바로 아래, Wall of Fame 바로 위에 삽입 -->
-    <div id="p2pCard" class="card" style="border-left:6px solid #16a085; display:none;">
+    <div id="p2pCard" class="card" style="border-left:6px solid #16a085;">
       <div class="card-title">
         <span>🤝 P2P 거래 (학생 간 직접 거래)</span>
         <button onclick="openP2PHistoryModal()"
@@ -1339,61 +1339,60 @@ function requestCancelDeposit(depId, amount) {
         </button>
       </div>
 
-    <!-- P2P 잠금 카드 (금 광석 미만일 때 표시) -->
-    <div id="p2pLocked" class="card" style="text-align:center;opacity:0.6;">
-      <div style="font-size:30px;">🔒</div>
-      <div style="font-size:14px;color:#888;margin-top:6px;">금 광석 이상 달성 시 P2P 거래 시스템이 해금됩니다.</div>
+
+
+    <!-- 받는 학생 -->
+    <div style="margin-bottom:8px;">
+      <label style="font-size:12px;color:#555;display:block;margin-bottom:4px;">받는 학생</label>
+      <div style="font-size:12px;color:#888;margin-bottom:6px;">
+      💡 금 광석 이상 + 2차 직업 승인을 받은 학생만 서비스를 판매할 수 있어요.
+      </div>
+      <select id="p2pReceiver"
+        style="width:100%;padding:9px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;box-sizing:border-box;">
+        <option value="">-- 학생 선택 --</option>
+      </select>
     </div>
 
-  <!-- 받는 학생 -->
-  <div style="margin-bottom:8px;">
-    <label style="font-size:12px;color:#555;display:block;margin-bottom:4px;">받는 학생</label>
-    <select id="p2pReceiver"
-      style="width:100%;padding:9px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;box-sizing:border-box;">
-      <option value="">-- 학생 선택 --</option>
-    </select>
-  </div>
-
-  <!-- 금액 -->
-  <div style="margin-bottom:8px;">
-    <label style="font-size:12px;color:#555;display:block;margin-bottom:4px;">금액 (최대 $10,000)</label>
-    <div style="display:flex;gap:6px;align-items:center;">
-      <input type="number" id="p2pAmount" min="1" max="10000" placeholder="예: 500"
-        style="flex:1;padding:9px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;box-sizing:border-box;">
-      <button onclick="setP2PAmount(100)"  style="padding:7px 10px;background:#ecf0f1;border:1px solid #ddd;border-radius:6px;font-size:12px;cursor:pointer;white-space:nowrap;">+100</button>
-      <button onclick="setP2PAmount(500)"  style="padding:7px 10px;background:#ecf0f1;border:1px solid #ddd;border-radius:6px;font-size:12px;cursor:pointer;white-space:nowrap;">+500</button>
-      <button onclick="setP2PAmount(1000)" style="padding:7px 10px;background:#ecf0f1;border:1px solid #ddd;border-radius:6px;font-size:12px;cursor:pointer;white-space:nowrap;">+1000</button>
+    <!-- 금액 -->
+    <div style="margin-bottom:8px;">
+      <label style="font-size:12px;color:#555;display:block;margin-bottom:4px;">금액 (최대 $10,000)</label>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <input type="number" id="p2pAmount" min="1" max="10000" placeholder="예: 500"
+          style="flex:1;padding:9px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;box-sizing:border-box;">
+        <button onclick="setP2PAmount(100)"  style="padding:7px 10px;background:#ecf0f1;border:1px solid #ddd;border-radius:6px;font-size:12px;cursor:pointer;white-space:nowrap;">+100</button>
+        <button onclick="setP2PAmount(500)"  style="padding:7px 10px;background:#ecf0f1;border:1px solid #ddd;border-radius:6px;font-size:12px;cursor:pointer;white-space:nowrap;">+500</button>
+        <button onclick="setP2PAmount(1000)" style="padding:7px 10px;background:#ecf0f1;border:1px solid #ddd;border-radius:6px;font-size:12px;cursor:pointer;white-space:nowrap;">+1000</button>
+      </div>
     </div>
-  </div>
 
-  <!-- 태그 -->
-  <div style="margin-bottom:8px;">
-    <label style="font-size:12px;color:#555;display:block;margin-bottom:4px;">거래 태그 (필수)</label>
-    <div style="display:flex;flex-wrap:wrap;gap:6px;">
-      <label style="cursor:pointer;"><input type="radio" name="p2pTag" value="#학습도움"> #학습도움</label>
-      <label style="cursor:pointer;"><input type="radio" name="p2pTag" value="#정서적지지"> #정서적지지</label>
-      <label style="cursor:pointer;"><input type="radio" name="p2pTag" value="#재능판매"> #재능판매</label>
-      <label style="cursor:pointer;"><input type="radio" name="p2pTag" value="#권리 및 기회"> #권리 및 기회</label>
-      <label style="cursor:pointer;"><input type="radio" name="p2pTag" value="#기타"> #기타</label>
+    <!-- 태그 -->
+    <div style="margin-bottom:8px;">
+      <label style="font-size:12px;color:#555;display:block;margin-bottom:4px;">거래 태그 (필수)</label>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">
+        <label style="cursor:pointer;"><input type="radio" name="p2pTag" value="#학습도움"> #학습도움</label>
+        <label style="cursor:pointer;"><input type="radio" name="p2pTag" value="#정서적지지"> #정서적지지</label>
+        <label style="cursor:pointer;"><input type="radio" name="p2pTag" value="#재능판매"> #재능판매</label>
+        <label style="cursor:pointer;"><input type="radio" name="p2pTag" value="#권리 및 기회"> #권리 및 기회</label>
+        <label style="cursor:pointer;"><input type="radio" name="p2pTag" value="#기타"> #기타</label>
+      </div>
     </div>
-  </div>
 
-  <!-- 거래 설명 -->
-  <div style="margin-bottom:12px;">
-    <label style="font-size:12px;color:#555;display:block;margin-bottom:4px;">❗거래 설명 (필수)</label>
-    <input type="text" id="p2pDesc" placeholder="그림 그려주기, 1인1역 대신해주기 등. ⚠️실제 물건이나 돈은 절대 거래 금지"
-      style="width:100%;padding:9px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;box-sizing:border-box;">
-  </div>
+    <!-- 거래 설명 -->
+    <div style="margin-bottom:12px;">
+      <label style="font-size:12px;color:#555;display:block;margin-bottom:4px;">❗거래 설명 (필수)</label>
+      <input type="text" id="p2pDesc" placeholder="판매할 서비스 내용 ⚠️실제 물건이나 돈은 절대 거래 금지"
+        style="width:100%;padding:9px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;box-sizing:border-box;">
+    </div>
 
-  <!-- 세금 안내 -->
-  <div style="background:#fff8e1;border-radius:8px;padding:8px 12px;font-size:12px;color:#888;margin-bottom:12px;">
-    💡 받는 학생에게 소득세 10%가 자동 차감됩니다. 거래 후 상대방 우편함에 알림이 발송됩니다.
-  </div>
+    <!-- 세금 안내 -->
+    <div style="background:#fff8e1;border-radius:8px;padding:8px 12px;font-size:12px;color:#888;margin-bottom:12px;">
+      💡 받는 학생에게 소득세 10%가 자동 차감됩니다. 거래 후 상대방 우편함에 알림이 발송됩니다.
+    </div>
 
-  <button onclick="submitP2P()"
-    style="width:100%;padding:11px;background:linear-gradient(135deg,#16a085,#1abc9c);color:white;border:none;border-radius:8px;font-weight:bold;font-size:15px;cursor:pointer;">
-    🤝 거래 실행하기
-  </button>
+    <button onclick="submitP2P()"
+      style="width:100%;padding:11px;background:linear-gradient(135deg,#16a085,#1abc9c);color:white;border:none;border-radius:8px;font-weight:bold;font-size:15px;cursor:pointer;">
+      🤝 거래 실행하기
+    </button>
 </div>
 
 <!-- ── P2P 거래 내역 모달 ── -->
@@ -1417,6 +1416,12 @@ function loadP2PReceiverList() {
     .withSuccessHandler(function(list) {
       var sel = document.getElementById('p2pReceiver');
       if (!sel) return;
+      if (!list || list.length === 0) {
+        sel.innerHTML = '<option value="">현재 이용 가능한 서비스(판매자)가 없습니다</option>';
+        sel.disabled = true;
+        return;
+      }
+      sel.disabled = false;
       sel.innerHTML = '<option value="">-- 학생 선택 --</option>';
       list.forEach(function(s) {
         var opt = document.createElement('option');
@@ -2289,9 +2294,7 @@ function closeP2PHistoryModal() {
     document.getElementById('job2Locked').style.display   = unlocked ? 'none'  : 'block';
     document.getElementById('job2Btn').style.display      = unlocked ? 'inline-block' : 'none';
     document.getElementById('job2BtnLocked').style.display = unlocked ? 'none' : 'inline-block';
-        // P2P 거래 카드도 동일 조건으로 표시/숨김
-    document.getElementById('p2pCard').style.display   = unlocked ? 'block' : 'none';
-    document.getElementById('p2pLocked').style.display = unlocked ? 'none'  : 'block';
+
 
     if (!unlocked) return;
 

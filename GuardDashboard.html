@@ -356,6 +356,7 @@
     <div class="tab"        id="tab1" onclick="switchTab(1)">📊 카테고리 통계</div>
     <div class="tab"        id="tab2" onclick="switchTab(2)">🌐 거래 네트워크</div>
     <div class="tab"        id="tab3" onclick="switchTab(3)">⚠️ 알림 센터 <span id="alertBadge" style="display:none;background:var(--red);color:white;border-radius:10px;padding:1px 7px;font-size:11px;margin-left:4px;"></span></div>
+    <div class="tab" id="tab4" onclick="switchTab(4)">📈 불평등 지수</div>
   </div>
 
   <!-- ── 탭 0: 실시간 스트리밍 ── -->
@@ -412,6 +413,69 @@
   </div>
 
 </div><!-- /mainScreen -->
+
+  <!-- ── 탭 4: 불평등 지수 ── -->
+    <div class="tab-content" id="content4">
+      <div id="inequalityLoading" style="padding:40px;text-align:center;color:var(--muted);">
+        📊 데이터 불러오는 중...
+      </div>
+      <div id="inequalityBody" style="display:none;">
+
+        <!-- 지니계수 요약 카드 -->
+        <div class="stat-row" style="margin-bottom:20px;">
+          <div class="stat-card">
+            <div class="stat-label">💰 자산보유량 지니계수</div>
+            <div class="stat-value blue" id="giniAssetVal">-</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px;" id="giniAssetLabel">-</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">🏅 브랜드가치 지니계수 (보조)</div>
+            <div class="stat-value" style="color:var(--purple);" id="giniValueVal">-</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px;" id="giniValueLabel">-</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">👑 상위 20% 자산 점유율</div>
+            <div class="stat-value red" id="top20Val">-</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px;" id="top20Label">-</div>
+          </div>
+        </div>
+
+        <!-- 분위별 점유율 바 -->
+        <div class="chart-section">
+          <div class="chart-title">📊 자산 분위별 점유율</div>
+          <div id="shareBarViz" style="margin-bottom:8px;"></div>
+          <div style="display:flex;gap:16px;font-size:12px;margin-top:8px;">
+            <span style="color:var(--red);">■ 상위 20%: <b id="shareTop20Pct">-</b></span>
+            <span style="color:var(--yellow);">■ 중위 60%: <b id="shareMid60Pct">-</b></span>
+            <span style="color:var(--green);">■ 하위 20%: <b id="shareBot20Pct">-</b></span>
+          </div>
+        </div>
+
+        <!-- 로렌츠 곡선 -->
+        <div class="chart-section">
+          <div class="chart-title">📉 로렌츠 곡선 <span style="font-size:11px;color:var(--muted);font-weight:normal;">— 대각선(완전평등)에서 멀수록 불평등</span></div>
+          <canvas id="lorenzCanvas" height="320" style="width:100%;border-radius:8px;background:var(--surface);border:1px solid var(--border);"></canvas>
+          <div style="display:flex;gap:16px;font-size:12px;margin-top:8px;color:var(--muted);">
+            <span style="color:var(--accent);">— 자산보유량</span>
+            <span style="color:var(--purple);">— 브랜드가치</span>
+            <span style="color:rgba(255,255,255,0.25);">-- 완전평등선</span>
+          </div>
+        </div>
+
+        <!-- 지니계수 추이 -->
+        <div class="chart-section">
+          <div class="chart-title">📅 지니계수 추이 (최근 12회)</div>
+          <canvas id="giniHistoryCanvas" height="180" style="width:100%;border-radius:8px;background:var(--surface);border:1px solid var(--border);"></canvas>
+        </div>
+
+        <!-- 학생 자산 순위 -->
+        <div class="chart-section">
+          <div class="chart-title">🏆 학생별 자산 현황</div>
+          <div id="studentRankList"></div>
+        </div>
+
+      </div>
+    </div>
 
 <script>
 // ══════════════════════════════════════════════════════════
@@ -510,16 +574,18 @@ function setPeriod(p) {
 // ══════════════════════════════════════════════════════════
 function switchTab(n) {
   _currentTab = n;
-  for (var i = 0; i < 4; i++) {
+  for (var i = 0; i < 5; i++) {   // 4 → 5 로 변경
     document.getElementById('tab'     + i).classList.toggle('active', i === n);
     document.getElementById('content' + i).classList.toggle('active', i === n);
   }
   if (n === 2 && _dashData) renderNetwork();
   if (n === 3) {
-    renderAlerts();  // 기존 데이터 즉시 표시
-    loadData();      // 최신 데이터 재요청
+    renderAlerts();
+    loadData();
   }
+  if (n === 4) loadInequalityData();  // ← 이 줄 추가
 }
+
 
 // ══════════════════════════════════════════════════════════
 // 탭 0: 거래 스트리밍
@@ -1080,6 +1146,229 @@ function esc(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 }
+
+// ══════════════════════════════════════════════════════════
+// 탭 4: 불평등 지수
+// ══════════════════════════════════════════════════════════
+var _ineqData = null;
+
+function loadInequalityData() {
+  document.getElementById('inequalityLoading').style.display = 'block';
+  document.getElementById('inequalityBody').style.display    = 'none';
+  google.script.run
+    .withSuccessHandler(function(data) {
+      _ineqData = data;
+      document.getElementById('inequalityLoading').style.display = 'none';
+      if (!data || !data.success) {
+        document.getElementById('inequalityLoading').textContent = '데이터를 불러오지 못했습니다.';
+        document.getElementById('inequalityLoading').style.display = 'block';
+        return;
+      }
+      document.getElementById('inequalityBody').style.display = 'block';
+      renderInequalityCards(data);
+      renderShareBar(data);
+      renderLorenzCanvas(data);
+      renderGiniHistory(data.history);
+      renderStudentRank(data.ranked);
+    })
+    .withFailureHandler(function(err) {
+      document.getElementById('inequalityLoading').textContent = '오류: ' + err.message;
+    })
+    .getInequalityData();
+}
+
+// 지니계수 수준 레이블 (실제 국가 비교)
+function giniLabel(g) {
+  if (g < 0.2)  return '매우 평등 (북유럽 복지국가 수준)';
+  if (g < 0.3)  return '평등한 편 (독일·일본 수준)';
+  if (g < 0.35) return '보통 (한국 평균 수준)';
+  if (g < 0.45) return '불평등한 편 (미국 수준)';
+  if (g < 0.55) return '심각한 불평등 (남미 수준)';
+  return '극심한 불평등';
+}
+
+function renderInequalityCards(d) {
+  document.getElementById('giniAssetVal').textContent   = d.giniAsset.toFixed(3);
+  document.getElementById('giniAssetLabel').textContent = giniLabel(d.giniAsset);
+  document.getElementById('giniValueVal').textContent   = d.giniValue.toFixed(3);
+  document.getElementById('giniValueLabel').textContent = giniLabel(d.giniValue);
+  var top20pct = (d.shareTop20 * 100).toFixed(1) + '%';
+  document.getElementById('top20Val').textContent   = top20pct;
+  document.getElementById('top20Label').textContent =
+    d.shareTop20 >= 0.5 ? '상위 20%가 절반 이상 보유 중' : '상위 20% 점유율';
+}
+
+function renderShareBar(d) {
+  var container = document.getElementById('shareBarViz');
+  var bot = (d.shareBot20 * 100).toFixed(1);
+  var mid = (d.shareMid60 * 100).toFixed(1);
+  var top = (d.shareTop20 * 100).toFixed(1);
+  document.getElementById('shareBot20Pct').textContent = bot + '%';
+  document.getElementById('shareMid60Pct').textContent = mid + '%';
+  document.getElementById('shareTop20Pct').textContent = top + '%';
+  container.innerHTML =
+    '<div style="display:flex;height:28px;border-radius:6px;overflow:hidden;border:1px solid var(--border);">' +
+      '<div style="width:' + bot + '%;background:var(--green);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;color:#0d1117;">' + (bot > 5 ? bot + '%' : '') + '</div>' +
+      '<div style="width:' + mid + '%;background:var(--yellow);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;color:#0d1117;">' + (mid > 8 ? mid + '%' : '') + '</div>' +
+      '<div style="width:' + top + '%;background:var(--red);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;color:#0d1117;">' + (top > 5 ? top + '%' : '') + '</div>' +
+    '</div>';
+}
+
+function renderLorenzCanvas(d) {
+  var canvas = document.getElementById('lorenzCanvas');
+  var W = canvas.offsetWidth || 600;
+  canvas.width  = W;
+  canvas.height = 320;
+  var ctx    = canvas.getContext('2d');
+  var pad    = 48;
+  var plotW  = W - pad * 2;
+  var plotH  = 320 - pad * 2;
+
+  ctx.clearRect(0, 0, W, 320);
+
+  // 그리드
+  ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+  ctx.lineWidth   = 1;
+  for (var g = 0; g <= 4; g++) {
+    var gx = pad + (plotW / 4) * g;
+    var gy = pad + (plotH / 4) * g;
+    ctx.beginPath(); ctx.moveTo(gx, pad);         ctx.lineTo(gx, pad + plotH); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(pad, gy);         ctx.lineTo(pad + plotW, gy); ctx.stroke();
+  }
+
+  // 축 레이블
+  ctx.fillStyle = 'rgba(139,148,158,0.9)';
+  ctx.font      = '11px Noto Sans KR, sans-serif';
+  ctx.textAlign = 'center';
+  ['0%','25%','50%','75%','100%'].forEach(function(label, idx) {
+    ctx.fillText(label, pad + (plotW / 4) * idx, pad + plotH + 16);
+  });
+  ctx.textAlign = 'right';
+  ['100%','75%','50%','25%','0%'].forEach(function(label, idx) {
+    ctx.fillText(label, pad - 6, pad + (plotH / 4) * idx + 4);
+  });
+
+  // 완전평등선 (대각선)
+  ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+  ctx.setLineDash([6, 4]);
+  ctx.lineWidth   = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(pad, pad + plotH);
+  ctx.lineTo(pad + plotW, pad);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // 로렌츠 곡선 그리기 헬퍼
+  function drawLorenz(points, color) {
+    ctx.strokeStyle = color;
+    ctx.lineWidth   = 2.5;
+    ctx.beginPath();
+    points.forEach(function(p, idx) {
+      var px = pad + p.x * plotW;
+      var py = pad + plotH - p.y * plotH;
+      if (idx === 0) ctx.moveTo(px, py);
+      else           ctx.lineTo(px, py);
+    });
+    ctx.stroke();
+  }
+
+  drawLorenz(d.lorenzAsset, '#58a6ff'); // 자산: 파랑
+  drawLorenz(d.lorenzValue, '#bc8cff'); // 브랜드: 보라
+
+  // 지니계수 면적 색칠 (자산 기준)
+  ctx.fillStyle = 'rgba(88,166,255,0.08)';
+  ctx.beginPath();
+  ctx.moveTo(pad, pad + plotH);
+  ctx.lineTo(pad + plotW, pad);
+  d.lorenzAsset.slice().reverse().forEach(function(p) {
+    ctx.lineTo(pad + p.x * plotW, pad + plotH - p.y * plotH);
+  });
+  ctx.closePath();
+  ctx.fill();
+}
+
+function renderGiniHistory(history) {
+  var canvas = document.getElementById('giniHistoryCanvas');
+  if (!history || history.length < 2) {
+    var ctx2 = canvas.getContext('2d');
+    canvas.width = canvas.offsetWidth || 600;
+    ctx2.clearRect(0, 0, canvas.width, 180);
+    ctx2.fillStyle = 'rgba(139,148,158,0.6)';
+    ctx2.font = '13px Noto Sans KR, sans-serif';
+    ctx2.textAlign = 'center';
+    ctx2.fillText('추이 데이터가 쌓이면 그래프가 표시됩니다. (2회 이상 측정 필요)', canvas.width / 2, 90);
+    return;
+  }
+  var W = canvas.offsetWidth || 600;
+  canvas.width  = W;
+  canvas.height = 180;
+  var ctx = canvas.getContext('2d');
+  var pad  = 40;
+  var plotW = W - pad * 2;
+  var plotH = 180 - pad * 2;
+
+  ctx.clearRect(0, 0, W, 180);
+
+  var maxG = Math.max.apply(null, history.map(function(h) { return Math.max(h.giniAsset, h.giniValue); }));
+  var scaleY = maxG > 0 ? plotH / maxG : 1;
+
+  function drawHistoryLine(key, color) {
+    ctx.strokeStyle = color;
+    ctx.lineWidth   = 2;
+    ctx.beginPath();
+    history.forEach(function(h, idx) {
+      var x = pad + (plotW / (history.length - 1)) * idx;
+      var y = pad + plotH - h[key] * scaleY;
+      if (idx === 0) ctx.moveTo(x, y);
+      else           ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+    // 점 표시
+    ctx.fillStyle = color;
+    history.forEach(function(h, idx) {
+      var x = pad + (plotW / (history.length - 1)) * idx;
+      var y = pad + plotH - h[key] * scaleY;
+      ctx.beginPath();
+      ctx.arc(x, y, 4, 0, Math.PI * 2);
+      ctx.fill();
+    });
+  }
+
+  // 날짜 레이블 (처음, 중간, 끝)
+  ctx.fillStyle   = 'rgba(139,148,158,0.8)';
+  ctx.font        = '10px Noto Sans KR, sans-serif';
+  ctx.textAlign   = 'center';
+  var labelIdxs   = [0, Math.floor(history.length / 2), history.length - 1];
+  labelIdxs.forEach(function(idx) {
+    var x = pad + (plotW / (history.length - 1)) * idx;
+    ctx.fillText(history[idx].date.substring(5), x, pad + plotH + 16); // MM-DD만 표시
+  });
+
+  drawHistoryLine('giniAsset', '#58a6ff');
+  drawHistoryLine('giniValue', '#bc8cff');
+}
+
+function renderStudentRank(ranked) {
+  var container = document.getElementById('studentRankList');
+  if (!ranked || ranked.length === 0) { container.innerHTML = '데이터 없음'; return; }
+  var maxAsset = ranked[0].asset || 1;
+  var html = '';
+  ranked.forEach(function(s, idx) {
+    var pct    = Math.round((s.asset / maxAsset) * 100);
+    var medal  = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : (idx + 1) + '.';
+    html +=
+      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:7px;">' +
+        '<span style="width:28px;text-align:center;font-size:13px;">' + medal + '</span>' +
+        '<span style="width:60px;font-size:13px;font-weight:bold;">' + s.name + '</span>' +
+        '<div style="flex:1;height:14px;background:var(--surface);border-radius:4px;overflow:hidden;border:1px solid var(--border);">' +
+          '<div style="width:' + pct + '%;height:100%;background:var(--accent);border-radius:4px;"></div>' +
+        '</div>' +
+        '<span style="width:70px;text-align:right;font-size:12px;color:var(--accent);">$' + s.asset.toLocaleString() + '</span>' +
+      '</div>';
+  });
+  container.innerHTML = html;
+}
+
 </script>
 </body>
 </html>

@@ -2611,10 +2611,15 @@ function closeP2PHistoryModal() {
     var overlay = document.getElementById('globalAlertOverlay');
     // 이모지 결정
     var emoji = '🎉';
-    if (alert.msg.indexOf('초월') !== -1)      emoji = '✨';
-    else if (alert.msg.indexOf('유일') !== -1)  emoji = '🌌';
-    else if (alert.msg.indexOf('히든') !== -1)  emoji = '🔮';
-    else if (alert.msg.indexOf('개 달성') !== -1) emoji = '🏆';
+    if (alert.msg.indexOf('초월') !== -1)           emoji = '✨';
+    else if (alert.msg.indexOf('유일') !== -1)       emoji = '🌌';
+    else if (alert.msg.indexOf('히든') !== -1)       emoji = '🔮';
+    else if (alert.msg.indexOf('그랜드마스터') !== -1) emoji = '🏆';
+    else if (alert.msg.indexOf('마스터') !== -1)     emoji = '👑';
+    else if (alert.msg.indexOf('다이아') !== -1)     emoji = '💠';
+    else if (alert.msg.indexOf('루비') !== -1)       emoji = '💎';
+    else if (alert.msg.indexOf('금 광석') !== -1)    emoji = '🥇';
+    else if (alert.msg.indexOf('개 달성') !== -1)    emoji = '🏆';
 
     document.getElementById('alertEmoji').textContent = emoji;
     document.getElementById('alertTitle').textContent = '📢 전체 공지';
@@ -2833,12 +2838,67 @@ function closeP2PHistoryModal() {
         iconHtml +
         '<div class="shop-item-info">' +
           '<div class="shop-item-name">' + item.itemName + equippedBadge + '</div>' +
-          '<div class="shop-item-cond">🔑 ' + item.condDesc + '</div>' +
+          '<div class="shop-item-cond">' + _buildCondBadges(item) + '</div>' +
           (item.price > 0 ? '<div class="shop-item-price">💰 $ ' + Number(item.price).toLocaleString() + '</div>' : '') +
         '</div>' +
         btnHtml +
       '</div>';
     }).join('');
+  }
+
+  // 조건 배지 생성 헬퍼
+  function _buildCondBadges(item) {
+    if (item.itemId && item.itemId.startsWith('DEFAULT_')) return '✅ 기본 제공';
+
+    var badges = [];
+
+    // 한정판 배지
+    if (item.limitedDate) {
+      var today = new Date().toISOString().slice(0, 10);
+      if (item.isExpired) {
+        badges.push('<span style="background:#e74c3c;color:white;font-size:10px;padding:1px 6px;border-radius:8px;">⏰ 판매 종료</span>');
+      } else {
+        var ld = new Date(item.limitedDate);
+        var limitLabel = (ld.getMonth()+1) + '월 ' + ld.getDate() + '일';
+        badges.push('<span style="background:#f39c12;color:white;font-size:10px;padding:1px 6px;border-radius:8px;">⏳ 한정판! ' + limitLabel + '까지만 판매!</span>');
+      }
+    }
+
+    // 조건 배지 생성 함수 (조건 타입 → 읽기 좋은 텍스트)
+    function condToText(cType, cVal) {
+      if (!cType || cType === 'none') return null;
+      if (cType === 'ach_count')  return '🏅 업적 ' + cVal + '개 이상';
+      if (cType.startsWith('ach_grade:')) {
+        var g = cType.split(':')[1];
+        return '✨ ' + g + ' 업적 ' + cVal + '개 이상';
+      }
+      var tierNames = ['','새싹','브론즈','빛나는 브론즈','거친 실버','성장한 실버','진화한 실버','은빛 극점','금 광석','제련된 골드','정련된 골드','태양의 황금','루비 원석','연마된 루비','각성한 루비','홍염의 정점','다이아 원석','세공된 다이아','무결 다이아','영원의 결정','마스터','천상의 마스터','그랜드마스터'];
+      if (cType === 'tier')      return '🏆 ' + (tierNames[Number(cVal)] || cVal + '단계') + ' 티어 이상';
+      if (cType === 'asset')     return '💰 자산 $' + Number(cVal).toLocaleString() + ' 이상';
+      if (cType === 'tax_paid')  return '🤝 납세+기부 $' + Number(cVal).toLocaleString() + ' 이상';
+      return '🔑 ' + item.condDesc;
+    }
+
+    var t1 = condToText(item.condType, item.condVal);
+    var t2 = item.condType2 ? condToText(item.condType2, item.condVal2) : null;
+
+    if (!t1 && !t2) {
+      badges.push('<span style="color:#27ae60;font-size:11px;">✅ 조건 없음</span>');
+    } else if (t1 && !t2) {
+      var color = item.condMet ? '#27ae60' : '#e74c3c';
+      badges.push('<span style="color:' + color + ';font-size:11px;">' + t1 + '</span>');
+    } else {
+      // OR 조건 두 개
+      var c1color = (item.condType  === 'none' || !item.condType)  ? '#27ae60' : (item.condMet ? '#27ae60' : '#e74c3c');
+      var c2color = '#3d85c8';
+      badges.push(
+        '<span style="color:' + c1color + ';font-size:11px;">' + t1 + '</span>' +
+        '<span style="color:#aaa;font-size:10px;margin:0 3px;">또는</span>' +
+        '<span style="color:' + c2color + ';font-size:11px;">' + t2 + '</span>'
+      );
+    }
+
+    return badges.join(' ');
   }
 
   function equipShopItem(itemId) {

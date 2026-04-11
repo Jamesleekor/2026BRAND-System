@@ -23,6 +23,30 @@ const COL_RANK_V = 6;  // F: 랭킹(가치)
 const COL_MVP    = 7;  // G: MVP포인트
 const COL_TAX    = 8;  // H: 누적납세액
 const COL_PASSWORD = 9;  // I: 비밀번호
+const TIER_ORDER = [
+  '새싹',        // 1
+  '브론즈',       // 2
+  '빛나는 브론즈', // 3
+  '거친 실버',    // 4
+  '성장한 실버',   // 5
+  '진화한 실버',   // 6
+  '은빛 극점',    // 7
+  '금 광석',      // 8
+  '제련된 골드',   // 9
+  '정련된 골드',   // 10
+  '태양의 황금',   // 11
+  '루비 원석',    // 12
+  '연마된 루비',   // 13
+  '각성한 루비',   // 14
+  '홍염의 정점',   // 15
+  '다이아 원석',   // 16
+  '세공된 다이아', // 17
+  '무결 다이아',   // 18
+  '영원의 결정',   // 19
+  '마스터',       // 20
+  '천상의 마스터', // 21
+  '그랜드마스터'   // 22
+];
 
 
 // ════════════════════════════════════════════════════════════════
@@ -122,6 +146,19 @@ function getStudentData(studentName, password) {
     }
   }
   if (!studentRow) return { success: false, msg: '학생을 찾을 수 없습니다. 이름을 다시 확인해주세요.' };
+
+  // 로그인 기록
+  try {
+    const loginLog = ss.getSheetByName('로그인_로그');
+    if (loginLog) {
+      const now = new Date();
+      const dateStr = Utilities.formatDate(now, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+      const timeStr = Utilities.formatDate(now, Session.getScriptTimeZone(), 'HH:mm:ss');
+      loginLog.appendRow([dateStr, studentName, timeStr]);
+    }
+  } catch(e) {}
+
+
   // 비밀번호 확인 (I열 = 인덱스 8)
   const correctPassword = String(studentRow[COL_PASSWORD - 1]).trim();
   const inputPassword = String(password).trim();
@@ -1170,15 +1207,18 @@ function checkAndGrantAchievements(studentName, balance, totalTax, honor) {
     }
   }
 
-  // ── RANK-001~006: 랭크 브레이커 ────────────────────────────
+  // ── RANK-001~007: 랭크 브레이커 ────────────────────────────
   const rankBreakers = {
     'RANK-001': ['거친 실버'],
     'RANK-002': ['금 광석'],
     'RANK-003': ['루비 원석'],
     'RANK-004': ['다이아 원석'],
     'RANK-005': ['마스터'],
-    'RANK-006': ['그랜드마스터']
+    'RANK-006': ['천상의 마스터'],
+    'RANK-007': ['그랜드마스터']
   };
+  // 전역 알림 대상 티어 (최초 진입 시 전체 공지)
+  const TIER_ALERT_TARGETS = ['금 광석', '루비 원석', '다이아 원석', '마스터', '천상의 마스터', '그랜드마스터'];
   // 현재 학생 티어명 계산 (honor 기반)
   const h = Number(honor) || 0;
   let currentTierName = '새싹';
@@ -1214,11 +1254,19 @@ function checkAndGrantAchievements(studentName, balance, totalTax, honor) {
       if (String(allAchData[i][1]).trim() === rankId) { alreadyExists = true; break; }
     }
     if (alreadyExists) return; // 이미 누군가 달성함 → 부여 안 함
+    let grantedAchName = '';
     for (let m = 1; m < masterData.length; m++) {
       if (String(masterData[m][0]).trim() === rankId) {
-        achSheet.appendRow([studentName, rankId, String(masterData[m][1]), String(masterData[m][2]), today, false]);
+        grantedAchName = String(masterData[m][1]).trim();
+        achSheet.appendRow([studentName, rankId, grantedAchName, String(masterData[m][2]), today, false]);
         break;
       }
+    }
+
+    // ★ 전역 알림 대상 티어 최초 진입 시 알림 발송
+    const tierName = rankBreakers[rankId][0]; // 해당 RANK의 티어명
+    if (TIER_ALERT_TARGETS.indexOf(tierName) !== -1) {
+      _postTierFirstAlert(studentName, tierName);
     }
   });
 
@@ -1293,7 +1341,7 @@ function getAchievementData(studentName) {
       const earned  = myAchIds.has(achId);
       // 자동 부여 업적은 신청 드롭다운에서 제외
       const AUTO_GRANTED_IDS = new Set(['ACH-001','ACH-002','ECO-001','ECO-002','HID-004',
-        'RANK-001','RANK-002','RANK-003','RANK-004','RANK-005','RANK-006']);
+        'RANK-001','RANK-002','RANK-003','RANK-004','RANK-005','RANK-006', 'RANK-007']);
       allAchievements.push({
         achId,
         achName:     isHidden && !earned ? '???' : achName,
@@ -1456,7 +1504,7 @@ function approveAchievement(rowNumber, isApproved, finalAchievementId) {
           const noticeId = 'HIDDEN_' + achId + '_' + new Date().getTime();
           const msg = `🎉 히든 업적 [${achName}]을(를) 달성한 사람이 최초로 등장했습니다! 지금부터 이 업적의 정체와 달성 조건이 모두에게 공개됩니다.`;
           const ts  = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
-          notifySheet.appendRow([noticeId, msg, ts]);
+          notifySheet.appendRow([noticeId, msg, ts, 'ALERT']);
         }
       }
       break;
@@ -1988,6 +2036,27 @@ function _checkAndPostGlobalAlert(studentName, achName, achGrade) {
   }
 }
 
+// ── 티어 최초 진입 전역 알림 (checkAndGrantAchievements에서 호출) ──
+function _postTierFirstAlert(studentName, tierName) {
+  const ss     = SpreadsheetApp.getActiveSpreadsheet();
+  const notify = ss.getSheetByName(SHEET_GLOBAL_NOTIFY);
+  if (!notify) return;
+
+  const tierEmojis = {
+    '금 광석': '🥇',
+    '루비 원석': '💎',
+    '다이아 원석': '💠',
+    '마스터': '👑',
+    '천상의 마스터': '👑',
+    '그랜드마스터': '🏆'
+  };
+  const emoji = tierEmojis[tierName] || '🎉';
+  const noticeId = 'TIER_' + tierName.replace(/\s/g, '') + '_' + new Date().getTime();
+  const msg = emoji + ' [' + studentName + '] 학생이 학급 최초로 [' + tierName + '] 티어에 진입했습니다! 새로운 역사의 시작입니다!';
+  const ts  = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
+  notify.appendRow([noticeId, msg, ts, 'ALERT']);
+}
+
 // 전광판 최신 메시지 조회 (프론트에서 폴링)
 function getLatestGlobalAlert(lastSeenId) {
   const ss     = SpreadsheetApp.getActiveSpreadsheet();
@@ -2110,10 +2179,37 @@ function getShopItems(studentName) {
   // 학생 보유 자산 조회
   const mainSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_MAIN);
   const mainData  = mainSheet.getDataRange().getValues();
-  let balance = 0;
+  let balance        = 0;
+  let studentTierName  = '새싹';  // 티어 조건 판별용
+  let studentTaxPaid   = 0;       // 누적 납세+기부 조건 판별용
   for (let i = 1; i < mainData.length; i++) {
     if (String(mainData[i][COL_NAME-1]).trim() === studentName) {
-      balance = Number(mainData[i][COL_ASSET-1]) || 0;
+      balance        = Number(mainData[i][COL_ASSET-1]) || 0;
+      studentTaxPaid = Number(mainData[i][COL_TAX-1])   || 0;  // H열: 누적 납세
+      // 브랜드가치로 티어명 계산
+      const honor = Number(mainData[i][COL_VALUE-1]) || 0;
+      if      (honor >= 100000) studentTierName = '그랜드마스터';
+      else if (honor >= 85000)  studentTierName = '천상의 마스터';
+      else if (honor >= 75000)  studentTierName = '마스터';
+      else if (honor >= 65000)  studentTierName = '영원의 결정';
+      else if (honor >= 60000)  studentTierName = '무결 다이아';
+      else if (honor >= 55000)  studentTierName = '세공된 다이아';
+      else if (honor >= 50000)  studentTierName = '다이아 원석';
+      else if (honor >= 45000)  studentTierName = '홍염의 정점';
+      else if (honor >= 40000)  studentTierName = '각성한 루비';
+      else if (honor >= 35000)  studentTierName = '연마된 루비';
+      else if (honor >= 30000)  studentTierName = '루비 원석';
+      else if (honor >= 25000)  studentTierName = '태양의 황금';
+      else if (honor >= 21000)  studentTierName = '정련된 골드';
+      else if (honor >= 17000)  studentTierName = '제련된 골드';
+      else if (honor >= 13000)  studentTierName = '금 광석';
+      else if (honor >= 10000)  studentTierName = '은빛 극점';
+      else if (honor >= 7500)   studentTierName = '진화한 실버';
+      else if (honor >= 5500)   studentTierName = '성장한 실버';
+      else if (honor >= 3500)   studentTierName = '거친 실버';
+      else if (honor >= 2000)   studentTierName = '빛나는 브론즈';
+      else if (honor >= 800)    studentTierName = '브론즈';
+      else                      studentTierName = '새싹';
       break;
     }
   }
@@ -2162,23 +2258,61 @@ function getShopItems(studentName) {
     const resourceVal = String(iData[i][7]).trim();
     const isOwned     = owned.includes(itemId);
 
+    // 구매 조건 관련
     // 구매 조건 충족 여부
-    let condMet = true;
-    if (condType === 'ach_count') {
-      condMet = totalAch >= Number(condVal);
-    } else if (condType.startsWith('ach_grade:')) {
-      const targetGrade = condType.split(':')[1];
-      condMet = (gradeCount[targetGrade] || 0) >= Number(condVal);
+    // ── J열: 조건타입2, K열: 조건값2, L열: 한정판_종료일 ──────────
+    const condType2   = iData[i][9]  ? String(iData[i][9]).trim()  : '';
+    const condVal2    = iData[i][10] ? String(iData[i][10]).trim() : '';
+    const limitedDate = iData[i][11] ? String(iData[i][11]).trim() : '';
+
+    // 한정판 만료 체크
+    let isExpired = false;
+    if (limitedDate) {
+      const today = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
+      isExpired = today > limitedDate;
     }
-    // 'none' 이면 condMet = true
 
-    const canBuy = !isOwned && condMet && balance >= price;
+    // 조건 판별 함수 (condType + condVal 한 쌍을 받아서 true/false 반환)
+    function checkOneCond(cType, cVal) {
+      if (!cType || cType === 'none') return true;
+      if (cType === 'ach_count') {
+        return totalAch >= Number(cVal);
+      }
+      if (cType.startsWith('ach_grade:')) {
+        const targetGrade = cType.split(':')[1];
+        return (gradeCount[targetGrade] || 0) >= Number(cVal);
+      }
+      if (cType === 'tier') {
+        // condVal은 티어 번호(1~22). 학생 현재 티어 번호와 비교
+        const studentTierNum = TIER_ORDER.indexOf(studentTierName) + 1; // 못 찾으면 0
+        return studentTierNum >= Number(cVal);
+      }
+      if (cType === 'asset') {
+        return balance >= Number(cVal);
+      }
+      if (cType === 'tax_paid') {
+        return studentTaxPaid >= Number(cVal);
+      }
+      return true; // 알 수 없는 타입은 통과
+    }
 
-    items.push({ itemId, category, itemName, price, condDesc, condType, condVal, resourceVal, isOwned, condMet, canBuy });
-  }
+    // 조건1 OR 조건2 (조건2가 없으면 조건1만 체크)
+    const cond1Met = checkOneCond(condType, condVal);
+    const cond2Met = condType2 ? checkOneCond(condType2, condVal2) : false;
+    const condMet  = condType2 ? (cond1Met && cond2Met) : cond1Met;
+
+    const canBuy = !isOwned && condMet && balance >= price && !isExpired;
+
+    items.push({
+      itemId, category, itemName, price,
+      condDesc, condType, condVal, condType2, condVal2,
+      limitedDate, isExpired,
+      resourceVal, isOwned, condMet, canBuy
+    });
+  }  // ← for 루프 닫기
 
   return { items, owned, balance };
-}
+}  // ← getShopItems 함수 닫기
 
 // 상점 아이템 목록 + 장착 여부 포함 반환 (Index.html openShopModal에서 호출)
 function getShopItemsWithEquip(studentName) {
@@ -2230,7 +2364,17 @@ function purchaseShopItem(studentName, itemId) {
   const price    = Number(itemRow[3]) || 0;
   const itemName = String(itemRow[2]).trim();
 
+  // 한정판 만료 체크
+  const limitedDate = itemRow[11] ? String(itemRow[11]).trim() : '';
+  if (limitedDate) {
+    const today = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
+    if (today > limitedDate) {
+      return { success: false, msg: `[${itemName}]은 한정판 기간이 종료된 아이템입니다.` };
+    }
+  }
+
   // 이미 구매했는지 체크
+
   const lData = logSheet.getDataRange().getValues();
   for (let i = 1; i < lData.length; i++) {
     if (String(lData[i][1]).trim() === studentName && String(lData[i][2]).trim() === itemId) {
@@ -4433,4 +4577,170 @@ function correctRejection(rowNumber) {
   const studentName = String(row[1]).trim();
   const achId       = String(row[2]).trim();
   return { success: true, msg: `[${studentName}] ${achId} 신청이 대기 상태로 복원되었습니다.` };
+}
+
+// ══════════════════════════════════════════════════════════
+// 불평등 지수: 지니계수 + 로렌츠 곡선 데이터 반환
+// ══════════════════════════════════════════════════════════
+function getInequalityData() {
+  const ss        = SpreadsheetApp.getActiveSpreadsheet();
+  const mainSheet = ss.getSheetByName(SHEET_MAIN);
+  if (!mainSheet) return { success: false, msg: '메인 시트 없음' };
+
+  const mainData = mainSheet.getDataRange().getValues();
+
+  // 학생별 자산보유량 + 브랜드가치 수집 (1행은 헤더라 스킵)
+  const students = [];
+  for (let i = 1; i < mainData.length; i++) {
+    const name  = String(mainData[i][COL_NAME  - 1]).trim();
+    const asset = Number(mainData[i][COL_ASSET - 1]) || 0;
+    const value = Number(mainData[i][COL_VALUE - 1]) || 0;
+    if (!name) continue;
+    students.push({ name, asset, value });
+  }
+
+  if (students.length === 0) return { success: false, msg: '학생 데이터 없음' };
+
+  // ── 지니계수 계산 함수 (업로드된 공식 그대로) ──────────────
+  // G = (Σi Σj |xi - xj|) / (2 * n^2 * x̄)
+  function calcGini(values) {
+    const n    = values.length;
+    const mean = values.reduce(function(s, v) { return s + v; }, 0) / n;
+    if (mean === 0) return 0;
+    let sumDiff = 0;
+    for (let i = 0; i < n; i++) {
+      for (let j = 0; j < n; j++) {
+        sumDiff += Math.abs(values[i] - values[j]);
+      }
+    }
+    return sumDiff / (2 * n * n * mean);
+  }
+
+  // ── 로렌츠 곡선 데이터 계산 함수 ──────────────────────────
+  // 오름차순 정렬 후 누적 비율 계산
+  // 반환값: [{x: 인구누적비율(0~1), y: 자산누적비율(0~1)}] 배열
+  function calcLorenz(values) {
+    const sorted = values.slice().sort(function(a, b) { return a - b; });
+    const total  = sorted.reduce(function(s, v) { return s + v; }, 0);
+    const n      = sorted.length;
+    const points = [{ x: 0, y: 0 }]; // 시작점
+    let cumSum = 0;
+    for (let i = 0; i < n; i++) {
+      cumSum += sorted[i];
+      points.push({
+        x: (i + 1) / n,
+        y: total > 0 ? cumSum / total : 0,
+        // 이 점에 해당하는 학생 수 (툴팁용)
+        studentCount: i + 1,
+        cumAsset: cumSum
+      });
+    }
+    return points;
+  }
+
+  // ── 자산보유량 기준 계산 ───────────────────────────────────
+  const assetValues  = students.map(function(s) { return s.asset; });
+  const giniAsset    = calcGini(assetValues);
+  const lorenzAsset  = calcLorenz(assetValues);
+
+  // ── 브랜드가치 기준 계산 (보조 지표) ─────────────────────
+  const valueValues  = students.map(function(s) { return s.value; });
+  const giniValue    = calcGini(valueValues);
+  const lorenzValue  = calcLorenz(valueValues);
+
+  // ── 분위별 자산 점유율 (하위 20%, 중위 60%, 상위 20%) ──────
+  const sortedAsset  = assetValues.slice().sort(function(a, b) { return a - b; });
+  const n            = sortedAsset.length;
+  const totalAsset   = sortedAsset.reduce(function(s, v) { return s + v; }, 0);
+  const bot20idx     = Math.floor(n * 0.2);
+  const top20idx     = Math.floor(n * 0.8);
+  const bot20sum     = sortedAsset.slice(0, bot20idx).reduce(function(s, v) { return s + v; }, 0);
+  const mid60sum     = sortedAsset.slice(bot20idx, top20idx).reduce(function(s, v) { return s + v; }, 0);
+  const top20sum     = sortedAsset.slice(top20idx).reduce(function(s, v) { return s + v; }, 0);
+
+  const shareBot20   = totalAsset > 0 ? bot20sum / totalAsset : 0;
+  const shareMid60   = totalAsset > 0 ? mid60sum / totalAsset : 0;
+  const shareTop20   = totalAsset > 0 ? top20sum / totalAsset : 0;
+
+  // ── 오늘 날짜 기록 (지니계수_로그 시트에 저장) ─────────────
+  _recordGiniLog(ss, giniAsset, giniValue, totalAsset);
+
+  // ── 지니계수_로그 시트에서 히스토리 읽기 ──────────────────
+  const history = _readGiniHistory(ss);
+
+  // ── 학생 순위 (자산보유량 내림차순, 프론트 표시용) ─────────
+  const ranked = students.slice().sort(function(a, b) { return b.asset - a.asset; });
+
+  return {
+    success:    true,
+    studentCount: students.length,
+    // 지니계수
+    giniAsset:  Math.round(giniAsset  * 1000) / 1000,
+    giniValue:  Math.round(giniValue  * 1000) / 1000,
+    // 로렌츠 곡선 포인트
+    lorenzAsset,
+    lorenzValue,
+    // 분위별 점유율
+    shareBot20: Math.round(shareBot20 * 1000) / 1000,
+    shareMid60: Math.round(shareMid60 * 1000) / 1000,
+    shareTop20: Math.round(shareTop20 * 1000) / 1000,
+    totalAsset,
+    // 히스토리 (차트용)
+    history,
+    // 학생 자산 순위
+    ranked
+  };
+}
+
+// ── 지니계수 로그 기록 헬퍼 ───────────────────────────────────
+function _recordGiniLog(ss, giniAsset, giniValue, totalAsset) {
+  try {
+    let logSheet = ss.getSheetByName('지니계수_로그');
+    // 시트가 없으면 자동 생성
+    if (!logSheet) {
+      logSheet = ss.insertSheet('지니계수_로그');
+      logSheet.appendRow(['날짜', '자산_지니계수', '브랜드_지니계수', '총자산합계', '기록시각']);
+      logSheet.getRange(1, 1, 1, 5).setFontWeight('bold');
+    }
+    const today    = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
+    const timeStr  = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'HH:mm');
+    const existing = logSheet.getDataRange().getValues();
+
+    // 오늘 날짜 행이 이미 있으면 덮어쓰기 (중복 방지)
+    for (let i = 1; i < existing.length; i++) {
+      if (String(existing[i][0]) === today) {
+        logSheet.getRange(i + 1, 1, 1, 5).setValues([[today, giniAsset, giniValue, totalAsset, timeStr]]);
+        return;
+      }
+    }
+    // 없으면 새 행 추가
+    logSheet.appendRow([today, giniAsset, giniValue, totalAsset, timeStr]);
+  } catch(e) {
+    // 로그 실패해도 메인 기능은 계속 동작
+    Logger.log('지니계수 로그 기록 실패: ' + e.message);
+  }
+}
+
+// ── 지니계수 히스토리 읽기 헬퍼 ──────────────────────────────
+function _readGiniHistory(ss) {
+  try {
+    const logSheet = ss.getSheetByName('지니계수_로그');
+    if (!logSheet) return [];
+    const data = logSheet.getDataRange().getValues();
+    const result = [];
+    // 최근 12주치만 반환 (헤더 제외, 역순)
+    for (let i = 1; i < data.length; i++) {
+      if (!data[i][0]) continue;
+      result.push({
+        date:       String(data[i][0]),
+        giniAsset:  Number(data[i][1]) || 0,
+        giniValue:  Number(data[i][2]) || 0,
+        totalAsset: Number(data[i][3]) || 0
+      });
+    }
+    // 최신순 정렬 후 최근 12개만
+    return result.reverse().slice(0, 12).reverse();
+  } catch(e) {
+    return [];
+  }
 }

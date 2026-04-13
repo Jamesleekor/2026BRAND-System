@@ -628,9 +628,8 @@
     /* ── 이미지 배경 스킨 공통 설정 ── */
     body[class*="skin-"] {
       background-size: cover;
-      background-attachment: fixed;
       background-position: top center;
-      background-repeat: no-repeat;
+      background-repeat: repeat;
     }
     /* 이미지 하단 페이드아웃 오버레이 */
     body[class*="skin-"]::after {
@@ -710,7 +709,7 @@
       <div id="charImgArea" style="display:none;flex-shrink:0;">
         <!-- 이미지 URL인 경우 -->
         <img id="charImg" src="" alt="캐릭터"
-          style="width:72px;height:72px;object-fit:contain;border-radius:12px;border:2px solid #eee;background:#f8f9fa;">
+          style="width:96px;height:96px;object-fit:contain;border-radius:12px;border:2px solid #eee;background:#f8f9fa;">
         <!-- 이모지인 경우 -->
         <span id="charEmoji" style="display:none;font-size:52px;line-height:1;"></span>
       </div>
@@ -868,30 +867,24 @@
     </div>
 
     <div class="card" style="margin-bottom:20px;">
-      <h3 style="margin-top:0;margin-bottom:10px;"><i class="fa-solid fa-cookie-bite"></i> 실시간 간식 거래소</h3>
+      <h3 style="margin-top:0;margin-bottom:10px;"><i class="fa-solid fa-cookie-bite"></i> 실시간 물품 거래소</h3>
+      <div style="max-height:220px;overflow-y:auto;">
       <table style="width:100%;text-align:left;border-collapse:collapse;">
         <thead>
           <tr style="border-bottom:2px solid #eee;">
             <th style="padding:8px 0;">품목</th>
             <th style="padding:8px 0;text-align:right;">현재 시세</th>
             <th style="padding:8px 0;text-align:right;">남은 수량</th>
+            <th style="padding:8px 0;text-align:right;"></th>
           </tr>
         </thead>
         <tbody id="snackMarketBody"></tbody>
       </table>
-    </div>
-
-    <div class="card">
-      <div class="card-title"><span><i class="fas fa-chart-line"></i> 다음 달 입찰 시작가 (전체 항목)</span></div>
-      <div class="table-wrapper">
-        <table id="priceTable">
-          <thead><tr><th>항목</th><th>평균가</th></tr></thead>
-          <tbody></tbody>
-        </table>
       </div>
+      <button onclick="openInventoryModal()" style="margin-top:10px;width:100%;padding:9px;background:#f0f0f0;border:none;border-radius:6px;font-size:13px;font-weight:bold;cursor:pointer;">🎒 내 인벤토리 보기</button>
     </div>
 
-    <!-- 2차 직업 신청 섹션 (금 광석 이상 공개) -->
+     <!-- 2차 직업 신청 섹션 (금 광석 이상 공개) -->
     <div id="job2Section" style="display:none;">
       <div class="card" style="border-left:6px solid #8e44ad;">
         <div class="card-title"><span>💼 2차 직업 시스템</span></div>
@@ -1659,6 +1652,21 @@ function closeP2PHistoryModal() {
       </div>
     </div>
 
+    <div class="card">
+      <div class="card-title"><span><i class="fas fa-chart-line"></i> 다음 달 입찰 시작가 (전체 항목)</span></div>
+      <!-- 자리 배치도 -->
+      <div id="seatGridWrap" style="display:none;margin-bottom:14px;"></div>
+      <!-- 자리 외 항목 테이블 -->
+      <div id="priceTableWrap">
+        <div class="table-wrapper">
+          <table id="priceTable">
+            <thead><tr><th>항목</th><th>평균가</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
   </div></div>
       
 
@@ -2189,10 +2197,18 @@ function closeP2PHistoryModal() {
     if (snackBody && data.snacks) {
       if (data.snacks.length > 0) {
         snackBody.innerHTML = data.snacks.map(function(s) {
+          var soldOut = s.stock <= 0;
           return '<tr style="border-bottom:1px solid #f5f5f5;">' +
             '<td style="padding:8px 0;font-weight:bold;">' + s.name + '</td>' +
             '<td style="padding:8px 0;text-align:right;color:#e74c3c;font-weight:bold;">$ ' + s.price.toLocaleString() + '</td>' +
             '<td style="padding:8px 0;text-align:right;color:' + (s.stock <= 5 ? 'red' : '#888') + ';">' + s.stock + '개</td>' +
+            '<td style="padding:8px 0;text-align:right;">' +
+              '<button onclick="doBuyItem(\'' + s.name.replace(/'/g, "\\'") + '\',' + s.price + ',' + s.stock + ',' + (s.weeklyLimit !== null ? s.weeklyLimit : 'null') + ')"' +
+              ' style="padding:4px 10px;font-size:12px;border:none;border-radius:5px;cursor:' + (soldOut ? 'not-allowed' : 'pointer') + ';' +
+              'background:' + (soldOut ? '#ccc' : '#e74c3c') + ';color:white;font-weight:bold;"' +
+              (soldOut ? ' disabled' : '') + '>' +
+              (soldOut ? '품절' : '구매') +
+            '</button></td>' +
           '</tr>';
         }).join('');
       } else {
@@ -2200,15 +2216,75 @@ function closeP2PHistoryModal() {
       }
     }
 
-    // 다음 달 경매 시작가 테이블
-    var priceTableBody = document.querySelector('#priceTable tbody');
-    if (priceTableBody && data.auctionPrices) {
-      priceTableBody.innerHTML = data.auctionPrices.map(function(item) {
-        return '<tr>' +
-          '<td style="font-size:0.9em;">' + item.item + '</td>' +
-          '<td style="font-weight:bold;color:#e67e22;text-align:right;">$ ' + Number(item.price).toLocaleString() + '</td>' +
-        '</tr>';
-      }).join('');
+    // 다음 달 경매 시작가 — 자리 배치도 + 나머지 테이블 분리 렌더링
+    if (data.auctionPrices) {
+      var seatItems  = data.auctionPrices.filter(function(x) { return x.item.startsWith('[자리]'); });
+      var otherItems = data.auctionPrices.filter(function(x) { return !x.item.startsWith('[자리]'); });
+
+      // ── 자리 배치도 렌더링 ──────────────────────────────────
+      var seatGrid = document.getElementById('seatGridWrap');
+      if (seatGrid && seatItems.length > 0) {
+        // 번호 순 정렬
+        seatItems.sort(function(a, b) {
+          var numA = parseInt(a.item.replace('[자리]', '').trim());
+          var numB = parseInt(b.item.replace('[자리]', '').trim());
+          return numA - numB;
+        });
+
+        // 열 수 계산 (최대 6열)
+        var totalSeats = seatItems.length;
+        var cols = Math.min(6, totalSeats);
+        var rows = Math.ceil(totalSeats / cols);
+
+        // 칠판 렌더링
+        var html = '<div style="border:2px solid #555;border-radius:6px;padding:10px 0;text-align:center;' +
+          'font-size:14px;font-weight:bold;color:#333;background:#f5f5f0;margin-bottom:16px;letter-spacing:2px;">칠판</div>';
+
+        // 격자 — 열 우선(세로 방향) 배열
+        html += '<div style="display:grid;grid-template-columns:repeat(' + cols + ',1fr);gap:8px;">';
+        // 세로 방향(열 우선)으로 인덱스 재배열
+        var ordered = [];
+        for (var c = 0; c < cols; c++) {
+          for (var r = 0; r < rows; r++) {
+            var idx = r * cols + c;
+            ordered.push(idx < totalSeats ? seatItems[idx] : null);
+          }
+        }
+        ordered.forEach(function(seat) {
+          if (!seat) {
+            html += '<div></div>';
+            return;
+          }
+          var num   = seat.item.replace(/[^0-9]/g, '');
+          var price = Number(seat.price).toLocaleString();
+          html += '<div style="border:1px solid #ddd;border-radius:8px;padding:8px 4px;text-align:center;background:#fff;">' +
+            '<div style="font-size:13px;font-weight:bold;color:#2c3e50;">자리' + num + '</div>' +
+            '<div style="font-size:11px;color:#e67e22;margin-top:3px;">(' + price + ')</div>' +
+          '</div>';
+        });
+        html += '</div>';
+        seatGrid.innerHTML = html;
+        seatGrid.style.display = 'block';
+      } else if (seatGrid) {
+        seatGrid.style.display = 'none';
+      }
+
+      // ── 나머지 항목 테이블 렌더링 ───────────────────────────
+      var priceTableBody = document.querySelector('#priceTable tbody');
+      var priceTableWrap = document.getElementById('priceTableWrap');
+      if (priceTableBody) {
+        if (otherItems.length > 0) {
+          priceTableBody.innerHTML = otherItems.map(function(item) {
+            return '<tr>' +
+              '<td style="font-size:0.9em;">' + item.item + '</td>' +
+              '<td style="font-weight:bold;color:#e67e22;text-align:right;">$ ' + Number(item.price).toLocaleString() + '</td>' +
+            '</tr>';
+          }).join('');
+          if (priceTableWrap) priceTableWrap.style.display = 'block';
+        } else {
+          if (priceTableWrap) priceTableWrap.style.display = 'none';
+        }
+      }
     }
 
     // ── 아래는 priceTable 유무와 무관하게 항상 실행 ──
@@ -3545,6 +3621,266 @@ function closeP2PHistoryModal() {
     </div>
   </div>
 </div>
+
+<!-- ── 구매 수량 선택 모달 ──────────────────────────────────── -->
+<div id="buyModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;">
+  <div style="background:white;margin:120px auto;max-width:320px;border-radius:12px;padding:24px;position:relative;">
+    <button onclick="closeBuyModal()" style="position:absolute;top:12px;right:12px;background:none;border:none;font-size:20px;cursor:pointer;">✕</button>
+    <h3 style="margin-top:0;margin-bottom:16px;">🛒 구매하기</h3>
+    <div style="margin-bottom:12px;">
+      <div style="font-size:16px;font-weight:bold;" id="buyModalItemName"></div>
+      <div style="font-size:13px;color:#888;margin-top:4px;">
+        현재 시세: <strong style="color:#e74c3c;">$<span id="buyModalPrice"></span></strong>
+        &nbsp;·&nbsp; 재고: <span id="buyModalStock"></span>개
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+      <label style="font-size:14px;font-weight:bold;">수량</label>
+      <input type="number" id="buyQtyInput" value="1" min="1"
+        oninput="updateBuyTotal()"
+        style="width:70px;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:16px;text-align:center;">
+      <span style="font-size:13px;color:#888;">개</span>
+    </div>
+    <div id="buyModalLimit" style="display:none;background:#fff3cd;border-radius:6px;padding:8px 12px;margin-bottom:12px;font-size:12px;color:#856404;"></div>
+    <div style="background:#fff8f0;border-radius:8px;padding:12px;margin-bottom:16px;text-align:center;">
+      <span style="font-size:13px;color:#888;">총 결제 금액</span><br>
+      <strong style="font-size:20px;color:#e74c3c;">$<span id="buyModalTotal"></span></strong>
+    </div>
+    <button id="buyConfirmBtn" onclick="confirmBuyItem()"
+      style="width:100%;padding:12px;background:#e74c3c;color:white;border:none;border-radius:8px;font-size:15px;font-weight:bold;cursor:pointer;">
+      구매하기
+    </button>
+  </div>
+</div>
+
+
+<!-- ── 사용 수량 선택 모달 ──────────────────────────────────── -->
+<div id="useModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:10000;">
+  <div style="background:white;margin:140px auto;max-width:300px;border-radius:12px;padding:24px;position:relative;">
+    <button onclick="closeUseModal()" style="position:absolute;top:12px;right:12px;background:none;border:none;font-size:20px;cursor:pointer;">✕</button>
+    <h3 style="margin-top:0;margin-bottom:16px;">✅ 사용하기</h3>
+    <div style="margin-bottom:12px;">
+      <div style="font-size:15px;font-weight:bold;" id="useModalItemName"></div>
+      <div style="font-size:13px;color:#888;margin-top:4px;">보유 수량: <strong id="useModalOwned"></strong>개</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+      <label style="font-size:14px;font-weight:bold;">사용 수량</label>
+      <input type="number" id="useQtyInput" value="1" min="1"
+        style="width:70px;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:16px;text-align:center;">
+      <span style="font-size:13px;color:#888;">개</span>
+    </div>
+    <button id="useConfirmBtn" onclick="confirmUseItem()"
+      style="width:100%;padding:12px;background:#e74c3c;color:white;border:none;border-radius:8px;font-size:15px;font-weight:bold;cursor:pointer;">
+      사용하기
+    </button>
+  </div>
+</div>
+
+<!-- ── 인벤토리 모달 ───────────────────────────────────────── -->
+<div id="inventoryModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;overflow-y:auto;">
+  <div style="background:white;margin:40px auto;max-width:480px;border-radius:12px;padding:24px;position:relative;">
+    <button onclick="closeInventoryModal()" style="position:absolute;top:12px;right:12px;background:none;border:none;font-size:20px;cursor:pointer;">✕</button>
+    <h3 style="margin-top:0;margin-bottom:16px;">🎒 내 인벤토리</h3>
+    <div id="inventoryList">로딩 중...</div>
+  </div>
+</div>
+
+<script>
+// ── 구매하기 ─────────────────────────────────────────────────
+function doBuyItem(itemName, price, stock, weeklyLimit) {
+  if (!window._currentStudentName) {
+    alert('먼저 로그인해 주세요.');
+    return;
+  }
+
+  // 수량 선택 모달 열기
+  var max = (weeklyLimit !== null && weeklyLimit !== undefined)
+            ? Math.min(stock, weeklyLimit)
+            : stock;
+  document.getElementById('buyModalItemName').textContent = itemName;
+  document.getElementById('buyModalPrice').textContent = price.toLocaleString();
+  document.getElementById('buyModalStock').textContent = stock;
+  document.getElementById('buyQtyInput').value = 1;
+  document.getElementById('buyQtyInput').max = max;
+  document.getElementById('buyModalTotal').textContent = price.toLocaleString();
+
+  // 주간 한도 안내 표시
+  var limitEl = document.getElementById('buyModalLimit');
+  if (weeklyLimit !== null && weeklyLimit !== undefined) {
+    limitEl.textContent = '⚠️ 이 품목은 주간 ' + weeklyLimit + '개 구매 제한이 있습니다.';
+    limitEl.style.display = 'block';
+  } else {
+    limitEl.style.display = 'none';
+  }
+
+  window._buyModalItem  = itemName;
+  window._buyModalPrice = price;
+  document.getElementById('buyModal').style.display = 'block';
+}
+
+function updateBuyTotal() {
+  var qty   = parseInt(document.getElementById('buyQtyInput').value) || 1;
+  var total = qty * (window._buyModalPrice || 0);
+  document.getElementById('buyModalTotal').textContent = total.toLocaleString();
+}
+
+function closeBuyModal() {
+  document.getElementById('buyModal').style.display = 'none';
+}
+
+function confirmBuyItem() {
+  var qty = parseInt(document.getElementById('buyQtyInput').value) || 1;
+  if (qty < 1) { alert('수량은 1개 이상이어야 합니다.'); return; }
+
+  // 버튼 비활성화 (중복 클릭 방지)
+  var btn = document.getElementById('buyConfirmBtn');
+  btn.disabled = true;
+  btn.textContent = '처리 중...';
+
+  google.script.run
+    .withSuccessHandler(function(res) {
+      btn.disabled = false;
+      btn.textContent = '구매하기';
+      closeBuyModal();
+      if (res.success) {
+        alert('✅ 구매 완료!\n' + window._buyModalItem + ' ' + res.quantity + '개를 $' + (res.price * res.quantity).toLocaleString() + '에 구매했습니다.\n잔액: $' + res.newBalance.toLocaleString());
+        if (window._lastDashboardData) {
+          window._lastDashboardData.personal.balance = res.newBalance;
+        }
+        loadDashboard();
+      } else {
+        alert('❌ ' + res.msg);
+      }
+    })
+    .withFailureHandler(function(err) {
+      btn.disabled = false;
+      btn.textContent = '구매하기';
+      closeBuyModal();
+      alert('오류가 발생했습니다: ' + err.message);
+    })
+    .buyItem(window._currentStudentName, window._buyModalItem, qty);
+}
+
+// ── 인벤토리 모달 열기 ────────────────────────────────────────
+function openInventoryModal() {
+  if (!window._currentStudentName) {
+    alert('먼저 로그인해 주세요.');
+    return;
+  }
+  document.getElementById('inventoryModal').style.display = 'block';
+  document.getElementById('inventoryList').innerHTML = '로딩 중...';
+
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (!res.success) {
+        document.getElementById('inventoryList').innerHTML = '불러오기 실패: ' + res.msg;
+        return;
+      }
+      renderInventory(res);
+    })
+    .withFailureHandler(function(err) {
+      document.getElementById('inventoryList').innerHTML = '오류: ' + err.message;
+    })
+    .getMyInventory(window._currentStudentName);
+}
+
+function closeInventoryModal() {
+  document.getElementById('inventoryModal').style.display = 'none';
+}
+
+// ── 인벤토리 렌더링 ───────────────────────────────────────────
+function renderInventory(res) {
+  var el     = document.getElementById('inventoryList');
+  var unused = res.unused || [];
+  var used   = res.used   || [];
+
+  if (unused.length === 0 && used.length === 0) {
+    el.innerHTML = '<p style="text-align:center;color:#aaa;padding:20px;">보유 중인 아이템이 없습니다.</p>';
+    return;
+  }
+
+  var html = '';
+  var totalUnusedQty = unused.reduce(function(s, i) { return s + i.totalQty; }, 0);
+
+  if (unused.length > 0) {
+    html += '<p style="font-weight:bold;color:#333;margin-bottom:8px;">📦 미사용 (' + totalUnusedQty + '개)</p>';
+    unused.forEach(function(item) {
+      html +=
+        '<div style="display:flex;justify-content:space-between;align-items:center;' +
+        'padding:10px;margin-bottom:8px;background:#fff8f0;border-radius:8px;border:1px solid #ffe0c0;">' +
+          '<div>' +
+            '<div style="font-weight:bold;font-size:14px;">' + item.itemName + '</div>' +
+            '<div style="font-size:12px;color:#888;">$' + item.price.toLocaleString() + ' · 보유 ' + item.totalQty + '개</div>' +
+          '</div>' +
+          '<button onclick="openUseModal(\'' + item.itemName.replace(/'/g, "\\'") + '\',' + item.totalQty + ')"' +
+          ' style="padding:6px 14px;background:#e74c3c;color:white;border:none;border-radius:6px;font-size:13px;font-weight:bold;cursor:pointer;">사용</button>' +
+        '</div>';
+    });
+  }
+
+  if (used.length > 0) {
+    var totalUsedQty = used.reduce(function(s, i) { return s + i.totalQty; }, 0);
+    html += '<p style="font-weight:bold;color:#aaa;margin:12px 0 8px;">✅ 사용 완료 (' + totalUsedQty + '개)</p>';
+    used.forEach(function(item) {
+      html +=
+        '<div style="padding:10px;margin-bottom:8px;background:#f5f5f5;border-radius:8px;color:#aaa;">' +
+          '<div style="font-weight:bold;font-size:14px;text-decoration:line-through;">' + item.itemName + ' × ' + item.totalQty + '개</div>' +
+          '<div style="font-size:12px;">최근 사용: ' + item.usedAt + '</div>' +
+        '</div>';
+    });
+  }
+
+  el.innerHTML = html;
+}
+
+// ── 사용 수량 선택 모달 열기 ──────────────────────────────────
+function openUseModal(itemName, totalQty) {
+  document.getElementById('useModalItemName').textContent = itemName;
+  document.getElementById('useModalOwned').textContent = totalQty;
+  document.getElementById('useQtyInput').value = 1;
+  document.getElementById('useQtyInput').max = totalQty;
+  window._useModalItem = itemName;
+  window._useModalMax  = totalQty;
+  document.getElementById('useModal').style.display = 'block';
+}
+
+function closeUseModal() {
+  document.getElementById('useModal').style.display = 'none';
+}
+
+function confirmUseItem() {
+  var qty = parseInt(document.getElementById('useQtyInput').value) || 1;
+  if (qty < 1 || qty > window._useModalMax) {
+    alert('1개 이상 ' + window._useModalMax + '개 이하로 입력해 주세요.');
+    return;
+  }
+  var btn = document.getElementById('useConfirmBtn');
+  btn.disabled = true;
+  btn.textContent = '처리 중...';
+
+  google.script.run
+    .withSuccessHandler(function(res) {
+      btn.disabled = false;
+      btn.textContent = '사용하기';
+      closeUseModal();
+      if (res.success) {
+        alert('✅ ' + res.msg);
+        openInventoryModal();
+      } else {
+        alert('❌ ' + res.msg);
+      }
+    })
+    .withFailureHandler(function(err) {
+      btn.disabled = false;
+      btn.textContent = '사용하기';
+      closeUseModal();
+      alert('오류가 발생했습니다: ' + err.message);
+    })
+    .useItem(window._currentStudentName, window._useModalItem, qty);
+}
+</script>
+
+</body>
 
 </body>
 </html>

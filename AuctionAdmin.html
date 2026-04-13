@@ -16,16 +16,55 @@
     .btn-extend { background: #f39c12; color: white; border: none; font-weight: bold; cursor: pointer; }
     .btn-end    { background: #8e44ad; color: white; border: none; font-weight: bold; cursor: pointer; width: 100%; padding: 10px; font-size: 15px; border-radius: 8px; }
 
-    /* 테이블 */
-    table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    /* ── 3단 레이아웃 ── */
+    .auction-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .auction-panel {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .auction-panel-header {
+      padding: 10px 14px;
+      font-weight: bold;
+      font-size: 13px;
+      color: white;
+    }
+    .auction-panel-header.blue   { background: #3d85c8; }
+    .auction-panel-header.green  { background: #27ae60; }
+    .auction-panel-header.red    { background: #e74c3c; }
+    .auction-panel-body {
+      flex: 1;
+      overflow-y: auto;
+      max-height: 45vh;
+    }
+
+    /* 학생 테이블 */
+    table { width: 100%; border-collapse: collapse; background: white; }
     th, td { padding: 6px 10px; border-bottom: 1px solid #ddd; text-align: left; vertical-align: middle; }
-    th { background: #3d85c8; color: white; position: sticky; top: 0; z-index: 1; font-size: 14px; }
+    th { background: #3d85c8; color: white; position: sticky; top: 0; z-index: 1; font-size: 13px; }
     tbody tr:nth-child(even) { background-color: #f8f9fa; }
     tbody tr:hover { background-color: #d1ecf1; outline: 2px solid #17a2b8; }
-
     .bid-input { width: 70px; text-align: right; border: 2px solid #3d85c8; font-weight: bold; }
     .btn-sold  { background: #27ae60; color: white; border: none; cursor: pointer; padding: 4px 12px; font-weight: bold; border-radius: 4px; }
     .btn-sold:hover { background: #219150; transform: scale(1.05); }
+
+    /* 낙찰/유찰 결과 테이블 */
+    .result-table { width: 100%; border-collapse: collapse; }
+    .result-table th { background: #27ae60; color: white; padding: 8px 10px; font-size: 12px; text-align: left; position: sticky; top: 0; }
+    .result-table.fail th { background: #e74c3c; }
+    .result-table td { padding: 7px 10px; font-size: 12px; border-bottom: 1px solid #f0f0f0; }
+    .result-table tr:last-child td { border-bottom: none; }
+    .result-table tbody tr:nth-child(even) { background: #f9f9f9; }
+    .empty-msg { text-align: center; color: #bbb; padding: 30px 10px; font-size: 13px; }
+
     #statusMsg { color: #e74c3c; font-weight: bold; width: 100%; margin-top: 5px; }
   </style>
 </head>
@@ -63,42 +102,76 @@
   <button class="btn-end" onclick="endAuction()">🏁 모든 경매 종료 및 오늘 결과 화면 송출하기</button>
 </div>
 
-<div style="max-height: 50vh; overflow-y: auto; border: 1px solid #ccc; border-radius: 8px;">
-  <table>
-    <thead><tr><th>학생 이름</th><th>잔여 자산</th><th>입찰가 입력</th><th>낙찰 처리</th></tr></thead>
-    <tbody id="studentList"></tbody>
-  </table>
+<!-- ── 3단 레이아웃 ── -->
+<div class="auction-grid">
+
+  <!-- 1열: 학생 입찰 테이블 -->
+  <div class="auction-panel">
+    <div class="auction-panel-header blue">👥 학생 입찰 현황</div>
+    <div class="auction-panel-body">
+      <table>
+        <thead><tr><th>학생 이름</th><th>잔여 자산</th><th>입찰가 입력</th><th>낙찰 처리</th></tr></thead>
+        <tbody id="studentList"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 2열: 낙찰 결과 테이블 -->
+  <div class="auction-panel">
+    <div class="auction-panel-header green">🏆 낙찰 결과 <span id="soldCount" style="font-size:11px;font-weight:normal;margin-left:6px;">0건</span></div>
+    <div class="auction-panel-body">
+      <table class="result-table" id="soldTable">
+        <thead><tr><th>상품명</th><th>낙찰자</th><th>낙찰가</th></tr></thead>
+        <tbody id="soldList">
+          <tr><td colspan="3" class="empty-msg">아직 낙찰된 상품이 없습니다</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 3열: 유찰 현황 테이블 -->
+  <div class="auction-panel">
+    <div class="auction-panel-header red">❌ 유찰 현황 <span id="failedCount" style="font-size:11px;font-weight:normal;margin-left:6px;">0건</span></div>
+    <div class="auction-panel-body">
+      <table class="result-table fail" id="failedTable">
+        <thead><tr><th>상품명</th><th>유찰 구분</th><th>누적횟수</th></tr></thead>
+        <tbody id="failedList">
+          <tr><td colspan="3" class="empty-msg">유찰된 상품이 없습니다</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
 </div>
 
 <script>
   // ── 전역 변수 ──────────────────────────────────────────────────
-  let failCount   = 0;  // 현재 상품의 유찰 횟수 (0: 최초, 1: 1차재경매, 2: 최종재경매)
-  let globalItems = []; // 경매 상품 목록 (getAuctionInitData에서 받아옴)
+  let failCount   = 0;
+  let globalItems = [];
+  let soldRecords   = [];  // 낙찰 기록 배열
+  let failedRecords = [];  // 유찰 기록 배열
 
   // ── 초기화: 학생 목록 + 상품 목록 불러오기 ─────────────────────
   google.script.run.withSuccessHandler(function(data) {
     globalItems = data.items;
 
-    // 상품 선택 드롭다운 채우기
     var itemSel = document.getElementById('itemSelect');
     itemSel.innerHTML = '';
     globalItems.forEach(function(item, index) {
       itemSel.innerHTML += '<option value="' + index + '">' + item.name + '</option>';
     });
 
-    // 학생 테이블 채우기
     var tbody = document.getElementById('studentList');
     tbody.innerHTML = '';
     data.students.forEach(function(st) {
       tbody.innerHTML += '<tr>' +
-        '<td style="font-size:14px;"><strong>' + st.name + '</strong> <span style="font-size:11px;color:gray;">(' + st.brand + ')</span></td>' +
+        '<td style="font-size:13px;"><strong>' + st.name + '</strong> <span style="font-size:11px;color:gray;">(' + st.brand + ')</span></td>' +
         '<td id="bal_' + st.rowIdx + '" data-balance="' + st.balance + '" style="font-weight:bold;color:#2c3e50;">$' + st.balance.toLocaleString() + '</td>' +
         '<td><input type="number" id="bid_' + st.rowIdx + '" class="bid-input" step="10" placeholder="금액"></td>' +
         '<td><button class="btn-sold" onclick="sellItem(' + st.rowIdx + ', \'' + st.name + '\', \'' + st.brand + '\')">쾅! 낙찰</button></td>' +
       '</tr>';
     });
 
-    // 초기 상태 idle로 설정
     google.script.run.setAuctionState({ status: 'idle' });
   }).getAuctionInitData();
 
@@ -111,46 +184,36 @@
   }
 
 
-  // ── 경매 송출 (level: 0=최초, 1=1차재경매, 2=최종재경매) ────────
+  // ── 경매 송출 ──────────────────────────────────────────────────
   function startItem(level) {
     var itemIdx      = parseInt(document.getElementById('itemSelect').value);
     var selectedItem = globalItems[itemIdx];
-    failCount        = level; // 버튼에서 직접 호출 시 failCount를 level에 맞춤
+    failCount        = level;
 
-    var endTime = new Date().getTime() + 31000; // 31초 (1초 여유)
+    var endTime = new Date().getTime() + 31000;
 
     if (level === 0) {
       document.getElementById('statusMsg').innerText =
         '[최초 송출 중] ' + selectedItem.name + ' (시작가: $' + selectedItem.startPrice + ')';
       google.script.run.setAuctionState({
-        status:     'bidding',
-        itemName:   selectedItem.name,
-        startPrice: selectedItem.startPrice,
-        failCount:  0,
-        endTime:    endTime
+        status: 'bidding', itemName: selectedItem.name,
+        startPrice: selectedItem.startPrice, failCount: 0, endTime: endTime
       });
-
     } else if (level === 1) {
       var discountedPrice = Math.round(selectedItem.startPrice * 0.9);
       document.getElementById('statusMsg').innerText =
         '[1차 재경매 송출 중] ' + selectedItem.name + ' (할인가: $' + discountedPrice + ')';
       google.script.run.setAuctionState({
-        status:       'failed',
-        itemName:     selectedItem.name,
-        failCount:    1,
-        currentPrice: discountedPrice,
-        endTime:      endTime
+        status: 'failed', itemName: selectedItem.name,
+        failCount: 1, currentPrice: discountedPrice, endTime: endTime
       });
-
-    } else { // level === 2
+    } else {
       var finalPrice = Math.round(selectedItem.startPrice * 0.81);
       document.getElementById('statusMsg').innerText =
         '[최종 재경매 송출 중] ' + selectedItem.name + ' (파격가: $' + finalPrice + ')';
       google.script.run.setAuctionState({
-        status:       'failed_final',
-        itemName:     selectedItem.name,
-        currentPrice: finalPrice,
-        endTime:      endTime
+        status: 'failed_final', itemName: selectedItem.name,
+        currentPrice: finalPrice, endTime: endTime
       });
     }
   }
@@ -170,37 +233,73 @@
 
 
   // ── 유찰 처리 ────────────────────────────────────────────────
-  // [수정] 버그 수정: failCount === 2 시 아이템을 이동하지 않음
-  //        최종 유찰(failCount > 2) 시에만 아이템을 목록 맨 뒤로 이동
   function failItem() {
-    var itemSel = document.getElementById('itemSelect');
+    var itemSel  = document.getElementById('itemSelect');
+    var itemIdx  = parseInt(itemSel.value);
+    var itemName = globalItems[itemIdx].name;
+    var roundNum = parseInt(document.getElementById('auctionRound').value);
     failCount++;
 
     if (failCount > 2) {
-      // 3번째 유찰 = 완전 유찰 → 수동 배정 필요
       alert('⚠️ 최종 유찰되었습니다. 수동 배정이 필요합니다.');
+
+      // 유찰 테이블 갱신 (최종 유찰)
+      _addFailRecord(itemName, failCount, roundNum);
+
+      // 시트 기록
+      google.script.run.recordAuctionFail(itemName, failCount, roundNum);
+
       resetDisplay();
-      // 완전 유찰된 상품을 드롭다운 맨 뒤로 보냄 (처리 완료 표시)
       itemSel.appendChild(itemSel.options[itemSel.selectedIndex]);
       failCount = 0;
       return;
     }
 
-    // failCount가 1 또는 2인 경우: 재경매 자동 송출
+    // 유찰 테이블 갱신 (1차/2차 유찰)
+    _addFailRecord(itemName, failCount, roundNum);
+
+    // 시트 기록
+    google.script.run.recordAuctionFail(itemName, failCount, roundNum);
+
+    // 재경매 자동 송출
     startItem(failCount);
-    // ✅ [수정] failCount === 2 시 아이템 이동 제거
-    //    (이전에는 여기서 이동했는데, 경매 중에 이동되면 다음 유찰 시 다른 아이템이 이동되는 버그 발생)
+  }
+
+
+  // ── 유찰 테이블에 행 추가 ─────────────────────────────────────
+  function _addFailRecord(itemName, count, roundNum) {
+    var label = count === 1 ? '1차 유찰'
+              : count === 2 ? '2차 유찰'
+              : '최종 유찰';
+    var badge = count >= 3
+      ? '<span style="background:#c0392b;color:white;padding:1px 6px;border-radius:3px;font-size:11px;">최종</span>'
+      : '<span style="background:#e67e22;color:white;padding:1px 6px;border-radius:3px;font-size:11px;">' + label + '</span>';
+
+    failedRecords.push({ itemName: itemName, label: label, count: count });
+
+    var tbody = document.getElementById('failedList');
+    // 빈 메시지 행 제거
+    if (tbody.querySelector('.empty-msg')) tbody.innerHTML = '';
+
+    var tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td style="font-size:12px;font-weight:bold;color:#2c3e50;">' + itemName + '</td>' +
+      '<td>' + badge + '</td>' +
+      '<td style="text-align:center;font-weight:bold;color:#e74c3c;">' + count + '회</td>';
+    tbody.appendChild(tr);
+
+    document.getElementById('failedCount').innerText = failedRecords.length + '건';
   }
 
 
   // ── 낙찰 처리 ────────────────────────────────────────────────
   function sellItem(rowIdx, name, brand) {
-    var input     = document.getElementById('bid_' + rowIdx);
-    var price     = parseInt(input.value);
-    var itemIdx   = parseInt(document.getElementById('itemSelect').value);
-    var itemName  = globalItems[itemIdx].name;
-    var roundNum  = parseInt(document.getElementById('auctionRound').value);
-    var balCell   = document.getElementById('bal_' + rowIdx);
+    var input      = document.getElementById('bid_' + rowIdx);
+    var price      = parseInt(input.value);
+    var itemIdx    = parseInt(document.getElementById('itemSelect').value);
+    var itemName   = globalItems[itemIdx].name;
+    var roundNum   = parseInt(document.getElementById('auctionRound').value);
+    var balCell    = document.getElementById('bal_' + rowIdx);
     var curBalance = parseInt(balCell.dataset.balance);
 
     if (!price || price <= 0) return alert('입찰가를 정확히 입력하세요!');
@@ -212,14 +311,15 @@
 
       google.script.run.withSuccessHandler(function(res) {
         if (res.success) {
-          // 잔액 실시간 갱신
+          // 잔액 갱신
           balCell.dataset.balance = res.newBalance;
           balCell.innerText       = '$' + res.newBalance.toLocaleString();
-          balCell.style.color     = '#e74c3c'; // 빨간색으로 차감 시각화
-
+          balCell.style.color     = '#e74c3c';
           input.value = '';
 
-          // ✅ [수정] 낙찰 완료 시 failCount 초기화 + 낙찰된 상품 목록 맨 뒤로 이동
+          // 낙찰 테이블 갱신
+          _addSoldRecord(itemName, name, price);
+
           failCount = 0;
           var itemSel = document.getElementById('itemSelect');
           itemSel.appendChild(itemSel.options[itemSel.selectedIndex]);
@@ -230,6 +330,24 @@
         }
       }).executeAuctionSold(studentInfo, itemDetails, price, roundNum);
     }
+  }
+
+
+  // ── 낙찰 테이블에 행 추가 ─────────────────────────────────────
+  function _addSoldRecord(itemName, winner, price) {
+    soldRecords.push({ itemName: itemName, winner: winner, price: price });
+
+    var tbody = document.getElementById('soldList');
+    if (tbody.querySelector('.empty-msg')) tbody.innerHTML = '';
+
+    var tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td style="font-size:12px;font-weight:bold;color:#2c3e50;">' + itemName + '</td>' +
+      '<td style="font-size:12px;">' + winner + '</td>' +
+      '<td style="font-size:12px;font-weight:bold;color:#27ae60;text-align:right;">$' + price.toLocaleString() + '</td>';
+    tbody.appendChild(tr);
+
+    document.getElementById('soldCount').innerText = soldRecords.length + '건';
   }
 
 

@@ -703,6 +703,9 @@
 
   <div id="dashboard">
 
+    <!-- ── 비상사태 배너 ── -->
+    <div id="emergencyBanner" style="display:none;margin-bottom:16px;padding:14px 16px;border-radius:10px;font-size:14px;font-weight:bold;text-align:center;"></div>
+
     <div style="margin-bottom:20px;display:flex;align-items:center;gap:12px;">
 
       <!-- 캐릭터 이미지 영역 (장착 시에만 표시) -->
@@ -2123,6 +2126,34 @@ function closeP2PHistoryModal() {
     document.getElementById('myBalance').innerText    = '$ ' + Number(data.personal.balance).toLocaleString();
     document.getElementById('balanceRank').innerText  = '순위: ' + data.personal.balanceRank + '위';
 
+    // ── 비상사태 배너 렌더링
+    var emg = data.emergency;
+    var banner = document.getElementById('emergencyBanner');
+    if (emg && emg.active) {
+      var bgMap = { '하이퍼인플레이션': '#fdecea', '고용 한파': '#fef9e7', '자산 동결': '#eaf4ff' };
+      var colorMap = { '하이퍼인플레이션': '#c0392b', '고용 한파': '#d35400', '자산 동결': '#1a5276' };
+      var msgMap = {
+        '하이퍼인플레이션': '🚨 하이퍼인플레이션 발령 중! 모든 물가가 200% 상승했습니다.',
+        '고용 한파'       : '📉 고용 한파 발령 중! 일부 직업이 구조조정되었습니다.',
+        '자산 동결'       : '🔒 자산 동결 발령 중! 보유 자산의 ' + emg.freezeRate + '%만 사용 가능합니다.'
+      };
+      banner.style.display     = 'block';
+      banner.style.background  = bgMap[emg.type]    || '#fdecea';
+      banner.style.color       = colorMap[emg.type] || '#c0392b';
+      banner.style.border      = '2px solid ' + (colorMap[emg.type] || '#c0392b');
+      var endStr = emg.endsAt ? ' (해제 예정: ' + emg.endsAt + ')' : '';
+      banner.innerHTML = (msgMap[emg.type] || '🚨 비상사태 발령 중!') + endStr;
+
+      // 자산 동결 시 사용 가능 금액 표시
+      if (emg.type === '자산 동결') {
+        var usable = Math.floor(Number(data.personal.balance) * (emg.freezeRate / 100));
+        var balEl = document.getElementById('myBalance');
+        if (balEl) balEl.innerText = '$ ' + Number(data.personal.balance).toLocaleString() + ' (사용 가능: $' + usable.toLocaleString() + ')';
+      }
+    } else {
+      banner.style.display = 'none';
+    }
+
     // 개인 납세액 + 반 전체 복지 기금
     document.getElementById('myPersonalTax').innerText = '$ ' + Number(data.personalTax || 0).toLocaleString();
     document.getElementById('totalTax').innerText      = '$ ' + Number(data.classTotalTax || 0).toLocaleString();
@@ -2223,11 +2254,12 @@ function closeP2PHistoryModal() {
 
       // ── 자리 배치도 렌더링 ──────────────────────────────────
       var seatGrid = document.getElementById('seatGridWrap');
+      console.log(seatItems.map(function(x){return x.item;}));
       if (seatGrid && seatItems.length > 0) {
         // 번호 순 정렬
         seatItems.sort(function(a, b) {
-          var numA = parseInt(a.item.replace('[자리]', '').trim());
-          var numB = parseInt(b.item.replace('[자리]', '').trim());
+          var numA = parseInt(a.item.replace(/\[자리\]/g, '').trim()) || 0;
+          var numB = parseInt(b.item.replace(/\[자리\]/g, '').trim()) || 0;
           return numA - numB;
         });
 
@@ -2242,11 +2274,12 @@ function closeP2PHistoryModal() {
 
         // 격자 — 열 우선(세로 방향) 배열
         html += '<div style="display:grid;grid-template-columns:repeat(' + cols + ',1fr);gap:8px;">';
-        // 세로 방향(열 우선)으로 인덱스 재배열
+        
+        // 세로 방향(열 우선) 배열
         var ordered = [];
-        for (var c = 0; c < cols; c++) {
-          for (var r = 0; r < rows; r++) {
-            var idx = r * cols + c;
+        for (var r = 0; r < rows; r++) {
+          for (var c = 0; c < cols; c++) {
+            var idx = c * rows + r;
             ordered.push(idx < totalSeats ? seatItems[idx] : null);
           }
         }
@@ -2671,18 +2704,22 @@ function closeP2PHistoryModal() {
   // ══════════════════════════════════════════════════════════════
   // ██ 업적 전광판 (Global Alert) — 30초마다 폴링
   // ══════════════════════════════════════════════════════════════
-  var _lastAlertId = null;
+  // 로그인 시각 이후 알림만 표시 — 캐시/기기 달라도 중복 없음
+  var _lastAlertId  = null;
+  var _loginTimeISO = null; // 로그인 시각 (ISO 문자열, 서버로 전달)
   var _alertPolling = null;
 
   function startAlertPolling() {
     if (_alertPolling) return;
+    // 폴링 시작 시각 = 로그인 시각으로 기록
+    _loginTimeISO = new Date().toISOString();
     _alertPolling = setInterval(function() {
       google.script.run.withSuccessHandler(function(alert) {
         if (!alert) return;
         if (alert.noticeId === _lastAlertId) return;
         _lastAlertId = alert.noticeId;
         showGlobalAlert(alert);
-      }).getLatestGlobalAlert(_lastAlertId || '');
+      }).getLatestGlobalAlert(_lastAlertId || '', _loginTimeISO);
     }, 30000); // 30초
   }
 
@@ -2885,7 +2922,9 @@ function closeP2PHistoryModal() {
       } else if (isDefault) {
         btnHtml = '<button class="shop-buy-btn can-buy" onclick="unequipShopItem(\'' + item.category + '\')">장착하기</button>';
       } else if (!item.isOwned) {
-        if (!item.condMet) {
+        if (item.isExpired) {
+          btnHtml = '<button class="shop-buy-btn locked-lbl">⏰ 판매 종료</button>';
+        } else if (!item.condMet) {
           btnHtml = '<button class="shop-buy-btn locked-lbl">🔒 조건 미달</button>';
         } else if (_shopData.balance < item.price) {
           btnHtml = '<button class="shop-buy-btn locked-lbl">잔액 부족</button>';

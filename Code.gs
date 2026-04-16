@@ -53,8 +53,9 @@ const TIER_ORDER = [
 // 1. 웹앱 진입점 (URL로 접속 시 어떤 화면을 보여줄지 결정)
 // ════════════════════════════════════════════════════════════════
 function doGet(e) {
-  const page = e.parameter.page;
-  const mode = e.parameter.mode;
+  const param = (e && e.parameter) ? e.parameter : {};
+  const page = param.page;
+  const mode = param.mode;
 
   if (page === 'admin' || mode === 'admin') {
     return HtmlService.createTemplateFromFile('AuctionAdmin').evaluate()
@@ -101,6 +102,7 @@ function onOpen() {
     .addItem('⏰ [백업] 자동 백업 스케줄 설정',    'setupDailyBackupTrigger')
     .addItem('⏰ [추적] 브랜드가치 자동 기록 설정', 'setupDailyTrackerTrigger')
     .addItem('📋 [백업] 백업 목록 확인',           'showBackupList')
+    .addItem('⏰ [예금] 만기 자동 처리 트리거 설정', 'setupDepositTrigger')
     .addToUi();
 }
 
@@ -162,6 +164,18 @@ function getStudentData(studentName, password) {
     }
   }
   if (!studentRow) return { success: false, msg: '학생을 찾을 수 없습니다. 이름을 다시 확인해주세요.' };
+
+  // 만기 예금 먼저 처리 (이후 studentRow를 다시 읽어야 최신 자산 반영)
+  checkAndPayDeposits(studentName);
+
+  // 만기 처리 후 최신 자산 반영을 위해 해당 학생 행 재조회
+  const freshMainData = mainSheet.getDataRange().getValues();
+  for (let i = 1; i < freshMainData.length; i++) {
+    if (String(freshMainData[i][COL_NAME - 1]).trim() === String(studentName).trim()) {
+      studentRow = freshMainData[i];
+      break;
+    }
+  }
 
   // 로그인 기록
   try {
@@ -245,6 +259,7 @@ function getStudentData(studentName, password) {
 
   // 업적 자동 체크 (로그인 시마다 조건 확인)
   checkAndGrantAchievements(studentName, Number(studentRow[COL_ASSET - 1]) || 0, Number(studentRow[COL_TAX - 1]) || 0, honor);
+  checkAndPayDeposits(studentName);
 
   const result = {
     success:       true,
@@ -277,25 +292,26 @@ function getStudentData(studentName, password) {
   // ───────────────────────────────────────────────────────────
 }
 
-// 간식 시세 계산 (재고 비율에 따라 최대 5배까지 비선형 상승)
+// 간식 시세 계산 (재고 100%→1배, 20% 이하→2.5배 상한, 선형 상승)
 function getSnackData() {
   const snackSheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_SNACK);
   if (!snackSheet) return [];
-  const sData = snackSheet.getDataRange().getValues();
+  const sData  = snackSheet.getDataRange().getValues();
   const result = [];
+  const _emg         = _getActiveEmergency();
+  const _inflationOn = _emg && _emg.type === '하이퍼인플레이션';
   for (let n = 1; n < sData.length; n++) {
     if (!sData[n][0]) continue;
     const basePrice    = Number(sData[n][1]) || 0;
     const baseStock    = Number(sData[n][2]) || 1;
     const currentStock = Number(sData[n][3]);
-    const weeklyLimit  = sData[n][4] !== '' && sData[n][4] !== null && sData[n][4] !== undefined
-                         ? Number(sData[n][4]) : null; // null = 제한 없음
-    const multiplier = (currentStock > 0)
-      ? Math.max(1, Math.min(5, baseStock / currentStock))
-      : 5;
+    const weeklyLimit  = (sData[n][4] !== '' && sData[n][4] !== null && sData[n][4] !== undefined)
+                         ? Number(sData[n][4]) : null;
+    // 재고 100%→1배, 20% 이하→2.5배 상한 (선형)
+    // currentStock/baseStock = 1.0(100%)일 때 1배, 0.2(20%)일 때 2.5배
+    const ratio      = (currentStock > 0) ? Math.min(1, currentStock / baseStock) : 0;
+    const multiplier = Math.max(1, Math.min(2.5, 1 + 1.5 * (1 - ratio) / 0.8));
     // ── 하이퍼인플레이션: 가격 ×2
-    const _emgSnack = _getActiveEmergency();
-    const _inflationOn = _emgSnack && _emgSnack.type === '하이퍼인플레이션';
     const finalPrice = _inflationOn
       ? Math.round(basePrice * multiplier * 2)
       : Math.round(basePrice * multiplier);
@@ -309,6 +325,7 @@ function getSnackData() {
   }
   return result;
 }
+
 
 
 // ════════════════════════════════════════════════════════════════
@@ -653,7 +670,8 @@ function applyDailyPoints(date, entries, taxRate) {
     const curValue     = Number(mainData[rowIdx][COL_VALUE - 1]) || 0;
     const curAsset     = Number(mainData[rowIdx][COL_ASSET - 1]) || 0;
     const curTax       = Number(mainData[rowIdx][COL_TAX - 1])   || 0;
-    const taxAmount    = Math.floor(e.points * (taxRate / 100));
+    // 마이너스 포인트 (음수)일 때는 세금 부과 없이 전액 차감
+    const taxAmount    = e.points > 0 ? Math.floor(e.points * (taxRate / 100)) : 0;
     const netAssetGain = e.points - taxAmount;
 
     mainData[rowIdx][COL_VALUE - 1] = curValue + e.points;      // 브랜드가치: 세금 없이 전액
@@ -1109,12 +1127,26 @@ function clearAchievementCache() {
 // 전체 캐시 초기화 (디버깅용)
 function clearAllCache() {
   const cache = CacheService.getScriptCache();
-  cache.removeAll(['achievement_master']);
-  
-  // 학생별 캐시는 패턴으로 삭제 불가하므로 개별 삭제
-  // (필요시 학생 목록 순회하며 삭제)
-  
-  SpreadsheetApp.getUi().alert('✅ 모든 캐시가 초기화되었습니다.');
+
+  // 1) 학생별 캐시 삭제 — 메인 시트에서 이름 목록을 읽어 개별 삭제
+  try {
+    const ss        = SpreadsheetApp.getActiveSpreadsheet();
+    const mainSheet = ss.getSheetByName(SHEET_MAIN);
+    if (mainSheet) {
+      const mainData = mainSheet.getDataRange().getValues();
+      const keys = [];
+      for (let i = 1; i < mainData.length; i++) {
+        const name = String(mainData[i][COL_NAME - 1]).trim();
+        if (name) keys.push('student_' + name);
+      }
+      if (keys.length > 0) cache.removeAll(keys);
+    }
+  } catch(e) {}
+
+  // 2) 업적 캐시 삭제
+  cache.remove('achievement_master');
+
+  SpreadsheetApp.getUi().alert('✅ 모든 캐시가 초기화되었습니다. (학생 캐시 포함)');
 }
 
 // 특정 학생의 달성 업적 목록 반환
@@ -3854,10 +3886,9 @@ function checkAndPayDeposits(studentName) {
     let dueVal = data[i][6];
     if (dueVal instanceof Date)
       dueVal = Utilities.formatDate(dueVal, Session.getScriptTimeZone(), 'yyyy-MM-dd');
-    const dueStr = String(dueVal).substring(0, 10);
-
-    const nowTs = new Date().getTime();
-    const dueTs = new Date(dueStr).getTime();
+    const dueStr  = String(dueVal).substring(0, 10); // "yyyy-MM-dd"
+    const dueTs   = new Date(dueStr + 'T12:00:00+09:00').getTime(); // KST 정오
+    const nowTs   = new Date().getTime();
     if (dueTs <= nowTs) {
       _payOneDeposit(ss, logSheet, i, data[i]);
       processed++;
@@ -5187,6 +5218,8 @@ function _ensureInventorySheet(ss) {
   return sheet;
 }
 
+// ── 아이템 사용 로그 시트 자동 생성 ──────────────────────────────
+
 // ── 주간 구매 수량 확인 ───────────────────────────────────────────
 function _getWeeklyBuyCount(invSheet, studentName, itemName) {
   const now = new Date();
@@ -5253,10 +5286,13 @@ function buyItem(studentName, itemName, quantity) {
         // 현재 시세는 getSnackData()와 동일한 비선형 가격 함수로 계산
         const basePrice  = Number(snackData[n][1]) || 0;
         const baseStock  = Number(snackData[n][2]) || 1;
-        const multiplier = (currentStock > 0)
-          ? Math.max(1, Math.min(5, baseStock / currentStock))
-          : 5;
-        currentPrice = Math.round(basePrice * multiplier);
+        // 재고 100%→1배, 20% 이하→2.5배 상한 (getSnackData와 동일 공식)
+        const ratio      = (currentStock > 0) ? Math.min(1, currentStock / baseStock) : 0;
+        const multiplier = Math.max(1, Math.min(2.5, 1 + 1.5 * (1 - ratio) / 0.8));
+        // ── 하이퍼인플레이션: getSnackData()와 동일하게 ×2 적용
+        const _emgItem = _getActiveEmergency();
+        const _infOn   = _emgItem && _emgItem.type === '하이퍼인플레이션';
+        currentPrice = Math.round(basePrice * multiplier * (_infOn ? 2 : 1));
         break;
       }
     }
@@ -5427,6 +5463,18 @@ function useItem(studentName, itemName, useQty) {
         invSheet.getRange(row.rowNum, 8).setValue(now);  // H열: 사용시기
       }
     }
+
+    // ── 아이템 사용 로그 시트에 기록 ─────────────────────────────
+    const useLogSheet = ss.getSheetByName('아이템사용로그');
+    if (useLogSheet) {
+      const logRow = useLogSheet.getLastRow() + 1;
+      useLogSheet.getRange(logRow, 1).setValue(now);
+      useLogSheet.getRange(logRow, 2).setValue(studentName);
+      useLogSheet.getRange(logRow, 3).setValue(itemName);
+      useLogSheet.getRange(logRow, 4).setValue(useQty);
+      useLogSheet.getRange(logRow, 5).setValue(false);
+    }
+    // ─────────────────────────────────────────────────────────────
 
     return {
       success : true,
@@ -5740,4 +5788,22 @@ function endEmergency() {
 // ── 자동 종료 트리거 함수 ────────────────────────────────────────
 function autoEndEmergency() {
   endEmergency();
+}
+
+
+// ── 예금 만기 자동 처리 트리거 설정 ──────────────────────────────
+function setupDepositTrigger() {
+  const triggers = ScriptApp.getProjectTriggers();
+  for (let i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === 'runDailyDepositCheck') {
+      ScriptApp.deleteTrigger(triggers[i]);
+    }
+  }
+  ScriptApp.newTrigger('runDailyDepositCheck')
+    .timeBased().everyDays(1).atHour(12).nearMinute(30).create();
+  SpreadsheetApp.getUi().alert('✅ 매일 12:30 예금 만기 자동 처리 트리거가 설정되었습니다.');
+}
+
+function runDailyDepositCheck() {
+  checkAndPayDeposits(null); // null = 전체 학생 처리
 }

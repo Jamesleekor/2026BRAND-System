@@ -67,6 +67,57 @@
 
     #statusMsg { color: #e74c3c; font-weight: bold; width: 100%; margin-top: 5px; }
   </style>
+
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAspOwJq6u54YBDWIx_WVOjhQHCupmriNc",
+      authDomain: "brand-503cd.firebaseapp.com",
+      databaseURL: "https://brand-503cd-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "brand-503cd",
+      storageBucket: "brand-503cd.firebasestorage.app",
+      messagingSenderId: "443808653648",
+      appId: "1:443808653648:web:56081109d74a2f32298c55"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db  = getDatabase(app);
+
+    // 전역에서 쓸 수 있도록 window에 등록
+    window._fbSet = function(stateObj) {
+      return set(ref(db, 'auction'), stateObj);
+    };
+    window._fbGet = function() {
+      return get(ref(db, 'auction')).then(function(snap) {
+        return snap.val();
+      });
+    };
+
+    // 낙찰/유찰 누적 기록 저장
+    window._fbSetRecords = function(sold, failed) {
+      return set(ref(db, 'auctionRecords'), { sold: sold, failed: failed });
+    };
+
+    // 복원 함수를 window에 등록 (일반 스크립트에서 호출)
+    window._fbRestoreRecords = function() {
+      return get(ref(db, 'auctionRecords')).then(function(snap) {
+        var data = snap.val();
+        if (!data) return;
+        if (data.sold && data.sold.length > 0) {
+          soldRecords = data.sold;
+          window._renderSoldTable && window._renderSoldTable();
+        }
+        if (data.failed && data.failed.length > 0) {
+          failedRecords = data.failed;
+          window._renderFailTable && window._renderFailTable();
+        }
+      });
+    };
+  </script>
+
 </head>
 <body>
 
@@ -151,6 +202,46 @@
   let soldRecords   = [];  // 낙찰 기록 배열
   let failedRecords = [];  // 유찰 기록 배열
 
+  // Firebase SDK(type=module)에서 접근할 수 있도록 window에 노출
+  window._renderSoldTable = function() {
+    var tbody = document.getElementById('soldList');
+    if (soldRecords.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="3" class="empty-msg">아직 낙찰된 상품이 없습니다</td></tr>';
+    } else {
+      tbody.innerHTML = '';
+      soldRecords.forEach(function(r) {
+        var tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td style="font-size:12px;font-weight:bold;color:#2c3e50;">' + r.itemName + '</td>' +
+          '<td style="font-size:12px;">' + r.winner + '</td>' +
+          '<td style="font-size:12px;font-weight:bold;color:#27ae60;text-align:right;">$' + r.price.toLocaleString() + '</td>';
+        tbody.appendChild(tr);
+      });
+    }
+    document.getElementById('soldCount').innerText = soldRecords.length + '건';
+  };
+
+  window._renderFailTable = function() {
+    var tbody = document.getElementById('failedList');
+    if (failedRecords.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="3" class="empty-msg">유찰된 상품이 없습니다</td></tr>';
+    } else {
+      tbody.innerHTML = '';
+      failedRecords.forEach(function(r) {
+        var badge = r.count >= 3
+          ? '<span style="background:#c0392b;color:white;padding:1px 6px;border-radius:3px;font-size:11px;">최종</span>'
+          : '<span style="background:#e67e22;color:white;padding:1px 6px;border-radius:3px;font-size:11px;">' + r.label + '</span>';
+        var tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td style="font-size:12px;font-weight:bold;color:#2c3e50;">' + r.itemName + '</td>' +
+          '<td>' + badge + '</td>' +
+          '<td style="text-align:center;font-weight:bold;color:#e74c3c;">' + r.count + '회</td>';
+        tbody.appendChild(tr);
+      });
+    }
+    document.getElementById('failedCount').innerText = failedRecords.length + '건';
+  };
+
   // ── 초기화: 학생 목록 + 상품 목록 불러오기 ─────────────────────
   google.script.run.withSuccessHandler(function(data) {
     globalItems = data.items;
@@ -172,7 +263,22 @@
       '</tr>';
     });
 
-    google.script.run.setAuctionState({ status: 'idle' });
+    // Firebase 준비 후: 기록 복원 + idle 설정
+    setTimeout(function() {
+      if (window._fbRestoreRecords) {
+        window._fbRestoreRecords();  // 낙찰/유찰 기록 복원
+      }
+      if (window._fbGet) {
+        window._fbGet().then(function(current) {
+          var activeStatuses = ['bidding', 'failed', 'failed_final', 'sold'];
+          if (!current || activeStatuses.indexOf(current.status) === -1) {
+            window._fbSet({ status: 'idle' });
+          }
+        });
+      } else {
+        google.script.run.setAuctionState({ status: 'idle' });
+      }
+    }, 1500);
   }).getAuctionInitData();
 
 
@@ -188,47 +294,76 @@
   function startItem(level) {
     var itemIdx      = parseInt(document.getElementById('itemSelect').value);
     var selectedItem = globalItems[itemIdx];
-    failCount        = level;
+    failCount        = level;  // 송출 레벨에 맞게 failCount 동기화
 
-    var endTime = new Date().getTime() + 31000;
+    var endTime = new Date().getTime() + 31000; // 31초 (1초 여유)
 
+    var stateObj;
     if (level === 0) {
       document.getElementById('statusMsg').innerText =
         '[최초 송출 중] ' + selectedItem.name + ' (시작가: $' + selectedItem.startPrice + ')';
-      google.script.run.setAuctionState({
-        status: 'bidding', itemName: selectedItem.name,
-        startPrice: selectedItem.startPrice, failCount: 0, endTime: endTime
-      });
+      stateObj = {
+        status:     'bidding',
+        itemName:   selectedItem.name,
+        startPrice: selectedItem.startPrice,
+        failCount:  0,
+        endTime:    endTime
+      };
     } else if (level === 1) {
       var discountedPrice = Math.round(selectedItem.startPrice * 0.9);
       document.getElementById('statusMsg').innerText =
         '[1차 재경매 송출 중] ' + selectedItem.name + ' (할인가: $' + discountedPrice + ')';
-      google.script.run.setAuctionState({
-        status: 'failed', itemName: selectedItem.name,
-        failCount: 1, currentPrice: discountedPrice, endTime: endTime
-      });
+      stateObj = {
+        status:       'failed',
+        itemName:     selectedItem.name,
+        failCount:    1,
+        currentPrice: discountedPrice,
+        endTime:      endTime
+      };
     } else {
       var finalPrice = Math.round(selectedItem.startPrice * 0.81);
       document.getElementById('statusMsg').innerText =
         '[최종 재경매 송출 중] ' + selectedItem.name + ' (파격가: $' + finalPrice + ')';
-      google.script.run.setAuctionState({
-        status: 'failed_final', itemName: selectedItem.name,
-        currentPrice: finalPrice, endTime: endTime
-      });
+      stateObj = {
+        status:       'failed_final',
+        itemName:     selectedItem.name,
+        currentPrice: finalPrice,
+        endTime:      endTime
+      };
+    }
+
+    // Firebase에 즉시 쓰기 + GAS에도 동기화 (호환성 유지)
+    if (window._fbSet) {
+      window._fbSet(stateObj);
+    } else {
+      google.script.run.setAuctionState(stateObj);
     }
   }
 
 
   // ── 시간 연장 (+10초) ────────────────────────────────────────
   function extendTime() {
-    google.script.run.withSuccessHandler(function(success) {
-      if (success) {
+    if (window._fbGet) {
+      window._fbGet().then(function(current) {
+        if (!current || current.status === 'idle') {
+          alert('진행 중인 경매가 없습니다.');
+          return;
+        }
+        var updated = Object.assign({}, current, { endTime: current.endTime + 10000 });
+        window._fbSet(updated);
         var msg = document.getElementById('statusMsg');
         if (msg.innerText.indexOf('연장됨') === -1) msg.innerText += ' (시간 10초 연장됨)';
-      } else {
-        alert('진행 중인 경매가 없습니다.');
-      }
-    }).addAuctionTime(10000);
+      });
+    } else {
+      google.script.run.withSuccessHandler(function(success) {
+        if (success) {
+          var msg = document.getElementById('statusMsg');
+          if (msg.innerText.indexOf('연장됨') === -1) msg.innerText += ' (시간 10초 연장됨)';
+        } else {
+          alert('진행 중인 경매가 없습니다.');
+        }
+      }).addAuctionTime(10000);
+    }
   }
 
 
@@ -238,31 +373,43 @@
     var itemIdx  = parseInt(itemSel.value);
     var itemName = globalItems[itemIdx].name;
     var roundNum = parseInt(document.getElementById('auctionRound').value);
-    failCount++;
 
-    if (failCount > 2) {
+    // ✅ 최초 송출 없이 유찰 버튼을 누른 경우 — 최초 송출을 먼저 자동 실행
+    // Firebase 상태가 idle이면 아직 송출이 안 된 것
+    if (window._fbGet) {
+      window._fbGet().then(function(current) {
+        var notStarted = !current || current.status === 'idle' || current.itemName !== itemName;
+        if (notStarted) {
+          if (!confirm('[' + itemName + '] 최초 송출 없이 유찰 처리합니다.\n1차 유찰로 기록됩니다. 계속하시겠습니까?')) return;
+          startItem(0); // 최초 송출로 failCount = 0 세팅
+        }
+        _doFail(itemSel, itemName, roundNum);
+      });
+    } else {
+      _doFail(itemSel, itemName, roundNum);
+    }
+  }
+
+  function _doFail(itemSel, itemName, roundNum) {
+    // failCount는 현재 송출된 레벨 (startItem에서 동기화됨)
+    var nextFail = failCount + 1;
+
+    if (nextFail > 2) {
+      // 3번 유찰 = 완전 최종 유찰
       alert('⚠️ 최종 유찰되었습니다. 수동 배정이 필요합니다.');
-
-      // 유찰 테이블 갱신 (최종 유찰)
-      _addFailRecord(itemName, failCount, roundNum);
-
-      // 시트 기록
-      google.script.run.recordAuctionFail(itemName, failCount, roundNum);
-
+      _addFailRecord(itemName, 3, roundNum);
+      google.script.run.recordAuctionFail(itemName, 3, roundNum);
       resetDisplay();
       itemSel.appendChild(itemSel.options[itemSel.selectedIndex]);
       failCount = 0;
       return;
     }
 
-    // 유찰 테이블 갱신 (1차/2차 유찰)
-    _addFailRecord(itemName, failCount, roundNum);
-
-    // 시트 기록
-    google.script.run.recordAuctionFail(itemName, failCount, roundNum);
-
-    // 재경매 자동 송출
-    startItem(failCount);
+    // 1차 또는 2차 유찰 → 재경매 송출
+    // startItem(nextFail) 안에서 failCount = nextFail 로 동기화됨
+    _addFailRecord(itemName, nextFail, roundNum);
+    google.script.run.recordAuctionFail(itemName, nextFail, roundNum);
+    startItem(nextFail);
   }
 
 
@@ -271,23 +418,33 @@
     var label = count === 1 ? '1차 유찰'
               : count === 2 ? '2차 유찰'
               : '최종 유찰';
-    var badge = count >= 3
-      ? '<span style="background:#c0392b;color:white;padding:1px 6px;border-radius:3px;font-size:11px;">최종</span>'
-      : '<span style="background:#e67e22;color:white;padding:1px 6px;border-radius:3px;font-size:11px;">' + label + '</span>';
 
     failedRecords.push({ itemName: itemName, label: label, count: count });
+    _renderFailTable();
 
+    // Firebase에 누적 기록 저장 (새로고침 복원용)
+    if (window._fbSetRecords) window._fbSetRecords(soldRecords, failedRecords);
+  }
+
+  // ── 유찰 테이블 렌더링 ────────────────────────────────────────
+  function _renderFailTable() {
     var tbody = document.getElementById('failedList');
-    // 빈 메시지 행 제거
-    if (tbody.querySelector('.empty-msg')) tbody.innerHTML = '';
-
-    var tr = document.createElement('tr');
-    tr.innerHTML =
-      '<td style="font-size:12px;font-weight:bold;color:#2c3e50;">' + itemName + '</td>' +
-      '<td>' + badge + '</td>' +
-      '<td style="text-align:center;font-weight:bold;color:#e74c3c;">' + count + '회</td>';
-    tbody.appendChild(tr);
-
+    if (failedRecords.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="3" class="empty-msg">유찰된 상품이 없습니다</td></tr>';
+    } else {
+      tbody.innerHTML = '';
+      failedRecords.forEach(function(r) {
+        var badge = r.count >= 3
+          ? '<span style="background:#c0392b;color:white;padding:1px 6px;border-radius:3px;font-size:11px;">최종</span>'
+          : '<span style="background:#e67e22;color:white;padding:1px 6px;border-radius:3px;font-size:11px;">' + r.label + '</span>';
+        var tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td style="font-size:12px;font-weight:bold;color:#2c3e50;">' + r.itemName + '</td>' +
+          '<td>' + badge + '</td>' +
+          '<td style="text-align:center;font-weight:bold;color:#e74c3c;">' + r.count + '회</td>';
+        tbody.appendChild(tr);
+      });
+    }
     document.getElementById('failedCount').innerText = failedRecords.length + '건';
   }
 
@@ -311,15 +468,27 @@
 
       google.script.run.withSuccessHandler(function(res) {
         if (res.success) {
-          // 잔액 갱신
+          // 잔액 실시간 갱신
           balCell.dataset.balance = res.newBalance;
           balCell.innerText       = '$' + res.newBalance.toLocaleString();
-          balCell.style.color     = '#e74c3c';
+          balCell.style.color     = '#e74c3c'; // 빨간색으로 차감 시각화
+
           input.value = '';
 
-          // 낙찰 테이블 갱신
+          // ✅ Firebase에 낙찰 상태 송출 → Display에서 낙찰 애니메이션 재생
+          if (window._fbSet) {
+            window._fbSet({
+              status:     'sold',
+              itemName:   itemName,
+              winner:     name,
+              finalPrice: price
+            });
+          }
+
+          // ✅ 낙찰 결과 대시보드에 행 추가
           _addSoldRecord(itemName, name, price);
 
+          // ✅ 낙찰 완료 시 failCount 초기화 + 낙찰된 상품 목록 맨 뒤로 이동
           failCount = 0;
           var itemSel = document.getElementById('itemSelect');
           itemSel.appendChild(itemSel.options[itemSel.selectedIndex]);
@@ -336,17 +505,28 @@
   // ── 낙찰 테이블에 행 추가 ─────────────────────────────────────
   function _addSoldRecord(itemName, winner, price) {
     soldRecords.push({ itemName: itemName, winner: winner, price: price });
+    _renderSoldTable();
 
+    // Firebase에 누적 기록 저장 (새로고침 복원용)
+    if (window._fbSetRecords) window._fbSetRecords(soldRecords, failedRecords);
+  }
+
+  // ── 낙찰 테이블 렌더링 ────────────────────────────────────────
+  function _renderSoldTable() {
     var tbody = document.getElementById('soldList');
-    if (tbody.querySelector('.empty-msg')) tbody.innerHTML = '';
-
-    var tr = document.createElement('tr');
-    tr.innerHTML =
-      '<td style="font-size:12px;font-weight:bold;color:#2c3e50;">' + itemName + '</td>' +
-      '<td style="font-size:12px;">' + winner + '</td>' +
-      '<td style="font-size:12px;font-weight:bold;color:#27ae60;text-align:right;">$' + price.toLocaleString() + '</td>';
-    tbody.appendChild(tr);
-
+    if (soldRecords.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="3" class="empty-msg">아직 낙찰된 상품이 없습니다</td></tr>';
+    } else {
+      tbody.innerHTML = '';
+      soldRecords.forEach(function(r) {
+        var tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td style="font-size:12px;font-weight:bold;color:#2c3e50;">' + r.itemName + '</td>' +
+          '<td style="font-size:12px;">' + r.winner + '</td>' +
+          '<td style="font-size:12px;font-weight:bold;color:#27ae60;text-align:right;">$' + r.price.toLocaleString() + '</td>';
+        tbody.appendChild(tr);
+      });
+    }
     document.getElementById('soldCount').innerText = soldRecords.length + '건';
   }
 
@@ -356,7 +536,20 @@
     if (!confirm('정말 오늘 경매를 종료하시겠습니까? (결과 화면 송출)')) return;
     document.getElementById('statusMsg').innerText = '결과 집계 중...';
     google.script.run.withSuccessHandler(function(results) {
-      google.script.run.setAuctionState({ status: 'ended', results: results });
+      var endedState = { status: 'ended', results: results };
+      if (window._fbSet) {
+        window._fbSet(endedState);
+      } else {
+        google.script.run.setAuctionState(endedState);
+      }
+
+      // 경매 종료 시 Firebase 누적 기록 초기화 (다음 회차를 위해)
+      if (window._fbSetRecords) {
+        window._fbSetRecords([], []);
+      }
+      soldRecords   = [];
+      failedRecords = [];
+
       document.getElementById('statusMsg').innerText = '결과 송출 완료!';
     }).getTodayAuctionResults();
   }
@@ -365,7 +558,13 @@
   // ── 화면 초기화 ─────────────────────────────────────────────
   function resetDisplay() {
     document.getElementById('statusMsg').innerText = '화면 초기화됨';
-    google.script.run.setAuctionState({ status: 'idle' });
+    failCount = 0;  // ✅ 항상 리셋 — 어떤 경로로 호출되든 failCount 초기화
+    var idleState = { status: 'idle' };
+    if (window._fbSet) {
+      window._fbSet(idleState);
+    } else {
+      google.script.run.setAuctionState(idleState);
+    }
   }
 </script>
 

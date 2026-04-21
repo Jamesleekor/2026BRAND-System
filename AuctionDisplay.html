@@ -137,6 +137,35 @@
     @keyframes pulse  { 0%{opacity:0.6;} 50%{opacity:1;} 100%{opacity:0.6;} }
     @keyframes popIn  { 0%{transform:scale(0.5);opacity:0;} 80%{transform:scale(1.1);opacity:1;} 100%{transform:scale(1);opacity:1;} }
   </style>
+
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAspOwJq6u54YBDWIx_WVOjhQHCupmriNc",
+      authDomain: "brand-503cd.firebaseapp.com",
+      databaseURL: "https://brand-503cd-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "brand-503cd",
+      storageBucket: "brand-503cd.firebasestorage.app",
+      messagingSenderId: "443808653648",
+      appId: "1:443808653648:web:56081109d74a2f32298c55"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db  = getDatabase(app);
+
+    // Firebase 리스닝 시작 — 상태 변경 즉시 콜백 실행
+    onValue(ref(db, 'auction'), function(snapshot) {
+      var stateObj = snapshot.val();
+      if (stateObj && window._onFirebaseState) {
+        window._onFirebaseState(stateObj);
+      }
+    });
+  </script>
+</head>
+
 </head>
 <body>
 
@@ -150,13 +179,25 @@
   let timerInterval = null;
   let endTime = null;
 
-  // 1.5초마다 서버에서 경매 상태 폴링
-  setInterval(fetchState, 1500);
+  // Firebase 리스닝 콜백 등록 — onValue가 상태 변경 시 즉시 호출
+  let firebaseConnected = false;
 
-  function fetchState() {
+  window._onFirebaseState = function(stateObj) {
+    firebaseConnected = true;  // Firebase 연결 확인
     if (isAnimating) return;
-    google.script.run.withSuccessHandler(updateUI).getAuctionState();
-  }
+    updateUI(stateObj);
+  };
+
+  // Firebase 로드 실패 시에만 GAS 폴링으로 fallback
+  setTimeout(function() {
+    if (!firebaseConnected) {
+      console.log('Firebase 연결 실패 — GAS 폴링으로 전환');
+      setInterval(function() {
+        if (isAnimating) return;
+        google.script.run.withSuccessHandler(updateUI).getAuctionState();
+      }, 1500);
+    }
+  }, 3000);
 
   function updateUI(stateObj) {
     if (!stateObj) return;
@@ -343,7 +384,6 @@
   }
   // ─────────────────────────────────────────────────────────────
 
-</script>
 </script>
 </body>
 </html>

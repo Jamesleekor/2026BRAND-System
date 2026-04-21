@@ -2158,7 +2158,7 @@ function _checkAndPostGlobalAlert(studentName, achName, achGrade) {
   if (achGrade === '유일' || achGrade === '초월') {
     const gradeLabel = achGrade === '유일' ? '🌌 유일' : '✨ 초월';
     noticeId = `GRADE_${achGrade}_${studentName}_${new Date().getTime()}`;
-    msg = `${gradeLabel} 등급 업적 [${achName}] 최초 달성! [${studentName}] 학생이 역사에 이름을 남겼습니다!`;
+    msg = `${gradeLabel} 등급 업적 [${achName}] 발현! [${studentName}] 학생의 이름이 아카식 레코드의 최상단에 기록됩니다!`;
   }
 
   if (msg && noticeId) {
@@ -2182,7 +2182,7 @@ function _postTierFirstAlert(studentName, tierName) {
   };
   const emoji = tierEmojis[tierName] || '🎉';
   const noticeId = 'TIER_' + tierName.replace(/\s/g, '') + '_' + new Date().getTime();
-  const msg = emoji + ' [' + studentName + '] 학생이 학급 최초로 [' + tierName + '] 티어에 진입했습니다! 새로운 역사의 시작입니다!';
+  const msg = emoji + ' [경고] 세계선이 재편됩니다.\n[' + studentName + '] 학생이 최초로 경계를 넘었습니다.\n이 기록은 영원히 소멸되지 않습니다.';
   const ts  = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
   notify.appendRow([noticeId, msg, ts, 'ALERT']);
 }

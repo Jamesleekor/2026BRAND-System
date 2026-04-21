@@ -540,7 +540,7 @@
     }
     .alert-emoji  { font-size: 60px; display: block; margin-bottom: 12px; animation: alertBounce 0.6s ease infinite alternate; }
     .alert-title  { font-size: 22px; font-weight: 900; color: #f1c40f; margin-bottom: 8px; text-shadow: 0 0 10px rgba(241,196,15,0.8); }
-    .alert-msg    { font-size: 15px; color: #ecf0f1; line-height: 1.6; margin-bottom: 20px; }
+    .alert-msg    { font-size: 15px; color: #ecf0f1; line-height: 1.6; margin-bottom: 20px; white-space: pre-line; }
     .alert-close  { background: #f39c12; color: white; border: none; border-radius: 20px; padding: 10px 30px; font-weight: bold; cursor: pointer; font-size: 14px; }
     @keyframes alertFadeIn  { from { opacity: 0; } to { opacity: 1; } }
     @keyframes alertPop     { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
@@ -1807,19 +1807,19 @@ function closeP2PHistoryModal() {
     '거친 실버': '실버는 쌓아올린 노력의 결과, 가능성이 현실이 되기 시작한다',
     '성장한 실버': '실버는 쌓아올린 노력의 결과, 가능성이 현실이 되기 시작한다',
     '진화한 실버': '실버는 쌓아올린 노력의 결과, 가능성이 현실이 되기 시작한다',
-    '은빛 극점': '실버의 정점, 그 빛이 눈부시게 빛나는 곳에 다다랐다',
-    '금 광석': '스스로를 증명한 순간, 멈출 이유가 없어진 순간',
-    '제련된 골드': '불꽃 속에서 더욱 단단해진 황금의 의지',
-    '정련된 골드': '순수함만 남긴 황금, 흔들리지 않는 경지에 올랐다',
-    '태양의 황금': '황금의 극점, 태양처럼 반짝이는 눈부신 존재',
-    '루비 원석': '평범함은 이미 뒤에 있다. 상위권 경쟁의 입구에 도달',
-    '연마된 루비': '갈고 닦인 붉은 빛, 더욱 선명하게 빛나기 시작한다',
-    '각성한 루비': '잠들어 있던 붉은 불꽃이 깨어났다. 이제 멈출 수 없다',
-    '홍염의 정점': '타오르는 붉은 정점, 루비 등급의 최고 경지에 도달',
-    '다이아 원석': '이 자리는 충분히 빛나고 있는 위치, 그럼에도 더 위를 본다면',
-    '세공된 다이아': '불순물 없이 정화된 결정, 진정한 강자의 반열에 올랐다',
-    '무결 다이아': '흠 하나 없는 완벽한 결정체, 이 경지에 닿은 자는 드물다',
-    '영원의 결정': '다이아몬드의 정점, 시간이 지나도 빛을 잃지 않는 영원한 존재',
+    '은빛 극점': '실버의 정점, 그 빛이 눈부시게 빛나는 곳에 다다르다',
+    '금 광석': '아직 투박하고, 아직 거칠고 — 그래서 아직 전부 가능해',
+    '제련된 골드': '불꽃 속에서 더욱 단단해진 의지, 거칠었던 표면이 조금씩 매끄러워지고 있어',
+    '정련된 골드': '이 고요함, 완성 직전에만 존재하는 순수함. 빛이 안에서 새어나오기 시작했어',
+    '태양의 황금': '오래 전, 하늘 위 황금을 동경하던 작은 금속이 스스로 빛이 되어 태양을 향해 날아오르다',
+    '루비 원석': '땅속 깊은 곳, 아직은 미약하게 숨쉬고 있는 붉은 빛',
+    '연마된 루비': '처음으로 빛에 닿은 순간, 불꽃의 기억이 돌아오다',
+    '각성한 루비': '잠들어 있던 열기를 깨우며 타오르기 시작한 붉은 빛',
+    '홍염의 정점': '모든 것을 불태우는 화염의 심장이 세상에 모습을 드러내다',
+    '다이아 원석': '열지 않은 투명한 침묵. 그 안에 무엇이 있는지 아직은 아무도 모른다',
+    '세공된 다이아': '세공이 끝난 결정체는 빛을 품는 것이 아니라 빛을 만들어내기 시작했다',
+    '무결 다이아': '단 하나의 흠도 허락하지 않은 결정체. 그 완벽한 내부에 깃든 우주의 편린',
+    '영원의 결정': '모든 것이 끊임없이 변화하는 시간동안 홀로 영원을 담아내다',
     '마스터': '노력만으로 닿기에는 부족한 선택받은 소수의 영역에 도달하다',
     '천상의 마스터': '인간의 한계를 넘어 하늘에 닿은 자, 이름이 별이 되다',
     '그랜드마스터': '모든 것이 바래져 잊혀진다 해도 그대가 이룩한 이 업적은 남으리라. 지금까지의 당신의 여정에 무한한 경의를'
@@ -1834,10 +1834,10 @@ function closeP2PHistoryModal() {
     '성장한 실버':     'https://lh3.googleusercontent.com/d/1osUBjhruiHVJN4t-Gpr3ZF4q8P0TpDJJ=s200',
     '진화한 실버':     'https://lh3.googleusercontent.com/d/1BUY9C9_L4OifyyIYZRG5hUwCotRMfpdV=s200',
     '은빛 극점':       'https://lh3.googleusercontent.com/d/1WUyRfQrEp694zsOF3HW5TJ7cNSV7hh6N=s200',
-    '금 광석':         'https://lh3.googleusercontent.com/d/1RErNzZEuc9gPcUhcsNEKpIiQcQXJLsDW=s200',
-    '제련된 골드':     'https://lh3.googleusercontent.com/d/1ksyW0vwhPaUegLPKpCpEzCqdKGRAs9ts=s200',
-    '정련된 골드':     'https://lh3.googleusercontent.com/d/15fuEOeLxGHgeks9kH3F41Ua17HakeHP0=s200',
-    '태양의 황금':     'https://lh3.googleusercontent.com/d/1TZShnEmdOsJHbiLjX7DP68VY7C9APLwO=s200',
+    '금 광석':         'https://raw.githubusercontent.com/Jamesleekor/brand-assets/main/tier_icon/rankicon_gold1.png',
+    '제련된 골드':     'https://raw.githubusercontent.com/Jamesleekor/brand-assets/main/tier_icon/rankicon_gold2.png',
+    '정련된 골드':     'https://raw.githubusercontent.com/Jamesleekor/brand-assets/main/tier_icon/rankicon_gold3.png',
+    '태양의 황금':     'https://raw.githubusercontent.com/Jamesleekor/brand-assets/main/tier_icon/rankicon_gold4.png',
     '루비 원석':       'https://lh3.googleusercontent.com/d/15X9xtvv7FdCJHoSArO2CwbV4fnHNN3UF=s200',
     '연마된 루비':     'https://lh3.googleusercontent.com/d/1REEir6vppC6iPRh6mOynTHWD4Vx-Ttgf=s200',
     '각성한 루비':     'https://lh3.googleusercontent.com/d/1MDwOHkjH0u50P5gkB1WrfXrvkpRCNLcS=s200',

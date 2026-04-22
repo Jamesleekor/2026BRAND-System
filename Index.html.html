@@ -623,6 +623,12 @@
     .shop-buy-btn.can-buy { background: #3d85c8; color: white; }
     .shop-buy-btn.owned-lbl { background: #2ecc71; color: white; cursor: default; }
     .shop-buy-btn.locked-lbl { background: #ccc; color: #888; cursor: default; }
+    .shop-preview-btn {
+      font-size: 12px; padding: 4px 10px; border-radius: 6px;
+      border: 1px solid #3d85c8; background: white; color: #3d85c8;
+      cursor: pointer; white-space: nowrap;
+    }
+    .shop-preview-btn:hover { background: #eaf2fb; }
 
     /* 스킨 CSS 변수 */
     /* ── 이미지 배경 스킨 공통 설정 ── */
@@ -847,7 +853,7 @@
           <strong id="myPersonalTax" style="color:var(--primary-color);">$ 0</strong>
         </div>
       </div>
-      <div style="font-size:11px;color:#bbb;margin-bottom:6px;">목표: $ 10,000</div>
+      <div style="font-size:11px;color:#bbb;margin-bottom:6px;">목표: $ 50,000</div>
       <div class="progress-container"><div id="taxBar" class="progress-bar"></div></div>
       <button onclick="openDonateModal()" style="margin-top:12px;width:100%;padding:9px;background:linear-gradient(135deg,#27ae60,#2ecc71);color:white;border:none;border-radius:8px;font-weight:bold;cursor:pointer;font-size:13px;">💚 복지 기금 기부하기</button>
     </div>
@@ -908,7 +914,7 @@
           <table id="jobMarketTable" style="width:100%;border-collapse:collapse;">
             <thead><tr>
               <th style="padding:8px;font-size:12px;color:#8e44ad;border-bottom:2px solid #eee;text-align:left;">학생</th>
-              <th style="padding:8px;font-size:12px;color:#8e44ad;border-bottom:2px solid #eee;text-align:left;">직업명</th>
+              <th style="padding:8px;font-size:12px;color:#8e44ad;border-bottom:2px solid #eee;text-align:left;width:90px;white-space:nowrap;">직업명</th>
               <th style="padding:8px;font-size:12px;color:#8e44ad;border-bottom:2px solid #eee;text-align:left;">서비스 내용</th>
             </tr></thead>
             <tbody id="jobMarketBody"></tbody>
@@ -2158,8 +2164,8 @@ function closeP2PHistoryModal() {
     document.getElementById('myPersonalTax').innerText = '$ ' + Number(data.personalTax || 0).toLocaleString();
     document.getElementById('totalTax').innerText      = '$ ' + Number(data.classTotalTax || 0).toLocaleString();
 
-    // 복지 기금 프로그레스 바 (목표 10,000 기준)
-    var taxPercent = Math.min(((data.classTotalTax || 0) / 100000) * 100, 100);
+    // 복지 기금 프로그레스 바 (목표 50,000 기준)
+    var taxPercent = Math.min(((data.classTotalTax || 0) / 50000) * 100, 100);
     document.getElementById('taxBar').style.width = taxPercent + '%';
 
     // 1인1역 직업 정보
@@ -2399,13 +2405,17 @@ function closeP2PHistoryModal() {
     var tierName = data.tierData ? data.tierData.name : '';
     var unlocked = GOLD_TIERS.indexOf(tierName) !== -1;
 
-    document.getElementById('job2Section').style.display  = unlocked ? 'block' : 'none';
-    document.getElementById('job2Locked').style.display   = unlocked ? 'none'  : 'block';
+    document.getElementById('job2Section').style.display  = 'block';  // 항상 표시
+    document.getElementById('job2Locked').style.display   = unlocked ? 'none' : 'block';
     document.getElementById('job2Btn').style.display      = unlocked ? 'inline-block' : 'none';
     document.getElementById('job2BtnLocked').style.display = unlocked ? 'none' : 'inline-block';
 
 
-    if (!unlocked) return;
+    if (!unlocked) {
+    // 신청 폼만 숨기고 현황판은 계속 렌더링
+    document.getElementById('job2ApplyForm').style.display = 'none';
+    document.getElementById('job2MyStatus').style.display  = 'none';
+}
 
     // 나의 2차 직업 상태
     if (data.job2) {
@@ -2450,7 +2460,7 @@ function closeP2PHistoryModal() {
       tbody.innerHTML = data.jobMarket.map(function(j) {
         return '<tr style="border-bottom:1px solid #f5f5f5;">' +
           '<td style="padding:8px;font-weight:bold;font-size:13px;">' + j.studentName + '</td>' +
-          '<td style="padding:8px;color:#8e44ad;font-size:13px;">' + j.jobName + '</td>' +
+          '<td style="padding:8px;color:#8e44ad;font-size:13px;width:90px;white-space:nowrap;">' + j.jobName + '</td>' +
           '<td style="padding:8px;font-size:12px;color:#555;">' + j.jobDesc + '</td>' +
         '</tr>';
       }).join('');
@@ -2825,6 +2835,29 @@ function closeP2PHistoryModal() {
     window._currentSkin = skinKey;
   }
 
+  var _previewTimer = null;
+  function previewSkin(skinKey, btnEl) {
+    var prevSkin = window._currentSkin || 'default';
+    applySkin(skinKey);
+    if (_previewTimer) clearTimeout(_previewTimer);
+
+    // 버튼에 카운트다운 표시
+    var count = 5;
+    btnEl.disabled = true;
+    btnEl.textContent = '⏱️ ' + count + '초 후 복원';
+    var ticker = setInterval(function() {
+      count--;
+      if (count > 0) {
+        btnEl.textContent = '⏱️ ' + count + '초 후 복원';
+      } else {
+        clearInterval(ticker);
+        applySkin(prevSkin);
+        btnEl.disabled = false;
+        btnEl.textContent = '👁️ 미리보기';
+      }
+    }, 1000);
+  }
+
   function applyFont(fontName) {
     if (!fontName || fontName === 'default') {
       document.body.style.fontFamily = "'Noto Sans KR', sans-serif";
@@ -2954,14 +2987,22 @@ function closeP2PHistoryModal() {
 
       var equippedBadge = item.isEquipped ? '<span style="font-size:10px;background:#2ecc71;color:white;padding:1px 6px;border-radius:8px;margin-left:4px;">장착 중</span>' : '';
 
-      return '<div class="shop-item-card ' + cardClass + '">' +
+      var previewBtn = '';
+      if (item.category === '스킨' && item.resourceVal && item.resourceVal !== 'default' && !isDefault) {
+        previewBtn = '<button class=\"shop-preview-btn\" onclick=\"previewSkin(\'' + item.resourceVal + '\', this)\">👁️ 미리보기</button>';
+      }
+
+      return '<div class=\"shop-item-card ' + cardClass + '\">' +
         iconHtml +
-        '<div class="shop-item-info">' +
-          '<div class="shop-item-name">' + item.itemName + equippedBadge + '</div>' +
-          '<div class="shop-item-cond">' + _buildCondBadges(item) + '</div>' +
-          (item.price > 0 ? '<div class="shop-item-price">💰 $ ' + Number(item.price).toLocaleString() + '</div>' : '') +
+        '<div class=\"shop-item-info\">' +
+          '<div class=\"shop-item-name\">' + item.itemName + equippedBadge + '</div>' +
+          '<div class=\"shop-item-cond\">' + _buildCondBadges(item) + '</div>' +
+          (item.price > 0 ? '<div class=\"shop-item-price\">💰 $ ' + Number(item.price).toLocaleString() + '</div>' : '') +
         '</div>' +
-        btnHtml +
+        '<div style=\"display:flex;flex-direction:column;gap:4px;align-items:flex-end;\">' +
+          previewBtn +
+          btnHtml +
+        '</div>' +
       '</div>';
     }).join('');
   }
@@ -3013,7 +3054,7 @@ function closeP2PHistoryModal() {
       var c2color = '#3d85c8';
       badges.push(
         '<span style="color:' + c1color + ';font-size:11px;">' + t1 + '</span>' +
-        '<span style="color:#aaa;font-size:10px;margin:0 3px;">또는</span>' +
+        '<span style="color:#aaa;font-size:10px;margin:0 3px;">그리고</span>' +
         '<span style="color:' + c2color + ';font-size:11px;">' + t2 + '</span>'
       );
     }

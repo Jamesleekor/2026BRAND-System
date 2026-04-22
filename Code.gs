@@ -722,14 +722,48 @@ function grantMvp(date, rowIdx, name, brand, amount, note) {
 }
 
 function updateRankings() {
-  const main    = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_MAIN);
+  const ss      = SpreadsheetApp.getActiveSpreadsheet();
+  const main    = ss.getSheetByName(SHEET_MAIN);
   const lastRow = main.getLastRow();
   if (lastRow < 2) return;
   const data = main.getRange(2, 1, lastRow - 1, COL_MVP).getValues();
+
+  // ── 예금 원금 합산 ──────────────────────────────────────────
+  const depositSheet = ss.getSheetByName('학생별가입예금');
+  const depositMap   = {};
+  if (depositSheet) {
+    const depData = depositSheet.getDataRange().getValues();
+    for (let i = 1; i < depData.length; i++) {
+      const dName     = String(depData[i][1]).trim(); // B열
+      const principal = Number(depData[i][2]) || 0;  // C열
+      if (!dName) continue;
+      depositMap[dName] = (depositMap[dName] || 0) + principal;
+    }
+  }
+
+  // ── 대출 잔액 합산 ──────────────────────────────────────────
+  const loanSheet = ss.getSheetByName('대출현황');
+  const loanMap   = {};
+  if (loanSheet) {
+    const loanData = loanSheet.getDataRange().getValues();
+    for (let i = 1; i < loanData.length; i++) {
+      const lName   = String(loanData[i][1]).trim();  // B열
+      const balance = Number(loanData[i][10]) || 0;  // K열
+      if (!lName) continue;
+      loanMap[lName] = (loanMap[lName] || 0) + balance;
+    }
+  }
+
   const vArr = data.map((r, i) => ({ idx: i, v: Number(r[COL_VALUE - 1]) || 0 }));
-  const aArr = data.map((r, i) => ({ idx: i, v: Number(r[COL_ASSET - 1]) || 0 }));
-  const rV   = _calcRank(vArr);
-  const rA   = _calcRank(aArr);
+  const aArr = data.map((r, i) => {
+    const name      = String(r[COL_NAME - 1]).trim();
+    const realAsset = (Number(r[COL_ASSET - 1]) || 0)
+                    + (depositMap[name] || 0)
+                    - (loanMap[name]    || 0);
+    return { idx: i, v: realAsset };
+  });
+  const rV = _calcRank(vArr);
+  const rA = _calcRank(aArr);
   main.getRange(2, COL_RANK_A, rA.length, 1).setValues(rA.map(r => [r]));
   main.getRange(2, COL_RANK_V, rV.length, 1).setValues(rV.map(r => [r]));
 }
@@ -2287,6 +2321,7 @@ function initShopSheet() {
     itemSheet.appendRow(['CHAR-001','캐릭터','🐱 고양이 마스코트', 600, '조건 없음',           'none',          '0',  '🐱', true]);
     itemSheet.appendRow(['CHAR-002','캐릭터','🦊 여우 탐정',      1200,'업적 7개 이상 달성',   'ach_count',     '7',  '🦊', true]);
     itemSheet.appendRow(['CHAR-003','캐릭터','🐲 황금 드래곤',    3000,'유일 업적 1개 이상 달성','ach_grade:유일','1',  '🐲', true]);
+    
   }
 
   // 상점_구매로그 시트 생성
@@ -4799,6 +4834,31 @@ function getInequalityData() {
   }
 
   if (students.length === 0) return { success: false, msg: '학생 데이터 없음' };
+  // ── 예금 원금 합산 ──────────────────────────────────────────
+  const depositSheet = ss.getSheetByName('학생별가입예금');
+  const depositMap   = {};
+  if (depositSheet) {
+    const depData = depositSheet.getDataRange().getValues();
+    for (let i = 1; i < depData.length; i++) {
+      const dName     = String(depData[i][1]).trim(); // B열
+      const principal = Number(depData[i][2]) || 0;  // C열
+      if (!dName) continue;
+      depositMap[dName] = (depositMap[dName] || 0) + principal;
+    }
+  }
+
+  // ── 대출 잔액 합산 ──────────────────────────────────────────
+  const loanSheet = ss.getSheetByName('대출현황');
+  const loanMap   = {};
+  if (loanSheet) {
+    const loanData = loanSheet.getDataRange().getValues();
+    for (let i = 1; i < loanData.length; i++) {
+      const lName   = String(loanData[i][1]).trim();  // B열
+      const balance = Number(loanData[i][10]) || 0;  // K열
+      if (!lName) continue;
+      loanMap[lName] = (loanMap[lName] || 0) + balance;
+    }
+  }
 
   // ── 지니계수 계산 함수 (업로드된 공식 그대로) ──────────────
   // G = (Σi Σj |xi - xj|) / (2 * n^2 * x̄)
@@ -4868,7 +4928,12 @@ function getInequalityData() {
   const history = _readGiniHistory(ss);
 
   // ── 학생 순위 (자산보유량 내림차순, 프론트 표시용) ─────────
-  const ranked = students.slice().sort(function(a, b) { return b.asset - a.asset; });
+  const ranked = students.slice()
+    .map(function(s) {
+      const realAsset = s.asset + (depositMap[s.name] || 0) - (loanMap[s.name] || 0);
+      return Object.assign({}, s, { realAsset: realAsset });
+    })
+    .sort(function(a, b) { return b.realAsset - a.realAsset; });
 
   return {
     success:    true,

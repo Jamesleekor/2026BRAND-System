@@ -319,6 +319,7 @@
   // ── 낙찰 카운트다운 + 결과 애니메이션 ──────────────────────
   function playSoldAnimation(stateObj) {
     isAnimating = true;
+    new Audio('https://raw.githubusercontent.com/Jamesleekor/brand-assets/blob/main/sound/bensound-bymyside.mp3').play();
     var container = document.getElementById('mainContainer');
 
     container.innerHTML = '<div class="countdown" style="animation:popIn 0.3s;">3</div>';

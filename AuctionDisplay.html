@@ -179,6 +179,25 @@
   let timerInterval = null;
   let endTime = null;
 
+  // ── 효과음 ──────────────────────────────────────────────────────
+  const tickingSound = new Audio('https://raw.githubusercontent.com/Jamesleekor/brand-assets/main/sound/dragon-studio-slow-cinematic-clock-ticking-405471.mp3');
+  tickingSound.loop = true;
+  const soldSound   = new Audio('https://raw.githubusercontent.com/Jamesleekor/brand-assets/main/sound/freesound_crunchpixstudio-purchase-success-384963.mp3');
+
+  function playTicking() {
+    tickingSound.currentTime = 0;
+    tickingSound.play().catch(function(){});
+  }
+  function stopTicking() {
+    tickingSound.pause();
+    tickingSound.currentTime = 0;
+  }
+  function playSoldSound() {
+    soldSound.currentTime = 0;
+    soldSound.play().catch(function(){});
+  }
+  // ────────────────────────────────────────────────────────────────
+
   // Firebase 리스닝 콜백 등록 — onValue가 상태 변경 시 즉시 호출
   let firebaseConnected = false;
 
@@ -213,14 +232,19 @@
 
     // 낙찰 상태는 애니메이션으로 처리
     if (stateObj.status === 'sold' && currentState !== 'sold') {
-      stopTimer();  // 타이머 정리
+      stopTimer();   // 타이머 정리
+      stopTicking(); // 틱 소리 정지
       playSoldAnimation(stateObj);
       return;
     }
 
-    // 상태 변경 시 타이머 정리
+    // 상태 변경 시 타이머·틱 소리 정리
     if (stateObj.status !== currentState) {
       stopTimer();
+      // idle / ended 로 전환되면 틱 소리도 끔
+      if (stateObj.status === 'idle' || stateObj.status === 'ended') {
+        stopTicking();
+      }
     }
 
     currentState = stateObj.status;
@@ -245,6 +269,7 @@
         '<div id="timer" class="timer-display">30</div>';
       
       startTimer(stateObj.endTime);
+      playTicking();
 
     // ── 1차 재경매 ─────────────────────────────────────────────
     } else if (stateObj.status === 'failed') {
@@ -257,6 +282,7 @@
         '<div id="timer" class="timer-display">30</div>';
       
       startTimer(stateObj.endTime);
+      playTicking();
 
     // ── 최종 재경매 ────────────────────────────────────────────
     } else if (stateObj.status === 'failed_final') {
@@ -275,6 +301,7 @@
         '<div id="timer" class="timer-display" style="margin-top:20px;">30</div>';
       
       startTimer(stateObj.endTime);
+      playTicking();
 
     // ── 경매 종료: 전체 학생 결과 ──────────────────────────────
     } else if (stateObj.status === 'ended') {
@@ -319,7 +346,6 @@
   // ── 낙찰 카운트다운 + 결과 애니메이션 ──────────────────────
   function playSoldAnimation(stateObj) {
     isAnimating = true;
-    new Audio('https://raw.githubusercontent.com/Jamesleekor/brand-assets/blob/main/sound/bensound-bymyside.mp3').play();
     var container = document.getElementById('mainContainer');
 
     container.innerHTML = '<div class="countdown" style="animation:popIn 0.3s;">3</div>';
@@ -327,6 +353,7 @@
     setTimeout(function() { container.innerHTML = '<div class="countdown" style="animation:popIn 0.3s;">1</div>'; }, 2000);
 
     setTimeout(function() {
+      playSoldSound(); // ✅ 낙찰 완료 효과음
       container.innerHTML =
         '<div style="animation:popIn 0.5s cubic-bezier(0.175,0.885,0.32,1.275);">' +
           '<div class="sold-title">쾅! 낙찰 완료!</div>' +
@@ -372,6 +399,7 @@
       if (remaining <= 0) {
         clearInterval(timerInterval);
         timerEl.textContent = '종료';
+        stopTicking(); // 타이머 종료 시 틱 소리 정지
       }
     }, 100); // 0.1초마다 업데이트 (부드러운 카운트다운)
   }

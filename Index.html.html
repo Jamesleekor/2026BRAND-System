@@ -913,7 +913,7 @@
         <div style="max-height:250px;overflow-y:auto;border:1px solid #f0f0f0;border-radius:8px;">
           <table id="jobMarketTable" style="width:100%;border-collapse:collapse;">
             <thead><tr>
-              <th style="padding:8px;font-size:12px;color:#8e44ad;border-bottom:2px solid #eee;text-align:left;">학생</th>
+              <th style="padding:8px;font-size:12px;color:#8e44ad;border-bottom:2px solid #eee;text-align:left;width:40px;white-space:nowrap;">학생</th>
               <th style="padding:8px;font-size:12px;color:#8e44ad;border-bottom:2px solid #eee;text-align:left;width:90px;white-space:nowrap;">직업명</th>
               <th style="padding:8px;font-size:12px;color:#8e44ad;border-bottom:2px solid #eee;text-align:left;">서비스 내용</th>
             </tr></thead>
@@ -2459,7 +2459,7 @@ function closeP2PHistoryModal() {
     if (data.jobMarket && data.jobMarket.length > 0) {
       tbody.innerHTML = data.jobMarket.map(function(j) {
         return '<tr style="border-bottom:1px solid #f5f5f5;">' +
-          '<td style="padding:8px;font-weight:bold;font-size:13px;">' + j.studentName + '</td>' +
+          '<td style="padding:8px;font-weight:bold;font-size:13px;width:40px;white-space:nowrap;">' + j.studentName + '</td>' +
           '<td style="padding:8px;color:#8e44ad;font-size:13px;width:90px;white-space:nowrap;">' + j.jobName + '</td>' +
           '<td style="padding:8px;font-size:12px;color:#555;">' + j.jobDesc + '</td>' +
         '</tr>';

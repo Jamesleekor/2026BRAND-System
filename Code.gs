@@ -209,9 +209,9 @@ function getStudentData(studentName, password) {
 
   // 비밀번호 확인 (I열 = 인덱스 8)
   const correctPassword = String(studentRow[COL_PASSWORD - 1]).trim();
-  const inputPassword = String(password).trim();
+  const inputPassword = (password === null || password === undefined) ? null : String(password).trim();
   
-  if (correctPassword && inputPassword !== correctPassword) {
+  if (inputPassword !== null && correctPassword && inputPassword !== correctPassword) {
     return { success: false, msg: '비밀번호가 일치하지 않습니다.' };
   }
 
@@ -421,7 +421,9 @@ function updateRankings() {
     for (let i = 1; i < depData.length; i++) {
       const dName     = String(depData[i][1]).trim(); // B열
       const principal = Number(depData[i][2]) || 0;  // C열
+      const dStatus   = String(depData[i][7]).trim(); // H열: 상태
       if (!dName) continue;
+      if (dStatus !== '진행중') continue;             // 중도해지/만기 제외
       depositMap[dName] = (depositMap[dName] || 0) + principal;
     }
   }

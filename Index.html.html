@@ -746,6 +746,15 @@
 
     </div>
 
+    <!-- ── 자산 새로고침 버튼 ── -->
+   <div style="text-align:right; margin-bottom:8px;">
+      <button id="refreshDashboardBtn" onclick="loadDashboard()"
+     style="padding:6px 14px; font-size:12px; background:#ecf0f1; color:#555;
+             border:1px solid #ddd; border-radius:6px; cursor:pointer; font-weight:bold;">
+    🔄 새로고침
+     </button>
+    </div>
+
     <!-- ── 브랜드가치 + 자산 가로 2열 ── -->
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px;">
       <div class="card" style="border-left:6px solid var(--secondary-color); margin-bottom:0;">
@@ -2395,6 +2404,36 @@ function closeP2PHistoryModal() {
       .getStudentHistory(data.personal.name);
 
   }    // ← showDashboard 함수 닫기
+
+// ── 대시보드 새로고침 ─────────────────────────────────────────
+  function loadDashboard() {
+    if (!window._currentStudentName) return;
+    var btn = document.getElementById('refreshDashboardBtn');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = '⏳ 갱신 중...';
+    }
+    google.script.run
+      .withSuccessHandler(function(data) {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = '🔄 새로고침';
+        }
+        if (data && data.success) {
+          showDashboard(data);
+        } else if (data) {
+          alert('갱신 실패: ' + data.msg);
+        }
+      })
+      .withFailureHandler(function(err) {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = '🔄 새로고침';
+        }
+        alert('갱신 오류: ' + err.message);
+      })
+      .getStudentData(window._currentStudentName, null);
+  }
 
   // ── 2차 직업 섹션 렌더링 ────────────────────────────────────
   function renderJob2Section(data) {

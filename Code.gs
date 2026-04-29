@@ -917,5 +917,229 @@ function _validatePassword(password) {
   return true;
 }
 
+// ============================================================
+// 로렌츠 곡선 복원 - A안 (스냅샷 추출 → 시트 출력)
+// Code.gs에 추가할 함수 2개
+// ============================================================
 
+/**
+ * 메인 실행 함수 - 스프레드시트 편집기에서 직접 실행
+ * 실행 방법: Apps Script 편집기 → 이 함수 선택 → ▶ 실행
+ */
+function buildLorenzData() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const historySheet = ss.getSheetByName('히스토리');
+
+  if (!historySheet) {
+    SpreadsheetApp.getUi().alert('히스토리 시트를 찾을 수 없습니다.');
+    return;
+  }
+
+  // ── 분석할 기준점 날짜 정의 ──────────────────────────────
+  // 날짜는 "경매 당일 포함 마지막 기록까지" 기준
+  const SNAPSHOTS = [
+    { label: '1회차_직전 (03-12)', date: '2026-03-12' },
+    { label: '1회차_직후 (03-13)', date: '2026-03-13' },
+    { label: '2회차_직전 (03-26)', date: '2026-03-26' },
+    { label: '2회차_직후 (03-27)', date: '2026-03-27' },
+    { label: '3회차_직전 (04-23)', date: '2026-04-23' },
+    { label: '3회차_직후 (04-24)', date: '2026-04-24' },
+  ];
+
+  // ── 히스토리 시트 전체 읽기 ──────────────────────────────
+  // 헤더 제외, 2행부터
+  const lastRow = historySheet.getLastRow();
+  if (lastRow < 2) {
+    SpreadsheetApp.getUi().alert('히스토리 데이터가 없습니다.');
+    return;
+  }
+  const rawData = historySheet.getRange(2, 1, lastRow - 1, 8).getValues();
+  // 열 구조: [0]날짜 [1]학생이름 [2]브랜드명 [3]당일지급점수 [4]당일자산변동 [5]누적브랜드가치 [6]누적자산 [7]비고
+
+  // ── 출력 시트 준비 ───────────────────────────────────────
+  const OUTPUT_SHEET_NAME = '로렌츠_분석';
+  let outSheet = ss.getSheetByName(OUTPUT_SHEET_NAME);
+  if (outSheet) {
+    outSheet.clearContents(); // 기존 내용 초기화 (재실행 시 덮어쓰기)
+  } else {
+    outSheet = ss.insertSheet(OUTPUT_SHEET_NAME);
+  }
+
+  // ── 각 기준점별 스냅샷 계산 및 출력 ─────────────────────
+  let currentOutputRow = 1;
+
+  SNAPSHOTS.forEach(function(snap) {
+    const snapshotData = _getSnapshot(rawData, snap.date);
+    const students = Object.keys(snapshotData);
+
+    if (students.length === 0) {
+      // 해당 날짜 이전 데이터가 없으면 초기값(1000)으로 처리
+      // (3월 6일 이전 기준점이 없으므로 실제로는 발생하지 않음)
+      return;
+    }
+
+    // 자산 배열 추출 및 오름차순 정렬
+    const assets = students.map(function(name) {
+      return snapshotData[name].asset;
+    }).sort(function(a, b) { return a - b; });
+
+    const brands = students.map(function(name) {
+      return snapshotData[name].brand;
+    }).sort(function(a, b) { return a - b; });
+
+    // 로렌츠 곡선 데이터 계산
+    const lorenzAsset = _calcLorenz(assets);
+    const lorenzBrand = _calcLorenz(brands);
+
+    // 지니계수 계산
+    const giniAsset  = _calcGini(lorenzAsset);
+    const giniBrand  = _calcGini(lorenzBrand);
+
+    // ── 시트에 출력 ──────────────────────────────────────
+    // 섹션 헤더
+    outSheet.getRange(currentOutputRow, 1).setValue('【' + snap.label + '】');
+    outSheet.getRange(currentOutputRow, 1).setFontWeight('bold');
+    outSheet.getRange(currentOutputRow, 2).setValue('자산 지니계수: ' + giniAsset.toFixed(4));
+    outSheet.getRange(currentOutputRow, 3).setValue('브랜드 지니계수: ' + giniBrand.toFixed(4));
+    outSheet.getRange(currentOutputRow, 4).setValue('학생 수: ' + students.length);
+    currentOutputRow++;
+
+    // 컬럼 헤더
+    outSheet.getRange(currentOutputRow, 1).setValue('순위(하위→상위)');
+    outSheet.getRange(currentOutputRow, 2).setValue('인구 누적비율');
+    outSheet.getRange(currentOutputRow, 3).setValue('자산 누적비율');
+    outSheet.getRange(currentOutputRow, 4).setValue('브랜드 누적비율');
+    outSheet.getRange(currentOutputRow, 5).setValue('완전평등선');
+    currentOutputRow++;
+
+    // 원점 (0, 0) 추가
+    outSheet.getRange(currentOutputRow, 1).setValue(0);
+    outSheet.getRange(currentOutputRow, 2).setValue(0);
+    outSheet.getRange(currentOutputRow, 3).setValue(0);
+    outSheet.getRange(currentOutputRow, 4).setValue(0);
+    outSheet.getRange(currentOutputRow, 5).setValue(0);
+    currentOutputRow++;
+
+    // 데이터 포인트 출력
+    for (let i = 0; i < lorenzAsset.length; i++) {
+      outSheet.getRange(currentOutputRow, 1).setValue(i + 1);
+      outSheet.getRange(currentOutputRow, 2).setValue(lorenzAsset[i].popShare);
+      outSheet.getRange(currentOutputRow, 3).setValue(lorenzAsset[i].cumShare);
+      outSheet.getRange(currentOutputRow, 4).setValue(lorenzBrand[i].cumShare);
+      outSheet.getRange(currentOutputRow, 5).setValue(lorenzAsset[i].popShare); // 완전평등선 = 대각선
+      currentOutputRow++;
+    }
+
+    // 섹션 간 빈 행
+    currentOutputRow += 2;
+  });
+
+  // ── 완료 알림 ─────────────────────────────────────────────
+  SpreadsheetApp.getUi().alert(
+    '로렌츠 분석 완료!\n\n' +
+    '"로렌츠_분석" 시트를 확인해주세요.\n' +
+    '각 기준점별 로렌츠 곡선 데이터가 출력되었습니다.\n\n' +
+    '차트 만들기: 각 섹션의 "인구 누적비율" + "자산 누적비율" 열을 선택 → 삽입 → 차트 → 분산형 차트'
+  );
+}
+
+
+// ============================================================
+// 내부 헬퍼 함수들
+// ============================================================
+
+/**
+ * 특정 날짜까지의 학생별 최신 자산·브랜드 스냅샷 반환
+ * @param {Array} rawData - 히스토리 시트 2D 배열 (헤더 제외)
+ * @param {string} targetDateStr - 'YYYY-MM-DD' 형식
+ * @returns {Object} { 학생이름: { asset: number, brand: number } }
+ */
+function _getSnapshot(rawData, targetDateStr) {
+  // targetDate: 해당 날짜의 23:59:59까지 포함
+  const targetDate = new Date(targetDateStr);
+  targetDate.setHours(23, 59, 59, 999);
+
+  // 학생별 마지막 기록 추적
+  // key: 학생이름, value: { asset, brand, rowIndex } (rowIndex는 원본 순서 유지용)
+  const studentMap = {};
+
+  rawData.forEach(function(row, idx) {
+    const name     = row[1]; // B열: 학생이름
+    const brand    = row[5]; // F열: 누적브랜드가치
+    const asset    = row[6]; // G열: 누적자산
+    const rowDate  = row[0]; // A열: 날짜 (Date 객체)
+
+    // 제외 조건: test 계정, 이름 없음, 날짜 없음
+    if (!name || String(name).toLowerCase().startsWith('test')) return;
+    if (!rowDate || !(rowDate instanceof Date)) return;
+    if (isNaN(rowDate.getTime())) return;
+
+    // 기준일 이후 기록 제외
+    if (rowDate > targetDate) return;
+
+    // 해당 학생의 기록을 덮어쓰며 누적 (히스토리가 시간순이므로 마지막 값 = 최신)
+    studentMap[name] = {
+      asset: (typeof asset === 'number') ? asset : 0,
+      brand: (typeof brand === 'number') ? brand : 0,
+      rowIdx: idx
+    };
+  });
+
+  // 히스토리에 아직 등장하지 않은 학생은 없다고 확인되었으므로
+  // 초기값(1000) 보정 로직 생략 — 필요 시 아래 주석 해제
+  /*
+  const ALL_STUDENTS = []; // 전체 학생 목록을 넣으면 초기값 1000 보정 가능
+  ALL_STUDENTS.forEach(function(name) {
+    if (!studentMap[name]) {
+      studentMap[name] = { asset: 1000, brand: 1000 };
+    }
+  });
+  */
+
+  return studentMap;
+}
+
+/**
+ * 정렬된 값 배열로부터 로렌츠 곡선 데이터 포인트 계산
+ * @param {number[]} sortedValues - 오름차순 정렬된 값 배열
+ * @returns {Array} [{ popShare, cumShare }, ...]
+ */
+function _calcLorenz(sortedValues) {
+  const n = sortedValues.length;
+  const total = sortedValues.reduce(function(sum, v) { return sum + v; }, 0);
+
+  if (total === 0) return sortedValues.map(function(_, i) {
+    return { popShare: (i + 1) / n, cumShare: 0 };
+  });
+
+  let cumSum = 0;
+  return sortedValues.map(function(v, i) {
+    cumSum += v;
+    return {
+      popShare: Math.round((i + 1) / n * 10000) / 10000, // 소수점 4자리
+      cumShare: Math.round(cumSum / total * 10000) / 10000
+    };
+  });
+}
+
+/**
+ * 로렌츠 곡선 데이터로부터 지니계수 계산 (사다리꼴 면적법)
+ * @param {Array} lorenzPoints - _calcLorenz() 반환값
+ * @returns {number} 지니계수 (0~1)
+ */
+function _calcGini(lorenzPoints) {
+  // 완전평등선(대각선) 아래 면적 = 0.5
+  // 로렌츠 곡선 아래 면적을 사다리꼴 공식으로 계산
+  const points = [{ popShare: 0, cumShare: 0 }].concat(lorenzPoints);
+  let areaUnderLorenz = 0;
+
+  for (let i = 1; i < points.length; i++) {
+    const dx = points[i].popShare - points[i-1].popShare;
+    const avgY = (points[i].cumShare + points[i-1].cumShare) / 2;
+    areaUnderLorenz += dx * avgY;
+  }
+
+  const gini = (0.5 - areaUnderLorenz) / 0.5;
+  return Math.max(0, Math.min(1, gini)); // 0~1 클램프
+}
 

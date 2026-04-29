@@ -678,9 +678,13 @@ function getEmojiForAchievement(achId) {
     'CHAL-001': '⚡', 'CHAL-002': '🚀', 'CHAL-003': '🌊',
     'CHAL-004': '🔮', 'CHAL-005': '🎪',
     // 히든
-    'HID-001': '🕵️', 'HID-002': '🎩', 'HID-003': '💫', 'HID-005': '🏅',
+    'HID-001': '🕵️', 'HID-002': '🎩', 'HID-003': '💫', 'HID-004' : '🛍️', 'HID-005': '🏅',
     // 시작 업적
-    'START-001': '🌱', 'START-002': '🌿', 'START-003': '🌳'
+    'START-001': '🌱', 'START-002': '🌿', 'START-003': '🌳',
+    // 초월
+    'ECO-015': '🗽', 'LIFE-017': '🔥', 'LIFE-019': '💥',
+    'RANK-007': '🌌', 'CHAL-008': '0️⃣', 'CHAL-009': '🔝',
+    'CHAL-010': '🌑', 'CHAL-011': '🐦‍🔥', 'CHAL-013': '🏆', 'CHAL-014': '⚔️'
   };
   return emojiMapping[achId] || '⭐';
 }

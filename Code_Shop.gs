@@ -460,7 +460,7 @@ function unequipShopItem(studentName, category) {
 // ════════════════════════════════════════════════════════════════
 function grantMilestoneReward(studentName, achCount) {
   // 마일스톤별 보상 정의 (업적 개수 → 자산 보상)
-  const MILESTONES = { 5: 500, 10: 1000, 15: 1500, 20: 3000, 30: 5000 };
+  const MILESTONES = { 5: 500, 10: 1000, 15: 1500, 20: 2000, 25:2500, 30: 3000, 40:4000, 50:5000 };
   const reward = MILESTONES[achCount];
   if (!reward) return;
 

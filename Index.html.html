@@ -844,6 +844,57 @@
 
     </div>
 
+    <!-- ── 길드 카드 ────────────────────────────────────────────── -->
+    <div class="card" id="guildCard" style="margin-bottom:20px; border-left:6px solid #1a6b3c; display:none;">
+      <!-- 헤더: 길드명 + 등수 -->
+      <div class="card-title" style="justify-content:space-between;">
+        <span><i class="fas fa-shield-alt"></i> 우리 길드</span>
+        <span id="guildRankBadge" style="font-size:13px;color:#1a6b3c;font-weight:bold;">-</span>
+      </div>
+
+      <!-- 길드명 + 슬로건 -->
+      <div style="text-align:center;padding:14px 10px 10px;background:#f4faf6;border-radius:8px;margin-bottom:12px;">
+        <div id="guildName" style="font-size:20px;font-weight:bold;color:#1a6b3c;margin-bottom:4px;">길드명 로딩 중...</div>
+        <div id="guildSlogan" style="font-size:12px;color:#7f8c8d;font-style:italic;"></div>
+      </div>
+
+      <!-- 길드 멤버 -->
+      <div style="margin-bottom:14px;">
+        <div style="font-size:12px;color:#888;margin-bottom:6px;font-weight:bold;">👥 길드원</div>
+        <div id="guildMembersList" style="display:flex;flex-wrap:wrap;gap:6px;">
+          <span style="font-size:12px;color:#aaa;">로딩 중...</span>
+        </div>
+      </div>
+
+      <!-- 미션 클리어 현황 -->
+      <div style="margin-bottom:14px;">
+        <div style="font-size:12px;color:#888;margin-bottom:6px;font-weight:bold;">
+          🎯 미션 현황 <span id="guildMissionSummary" style="color:#1a6b3c;margin-left:4px;"></span>
+        </div>
+        <div id="guildMissionList" style="display:grid;grid-template-columns:repeat(2,1fr);gap:5px;">
+          <span style="font-size:12px;color:#aaa;">로딩 중...</span>
+        </div>
+      </div>
+
+      <!-- 전체 길드 순위 (이름 + 등수만, 점수 비공개) -->
+      <div>
+        <div style="font-size:12px;color:#888;margin-bottom:6px;font-weight:bold;">📊 전체 순위</div>
+        <div id="guildRankList" style="background:#f9f9f9;border-radius:8px;padding:8px;">
+          <span style="font-size:12px;color:#aaa;">로딩 중...</span>
+        </div>
+        <div style="font-size:10px;color:#bbb;margin-top:4px;text-align:right;">
+          ※ 다른 길드의 점수는 비공개입니다
+        </div>
+      </div>
+    </div>
+
+    <!-- 길드 미배정 카드 (소속 길드가 없을 때만 표시) -->
+    <div class="card" id="guildNoneCard" style="margin-bottom:20px; border-left:6px solid #95a5a6; display:none; text-align:center;">
+      <div style="font-size:32px;color:#bdc3c7;margin-bottom:8px;">🏰</div>
+      <div style="font-size:14px;color:#7f8c8d;">아직 길드에 배정되지 않았습니다.</div>
+      <div style="font-size:12px;color:#aaa;margin-top:4px;">곧 마스터의 매칭 발표가 있을 예정입니다.</div>
+    </div>
+
     <div style="background:#f8f9fa;border-radius:10px;padding:15px;margin-top:10px;border-left:5px solid #3498db;margin-bottom:20px;">
       <div style="font-size:0.9em;color:#7f8c8d;margin-bottom:5px;">현재 나의 직업</div>
       <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -2140,6 +2191,11 @@ function closeP2PHistoryModal() {
     document.getElementById('honorRank').innerText    = '순위: ' + data.personal.honorRank + '위';
     document.getElementById('myBalance').innerText    = '$ ' + Number(data.personal.balance).toLocaleString();
     document.getElementById('balanceRank').innerText  = '순위: ' + data.personal.balanceRank + '위';
+
+    // ── 길드 카드 로딩 (백그라운드)
+    if (typeof loadGuildCardForStudent === 'function') {
+      loadGuildCardForStudent(data.personal.name);
+    }
 
     // ── 비상사태 배너 렌더링
     var emg = data.emergency;
@@ -3998,6 +4054,158 @@ function confirmUseItem() {
       alert('오류가 발생했습니다: ' + err.message);
     })
     .useItem(window._currentStudentName, window._useModalItem, qty);
+}
+
+// ============================================================
+// 길드 카드 — 학생 대시보드용
+// ============================================================
+
+// 미션 메타 (별 등급 + 표시명)
+var GUILD_MISSION_META_STUDENT = [
+  { id: "M01", name: "첫 깃발",            star: 1 },
+  { id: "M02", name: "다섯 개의 다른 길",  star: 3 },
+  { id: "M03", name: "길드 정체성 만들기", star: 2 },
+  { id: "M04", name: "우리 길드의 장보기", star: 2 },
+  { id: "M07", name: "미식 탐험가",        star: 3 },
+  { id: "M12", name: "길드 명예의 일격",   star: 4 },
+  { id: "M14", name: "미래에 남기는 편지", star: 2 },
+  { id: "M15", name: "시즌 결산",          star: 1 }
+];
+
+// 포트별 색상 (땅·물·빛·바람·불)
+var PORT_COLORS = {
+  "땅":   { bg: "#fdf2e9", color: "#a04000" },
+  "물":   { bg: "#eaf4ff", color: "#1f618d" },
+  "빛":   { bg: "#fef9e7", color: "#b7950b" },
+  "바람": { bg: "#eafaf1", color: "#1e8449" },
+  "불":   { bg: "#fdedec", color: "#c0392b" }
+};
+
+/**
+ * 학생 이름을 받아 길드 카드 데이터를 로드하고 렌더링합니다.
+ * showDashboard에서 호출됩니다.
+ */
+function loadGuildCardForStudent(studentName) {
+  if (!studentName) return;
+
+  google.script.run
+    .withSuccessHandler(function(data) {
+      renderGuildCard(data);
+    })
+    .withFailureHandler(function(err) {
+      // 길드 시스템 미가동 시에도 대시보드는 정상 동작해야 하므로 조용히 숨김
+      var card = document.getElementById('guildCard');
+      var none = document.getElementById('guildNoneCard');
+      if (card) card.style.display = 'none';
+      if (none) none.style.display = 'none';
+      // 콘솔에만 기록 (학생에게 alert 띄우지 않음)
+      if (window.console) console.log('[guildCard] load failed: ' + err.message);
+    })
+    .getGuildCardDataForStudent(studentName);
+}
+
+/**
+ * 길드 카드 데이터 렌더링
+ * data 형식:
+ * {
+ *   hasGuild: boolean,
+ *   guildId, guildName, slogan,
+ *   members: [ { name, port } ],
+ *   myRank, myRankBadge,        // 내 길드의 등수 (예: 2, "🥈 2위")
+ *   missionResults: { M01:'클리어'|'실패'|'진행중'|'대기', ... },
+ *   missionClearedCount,
+ *   allRanks: [ { guildName, rank } ]  // 전체 길드 순위 (이름 + 등수만)
+ * }
+ */
+function renderGuildCard(data) {
+  var guildCard = document.getElementById('guildCard');
+  var noneCard  = document.getElementById('guildNoneCard');
+
+  // 길드 미배정
+  if (!data || !data.hasGuild) {
+    if (guildCard) guildCard.style.display = 'none';
+    if (noneCard)  noneCard.style.display  = 'block';
+    return;
+  }
+
+  if (noneCard)  noneCard.style.display  = 'none';
+  if (guildCard) guildCard.style.display = 'block';
+
+  // ── 헤더: 길드명 + 등수 ──
+  document.getElementById('guildName').innerText = data.guildName || '우리 길드';
+  document.getElementById('guildSlogan').innerText = data.slogan || '';
+
+  var rankBadge = document.getElementById('guildRankBadge');
+  if (data.myRank) {
+    var rankEmoji = ['', '🥇', '🥈', '🥉', '4️⃣', '5️⃣'];
+    rankBadge.innerText = (rankEmoji[data.myRank] || '') + ' ' + data.myRank + '위';
+    rankBadge.style.color = data.myRank === 1 ? '#d4ac0d' : '#1a6b3c';
+  } else {
+    rankBadge.innerText = '순위 산출 전';
+    rankBadge.style.color = '#aaa';
+  }
+
+  // ── 길드 멤버 ──
+  var membersList = document.getElementById('guildMembersList');
+  if (!data.members || data.members.length === 0) {
+    membersList.innerHTML = '<span style="font-size:12px;color:#aaa;">멤버 정보 없음</span>';
+  } else {
+    membersList.innerHTML = data.members.map(function(m) {
+      var pc = PORT_COLORS[m.port] || { bg: '#f0f0f0', color: '#666' };
+      return '<div style="display:flex;align-items:center;gap:4px;padding:4px 10px;' +
+        'background:' + pc.bg + ';border-radius:14px;font-size:12px;">' +
+        '<span style="font-weight:bold;color:#2c3e50;">' + m.name + '</span>' +
+        '<span style="color:' + pc.color + ';font-size:11px;">·' + (m.port || '?') + '</span>' +
+        '</div>';
+    }).join('');
+  }
+
+  // ── 미션 클리어 현황 ──
+  var missionList = document.getElementById('guildMissionList');
+  var statusStyle = {
+    '클리어': { bg: '#eafaf1', color: '#1e8449', icon: '✅' },
+    '실패':   { bg: '#fdedec', color: '#c0392b', icon: '❌' },
+    '진행중': { bg: '#eaf4ff', color: '#2471a3', icon: '🔄' },
+    '대기':   { bg: '#f5f5f5', color: '#999',    icon: '⏳' }
+  };
+  var results = data.missionResults || {};
+
+  missionList.innerHTML = GUILD_MISSION_META_STUDENT.map(function(m) {
+    var status = results[m.id] || '대기';
+    var s = statusStyle[status] || statusStyle['대기'];
+    var stars = '★'.repeat(m.star);
+    return '<div style="background:' + s.bg + ';border-radius:6px;padding:6px 8px;display:flex;align-items:center;gap:6px;">' +
+      '<span style="font-size:13px;">' + s.icon + '</span>' +
+      '<div style="flex:1;min-width:0;">' +
+        '<div style="font-size:11px;font-weight:bold;color:' + s.color + ';">' + m.id + '</div>' +
+        '<div style="font-size:10px;color:#666;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + m.name + '</div>' +
+      '</div>' +
+      '<span style="color:#d4ac0d;font-size:9px;">' + stars + '</span>' +
+    '</div>';
+  }).join('');
+
+  document.getElementById('guildMissionSummary').innerText =
+    '(' + (data.missionClearedCount || 0) + ' / 8 클리어)';
+
+  // ── 전체 길드 순위 (이름 + 등수만, 점수 비공개) ──
+  var rankList = document.getElementById('guildRankList');
+  if (!data.allRanks || data.allRanks.length === 0) {
+    rankList.innerHTML = '<span style="font-size:12px;color:#aaa;">순위 산출 전입니다.</span>';
+  } else {
+    rankList.innerHTML = data.allRanks.map(function(r) {
+      var isMine = r.guildName === data.guildName;
+      var rankEmoji = ['', '🥇', '🥈', '🥉', '4️⃣', '5️⃣'];
+      var bg = isMine ? '#e8f5e9' : 'transparent';
+      var weight = isMine ? 'bold' : 'normal';
+      return '<div style="display:flex;justify-content:space-between;padding:5px 8px;border-radius:5px;background:' + bg + ';">' +
+        '<span style="font-size:13px;color:#2c3e50;font-weight:' + weight + ';">' +
+          (rankEmoji[r.rank] || (r.rank + '위 ')) + ' ' + r.guildName +
+          (isMine ? ' <span style="font-size:10px;color:#1a6b3c;">(우리 길드)</span>' : '') +
+        '</span>' +
+        '<span style="font-size:12px;color:#888;">' + r.rank + '위</span>' +
+      '</div>';
+    }).join('');
+  }
 }
 </script>
 

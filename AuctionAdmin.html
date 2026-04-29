@@ -896,6 +896,8 @@ function sendBroadcast() {
      style="background:#0d1117;color:#58a6ff;border:1px solid #58a6ff;padding:8px 16px;border-radius:6px;font-weight:bold;cursor:pointer;">🛡️ 수호대 비밀번호 설정</button>
     <button onclick="loadPendingLoans()"
      style="background:#6c3483;color:white;border:none;padding:8px 16px;border-radius:6px;font-weight:bold;cursor:pointer;">💳 대출 승인 대기함</button>
+    <button onclick="openGuildModal()"
+     style="background:#1a6b3c;color:white;border:none;padding:8px 16px;border-radius:6px;font-weight:bold;cursor:pointer;">🏰 길드 운영 / 현황</button>
   </div>
 
   <!-- 대출 대기함 -->
@@ -1216,6 +1218,704 @@ function sendBroadcast() {
   <p style="font-size:13px;color:#888;margin:0 0 12px;">오늘 동일인 3회 이상 거래 또는 단일 $2,000 이상 거래가 자동 표시됩니다.</p>
   <div id="p2pAlertList">로딩 중...</div>
 </div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!-- 길드 통합 모달 (현황 + 운영) -->
+<!-- ═══════════════════════════════════════════════ -->
+<div id="guildModal"
+  style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+         background:rgba(0,0,0,0.5);z-index:9998;justify-content:center;align-items:flex-start;
+         padding:20px 0;overflow-y:auto;">
+  <div style="background:white;border-radius:12px;padding:0;width:94%;max-width:920px;
+              box-shadow:0 10px 40px rgba(0,0,0,0.3);overflow:hidden;">
+
+    <!-- 모달 헤더 -->
+    <div style="background:#1a6b3c;color:white;padding:14px 20px;
+                display:flex;justify-content:space-between;align-items:center;">
+      <div style="font-size:17px;font-weight:bold;">🏰 길드 운영 / 현황</div>
+      <button onclick="closeGuildModal()"
+        style="background:none;border:none;color:white;font-size:22px;cursor:pointer;">✕</button>
+    </div>
+
+    <!-- 탭 헤더 -->
+    <div style="display:flex;border-bottom:2px solid #e8f5e9;background:#f4faf6;">
+      <button class="guild-tab-btn" data-tab="status"  onclick="switchGuildTab('status')"
+        style="flex:1;padding:13px;border:none;background:transparent;cursor:pointer;font-weight:bold;font-size:13px;">
+        📊 현황
+      </button>
+      <button class="guild-tab-btn" data-tab="announce" onclick="switchGuildTab('announce')"
+        style="flex:1;padding:13px;border:none;background:transparent;cursor:pointer;font-weight:bold;font-size:13px;">
+        📢 미션 발표
+      </button>
+      <button class="guild-tab-btn" data-tab="manual"   onclick="switchGuildTab('manual')"
+        style="flex:1;padding:13px;border:none;background:transparent;cursor:pointer;font-weight:bold;font-size:13px;">
+        ✏️ 정성평가
+      </button>
+      <button class="guild-tab-btn" data-tab="session"  onclick="switchGuildTab('session')"
+        style="flex:1;padding:13px;border:none;background:transparent;cursor:pointer;font-weight:bold;font-size:13px;">
+        📋 세션 출석
+      </button>
+    </div>
+
+    <!-- 탭 내용 영역 -->
+    <div style="padding:20px;max-height:75vh;overflow-y:auto;">
+
+      <!-- ── 탭 1: 현황 ─────────────────────────────────────── -->
+      <div id="guildTab_status" class="guild-tab-content">
+        <!-- GS 순위 -->
+        <div style="margin-bottom:20px;">
+          <div style="font-size:14px;font-weight:bold;color:#1a6b3c;margin-bottom:10px;
+                      padding-bottom:6px;border-bottom:2px solid #e8f5e9;">
+            📊 이번 달 GS 순위
+          </div>
+          <div id="guildGsRank">
+            <div style="color:#aaa;font-size:13px;padding:10px;">불러오는 중...</div>
+          </div>
+        </div>
+
+        <!-- 미션 클리어 현황 -->
+        <div style="margin-bottom:20px;">
+          <div style="font-size:14px;font-weight:bold;color:#1a6b3c;margin-bottom:10px;
+                      padding-bottom:6px;border-bottom:2px solid #e8f5e9;">
+            🎯 미션 클리어 현황
+          </div>
+          <div id="guildMissionStatus">
+            <div style="color:#aaa;font-size:13px;padding:10px;">불러오는 중...</div>
+          </div>
+        </div>
+
+        <!-- 세션 출석률 -->
+        <div>
+          <div style="font-size:14px;font-weight:bold;color:#1a6b3c;margin-bottom:10px;
+                      padding-bottom:6px;border-bottom:2px solid #e8f5e9;">
+            📋 세션 출석률
+          </div>
+          <div id="guildAttendance">
+            <div style="color:#aaa;font-size:13px;padding:10px;">불러오는 중...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── 탭 2: 미션 발표 ────────────────────────────────── -->
+      <div id="guildTab_announce" class="guild-tab-content" style="display:none;">
+        <div style="background:#fff8e1;border:1px solid #f9d56e;border-radius:8px;
+                    padding:10px 14px;font-size:12px;color:#7d6608;margin-bottom:16px;">
+          ⚠️ 발표 시 5개 길드에 동일 미션 행이 자동 생성됩니다. 같은 미션은 중복 발표되지 않습니다.
+        </div>
+
+        <!-- 미션 선택 -->
+        <div style="margin-bottom:14px;">
+          <label style="font-size:13px;font-weight:bold;display:block;margin-bottom:6px;">미션 선택</label>
+          <select id="annMissionId"
+            style="width:100%;padding:9px;border:1px solid #ddd;border-radius:6px;font-size:14px;box-sizing:border-box;">
+            <option value="M01">M01 — 첫 깃발 (★)</option>
+            <option value="M02">M02 — 다섯 개의 다른 길 (★★★)</option>
+            <option value="M03">M03 — 길드 정체성 만들기 (★★)</option>
+            <option value="M04">M04 — 우리 길드의 장보기 (★★)</option>
+            <option value="M07">M07 — 미식 탐험가 (★★★)</option>
+            <option value="M12">M12 — 길드 명예의 일격 (★★★★)</option>
+            <option value="M14">M14 — 미래에 남기는 편지 (★★)</option>
+            <option value="M15">M15 — 시즌 결산 (★)</option>
+          </select>
+        </div>
+
+        <!-- 발표일 / 마감일 -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+          <div>
+            <label style="font-size:13px;font-weight:bold;display:block;margin-bottom:6px;">발표일</label>
+            <input type="date" id="annStartDate"
+              style="width:100%;padding:9px;border:1px solid #ddd;border-radius:6px;font-size:14px;box-sizing:border-box;">
+          </div>
+          <div>
+            <label style="font-size:13px;font-weight:bold;display:block;margin-bottom:6px;">마감일</label>
+            <input type="date" id="annEndDate"
+              style="width:100%;padding:9px;border:1px solid #ddd;border-radius:6px;font-size:14px;box-sizing:border-box;">
+          </div>
+        </div>
+
+        <!-- 발표 버튼 -->
+        <button id="annSubmitBtn" onclick="doAnnounceMission()"
+          style="width:100%;padding:12px;background:#1a6b3c;color:white;border:none;
+                 border-radius:8px;font-weight:bold;font-size:15px;cursor:pointer;">
+          📢 미션 발표하기
+        </button>
+        <div id="annResult" style="margin-top:10px;font-size:13px;text-align:center;"></div>
+      </div>
+
+      <!-- ── 탭 3: 정성평가 ─────────────────────────────────── -->
+      <div id="guildTab_manual" class="guild-tab-content" style="display:none;">
+        <div style="background:#e8f4fd;border:1px solid #aed6f1;border-radius:8px;
+                    padding:10px 14px;font-size:12px;color:#1f618d;margin-bottom:16px;">
+          ℹ️ M01·M03·M14·M15 정성평가 미션 또는 M04 보조 점수 입력에 사용합니다.
+        </div>
+
+        <!-- 미션 + 길드 선택 -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+          <div>
+            <label style="font-size:13px;font-weight:bold;display:block;margin-bottom:6px;">미션</label>
+            <select id="manMissionId"
+              style="width:100%;padding:9px;border:1px solid #ddd;border-radius:6px;font-size:14px;box-sizing:border-box;">
+              <option value="M01">M01 — 첫 깃발</option>
+              <option value="M03">M03 — 길드 정체성 만들기</option>
+              <option value="M04">M04 — 우리 길드의 장보기 (보조)</option>
+              <option value="M14">M14 — 미래에 남기는 편지</option>
+              <option value="M15">M15 — 시즌 결산</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:13px;font-weight:bold;display:block;margin-bottom:6px;">길드</label>
+            <select id="manGuildId"
+              style="width:100%;padding:9px;border:1px solid #ddd;border-radius:6px;font-size:14px;box-sizing:border-box;">
+              <option value="GUILD_01">GUILD_01</option>
+              <option value="GUILD_02">GUILD_02</option>
+              <option value="GUILD_03">GUILD_03</option>
+              <option value="GUILD_04">GUILD_04</option>
+              <option value="GUILD_05">GUILD_05</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 점수 슬라이더 -->
+        <div style="margin-bottom:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <label style="font-size:13px;font-weight:bold;">점수</label>
+            <span id="manScoreLabel"
+              style="font-size:18px;font-weight:bold;color:#1a6b3c;">85점</span>
+          </div>
+          <input type="range" id="manScore" min="0" max="100" value="85" step="5"
+            oninput="document.getElementById('manScoreLabel').innerText = this.value + '점';"
+            style="width:100%;cursor:pointer;">
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:#aaa;margin-top:2px;">
+            <span>0</span><span>50</span><span>100</span>
+          </div>
+        </div>
+
+        <!-- 키워드 태그 (긍정 / 주의) -->
+        <div style="margin-bottom:14px;">
+          <label style="font-size:13px;font-weight:bold;display:block;margin-bottom:6px;">키워드 태그 (다중 선택)</label>
+
+          <div style="font-size:11px;color:#1e8449;margin:8px 0 4px;">긍정</div>
+          <div id="manTagsPositive" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+
+          <div style="font-size:11px;color:#c0392b;margin:10px 0 4px;">주의</div>
+          <div id="manTagsCaution" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+        </div>
+
+        <!-- 메모 -->
+        <div style="margin-bottom:16px;">
+          <label style="font-size:13px;font-weight:bold;display:block;margin-bottom:6px;">메모 (선택, 단답)</label>
+          <input type="text" id="manComment" placeholder="예: 단체 입장 명확함"
+            style="width:100%;padding:9px;border:1px solid #ddd;border-radius:6px;font-size:14px;box-sizing:border-box;">
+        </div>
+
+        <!-- 저장 버튼 -->
+        <button id="manSubmitBtn" onclick="doSaveManualScore()"
+          style="width:100%;padding:12px;background:#1a6b3c;color:white;border:none;
+                 border-radius:8px;font-weight:bold;font-size:15px;cursor:pointer;">
+          ✏️ 정성평가 저장
+        </button>
+        <div id="manResult" style="margin-top:10px;font-size:13px;text-align:center;"></div>
+      </div>
+
+      <!-- ── 탭 4: 세션 출석 ────────────────────────────────── -->
+      <div id="guildTab_session" class="guild-tab-content" style="display:none;">
+        <div style="background:#e8f4fd;border:1px solid #aed6f1;border-radius:8px;
+                    padding:10px 14px;font-size:12px;color:#1f618d;margin-bottom:16px;">
+          ℹ️ 길드 선택 시 멤버가 자동으로 불러와집니다. 기본값은 모두 출석(O)입니다.
+        </div>
+
+        <!-- 길드 + 날짜 선택 -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+          <div>
+            <label style="font-size:13px;font-weight:bold;display:block;margin-bottom:6px;">길드</label>
+            <select id="sesGuildId" onchange="loadSessionMembers()"
+              style="width:100%;padding:9px;border:1px solid #ddd;border-radius:6px;font-size:14px;box-sizing:border-box;">
+              <option value="">— 길드 선택 —</option>
+              <option value="GUILD_01">GUILD_01</option>
+              <option value="GUILD_02">GUILD_02</option>
+              <option value="GUILD_03">GUILD_03</option>
+              <option value="GUILD_04">GUILD_04</option>
+              <option value="GUILD_05">GUILD_05</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:13px;font-weight:bold;display:block;margin-bottom:6px;">세션 날짜</label>
+            <input type="date" id="sesDate"
+              style="width:100%;padding:9px;border:1px solid #ddd;border-radius:6px;font-size:14px;box-sizing:border-box;">
+          </div>
+        </div>
+
+        <!-- 멤버 출석 토글 -->
+        <div style="margin-bottom:16px;">
+          <label style="font-size:13px;font-weight:bold;display:block;margin-bottom:8px;">출석 체크</label>
+          <div id="sesMembersList" style="background:#f9f9f9;border-radius:8px;padding:12px;min-height:60px;">
+            <span style="color:#aaa;font-size:13px;">길드를 먼저 선택하세요.</span>
+          </div>
+        </div>
+
+        <!-- 저장 버튼 -->
+        <button id="sesSubmitBtn" onclick="doSaveSessionAttendance()"
+          style="width:100%;padding:12px;background:#1a6b3c;color:white;border:none;
+                 border-radius:8px;font-weight:bold;font-size:15px;cursor:pointer;">
+          📋 출석 저장
+        </button>
+        <div id="sesResult" style="margin-top:10px;font-size:13px;text-align:center;"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// 길드 통합 모달 — 4개 탭 (현황 / 발표 / 정성평가 / 세션 출석)
+// ============================================================
+
+// ── 키워드 태그 정의 ───────────────────────────────────────
+var GUILD_MANUAL_TAGS_POSITIVE = [
+  "결정 장애 극복", "단체 입장 명확", "도전 정신", "합의 성숙", "소외자 포용"
+];
+var GUILD_MANUAL_TAGS_CAUTION = [
+  "결정 장애 잔존", "한 명 독박", "소극적 참여", "갈등 미해결", "형식적 진행"
+];
+
+var _selectedManualTags = [];
+
+// ── 모달 열기/닫기 ─────────────────────────────────────────
+function openGuildModal() {
+  document.getElementById('guildModal').style.display = 'flex';
+  // 기본 탭: 현황
+  switchGuildTab('status');
+  // 기본 날짜 = 오늘
+  var today = new Date().toISOString().split('T')[0];
+  var sd = document.getElementById('annStartDate');
+  var sd2 = document.getElementById('sesDate');
+  if (sd && !sd.value) sd.value = today;
+  if (sd2 && !sd2.value) sd2.value = today;
+  // 키워드 태그 렌더링 (한 번만)
+  renderManualTags();
+}
+
+function closeGuildModal() {
+  document.getElementById('guildModal').style.display = 'none';
+}
+
+// ── 탭 전환 ────────────────────────────────────────────────
+function switchGuildTab(tabName) {
+  var tabs = ['status', 'announce', 'manual', 'session'];
+  tabs.forEach(function(t) {
+    var content = document.getElementById('guildTab_' + t);
+    if (content) content.style.display = (t === tabName) ? 'block' : 'none';
+  });
+
+  // 탭 버튼 스타일
+  var btns = document.querySelectorAll('.guild-tab-btn');
+  btns.forEach(function(b) {
+    if (b.getAttribute('data-tab') === tabName) {
+      b.style.background = 'white';
+      b.style.color = '#1a6b3c';
+      b.style.borderBottom = '3px solid #1a6b3c';
+    } else {
+      b.style.background = 'transparent';
+      b.style.color = '#7f8c8d';
+      b.style.borderBottom = '3px solid transparent';
+    }
+  });
+
+  // 현황 탭 진입 시 자동 로드
+  if (tabName === 'status') loadGuildStatus();
+}
+
+// ────────────────────────────────────────────────────────────
+// 탭 1: 현황 — 기존 로직 (백엔드 API 동일하게 유지)
+// ────────────────────────────────────────────────────────────
+function loadGuildStatus() {
+  document.getElementById('guildGsRank').innerHTML =
+    '<div style="color:#aaa;font-size:13px;padding:10px;">불러오는 중...</div>';
+  document.getElementById('guildMissionStatus').innerHTML =
+    '<div style="color:#aaa;font-size:13px;padding:10px;">불러오는 중...</div>';
+  document.getElementById('guildAttendance').innerHTML =
+    '<div style="color:#aaa;font-size:13px;padding:10px;">불러오는 중...</div>';
+
+  google.script.run
+    .withSuccessHandler(renderGuildGsRank)
+    .withFailureHandler(function(e) {
+      document.getElementById('guildGsRank').innerHTML =
+        '<div style="color:#e74c3c;font-size:13px;">⚠️ 오류: ' + e.message + '</div>';
+    })
+    .getGuildGsRank();
+
+  google.script.run
+    .withSuccessHandler(renderGuildMissionStatus)
+    .withFailureHandler(function(e) {
+      document.getElementById('guildMissionStatus').innerHTML =
+        '<div style="color:#e74c3c;font-size:13px;">⚠️ 오류: ' + e.message + '</div>';
+    })
+    .getGuildMissionStatus();
+
+  google.script.run
+    .withSuccessHandler(renderGuildAttendance)
+    .withFailureHandler(function(e) {
+      document.getElementById('guildAttendance').innerHTML =
+        '<div style="color:#e74c3c;font-size:13px;">⚠️ 오류: ' + e.message + '</div>';
+    })
+    .getGuildAttendanceStats();
+}
+
+function renderGuildGsRank(data) {
+  var el = document.getElementById('guildGsRank');
+  if (!data || data.length === 0) {
+    el.innerHTML = '<div style="color:#aaa;font-size:13px;padding:10px;">이번 달 GS 데이터가 없습니다. (월간 GS 산출 후 표시됩니다)</div>';
+    return;
+  }
+  var rankEmoji = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣'];
+  var html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;">';
+  data.forEach(function(g, i) {
+    var isFirst = g.rank === 1;
+    html +=
+      '<div style="border:2px solid ' + (isFirst ? '#f1c40f' : '#e8f5e9') + ';border-radius:10px;padding:12px;text-align:center;' +
+        'background:' + (isFirst ? '#fffde7' : 'white') + ';">' +
+        '<div style="font-size:22px;margin-bottom:4px;">' + (rankEmoji[i] || (g.rank + '위')) + '</div>' +
+        '<div style="font-size:14px;font-weight:bold;color:#1a6b3c;margin-bottom:2px;">' + (g.guildName || g.guildId) + '</div>' +
+        '<div style="font-size:20px;font-weight:bold;color:#2c3e50;">' + Number(g.totalGS).toFixed(1) + '</div>' +
+        '<div style="font-size:11px;color:#aaa;">GS 점수</div>' +
+      '</div>';
+  });
+  html += '</div>';
+  html += '<div style="font-size:11px;color:#aaa;margin-top:8px;text-align:right;">' +
+    (data[0] ? data[0].yearMonth + ' 기준' : '') + '</div>';
+  el.innerHTML = html;
+}
+
+function renderGuildMissionStatus(data) {
+  var el = document.getElementById('guildMissionStatus');
+  if (!data || !data.guilds || data.guilds.length === 0) {
+    el.innerHTML = '<div style="color:#aaa;font-size:13px;padding:10px;">미션 데이터가 없습니다.</div>';
+    return;
+  }
+  var missions = data.missions;
+  var guilds   = data.guilds;
+  var statusStyle = {
+    '클리어':  { bg: '#eafaf1', color: '#1e8449', text: '✅ 클리어' },
+    '실패':    { bg: '#fdedec', color: '#c0392b', text: '❌ 실패'   },
+    '진행중':  { bg: '#eaf4ff', color: '#2471a3', text: '🔄 진행중' },
+    '대기':    { bg: '#f9f9f9', color: '#aaa',    text: '⏳ 대기'   }
+  };
+  var html = '<div style="overflow-x:auto;">' +
+    '<table style="width:100%;border-collapse:collapse;font-size:12px;">' +
+    '<thead>' +
+    '<tr style="background:#1a6b3c;color:white;">' +
+    '<th style="padding:8px 10px;text-align:left;white-space:nowrap;">미션</th>';
+  guilds.forEach(function(g) {
+    html += '<th style="padding:8px 10px;text-align:center;white-space:nowrap;">' +
+      (g.guildName || g.guildId) + '</th>';
+  });
+  html += '</tr></thead><tbody>';
+  missions.forEach(function(m, i) {
+    var bg = i % 2 === 0 ? '#f9f9f9' : 'white';
+    html += '<tr style="background:' + bg + ';">' +
+      '<td style="padding:7px 10px;font-weight:bold;color:#2c3e50;white-space:nowrap;">' +
+        m.missionId + '<br>' +
+        '<span style="font-size:11px;font-weight:normal;color:#666;">' + m.missionName + '</span>' +
+      '</td>';
+    guilds.forEach(function(g) {
+      var status = (g.results && g.results[m.missionId]) || '대기';
+      var s = statusStyle[status] || statusStyle['대기'];
+      html +=
+        '<td style="padding:7px 10px;text-align:center;">' +
+          '<span style="display:inline-block;padding:3px 8px;border-radius:12px;' +
+            'background:' + s.bg + ';color:' + s.color + ';font-size:11px;font-weight:bold;">' +
+            s.text +
+          '</span>' +
+        '</td>';
+    });
+    html += '</tr>';
+  });
+  html += '<tr style="background:#e8f5e9;font-weight:bold;">' +
+    '<td style="padding:7px 10px;color:#1a6b3c;">클리어 합계</td>';
+  guilds.forEach(function(g) {
+    var cleared = 0;
+    missions.forEach(function(m) {
+      if (g.results && g.results[m.missionId] === '클리어') cleared++;
+    });
+    html +=
+      '<td style="padding:7px 10px;text-align:center;color:#1a6b3c;font-size:14px;">' +
+        cleared + ' / ' + missions.length +
+      '</td>';
+  });
+  html += '</tr></tbody></table></div>';
+  el.innerHTML = html;
+}
+
+function renderGuildAttendance(data) {
+  var el = document.getElementById('guildAttendance');
+  if (!data || data.length === 0) {
+    el.innerHTML = '<div style="color:#aaa;font-size:13px;padding:10px;">세션 출석 데이터가 없습니다.</div>';
+    return;
+  }
+  var html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">';
+  data.forEach(function(g) {
+    var rateColor = g.avgAttendanceRate >= 90 ? '#1e8449'
+                  : g.avgAttendanceRate >= 70 ? '#e67e22'
+                  : '#c0392b';
+    html +=
+      '<div style="border:1px solid #ddd;border-radius:10px;overflow:hidden;">' +
+        '<div style="background:#1a6b3c;color:white;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;">' +
+          '<span style="font-weight:bold;font-size:13px;">' + (g.guildName || g.guildId) + '</span>' +
+          '<span style="font-size:12px;opacity:0.85;">총 ' + g.totalSessions + '회</span>' +
+        '</div>' +
+        '<div style="padding:10px 12px 6px;">' +
+          '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">' +
+            '<span style="color:#555;">평균 출석률</span>' +
+            '<span style="font-weight:bold;color:' + rateColor + ';">' + g.avgAttendanceRate + '%</span>' +
+          '</div>' +
+          '<div style="background:#eee;border-radius:4px;height:6px;">' +
+            '<div style="background:' + rateColor + ';height:6px;border-radius:4px;width:' + g.avgAttendanceRate + '%;"></div>' +
+          '</div>' +
+        '</div>' +
+        '<div style="padding:4px 12px 10px;">';
+    (g.members || []).forEach(function(m) {
+      var mColor = m.rate >= 90 ? '#1e8449' : m.rate >= 70 ? '#e67e22' : '#c0392b';
+      html +=
+        '<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid #f5f5f5;">' +
+          '<span style="font-size:12px;color:#2c3e50;">' + m.name + '</span>' +
+          '<span style="font-size:12px;color:' + mColor + ';font-weight:bold;">' +
+            m.attended + '/' + m.total + ' (' + m.rate + '%)' +
+          '</span>' +
+        '</div>';
+    });
+    html += '</div></div>';
+  });
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+// ────────────────────────────────────────────────────────────
+// 탭 2: 미션 발표
+// ────────────────────────────────────────────────────────────
+function doAnnounceMission() {
+  var missionId = document.getElementById('annMissionId').value;
+  var startDate = document.getElementById('annStartDate').value;
+  var endDate   = document.getElementById('annEndDate').value;
+  var resultEl  = document.getElementById('annResult');
+  var btn       = document.getElementById('annSubmitBtn');
+
+  if (!missionId || !startDate || !endDate) {
+    resultEl.style.color = '#c0392b';
+    resultEl.innerText = '❌ 미션·발표일·마감일을 모두 입력해주세요.';
+    return;
+  }
+  if (startDate > endDate) {
+    resultEl.style.color = '#c0392b';
+    resultEl.innerText = '❌ 발표일이 마감일보다 늦을 수 없습니다.';
+    return;
+  }
+  if (!confirm('[' + missionId + '] 미션을 발표합니다.\n발표일: ' + startDate + '\n마감일: ' + endDate + '\n\n5개 길드에 행이 생성됩니다. 진행하시겠습니까?')) return;
+
+  btn.disabled = true; btn.innerText = '발표 중...';
+  resultEl.innerText = '';
+
+  google.script.run
+    .withSuccessHandler(function(res) {
+      btn.disabled = false; btn.innerText = '📢 미션 발표하기';
+      resultEl.style.color = res.success ? '#1e8449' : '#c0392b';
+      resultEl.innerText = (res.success ? '✅ ' : '❌ ') + res.msg;
+    })
+    .withFailureHandler(function(err) {
+      btn.disabled = false; btn.innerText = '📢 미션 발표하기';
+      resultEl.style.color = '#c0392b';
+      resultEl.innerText = '❌ ' + err.message;
+    })
+    .announceGuildMissionUI(missionId, startDate, endDate);
+}
+
+// ────────────────────────────────────────────────────────────
+// 탭 3: 정성평가 — 키워드 태그 + 메모 + 점수
+// ────────────────────────────────────────────────────────────
+function renderManualTags() {
+  var posEl = document.getElementById('manTagsPositive');
+  var cauEl = document.getElementById('manTagsCaution');
+  if (!posEl || !cauEl) return;
+  if (posEl.children.length > 0) return; // 이미 렌더링됨
+
+  function tagBtn(tagText, color) {
+    return '<button type="button" data-tag="' + tagText + '" data-active="false" ' +
+      'onclick="toggleManualTag(this)" ' +
+      'style="padding:5px 11px;border-radius:14px;border:1.5px solid ' + color +
+      ';background:white;color:' + color + ';font-size:12px;cursor:pointer;">' +
+      tagText +
+      '</button>';
+  }
+
+  posEl.innerHTML = GUILD_MANUAL_TAGS_POSITIVE.map(function(t) { return tagBtn(t, '#1e8449'); }).join('');
+  cauEl.innerHTML = GUILD_MANUAL_TAGS_CAUTION.map(function(t)  { return tagBtn(t, '#c0392b'); }).join('');
+}
+
+function toggleManualTag(btn) {
+  var isActive = btn.getAttribute('data-active') === 'true';
+  var tag      = btn.getAttribute('data-tag');
+  var isPos    = GUILD_MANUAL_TAGS_POSITIVE.indexOf(tag) !== -1;
+  var color    = isPos ? '#1e8449' : '#c0392b';
+
+  if (isActive) {
+    btn.setAttribute('data-active', 'false');
+    btn.style.background = 'white';
+    btn.style.color = color;
+    var i = _selectedManualTags.indexOf(tag);
+    if (i !== -1) _selectedManualTags.splice(i, 1);
+  } else {
+    btn.setAttribute('data-active', 'true');
+    btn.style.background = color;
+    btn.style.color = 'white';
+    _selectedManualTags.push(tag);
+  }
+}
+
+function doSaveManualScore() {
+  var missionId = document.getElementById('manMissionId').value;
+  var guildId   = document.getElementById('manGuildId').value;
+  var score     = parseInt(document.getElementById('manScore').value);
+  var memo      = document.getElementById('manComment').value.trim();
+  var resultEl  = document.getElementById('manResult');
+  var btn       = document.getElementById('manSubmitBtn');
+
+  // 키워드 태그 + 메모를 코멘트 한 줄로 결합
+  var combined = '';
+  if (_selectedManualTags.length > 0) combined += '[' + _selectedManualTags.join(', ') + ']';
+  if (memo) combined += (combined ? ' ' : '') + memo;
+
+  if (!confirm(missionId + ' / ' + guildId + ' / ' + score + '점\n코멘트: ' + (combined || '(없음)') + '\n\n저장하시겠습니까?')) return;
+
+  btn.disabled = true; btn.innerText = '저장 중...';
+  resultEl.innerText = '';
+
+  google.script.run
+    .withSuccessHandler(function(res) {
+      btn.disabled = false; btn.innerText = '✏️ 정성평가 저장';
+      resultEl.style.color = res.success ? '#1e8449' : '#c0392b';
+      resultEl.innerText = (res.success ? '✅ ' : '❌ ') + res.msg;
+      if (res.success) {
+        // 입력 초기화
+        document.getElementById('manComment').value = '';
+        _selectedManualTags = [];
+        var btns = document.querySelectorAll('#manTagsPositive button, #manTagsCaution button');
+        btns.forEach(function(b) {
+          var t = b.getAttribute('data-tag');
+          var isPos = GUILD_MANUAL_TAGS_POSITIVE.indexOf(t) !== -1;
+          b.setAttribute('data-active', 'false');
+          b.style.background = 'white';
+          b.style.color = isPos ? '#1e8449' : '#c0392b';
+        });
+      }
+    })
+    .withFailureHandler(function(err) {
+      btn.disabled = false; btn.innerText = '✏️ 정성평가 저장';
+      resultEl.style.color = '#c0392b';
+      resultEl.innerText = '❌ ' + err.message;
+    })
+    .saveGuildManualScoreUI(missionId, guildId, score, combined);
+}
+
+// ────────────────────────────────────────────────────────────
+// 탭 4: 세션 출석
+// ────────────────────────────────────────────────────────────
+function loadSessionMembers() {
+  var guildId = document.getElementById('sesGuildId').value;
+  var listEl  = document.getElementById('sesMembersList');
+  if (!guildId) {
+    listEl.innerHTML = '<span style="color:#aaa;font-size:13px;">길드를 먼저 선택하세요.</span>';
+    return;
+  }
+  listEl.innerHTML = '<span style="color:#aaa;font-size:13px;">멤버 불러오는 중...</span>';
+  google.script.run
+    .withSuccessHandler(function(members) {
+      if (!members || members.length === 0) {
+        listEl.innerHTML = '<span style="color:#c0392b;font-size:13px;">⚠️ 길드 멤버가 없습니다. 길드_구성 시트를 확인하세요.</span>';
+        return;
+      }
+      var html = members.map(function(name) {
+        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #eee;">' +
+          '<span style="font-size:14px;color:#2c3e50;font-weight:bold;">' + name + '</span>' +
+          '<div style="display:flex;gap:6px;">' +
+            '<button type="button" data-name="' + name + '" data-att="O" data-active="true" ' +
+              'onclick="toggleSessionAtt(this, \'O\')" ' +
+              'style="padding:5px 14px;border-radius:6px;border:none;background:#27ae60;color:white;font-weight:bold;cursor:pointer;font-size:13px;">O</button>' +
+            '<button type="button" data-name="' + name + '" data-att="X" data-active="false" ' +
+              'onclick="toggleSessionAtt(this, \'X\')" ' +
+              'style="padding:5px 14px;border-radius:6px;border:none;background:#e0e0e0;color:#666;font-weight:bold;cursor:pointer;font-size:13px;">X</button>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+      listEl.innerHTML = html;
+    })
+    .withFailureHandler(function(err) {
+      listEl.innerHTML = '<span style="color:#c0392b;font-size:13px;">❌ ' + err.message + '</span>';
+    })
+    .getGuildMembersForSession(guildId);
+}
+
+function toggleSessionAtt(btn, value) {
+  var name = btn.getAttribute('data-name');
+  // 같은 이름의 두 버튼 찾아서 토글
+  var siblings = document.querySelectorAll('#sesMembersList button[data-name="' + CSS.escape(name) + '"]');
+  siblings.forEach(function(b) {
+    var v = b.getAttribute('data-att');
+    if (v === value) {
+      b.setAttribute('data-active', 'true');
+      b.style.background = (v === 'O') ? '#27ae60' : '#e74c3c';
+      b.style.color = 'white';
+    } else {
+      b.setAttribute('data-active', 'false');
+      b.style.background = '#e0e0e0';
+      b.style.color = '#666';
+    }
+  });
+}
+
+function doSaveSessionAttendance() {
+  var guildId  = document.getElementById('sesGuildId').value;
+  var sesDate  = document.getElementById('sesDate').value;
+  var resultEl = document.getElementById('sesResult');
+  var btn      = document.getElementById('sesSubmitBtn');
+
+  if (!guildId)  { resultEl.style.color='#c0392b'; resultEl.innerText='❌ 길드를 선택하세요.'; return; }
+  if (!sesDate)  { resultEl.style.color='#c0392b'; resultEl.innerText='❌ 세션 날짜를 선택하세요.'; return; }
+
+  // 활성 버튼만 추출하여 attendanceMap 구성
+  var activeBtns = document.querySelectorAll('#sesMembersList button[data-active="true"]');
+  if (activeBtns.length === 0) {
+    resultEl.style.color = '#c0392b';
+    resultEl.innerText = '❌ 멤버가 로드되지 않았습니다. 길드를 다시 선택하세요.';
+    return;
+  }
+
+  var attMap = {};
+  activeBtns.forEach(function(b) {
+    var nm = b.getAttribute('data-name');
+    var v  = b.getAttribute('data-att');
+    attMap[nm] = v;
+  });
+
+  if (!confirm(guildId + ' / ' + sesDate + '\n출석: ' + Object.keys(attMap).length + '명\n\n저장하시겠습니까?')) return;
+
+  btn.disabled = true; btn.innerText = '저장 중...';
+  resultEl.innerText = '';
+
+  google.script.run
+    .withSuccessHandler(function(res) {
+      btn.disabled = false; btn.innerText = '📋 출석 저장';
+      resultEl.style.color = res.success ? '#1e8449' : '#c0392b';
+      resultEl.innerText = (res.success ? '✅ ' : '❌ ') + res.msg;
+    })
+    .withFailureHandler(function(err) {
+      btn.disabled = false; btn.innerText = '📋 출석 저장';
+      resultEl.style.color = '#c0392b';
+      resultEl.innerText = '❌ ' + err.message;
+    })
+    .saveGuildSessionAttendanceUI(guildId, sesDate, attMap);
+}
+</script>
+
 
 <script>
 // ── P2P 이상거래 목록 불러오기 ───────────────────────────────

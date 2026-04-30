@@ -163,6 +163,7 @@ function getInequalityData() {
       const dName     = String(depData[i][1]).trim(); // B열
       const principal = Number(depData[i][2]) || 0;  // C열
       if (!dName) continue;
+      if (String(depData[i][7]).trim() !== '진행중') continue;
       depositMap[dName] = (depositMap[dName] || 0) + principal;
     }
   }

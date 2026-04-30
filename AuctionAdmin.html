@@ -129,445 +129,153 @@
   </a>
 </div>
 
-<div class="control-box">
-  <label style="font-weight:bold;">진행 회차:</label>
-  <select id="auctionRound" style="border: 2px solid #8e44ad; font-weight:bold;">
-    <option value="1">1차 경매</option><option value="2">2차 경매</option><option value="3">3차 경매</option>
-    <option value="4">4차 경매</option><option value="5">5차 경매</option><option value="6">6차 경매</option>
-    <option value="7">7차 경매</option><option value="8">8차 경매</option><option value="9">9차 경매</option>
-  </select>
-  <span style="border-left: 1px solid #ddd; height: 20px; margin: 0 5px;"></span>
+<!-- ═══ 운영 버튼 행 ═══ -->
+<div style="padding:14px 18px 0;">
+<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
+    <button onclick="loadPendingAch()" style="background:#8e44ad;color:white;border:none;padding:8px 16px;border-radius:6px;font-weight:bold;cursor:pointer;">🏅 업적 승인 대기함 불러오기</button>
+    <button onclick="loadPendingJobs()" style="background:#2980b9;color:white;border:none;padding:8px 16px;border-radius:6px;font-weight:bold;cursor:pointer;">💼 2차 직업 대기함 불러오기</button>
+    <button onclick="loadRejectedAch()" style="background:#c0392b;color:white;border:none;padding:8px 16px;border-radius:6px;font-weight:bold;cursor:pointer;">↩️ 반려 정정함 불러오기</button>
+    <button onclick="loadP2PAlerts()"
+     style="background:#16a085;color:white;border:none;padding:8px 16px;border-radius:6px;font-weight:bold;cursor:pointer;">
+     🚨 P2P 이상거래 확인</button>
+    <button onclick="openLaunchDepositModal()"
+      style="background:#2471a3;color:white;border:none;padding:8px 16px;border-radius:6px;font-weight:bold;cursor:pointer;">
+     🏦 신규 예금 상품 론칭</button>
+    <button onclick="doSetPenaltyRate()"
+      style="background:#7f8c8d;color:white;border:none;padding:8px 16px;border-radius:6px;font-weight:bold;cursor:pointer;">
+      ✏️ 패널티율 수정</button>
+    <button onclick="setGuardPw()"
+     style="background:#0d1117;color:#58a6ff;border:1px solid #58a6ff;padding:8px 16px;border-radius:6px;font-weight:bold;cursor:pointer;">🛡️ 수호대 비밀번호 설정</button>
+    <button onclick="loadPendingLoans()"
+     style="background:#6c3483;color:white;border:none;padding:8px 16px;border-radius:6px;font-weight:bold;cursor:pointer;">💳 대출 승인 대기함</button>
+    <button onclick="openGuildModal()"
+     style="background:#1a6b3c;color:white;border:none;padding:8px 16px;border-radius:6px;font-weight:bold;cursor:pointer;">🏰 길드 운영 / 현황</button>
+  </div></div>
+<!-- ═══════════════════════════════════════════════ -->
+<!-- 전체 메시지 발송 섹션 -->
+<!-- ═══════════════════════════════════════════════ -->
+<div style="margin-top:14px;background:white;border-radius:10px;box-shadow:0 2px 5px rgba(0,0,0,0.1);border-left:6px solid #16a085;overflow:hidden;">
+  <div onclick="toggleAdminCard('broadcastToggleBody','broadcastArrow')"
+    style="padding:14px 18px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
+    <h3 style="margin:0;color:#16a085;">📢 전체 메시지 발송</h3>
+    <span id="broadcastArrow" style="font-size:13px;color:#aaa;transition:transform 0.3s;">▼</span>
+  </div>
+  <div id="broadcastToggleBody" style="display:none;padding:0 18px 18px;">
 
-  <label style="font-weight:bold;">상품:</label>
-  <select id="itemSelect" style="max-width: 150px;"></select>
-
-  <button class="btn-start"                                onclick="startItem(0)">▶ 최초 송출</button>
-  <button class="btn-start" style="background:#e67e22;"    onclick="startItem(1)">📉 1차 재경매 송출</button>
-  <button class="btn-start" style="background:#c0392b;"    onclick="startItem(2)">⚠️ 최종 재경매 송출</button>
-
-  <button class="btn-extend" onclick="extendTime()">⏱️ +10초</button>
-  <button class="btn-fail"   onclick="failItem()">❌ 유찰</button>
-  <button class="btn-next" style="background:#95a5a6;" onclick="resetDisplay()">⏹️ 화면초기화</button>
-
-  <div id="statusMsg"></div>
-  <button class="btn-end" onclick="endAuction()">🏁 모든 경매 종료 및 오늘 결과 화면 송출하기</button>
-</div>
-
-<!-- ── 3단 레이아웃 ── -->
-<div class="auction-grid">
-
-  <!-- 1열: 학생 입찰 테이블 -->
-  <div class="auction-panel">
-    <div class="auction-panel-header blue">👥 학생 입찰 현황</div>
-    <div class="auction-panel-body">
-      <table>
-        <thead><tr><th>학생 이름</th><th>잔여 자산</th><th>입찰가 입력</th><th>낙찰 처리</th></tr></thead>
-        <tbody id="studentList"></tbody>
-      </table>
+  <!-- 수신자 선택 -->
+  <div style="margin-bottom:12px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+      <label style="font-size:14px;font-weight:bold;">수신 대상</label>
+      <label style="font-size:13px;cursor:pointer;">
+        <input type="radio" name="mailTarget" value="all" checked onchange="toggleRecipientSelect(this)">
+        전체 학생
+      </label>
+      <label style="font-size:13px;cursor:pointer;">
+        <input type="radio" name="mailTarget" value="select" onchange="toggleRecipientSelect(this)">
+        개별 선택
+      </label>
+    </div>
+    <div id="recipientSelectArea" style="display:none;">
+      <button onclick="loadStudentList()" style="background:#16a085;color:white;border:none;padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer;margin-bottom:8px;">학생 목록 불러오기</button>
+      <div id="studentCheckboxes" style="display:flex;flex-wrap:wrap;gap:6px;padding:8px;background:#f9f9f9;border-radius:6px;min-height:36px;font-size:13px;">
+        <span style="color:#aaa;">위 버튼을 눌러 불러오세요</span>
+      </div>
     </div>
   </div>
 
-  <!-- 2열: 낙찰 결과 테이블 -->
-  <div class="auction-panel">
-    <div class="auction-panel-header green">🏆 낙찰 결과 <span id="soldCount" style="font-size:11px;font-weight:normal;margin-left:6px;">0건</span></div>
-    <div class="auction-panel-body">
-      <table class="result-table" id="soldTable">
-        <thead><tr><th>상품명</th><th>낙찰자</th><th>낙찰가</th></tr></thead>
-        <tbody id="soldList">
-          <tr><td colspan="3" class="empty-msg">아직 낙찰된 상품이 없습니다</td></tr>
-        </tbody>
-      </table>
-    </div>
+  <!-- 제목 -->
+  <div style="margin-bottom:10px;">
+    <input type="text" id="broadcastSubject" placeholder="메시지 제목 (예: 시스템 업데이트 안내)"
+      style="width:100%;box-sizing:border-box;padding:9px;border:1px solid #ddd;border-radius:6px;font-size:14px;">
   </div>
 
-  <!-- 3열: 유찰 현황 테이블 -->
-  <div class="auction-panel">
-    <div class="auction-panel-header red">❌ 유찰 현황 <span id="failedCount" style="font-size:11px;font-weight:normal;margin-left:6px;">0건</span></div>
-    <div class="auction-panel-body">
-      <table class="result-table fail" id="failedTable">
-        <thead><tr><th>상품명</th><th>유찰 구분</th><th>누적횟수</th></tr></thead>
-        <tbody id="failedList">
-          <tr><td colspan="3" class="empty-msg">유찰된 상품이 없습니다</td></tr>
-        </tbody>
-      </table>
-    </div>
+  <!-- 내용 -->
+  <div style="margin-bottom:12px;">
+    <textarea id="broadcastBody" placeholder="메시지 내용을 입력하세요."
+      style="width:100%;box-sizing:border-box;height:100px;padding:9px;border:1px solid #ddd;border-radius:6px;font-size:14px;resize:vertical;"></textarea>
   </div>
 
+  <!-- 발송 버튼 -->
+  <button id="broadcastSendBtn" onclick="sendBroadcast()"
+    style="background:#16a085;color:white;border:none;padding:10px 24px;border-radius:6px;font-size:14px;font-weight:bold;cursor:pointer;">
+    📨 메시지 발송
+  </button>
+  <span id="broadcastResult" style="margin-left:12px;font-size:13px;"></span>
+  </div><!-- /broadcastToggleBody -->
 </div>
 
 <script>
-  // ── 전역 변수 ──────────────────────────────────────────────────
-  let failCount   = 0;
-  let globalItems = [];
-  let soldRecords   = [];  // 낙찰 기록 배열
-  let failedRecords = [];  // 유찰 기록 배열
+function toggleRecipientSelect(radio) {
+  document.getElementById('recipientSelectArea').style.display =
+    radio.value === 'select' ? 'block' : 'none';
+}
 
-  // Firebase SDK(type=module)에서 접근할 수 있도록 window에 노출
-  window._renderSoldTable = function() {
-    var tbody = document.getElementById('soldList');
-    if (soldRecords.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="3" class="empty-msg">아직 낙찰된 상품이 없습니다</td></tr>';
-    } else {
-      tbody.innerHTML = '';
-      soldRecords.forEach(function(r) {
-        var tr = document.createElement('tr');
-        tr.innerHTML =
-          '<td style="font-size:12px;font-weight:bold;color:#2c3e50;">' + r.itemName + '</td>' +
-          '<td style="font-size:12px;">' + r.winner + '</td>' +
-          '<td style="font-size:12px;font-weight:bold;color:#27ae60;text-align:right;">$' + r.price.toLocaleString() + '</td>';
-        tbody.appendChild(tr);
-      });
-    }
-    document.getElementById('soldCount').innerText = soldRecords.length + '건';
-  };
-
-  window._renderFailTable = function() {
-    var tbody = document.getElementById('failedList');
-    if (failedRecords.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="3" class="empty-msg">유찰된 상품이 없습니다</td></tr>';
-    } else {
-      tbody.innerHTML = '';
-      failedRecords.forEach(function(r) {
-        var badge = r.count >= 3
-          ? '<span style="background:#c0392b;color:white;padding:1px 6px;border-radius:3px;font-size:11px;">최종</span>'
-          : '<span style="background:#e67e22;color:white;padding:1px 6px;border-radius:3px;font-size:11px;">' + r.label + '</span>';
-        var tr = document.createElement('tr');
-        tr.innerHTML =
-          '<td style="font-size:12px;font-weight:bold;color:#2c3e50;">' + r.itemName + '</td>' +
-          '<td>' + badge + '</td>' +
-          '<td style="text-align:center;font-weight:bold;color:#e74c3c;">' + r.count + '회</td>';
-        tbody.appendChild(tr);
-      });
-    }
-    document.getElementById('failedCount').innerText = failedRecords.length + '건';
-  };
-
-  // ── 초기화: 학생 목록 + 상품 목록 불러오기 ─────────────────────
-  google.script.run.withSuccessHandler(function(data) {
-    globalItems = data.items;
-
-    var itemSel = document.getElementById('itemSelect');
-    itemSel.innerHTML = '';
-    globalItems.forEach(function(item, index) {
-      itemSel.innerHTML += '<option value="' + index + '">' + item.name + '</option>';
-    });
-
-    var tbody = document.getElementById('studentList');
-    tbody.innerHTML = '';
-    data.students.forEach(function(st) {
-      tbody.innerHTML += '<tr>' +
-        '<td style="font-size:13px;"><strong>' + st.name + '</strong> <span style="font-size:11px;color:gray;">(' + st.brand + ')</span></td>' +
-        '<td id="bal_' + st.rowIdx + '" data-balance="' + st.balance + '" style="font-weight:bold;color:#2c3e50;">$' + st.balance.toLocaleString() + '</td>' +
-        '<td><input type="number" id="bid_' + st.rowIdx + '" class="bid-input" step="10" placeholder="금액"></td>' +
-        '<td><button class="btn-sold" onclick="sellItem(' + st.rowIdx + ', \'' + st.name + '\', \'' + st.brand + '\')">쾅! 낙찰</button></td>' +
-      '</tr>';
-    });
-
-    // Firebase 준비 후: 기록 복원 + idle 설정
-    setTimeout(function() {
-      if (window._fbRestoreRecords) {
-        window._fbRestoreRecords();  // 낙찰/유찰 기록 복원
+function loadStudentList() {
+  document.getElementById('studentCheckboxes').innerHTML = '<span style="color:#aaa;">불러오는 중...</span>';
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (!res.success) {
+        document.getElementById('studentCheckboxes').innerHTML = '<span style="color:red;">' + res.msg + '</span>';
+        return;
       }
-      if (window._fbGet) {
-        window._fbGet().then(function(current) {
-          var activeStatuses = ['bidding', 'failed', 'failed_final', 'sold'];
-          if (!current || activeStatuses.indexOf(current.status) === -1) {
-            window._fbSet({ status: 'idle' });
-          }
-        });
+      var html = res.students.map(function(name) {
+        return '<label style="cursor:pointer;padding:3px 8px;background:#e8f8f5;border-radius:4px;">' +
+          '<input type="checkbox" class="studentChk" value="' + name + '" style="margin-right:4px;">' +
+          name + '</label>';
+      }).join('');
+      document.getElementById('studentCheckboxes').innerHTML = html ||
+        '<span style="color:#aaa;">학생이 없습니다.</span>';
+    })
+    .withFailureHandler(function(err) {
+      document.getElementById('studentCheckboxes').innerHTML = '<span style="color:red;">오류: ' + err.message + '</span>';
+    })
+    .getStudentListForMail();
+}
+
+function sendBroadcast() {
+  var subject = document.getElementById('broadcastSubject').value.trim();
+  var body    = document.getElementById('broadcastBody').value.trim();
+  if (!subject) { alert('제목을 입력해 주세요.'); return; }
+  if (!body)    { alert('내용을 입력해 주세요.'); return; }
+
+  // 수신자 결정
+  var isAll = document.querySelector('input[name="mailTarget"]:checked').value === 'all';
+  var targetNames = [];
+  if (!isAll) {
+    var checkboxes = document.querySelectorAll('.studentChk:checked');
+    checkboxes.forEach(function(cb) { targetNames.push(cb.value); });
+    if (targetNames.length === 0) { alert('수신자를 1명 이상 선택해 주세요.'); return; }
+  }
+
+  var btn = document.getElementById('broadcastSendBtn');
+  var result = document.getElementById('broadcastResult');
+  btn.disabled = true;
+  btn.textContent = '발송 중...';
+  result.textContent = '';
+
+  google.script.run
+    .withSuccessHandler(function(res) {
+      btn.disabled = false;
+      btn.textContent = '📨 메시지 발송';
+      if (res.success) {
+        result.style.color = '#16a085';
+        result.textContent = '✅ ' + res.count + '명에게 발송 완료!';
+        document.getElementById('broadcastSubject').value = '';
+        document.getElementById('broadcastBody').value = '';
       } else {
-        google.script.run.setAuctionState({ status: 'idle' });
+        result.style.color = 'red';
+        result.textContent = '❌ ' + res.msg;
       }
-    }, 1500);
-  }).getAuctionInitData();
-
-
-  // ── 학생용 중계 화면 새 창으로 열기 ────────────────────────────
-  function openDisplay() {
-    google.script.run.withSuccessHandler(function(url) {
-      window.open(url + '?page=display', '_blank');
-    }).getScriptUrl();
-  }
-
-
-  // ── 경매 송출 ──────────────────────────────────────────────────
-  function startItem(level) {
-    var itemIdx      = parseInt(document.getElementById('itemSelect').value);
-    var selectedItem = globalItems[itemIdx];
-    failCount        = level;  // 송출 레벨에 맞게 failCount 동기화
-
-    var endTime = new Date().getTime() + 31000; // 31초 (1초 여유)
-
-    var stateObj;
-    if (level === 0) {
-      document.getElementById('statusMsg').innerText =
-        '[최초 송출 중] ' + selectedItem.name + ' (시작가: $' + selectedItem.startPrice + ')';
-      stateObj = {
-        status:     'bidding',
-        itemName:   selectedItem.name,
-        startPrice: selectedItem.startPrice,
-        failCount:  0,
-        endTime:    endTime
-      };
-    } else if (level === 1) {
-      var discountedPrice = Math.round(selectedItem.startPrice * 0.9);
-      document.getElementById('statusMsg').innerText =
-        '[1차 재경매 송출 중] ' + selectedItem.name + ' (할인가: $' + discountedPrice + ')';
-      stateObj = {
-        status:       'failed',
-        itemName:     selectedItem.name,
-        failCount:    1,
-        currentPrice: discountedPrice,
-        endTime:      endTime
-      };
-    } else {
-      var finalPrice = Math.round(selectedItem.startPrice * 0.81);
-      document.getElementById('statusMsg').innerText =
-        '[최종 재경매 송출 중] ' + selectedItem.name + ' (파격가: $' + finalPrice + ')';
-      stateObj = {
-        status:       'failed_final',
-        itemName:     selectedItem.name,
-        currentPrice: finalPrice,
-        endTime:      endTime
-      };
-    }
-
-    // Firebase에 즉시 쓰기 + GAS에도 동기화 (호환성 유지)
-    if (window._fbSet) {
-      window._fbSet(stateObj);
-    } else {
-      google.script.run.setAuctionState(stateObj);
-    }
-  }
-
-
-  // ── 시간 연장 (+10초) ────────────────────────────────────────
-  function extendTime() {
-    if (window._fbGet) {
-      window._fbGet().then(function(current) {
-        if (!current || current.status === 'idle') {
-          alert('진행 중인 경매가 없습니다.');
-          return;
-        }
-        var updated = Object.assign({}, current, { endTime: current.endTime + 10000 });
-        window._fbSet(updated);
-        var msg = document.getElementById('statusMsg');
-        if (msg.innerText.indexOf('연장됨') === -1) msg.innerText += ' (시간 10초 연장됨)';
-      });
-    } else {
-      google.script.run.withSuccessHandler(function(success) {
-        if (success) {
-          var msg = document.getElementById('statusMsg');
-          if (msg.innerText.indexOf('연장됨') === -1) msg.innerText += ' (시간 10초 연장됨)';
-        } else {
-          alert('진행 중인 경매가 없습니다.');
-        }
-      }).addAuctionTime(10000);
-    }
-  }
-
-
-  // ── 유찰 처리 ────────────────────────────────────────────────
-  function failItem() {
-    var itemSel  = document.getElementById('itemSelect');
-    var itemIdx  = parseInt(itemSel.value);
-    var itemName = globalItems[itemIdx].name;
-    var roundNum = parseInt(document.getElementById('auctionRound').value);
-
-    // ✅ 최초 송출 없이 유찰 버튼을 누른 경우 — 최초 송출을 먼저 자동 실행
-    // Firebase 상태가 idle이면 아직 송출이 안 된 것
-    if (window._fbGet) {
-      window._fbGet().then(function(current) {
-        var notStarted = !current || current.status === 'idle' || current.itemName !== itemName;
-        if (notStarted) {
-          if (!confirm('[' + itemName + '] 최초 송출 없이 유찰 처리합니다.\n1차 유찰로 기록됩니다. 계속하시겠습니까?')) return;
-          startItem(0); // 최초 송출로 failCount = 0 세팅
-        }
-        _doFail(itemSel, itemName, roundNum);
-      });
-    } else {
-      _doFail(itemSel, itemName, roundNum);
-    }
-  }
-
-  function _doFail(itemSel, itemName, roundNum) {
-    // failCount는 현재 송출된 레벨 (startItem에서 동기화됨)
-    var nextFail = failCount + 1;
-
-    if (nextFail > 2) {
-      // 3번 유찰 = 완전 최종 유찰
-      alert('⚠️ 최종 유찰되었습니다. 수동 배정이 필요합니다.');
-      _addFailRecord(itemName, 3, roundNum);
-      google.script.run.recordAuctionFail(itemName, 3, roundNum);
-      resetDisplay();
-      itemSel.appendChild(itemSel.options[itemSel.selectedIndex]);
-      failCount = 0;
-      return;
-    }
-
-    // 1차 또는 2차 유찰 → 재경매 송출
-    // startItem(nextFail) 안에서 failCount = nextFail 로 동기화됨
-    _addFailRecord(itemName, nextFail, roundNum);
-    google.script.run.recordAuctionFail(itemName, nextFail, roundNum);
-    startItem(nextFail);
-  }
-
-
-  // ── 유찰 테이블에 행 추가 ─────────────────────────────────────
-  function _addFailRecord(itemName, count, roundNum) {
-    var label = count === 1 ? '1차 유찰'
-              : count === 2 ? '2차 유찰'
-              : '최종 유찰';
-
-    failedRecords.push({ itemName: itemName, label: label, count: count });
-    _renderFailTable();
-
-    // Firebase에 누적 기록 저장 (새로고침 복원용)
-    if (window._fbSetRecords) window._fbSetRecords(soldRecords, failedRecords);
-  }
-
-  // ── 유찰 테이블 렌더링 ────────────────────────────────────────
-  function _renderFailTable() {
-    var tbody = document.getElementById('failedList');
-    if (failedRecords.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="3" class="empty-msg">유찰된 상품이 없습니다</td></tr>';
-    } else {
-      tbody.innerHTML = '';
-      failedRecords.forEach(function(r) {
-        var badge = r.count >= 3
-          ? '<span style="background:#c0392b;color:white;padding:1px 6px;border-radius:3px;font-size:11px;">최종</span>'
-          : '<span style="background:#e67e22;color:white;padding:1px 6px;border-radius:3px;font-size:11px;">' + r.label + '</span>';
-        var tr = document.createElement('tr');
-        tr.innerHTML =
-          '<td style="font-size:12px;font-weight:bold;color:#2c3e50;">' + r.itemName + '</td>' +
-          '<td>' + badge + '</td>' +
-          '<td style="text-align:center;font-weight:bold;color:#e74c3c;">' + r.count + '회</td>';
-        tbody.appendChild(tr);
-      });
-    }
-    document.getElementById('failedCount').innerText = failedRecords.length + '건';
-  }
-
-
-  // ── 낙찰 처리 ────────────────────────────────────────────────
-  function sellItem(rowIdx, name, brand) {
-    var input      = document.getElementById('bid_' + rowIdx);
-    var price      = parseInt(input.value);
-    var itemIdx    = parseInt(document.getElementById('itemSelect').value);
-    var itemName   = globalItems[itemIdx].name;
-    var roundNum   = parseInt(document.getElementById('auctionRound').value);
-    var balCell    = document.getElementById('bal_' + rowIdx);
-    var curBalance = parseInt(balCell.dataset.balance);
-
-    if (!price || price <= 0) return alert('입찰가를 정확히 입력하세요!');
-    if (price > curBalance)   return alert('잔액이 부족합니다! (현재 잔액: $' + curBalance + ')');
-
-    if (confirm(name + ' 학생에게 [' + itemName + ']을(를) $' + price + '에 낙찰하시겠습니까?')) {
-      var studentInfo = { rowIdx: rowIdx, name: name, brand: brand };
-      var itemDetails = { name: itemName };
-
-      google.script.run.withSuccessHandler(function(res) {
-        if (res.success) {
-          // 잔액 실시간 갱신
-          balCell.dataset.balance = res.newBalance;
-          balCell.innerText       = '$' + res.newBalance.toLocaleString();
-          balCell.style.color     = '#e74c3c'; // 빨간색으로 차감 시각화
-
-          input.value = '';
-
-          // ✅ Firebase에 낙찰 상태 송출 → Display에서 낙찰 애니메이션 재생
-          if (window._fbSet) {
-            window._fbSet({
-              status:     'sold',
-              itemName:   itemName,
-              winner:     name,
-              finalPrice: price
-            });
-          }
-
-          // ✅ 낙찰 결과 대시보드에 행 추가
-          _addSoldRecord(itemName, name, price);
-
-          // ✅ 낙찰 완료 시 failCount 초기화 + 낙찰된 상품 목록 맨 뒤로 이동
-          failCount = 0;
-          var itemSel = document.getElementById('itemSelect');
-          itemSel.appendChild(itemSel.options[itemSel.selectedIndex]);
-
-          alert('낙찰 및 기록 완료!');
-        } else {
-          alert('오류: ' + res.msg);
-        }
-      }).executeAuctionSold(studentInfo, itemDetails, price, roundNum);
-    }
-  }
-
-
-  // ── 낙찰 테이블에 행 추가 ─────────────────────────────────────
-  function _addSoldRecord(itemName, winner, price) {
-    soldRecords.push({ itemName: itemName, winner: winner, price: price });
-    _renderSoldTable();
-
-    // Firebase에 누적 기록 저장 (새로고침 복원용)
-    if (window._fbSetRecords) window._fbSetRecords(soldRecords, failedRecords);
-  }
-
-  // ── 낙찰 테이블 렌더링 ────────────────────────────────────────
-  function _renderSoldTable() {
-    var tbody = document.getElementById('soldList');
-    if (soldRecords.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="3" class="empty-msg">아직 낙찰된 상품이 없습니다</td></tr>';
-    } else {
-      tbody.innerHTML = '';
-      soldRecords.forEach(function(r) {
-        var tr = document.createElement('tr');
-        tr.innerHTML =
-          '<td style="font-size:12px;font-weight:bold;color:#2c3e50;">' + r.itemName + '</td>' +
-          '<td style="font-size:12px;">' + r.winner + '</td>' +
-          '<td style="font-size:12px;font-weight:bold;color:#27ae60;text-align:right;">$' + r.price.toLocaleString() + '</td>';
-        tbody.appendChild(tr);
-      });
-    }
-    document.getElementById('soldCount').innerText = soldRecords.length + '건';
-  }
-
-
-  // ── 경매 종료 및 결과 송출 ──────────────────────────────────
-  function endAuction() {
-    if (!confirm('정말 오늘 경매를 종료하시겠습니까? (결과 화면 송출)')) return;
-    document.getElementById('statusMsg').innerText = '결과 집계 중...';
-    google.script.run.withSuccessHandler(function(results) {
-      var endedState = { status: 'ended', results: results };
-      if (window._fbSet) {
-        window._fbSet(endedState);
-      } else {
-        google.script.run.setAuctionState(endedState);
-      }
-
-      // 경매 종료 시 Firebase 누적 기록 초기화 (다음 회차를 위해)
-      if (window._fbSetRecords) {
-        window._fbSetRecords([], []);
-      }
-      soldRecords   = [];
-      failedRecords = [];
-
-      document.getElementById('statusMsg').innerText = '결과 송출 완료!';
-    }).getTodayAuctionResults();
-  }
-
-
-  // ── 화면 초기화 ─────────────────────────────────────────────
-  function resetDisplay() {
-    document.getElementById('statusMsg').innerText = '화면 초기화됨';
-    failCount = 0;  // ✅ 항상 리셋 — 어떤 경로로 호출되든 failCount 초기화
-    var idleState = { status: 'idle' };
-    if (window._fbSet) {
-      window._fbSet(idleState);
-    } else {
-      google.script.run.setAuctionState(idleState);
-    }
-  }
+    })
+    .withFailureHandler(function(err) {
+      btn.disabled = false;
+      btn.textContent = '📨 메시지 발송';
+      result.style.color = 'red';
+      result.textContent = '❌ 오류: ' + err.message;
+    })
+    .sendBroadcastMail(subject, body, targetNames);
+}
 </script>
-
 <!-- ═══════════════════════════════════════════════ -->
 <!-- 국가 비상사태 선포 섹션 -->
 <!-- ═══════════════════════════════════════════════ -->
@@ -691,7 +399,13 @@ function endEmergency() {
 setTimeout(function() { loadEmergencyStatus(); }, 500);
 </script>
 
-<div style="margin-top:20px;background:white;border-radius:10px;padding:18px;box-shadow:0 2px 5px rgba(0,0,0,0.1);border-left:6px solid #c0392b;">
+<div style="margin-top:14px;background:white;border-radius:10px;box-shadow:0 2px 5px rgba(0,0,0,0.1);border-left:6px solid #c0392b;overflow:hidden;">
+  <div onclick="toggleAdminCard('emergencyBody','emergencyArrow')"
+    style="padding:14px 18px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
+    <h3 style="margin:0;color:#c0392b;">🚨 국가 비상사태 선포</h3>
+    <span id="emergencyArrow" style="font-size:13px;color:#aaa;transition:transform 0.3s;">▼</span>
+  </div>
+  <div id="emergencyBody" style="display:none;padding:0 18px 18px;">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
     <h3 style="margin:0;color:#c0392b;">🚨 국가 비상사태 선포</h3>
     <button onclick="loadEmergencyStatus()" style="background:#eee;border:none;padding:6px 12px;border-radius:6px;font-size:12px;cursor:pointer;">🔄 현황 새로고침</button>
@@ -755,150 +469,13 @@ setTimeout(function() { loadEmergencyStatus(); }, 500);
     <span id="emergencyEndResult" style="margin-left:12px;font-size:13px;"></span>
   </div>
 </div>
-<!-- ═══════════════════════════════════════════════ -->
-<!-- 전체 메시지 발송 섹션 -->
-<!-- ═══════════════════════════════════════════════ -->
-<div style="margin-top:20px;background:white;border-radius:10px;padding:18px;box-shadow:0 2px 5px rgba(0,0,0,0.1);border-left:6px solid #16a085;">
-  <h3 style="margin:0 0 14px;color:#16a085;">📢 전체 메시지 발송</h3>
-
-  <!-- 수신자 선택 -->
-  <div style="margin-bottom:12px;">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
-      <label style="font-size:14px;font-weight:bold;">수신 대상</label>
-      <label style="font-size:13px;cursor:pointer;">
-        <input type="radio" name="mailTarget" value="all" checked onchange="toggleRecipientSelect(this)">
-        전체 학생
-      </label>
-      <label style="font-size:13px;cursor:pointer;">
-        <input type="radio" name="mailTarget" value="select" onchange="toggleRecipientSelect(this)">
-        개별 선택
-      </label>
-    </div>
-    <div id="recipientSelectArea" style="display:none;">
-      <button onclick="loadStudentList()" style="background:#16a085;color:white;border:none;padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer;margin-bottom:8px;">학생 목록 불러오기</button>
-      <div id="studentCheckboxes" style="display:flex;flex-wrap:wrap;gap:6px;padding:8px;background:#f9f9f9;border-radius:6px;min-height:36px;font-size:13px;">
-        <span style="color:#aaa;">위 버튼을 눌러 불러오세요</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- 제목 -->
-  <div style="margin-bottom:10px;">
-    <input type="text" id="broadcastSubject" placeholder="메시지 제목 (예: 시스템 업데이트 안내)"
-      style="width:100%;box-sizing:border-box;padding:9px;border:1px solid #ddd;border-radius:6px;font-size:14px;">
-  </div>
-
-  <!-- 내용 -->
-  <div style="margin-bottom:12px;">
-    <textarea id="broadcastBody" placeholder="메시지 내용을 입력하세요."
-      style="width:100%;box-sizing:border-box;height:100px;padding:9px;border:1px solid #ddd;border-radius:6px;font-size:14px;resize:vertical;"></textarea>
-  </div>
-
-  <!-- 발송 버튼 -->
-  <button id="broadcastSendBtn" onclick="sendBroadcast()"
-    style="background:#16a085;color:white;border:none;padding:10px 24px;border-radius:6px;font-size:14px;font-weight:bold;cursor:pointer;">
-    📨 메시지 발송
-  </button>
-  <span id="broadcastResult" style="margin-left:12px;font-size:13px;"></span>
-</div>
-
-<script>
-function toggleRecipientSelect(radio) {
-  document.getElementById('recipientSelectArea').style.display =
-    radio.value === 'select' ? 'block' : 'none';
-}
-
-function loadStudentList() {
-  document.getElementById('studentCheckboxes').innerHTML = '<span style="color:#aaa;">불러오는 중...</span>';
-  google.script.run
-    .withSuccessHandler(function(res) {
-      if (!res.success) {
-        document.getElementById('studentCheckboxes').innerHTML = '<span style="color:red;">' + res.msg + '</span>';
-        return;
-      }
-      var html = res.students.map(function(name) {
-        return '<label style="cursor:pointer;padding:3px 8px;background:#e8f8f5;border-radius:4px;">' +
-          '<input type="checkbox" class="studentChk" value="' + name + '" style="margin-right:4px;">' +
-          name + '</label>';
-      }).join('');
-      document.getElementById('studentCheckboxes').innerHTML = html ||
-        '<span style="color:#aaa;">학생이 없습니다.</span>';
-    })
-    .withFailureHandler(function(err) {
-      document.getElementById('studentCheckboxes').innerHTML = '<span style="color:red;">오류: ' + err.message + '</span>';
-    })
-    .getStudentListForMail();
-}
-
-function sendBroadcast() {
-  var subject = document.getElementById('broadcastSubject').value.trim();
-  var body    = document.getElementById('broadcastBody').value.trim();
-  if (!subject) { alert('제목을 입력해 주세요.'); return; }
-  if (!body)    { alert('내용을 입력해 주세요.'); return; }
-
-  // 수신자 결정
-  var isAll = document.querySelector('input[name="mailTarget"]:checked').value === 'all';
-  var targetNames = [];
-  if (!isAll) {
-    var checkboxes = document.querySelectorAll('.studentChk:checked');
-    checkboxes.forEach(function(cb) { targetNames.push(cb.value); });
-    if (targetNames.length === 0) { alert('수신자를 1명 이상 선택해 주세요.'); return; }
-  }
-
-  var btn = document.getElementById('broadcastSendBtn');
-  var result = document.getElementById('broadcastResult');
-  btn.disabled = true;
-  btn.textContent = '발송 중...';
-  result.textContent = '';
-
-  google.script.run
-    .withSuccessHandler(function(res) {
-      btn.disabled = false;
-      btn.textContent = '📨 메시지 발송';
-      if (res.success) {
-        result.style.color = '#16a085';
-        result.textContent = '✅ ' + res.count + '명에게 발송 완료!';
-        document.getElementById('broadcastSubject').value = '';
-        document.getElementById('broadcastBody').value = '';
-      } else {
-        result.style.color = 'red';
-        result.textContent = '❌ ' + res.msg;
-      }
-    })
-    .withFailureHandler(function(err) {
-      btn.disabled = false;
-      btn.textContent = '📨 메시지 발송';
-      result.style.color = 'red';
-      result.textContent = '❌ 오류: ' + err.message;
-    })
-    .sendBroadcastMail(subject, body, targetNames);
-}
-</script>
 
 <!-- ═══════════════════════════════════════════════ -->
 <!-- 업적 & 2차 직업 승인 대기함 섹션 -->
 <!-- ═══════════════════════════════════════════════ -->
 <div style="margin-top:20px;">
-  <div style="display:flex;gap:10px;margin-bottom:10px;">
-    <button onclick="loadPendingAch()" style="background:#8e44ad;color:white;border:none;padding:8px 16px;border-radius:6px;font-weight:bold;cursor:pointer;">🏅 업적 승인 대기함 불러오기</button>
-    <button onclick="loadPendingJobs()" style="background:#2980b9;color:white;border:none;padding:8px 16px;border-radius:6px;font-weight:bold;cursor:pointer;">💼 2차 직업 대기함 불러오기</button>
-    <button onclick="loadRejectedAch()" style="background:#c0392b;color:white;border:none;padding:8px 16px;border-radius:6px;font-weight:bold;cursor:pointer;">↩️ 반려 정정함 불러오기</button>
-    <button onclick="loadP2PAlerts()"
-     style="background:#16a085;color:white;border:none;padding:8px 16px;border-radius:6px;font-weight:bold;cursor:pointer;">
-     🚨 P2P 이상거래 확인</button>
-    <button onclick="openLaunchDepositModal()"
-      style="background:#2471a3;color:white;border:none;padding:8px 16px;border-radius:6px;font-weight:bold;cursor:pointer;">
-     🏦 신규 예금 상품 론칭</button>
-    <button onclick="doSetPenaltyRate()"
-      style="background:#7f8c8d;color:white;border:none;padding:8px 16px;border-radius:6px;font-weight:bold;cursor:pointer;">
-      ✏️ 패널티율 수정</button>
-    <button onclick="setGuardPw()"
-     style="background:#0d1117;color:#58a6ff;border:1px solid #58a6ff;padding:8px 16px;border-radius:6px;font-weight:bold;cursor:pointer;">🛡️ 수호대 비밀번호 설정</button>
-    <button onclick="loadPendingLoans()"
-     style="background:#6c3483;color:white;border:none;padding:8px 16px;border-radius:6px;font-weight:bold;cursor:pointer;">💳 대출 승인 대기함</button>
-    <button onclick="openGuildModal()"
-     style="background:#1a6b3c;color:white;border:none;padding:8px 16px;border-radius:6px;font-weight:bold;cursor:pointer;">🏰 길드 운영 / 현황</button>
-  </div>
+  
+
 
   <!-- 대출 대기함 -->
   <div id="loanPendingArea" style="display:none;margin-top:10px;border:1px solid #ddd;border-radius:8px;padding:12px;">
@@ -1916,6 +1493,462 @@ function doSaveSessionAttendance() {
 }
 </script>
 
+<!-- ═══ 경매 제어 패널 (월 1회) ═══ -->
+<details style="margin-top:20px;">
+<summary style="cursor:pointer;background:#2c3e50;color:white;padding:12px 18px;border-radius:8px;font-weight:bold;font-size:15px;list-style:none;display:flex;justify-content:space-between;">🎙️ 경매 제어 패널 (월 1회 사용) <span>▼</span></summary>
+<div style="margin-top:10px;">
+
+<div class="control-box">
+  <label style="font-weight:bold;">진행 회차:</label>
+  <select id="auctionRound" style="border: 2px solid #8e44ad; font-weight:bold;">
+    <option value="1">1차 경매</option><option value="2">2차 경매</option><option value="3">3차 경매</option>
+    <option value="4">4차 경매</option><option value="5">5차 경매</option><option value="6">6차 경매</option>
+    <option value="7">7차 경매</option><option value="8">8차 경매</option><option value="9">9차 경매</option>
+  </select>
+  <span style="border-left: 1px solid #ddd; height: 20px; margin: 0 5px;"></span>
+
+  <label style="font-weight:bold;">상품:</label>
+  <select id="itemSelect" style="max-width: 150px;"></select>
+
+  <button class="btn-start"                                onclick="startItem(0)">▶ 최초 송출</button>
+  <button class="btn-start" style="background:#e67e22;"    onclick="startItem(1)">📉 1차 재경매 송출</button>
+  <button class="btn-start" style="background:#c0392b;"    onclick="startItem(2)">⚠️ 최종 재경매 송출</button>
+
+  <button class="btn-extend" onclick="extendTime()">⏱️ +10초</button>
+  <button class="btn-fail"   onclick="failItem()">❌ 유찰</button>
+  <button class="btn-next" style="background:#95a5a6;" onclick="resetDisplay()">⏹️ 화면초기화</button>
+
+  <div id="statusMsg"></div>
+  <button class="btn-end" onclick="endAuction()">🏁 모든 경매 종료 및 오늘 결과 화면 송출하기</button>
+</div>
+
+<!-- ── 3단 레이아웃 ── -->
+<div class="auction-grid">
+
+  <!-- 1열: 학생 입찰 테이블 -->
+  <div class="auction-panel">
+    <div class="auction-panel-header blue">👥 학생 입찰 현황</div>
+    <div class="auction-panel-body">
+      <table>
+        <thead><tr><th>학생 이름</th><th>잔여 자산</th><th>입찰가 입력</th><th>낙찰 처리</th></tr></thead>
+        <tbody id="studentList"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 2열: 낙찰 결과 테이블 -->
+  <div class="auction-panel">
+    <div class="auction-panel-header green">🏆 낙찰 결과 <span id="soldCount" style="font-size:11px;font-weight:normal;margin-left:6px;">0건</span></div>
+    <div class="auction-panel-body">
+      <table class="result-table" id="soldTable">
+        <thead><tr><th>상품명</th><th>낙찰자</th><th>낙찰가</th></tr></thead>
+        <tbody id="soldList">
+          <tr><td colspan="3" class="empty-msg">아직 낙찰된 상품이 없습니다</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 3열: 유찰 현황 테이블 -->
+  <div class="auction-panel">
+    <div class="auction-panel-header red">❌ 유찰 현황 <span id="failedCount" style="font-size:11px;font-weight:normal;margin-left:6px;">0건</span></div>
+    <div class="auction-panel-body">
+      <table class="result-table fail" id="failedTable">
+        <thead><tr><th>상품명</th><th>유찰 구분</th><th>누적횟수</th></tr></thead>
+        <tbody id="failedList">
+          <tr><td colspan="3" class="empty-msg">유찰된 상품이 없습니다</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ── 전역 변수 ──────────────────────────────────────────────────
+  let failCount   = 0;
+  let globalItems = [];
+  let soldRecords   = [];  // 낙찰 기록 배열
+  let failedRecords = [];  // 유찰 기록 배열
+
+  // Firebase SDK(type=module)에서 접근할 수 있도록 window에 노출
+  window._renderSoldTable = function() {
+    var tbody = document.getElementById('soldList');
+    if (soldRecords.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="3" class="empty-msg">아직 낙찰된 상품이 없습니다</td></tr>';
+    } else {
+      tbody.innerHTML = '';
+      soldRecords.forEach(function(r) {
+        var tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td style="font-size:12px;font-weight:bold;color:#2c3e50;">' + r.itemName + '</td>' +
+          '<td style="font-size:12px;">' + r.winner + '</td>' +
+          '<td style="font-size:12px;font-weight:bold;color:#27ae60;text-align:right;">$' + r.price.toLocaleString() + '</td>';
+        tbody.appendChild(tr);
+      });
+    }
+    document.getElementById('soldCount').innerText = soldRecords.length + '건';
+  };
+
+  window._renderFailTable = function() {
+    var tbody = document.getElementById('failedList');
+    if (failedRecords.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="3" class="empty-msg">유찰된 상품이 없습니다</td></tr>';
+    } else {
+      tbody.innerHTML = '';
+      failedRecords.forEach(function(r) {
+        var badge = r.count >= 3
+          ? '<span style="background:#c0392b;color:white;padding:1px 6px;border-radius:3px;font-size:11px;">최종</span>'
+          : '<span style="background:#e67e22;color:white;padding:1px 6px;border-radius:3px;font-size:11px;">' + r.label + '</span>';
+        var tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td style="font-size:12px;font-weight:bold;color:#2c3e50;">' + r.itemName + '</td>' +
+          '<td>' + badge + '</td>' +
+          '<td style="text-align:center;font-weight:bold;color:#e74c3c;">' + r.count + '회</td>';
+        tbody.appendChild(tr);
+      });
+    }
+    document.getElementById('failedCount').innerText = failedRecords.length + '건';
+  };
+
+  // ── 초기화: 학생 목록 + 상품 목록 불러오기 ─────────────────────
+  google.script.run.withSuccessHandler(function(data) {
+    globalItems = data.items;
+
+    var itemSel = document.getElementById('itemSelect');
+    itemSel.innerHTML = '';
+    globalItems.forEach(function(item, index) {
+      itemSel.innerHTML += '<option value="' + index + '">' + item.name + '</option>';
+    });
+
+    var tbody = document.getElementById('studentList');
+    tbody.innerHTML = '';
+    data.students.forEach(function(st) {
+      tbody.innerHTML += '<tr>' +
+        '<td style="font-size:13px;"><strong>' + st.name + '</strong> <span style="font-size:11px;color:gray;">(' + st.brand + ')</span></td>' +
+        '<td id="bal_' + st.rowIdx + '" data-balance="' + st.balance + '" style="font-weight:bold;color:#2c3e50;">$' + st.balance.toLocaleString() + '</td>' +
+        '<td><input type="number" id="bid_' + st.rowIdx + '" class="bid-input" step="10" placeholder="금액"></td>' +
+        '<td><button class="btn-sold" onclick="sellItem(' + st.rowIdx + ', \'' + st.name + '\', \'' + st.brand + '\')">쾅! 낙찰</button></td>' +
+      '</tr>';
+    });
+
+    // Firebase 준비 후: 기록 복원 + idle 설정
+    setTimeout(function() {
+      if (window._fbRestoreRecords) {
+        window._fbRestoreRecords();  // 낙찰/유찰 기록 복원
+      }
+      if (window._fbGet) {
+        window._fbGet().then(function(current) {
+          var activeStatuses = ['bidding', 'failed', 'failed_final', 'sold'];
+          if (!current || activeStatuses.indexOf(current.status) === -1) {
+            window._fbSet({ status: 'idle' });
+          }
+        });
+      } else {
+        google.script.run.setAuctionState({ status: 'idle' });
+      }
+    }, 1500);
+  }).getAuctionInitData();
+
+
+  // ── 학생용 중계 화면 새 창으로 열기 ────────────────────────────
+  function openDisplay() {
+    google.script.run.withSuccessHandler(function(url) {
+      window.open(url + '?page=display', '_blank');
+    }).getScriptUrl();
+  }
+
+
+  // ── 경매 송출 ──────────────────────────────────────────────────
+  function startItem(level) {
+    var itemIdx      = parseInt(document.getElementById('itemSelect').value);
+    var selectedItem = globalItems[itemIdx];
+    failCount        = level;  // 송출 레벨에 맞게 failCount 동기화
+
+    var endTime = new Date().getTime() + 31000; // 31초 (1초 여유)
+
+    var stateObj;
+    if (level === 0) {
+      document.getElementById('statusMsg').innerText =
+        '[최초 송출 중] ' + selectedItem.name + ' (시작가: $' + selectedItem.startPrice + ')';
+      stateObj = {
+        status:     'bidding',
+        itemName:   selectedItem.name,
+        startPrice: selectedItem.startPrice,
+        failCount:  0,
+        endTime:    endTime
+      };
+    } else if (level === 1) {
+      var discountedPrice = Math.round(selectedItem.startPrice * 0.9);
+      document.getElementById('statusMsg').innerText =
+        '[1차 재경매 송출 중] ' + selectedItem.name + ' (할인가: $' + discountedPrice + ')';
+      stateObj = {
+        status:       'failed',
+        itemName:     selectedItem.name,
+        failCount:    1,
+        currentPrice: discountedPrice,
+        endTime:      endTime
+      };
+    } else {
+      var finalPrice = Math.round(selectedItem.startPrice * 0.81);
+      document.getElementById('statusMsg').innerText =
+        '[최종 재경매 송출 중] ' + selectedItem.name + ' (파격가: $' + finalPrice + ')';
+      stateObj = {
+        status:       'failed_final',
+        itemName:     selectedItem.name,
+        currentPrice: finalPrice,
+        endTime:      endTime
+      };
+    }
+
+    // Firebase에 즉시 쓰기 + GAS에도 동기화 (호환성 유지)
+    if (window._fbSet) {
+      window._fbSet(stateObj);
+    } else {
+      google.script.run.setAuctionState(stateObj);
+    }
+  }
+
+
+  // ── 시간 연장 (+10초) ────────────────────────────────────────
+  function extendTime() {
+    if (window._fbGet) {
+      window._fbGet().then(function(current) {
+        if (!current || current.status === 'idle') {
+          alert('진행 중인 경매가 없습니다.');
+          return;
+        }
+        var updated = Object.assign({}, current, { endTime: current.endTime + 10000 });
+        window._fbSet(updated);
+        var msg = document.getElementById('statusMsg');
+        if (msg.innerText.indexOf('연장됨') === -1) msg.innerText += ' (시간 10초 연장됨)';
+      });
+    } else {
+      google.script.run.withSuccessHandler(function(success) {
+        if (success) {
+          var msg = document.getElementById('statusMsg');
+          if (msg.innerText.indexOf('연장됨') === -1) msg.innerText += ' (시간 10초 연장됨)';
+        } else {
+          alert('진행 중인 경매가 없습니다.');
+        }
+      }).addAuctionTime(10000);
+    }
+  }
+
+
+  // ── 유찰 처리 ────────────────────────────────────────────────
+  function failItem() {
+    var itemSel  = document.getElementById('itemSelect');
+    var itemIdx  = parseInt(itemSel.value);
+    var itemName = globalItems[itemIdx].name;
+    var roundNum = parseInt(document.getElementById('auctionRound').value);
+
+    // ✅ 최초 송출 없이 유찰 버튼을 누른 경우 — 최초 송출을 먼저 자동 실행
+    // Firebase 상태가 idle이면 아직 송출이 안 된 것
+    if (window._fbGet) {
+      window._fbGet().then(function(current) {
+        var notStarted = !current || current.status === 'idle' || current.itemName !== itemName;
+        if (notStarted) {
+          if (!confirm('[' + itemName + '] 최초 송출 없이 유찰 처리합니다.\n1차 유찰로 기록됩니다. 계속하시겠습니까?')) return;
+          startItem(0); // 최초 송출로 failCount = 0 세팅
+        }
+        _doFail(itemSel, itemName, roundNum);
+      });
+    } else {
+      _doFail(itemSel, itemName, roundNum);
+    }
+  }
+
+  function _doFail(itemSel, itemName, roundNum) {
+    // failCount는 현재 송출된 레벨 (startItem에서 동기화됨)
+    var nextFail = failCount + 1;
+
+    if (nextFail > 2) {
+      // 3번 유찰 = 완전 최종 유찰
+      alert('⚠️ 최종 유찰되었습니다. 수동 배정이 필요합니다.');
+      _addFailRecord(itemName, 3, roundNum);
+      google.script.run.recordAuctionFail(itemName, 3, roundNum);
+      resetDisplay();
+      itemSel.appendChild(itemSel.options[itemSel.selectedIndex]);
+      failCount = 0;
+      return;
+    }
+
+    // 1차 또는 2차 유찰 → 재경매 송출
+    // startItem(nextFail) 안에서 failCount = nextFail 로 동기화됨
+    _addFailRecord(itemName, nextFail, roundNum);
+    google.script.run.recordAuctionFail(itemName, nextFail, roundNum);
+    startItem(nextFail);
+  }
+
+
+  // ── 유찰 테이블에 행 추가 ─────────────────────────────────────
+  function _addFailRecord(itemName, count, roundNum) {
+    var label = count === 1 ? '1차 유찰'
+              : count === 2 ? '2차 유찰'
+              : '최종 유찰';
+
+    failedRecords.push({ itemName: itemName, label: label, count: count });
+    _renderFailTable();
+
+    // Firebase에 누적 기록 저장 (새로고침 복원용)
+    if (window._fbSetRecords) window._fbSetRecords(soldRecords, failedRecords);
+  }
+
+  // ── 유찰 테이블 렌더링 ────────────────────────────────────────
+  function _renderFailTable() {
+    var tbody = document.getElementById('failedList');
+    if (failedRecords.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="3" class="empty-msg">유찰된 상품이 없습니다</td></tr>';
+    } else {
+      tbody.innerHTML = '';
+      failedRecords.forEach(function(r) {
+        var badge = r.count >= 3
+          ? '<span style="background:#c0392b;color:white;padding:1px 6px;border-radius:3px;font-size:11px;">최종</span>'
+          : '<span style="background:#e67e22;color:white;padding:1px 6px;border-radius:3px;font-size:11px;">' + r.label + '</span>';
+        var tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td style="font-size:12px;font-weight:bold;color:#2c3e50;">' + r.itemName + '</td>' +
+          '<td>' + badge + '</td>' +
+          '<td style="text-align:center;font-weight:bold;color:#e74c3c;">' + r.count + '회</td>';
+        tbody.appendChild(tr);
+      });
+    }
+    document.getElementById('failedCount').innerText = failedRecords.length + '건';
+  }
+
+
+  // ── 낙찰 처리 ────────────────────────────────────────────────
+  function sellItem(rowIdx, name, brand) {
+    var input      = document.getElementById('bid_' + rowIdx);
+    var price      = parseInt(input.value);
+    var itemIdx    = parseInt(document.getElementById('itemSelect').value);
+    var itemName   = globalItems[itemIdx].name;
+    var roundNum   = parseInt(document.getElementById('auctionRound').value);
+    var balCell    = document.getElementById('bal_' + rowIdx);
+    var curBalance = parseInt(balCell.dataset.balance);
+
+    if (!price || price <= 0) return alert('입찰가를 정확히 입력하세요!');
+    if (price > curBalance)   return alert('잔액이 부족합니다! (현재 잔액: $' + curBalance + ')');
+
+    if (confirm(name + ' 학생에게 [' + itemName + ']을(를) $' + price + '에 낙찰하시겠습니까?')) {
+      var studentInfo = { rowIdx: rowIdx, name: name, brand: brand };
+      var itemDetails = { name: itemName };
+
+      google.script.run.withSuccessHandler(function(res) {
+        if (res.success) {
+          // 잔액 실시간 갱신
+          balCell.dataset.balance = res.newBalance;
+          balCell.innerText       = '$' + res.newBalance.toLocaleString();
+          balCell.style.color     = '#e74c3c'; // 빨간색으로 차감 시각화
+
+          input.value = '';
+
+          // ✅ Firebase에 낙찰 상태 송출 → Display에서 낙찰 애니메이션 재생
+          if (window._fbSet) {
+            window._fbSet({
+              status:     'sold',
+              itemName:   itemName,
+              winner:     name,
+              finalPrice: price
+            });
+          }
+
+          // ✅ 낙찰 결과 대시보드에 행 추가
+          _addSoldRecord(itemName, name, price);
+
+          // ✅ 낙찰 완료 시 failCount 초기화 + 낙찰된 상품 목록 맨 뒤로 이동
+          failCount = 0;
+          var itemSel = document.getElementById('itemSelect');
+          itemSel.appendChild(itemSel.options[itemSel.selectedIndex]);
+
+          alert('낙찰 및 기록 완료!');
+        } else {
+          alert('오류: ' + res.msg);
+        }
+      }).executeAuctionSold(studentInfo, itemDetails, price, roundNum);
+    }
+  }
+
+
+  // ── 낙찰 테이블에 행 추가 ─────────────────────────────────────
+  function _addSoldRecord(itemName, winner, price) {
+    soldRecords.push({ itemName: itemName, winner: winner, price: price });
+    _renderSoldTable();
+
+    // Firebase에 누적 기록 저장 (새로고침 복원용)
+    if (window._fbSetRecords) window._fbSetRecords(soldRecords, failedRecords);
+  }
+
+  // ── 낙찰 테이블 렌더링 ────────────────────────────────────────
+  function _renderSoldTable() {
+    var tbody = document.getElementById('soldList');
+    if (soldRecords.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="3" class="empty-msg">아직 낙찰된 상품이 없습니다</td></tr>';
+    } else {
+      tbody.innerHTML = '';
+      soldRecords.forEach(function(r) {
+        var tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td style="font-size:12px;font-weight:bold;color:#2c3e50;">' + r.itemName + '</td>' +
+          '<td style="font-size:12px;">' + r.winner + '</td>' +
+          '<td style="font-size:12px;font-weight:bold;color:#27ae60;text-align:right;">$' + r.price.toLocaleString() + '</td>';
+        tbody.appendChild(tr);
+      });
+    }
+    document.getElementById('soldCount').innerText = soldRecords.length + '건';
+  }
+
+
+  // ── 경매 종료 및 결과 송출 ──────────────────────────────────
+  function endAuction() {
+    if (!confirm('정말 오늘 경매를 종료하시겠습니까? (결과 화면 송출)')) return;
+    document.getElementById('statusMsg').innerText = '결과 집계 중...';
+    google.script.run.withSuccessHandler(function(results) {
+      var endedState = { status: 'ended', results: results };
+      if (window._fbSet) {
+        window._fbSet(endedState);
+      } else {
+        google.script.run.setAuctionState(endedState);
+      }
+
+      // 경매 종료 시 Firebase 누적 기록 초기화 (다음 회차를 위해)
+      if (window._fbSetRecords) {
+        window._fbSetRecords([], []);
+      }
+      soldRecords   = [];
+      failedRecords = [];
+
+      document.getElementById('statusMsg').innerText = '결과 송출 완료!';
+    }).getTodayAuctionResults();
+  }
+
+
+  // ── 화면 초기화 ─────────────────────────────────────────────
+  function resetDisplay() {
+    document.getElementById('statusMsg').innerText = '화면 초기화됨';
+    failCount = 0;  // ✅ 항상 리셋 — 어떤 경로로 호출되든 failCount 초기화
+    var idleState = { status: 'idle' };
+    if (window._fbSet) {
+      window._fbSet(idleState);
+    } else {
+      google.script.run.setAuctionState(idleState);
+    }
+  }
+</script>
+</div>
+</details>
+<script>
+function toggleAdminCard(bodyId, arrowId) {
+  var body  = document.getElementById(bodyId);
+  var arrow = document.getElementById(arrowId);
+  if (!body) return;
+  var isHidden = body.style.display === 'none';
+  body.style.display  = isHidden ? 'block' : 'none';
+  if (arrow) arrow.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+}
+</script>
+
 
 <script>
 // ── P2P 이상거래 목록 불러오기 ───────────────────────────────
@@ -2108,4 +2141,3 @@ function doSetPenaltyRate() {
 }
 </script>
 </body>
-</html>

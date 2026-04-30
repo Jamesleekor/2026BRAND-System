@@ -15,9 +15,13 @@
 // ============================================================
 
 // --- GS 공식 가중치 (나중에 조정 시 여기만 수정) ---
-var GS_ALPHA        = 0.4;   // 인당 평균 자산 증가량 가중치
-var GS_BETA         = 0.3;   // 격차 축소율 가중치
-var GS_MISSION_RATE = 0.3;   // 미션항 가중치
+var GS_ALPHA        = 0.35;  // 브랜드가치 인당 증가량 (정규화) 가중치
+var GS_BETA         = 0.20;  // 격차 축소율 (정규화) 가중치
+var GS_MISSION_RATE = 0.15;  // 미션항 가중치
+var GS_PROJECT_RATE = 0.30;  // 학기 프로젝트 가중치
+
+// --- 캡 시스템: 개인 브랜드가치 기여 상한 = 길드 평균의 N배 ---
+var GS_CAP_MULTIPLIER = 2.0; // 평균의 2배 초과분은 잘라냄
 
 // --- 미션별 가중치 (합계가 반드시 1.0이 되도록 설정) ---
 // 마스터가 직접 수정. 미사용 미션은 0으로 두면 됨.
@@ -720,10 +724,15 @@ function calcMonthlyGS() {
   gsResults.forEach(function(r, idx) { r.rank = idx + 1; });
 
   // 길드_GS_월간 시트에 기록
-  // 컬럼: A=월, B=길드ID, C=시작_자산합계, D=종료_자산합계,
-  //        E=인당_평균_증가량, F=시작_표준편차, G=종료_표준편차,
-  //        H=격차축소율, I=미션점수합계, J=알파_적용값,
-  //        K=베타_적용값, L=미션항_적용값, M=월간_GS_합계, N=월간_순위
+  // 컬럼: A=월, B=길드ID,
+  //   C=시작_브랜드가치합계, D=종료_브랜드가치합계,
+  //   E=인당_증가량(캡적용), F=정규화_증가점수,
+  //   G=시작_표준편차, H=종료_표준편차,
+  //   I=격차축소율, J=정규화_격차점수,
+  //   K=미션점수합계, L=정규화_미션점수,
+  //   M=알파_적용값, N=베타_적용값, O=미션항_적용값,
+  //   P=학기프로젝트점수, Q=프로젝트_적용값,
+  //   R=월간_GS_합계, S=월간_순위
   gsResults.forEach(function(r) {
     gsSheet.appendRow([
       yearMonth,
@@ -756,6 +765,88 @@ function calcMonthlyGS() {
  */
 function runMonthlyGSManually() {
   calcMonthlyGS();
+}
+
+/**
+ * 시즌 종료 후 학기 프로젝트 점수를 입력합니다.
+ * P열(프로젝트점수)과 Q열(적용값)을 업데이트하고
+ * R열(월간_GS)도 재계산합니다.
+ *
+ * 사용법 (Run_Master.gs에서 호출):
+ *   setGuildProjectScore("2026-07", "GUILD_01", 88)
+ *
+ * @param {string} yearMonth  - 대상 월 (yyyy-MM)
+ * @param {string} guildId
+ * @param {number} score      - 0~100
+ */
+function setGuildProjectScore(yearMonth, guildId, score) {
+  if (!yearMonth || !guildId || score === undefined) {
+    throw new Error("setGuildProjectScore: yearMonth, guildId, score 모두 필수입니다.");
+  }
+  if (score < 0 || score > 100) {
+    throw new Error("score는 0~100 사이여야 합니다. 입력값: " + score);
+  }
+
+  var ss      = SpreadsheetApp.getActiveSpreadsheet();
+  var gsSheet = ss.getSheetByName(SHEET_NAMES.GS_MONTHLY);
+  if (!gsSheet) throw new Error("시트 없음: " + SHEET_NAMES.GS_MONTHLY);
+
+  // 컬럼: A=월(0), B=길드ID(1), ... P=학기프로젝트점수(15), Q=프로젝트적용값(16),
+  //        R=월간_GS(17), S=순위(18)
+  var data = gsSheet.getDataRange().getValues();
+  var found = false;
+
+  for (var i = 1; i < data.length; i++) {
+    if (String(data[i][0]).trim() !== yearMonth) continue;
+    if (String(data[i][1]).trim() !== guildId) continue;
+
+    var projectVal = GS_PROJECT_RATE * score;
+
+    // 기존 GS에서 이전 프로젝트 적용값 제거 후 새 값 반영
+    var prevProjectVal = parseFloat(data[i][16]) || 0;
+    var prevTotalGS    = parseFloat(data[i][17]) || 0;
+    var newTotalGS     = Math.round((prevTotalGS - prevProjectVal + projectVal) * 100) / 100;
+
+    gsSheet.getRange(i + 1, 16).setValue(score);                              // P열
+    gsSheet.getRange(i + 1, 17).setValue(Math.round(projectVal * 100) / 100); // Q열
+    gsSheet.getRange(i + 1, 18).setValue(newTotalGS);                         // R열
+
+    Logger.log("[setGuildProjectScore] " + yearMonth + " / " + guildId +
+               " → 프로젝트: " + score + "점, 새 GS: " + newTotalGS);
+    found = true;
+    break;
+  }
+
+  if (!found) {
+    throw new Error("해당 월/길드 행 없음: " + yearMonth + " / " + guildId +
+                    " (먼저 calcMonthlyGS를 실행했는지 확인하세요)");
+  }
+
+  // 순위 재산정
+  _recalcGSRank(gsSheet, yearMonth);
+
+  SpreadsheetApp.getActiveSpreadsheet().toast(
+    guildId + " 학기 프로젝트 " + score + "점 입력 완료.",
+    "프로젝트 점수 입력", 4
+  );
+}
+
+/**
+ * 특정 월의 GS 순위를 재산정합니다. (R열 기준)
+ */
+function _recalcGSRank(gsSheet, yearMonth) {
+  var data = gsSheet.getDataRange().getValues();
+  var rows = [];
+
+  for (var i = 1; i < data.length; i++) {
+    if (String(data[i][0]).trim() !== yearMonth) continue;
+    rows.push({ rowIndex: i + 1, totalGS: parseFloat(data[i][17]) || 0 });
+  }
+
+  rows.sort(function(a, b) { return b.totalGS - a.totalGS; });
+  rows.forEach(function(r, idx) {
+    gsSheet.getRange(r.rowIndex, 19).setValue(idx + 1); // S열: 순위
+  });
 }
 
 
@@ -1046,7 +1137,7 @@ function getGuildGsRank() {
   var yearMonth = Utilities.formatDate(now, "Asia/Seoul", "yyyy-MM");
 
   // 이번 달 행 추출
-  // 컬럼: A=월, B=길드ID, M=월간_GS_합계, N=월간_순위
+  // 컬럼: A=월, B=길드ID, R=월간_GS_합계(17), S=월간_순위(18)
   var data    = gsSheet.getDataRange().getValues();
   var results = [];
 
@@ -1056,8 +1147,8 @@ function getGuildGsRank() {
     results.push({
       guildId   : guildId,
       guildName : _getGuildName(mbSheet, guildId),
-      rank      : parseInt(data[i][13]) || 0,  // N열
-      totalGS   : parseFloat(data[i][12]) || 0, // M열
+      rank      : parseInt(data[i][18]) || 0,  // S열
+      totalGS   : parseFloat(data[i][17]) || 0, // R열
       yearMonth : yearMonth
     });
   }
@@ -1074,8 +1165,8 @@ function getGuildGsRank() {
       results.push({
         guildId   : gId,
         guildName : _getGuildName(mbSheet, gId),
-        rank      : parseInt(data[j][13]) || 0,
-        totalGS   : parseFloat(data[j][12]) || 0,
+        rank      : parseInt(data[j][18]) || 0,
+        totalGS   : parseFloat(data[j][17]) || 0,
         yearMonth : prevMonth + " (전월)"
       });
     }
@@ -1302,6 +1393,7 @@ function getGuildCardDataForStudent(studentName) {
   var gsSheet   = ss.getSheetByName(SHEET_NAMES.GS_MONTHLY);
   var allRanks  = [];
   var myRank    = null;
+  var myGS      = null;
 
   if (gsSheet) {
     var now       = new Date();
@@ -1312,8 +1404,9 @@ function getGuildCardDataForStudent(studentName) {
     for (var x = 1; x < gsData.length; x++) {
       if (String(gsData[x][0]).trim() !== yearMonth) continue;
       rawRanks.push({
-        guildId: String(gsData[x][1]).trim(),
-        rank:    parseInt(gsData[x][13]) || 0  // N열
+        guildId : String(gsData[x][1]).trim(),
+        rank    : parseInt(gsData[x][18]) || 0,   // S열
+        totalGS : parseFloat(gsData[x][17]) || 0  // R열
       });
     }
 
@@ -1323,18 +1416,22 @@ function getGuildCardDataForStudent(studentName) {
       for (var y = 1; y < gsData.length; y++) {
         if (String(gsData[y][0]).trim() !== prev) continue;
         rawRanks.push({
-          guildId: String(gsData[y][1]).trim(),
-          rank:    parseInt(gsData[y][13]) || 0
+          guildId : String(gsData[y][1]).trim(),
+          rank    : parseInt(gsData[y][18]) || 0,   // S열
+          totalGS : parseFloat(gsData[y][17]) || 0  // R열
         });
       }
     }
 
-    // 정렬 + 길드명 부여 (점수는 의도적으로 제외)
+    // 정렬 + 길드명 부여 (내 길드 GS만 반환, 타 길드 점수 비공개)
     rawRanks.sort(function(a, b) { return a.rank - b.rank; });
     rawRanks.forEach(function(r) {
       var gName = _getGuildName(mbSheet, r.guildId);
       allRanks.push({ guildName: gName, rank: r.rank });
-      if (r.guildId === myGuildId) myRank = r.rank;
+      if (r.guildId === myGuildId) {
+        myRank = r.rank;
+        myGS   = r.totalGS;
+      }
     });
   }
 
@@ -1345,6 +1442,7 @@ function getGuildCardDataForStudent(studentName) {
     slogan              : mySlogan,
     members             : members,
     myRank              : myRank,
+    myGS                : myGS,
     missionResults      : results,
     missionClearedCount : clearedCt,
     allRanks            : allRanks

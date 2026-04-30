@@ -132,9 +132,13 @@ function getGuardDashboardData(period) {
   // ── 통계 요약 ────────────────────────────────────────────────
   const totalCount  = transactions.length;
   const totalAmount = transactions.reduce(function(s, t) { return s + t.amount; }, 0);
-  const anomalyCount = transactions.filter(function(t) {
-    return t.status === '이상거래' || t.anomalyReasons.length > 0;
+  const anomalySuspectCount = transactions.filter(function(t) {
+  return t.status !== '최종적발' &&
+         (t.status === '이상거래' || t.anomalyReasons.length > 0);
   }).length;
+  const anomalyFinalCount = transactions.filter(function(t) {
+    return t.status === '최종적발';
+}).length;
 
   // Top 판매자 3명
   const topSellers = Object.keys(sellerMap)
@@ -149,14 +153,18 @@ function getGuardDashboardData(period) {
     .slice(0, 3);
 
   // 태그별 통계 배열
+  const FIXED_TAGS = ['#학습도움', '#정서적지지', '#재능판매', '#권리 및 기회'];
   const tagStats = Object.keys(tagCount).map(function(tag) {
-    return { tag, count: tagCount[tag], amount: tagAmount[tag] };
+    const avg = FIXED_TAGS.indexOf(tag) !== -1
+      ? Math.round(tagAmount[tag] / tagCount[tag])
+      : null;
+    return { tag, count: tagCount[tag], amount: tagAmount[tag], avgAmount: avg };
   }).sort(function(a, b) { return b.count - a.count; });
 
   // 주간 요약 텍스트 자동 생성
   const topTag   = tagStats.length > 0 ? tagStats[0].tag : '-';
   const weekSummary = `이번 기간 총 ${totalCount}건, 총 $${totalAmount.toLocaleString()} 거래 발생. ` +
-    `최다 태그: ${topTag}. 이상 거래 ${anomalyCount}건 감지. ` +
+    `최다 태그: ${topTag}. 이상거래 의심 ${anomalySuspectCount}건 / 최종 적발 ${anomalyFinalCount}건. ` +
     (topSellers.length > 0 ? `최다 판매자: ${topSellers[0].name}(${topSellers[0].count}건).` : '');
 
   // ── 네트워크 노드/엣지 (시각화용) ───────────────────────────
@@ -183,7 +191,8 @@ function getGuardDashboardData(period) {
     stats: {
       totalCount,
       totalAmount,
-      anomalyCount,
+      anomalySuspectCount,
+      anomalyFinalCount,
       topSellers,
       topBuyers,
       tagStats,
@@ -199,23 +208,68 @@ function getP2PAlertsForGuard() {
   const sheet = ss.getSheetByName(SHEET_P2P);
   if (!sheet) return [];
 
-  const data   = sheet.getDataRange().getValues();
-  const result = [];
+  const data = sheet.getDataRange().getValues();
+
+  // ─1단계: 전체 행 파싱
+  const rows = [];
   for (let i = 1; i < data.length; i++) {
-    const status = String(data[i][7]).trim();
-    if (status !== '이상거래') continue;
-    result.push({
-      rowNum:      i + 1,
-      txnId:       String(data[i][0]),
-      date:        String(data[i][1]).substring(0, 10),
-      sender:      String(data[i][2]).trim(),
-      receiver:    String(data[i][3]).trim(),
-      amount:      Number(data[i][4]) || 0,
-      tag:         String(data[i][5]).trim(),
-      description: String(data[i][6]).trim(),
-      memo:        data[i][8] ? String(data[i][8]).trim() : ''
+    if (!data[i][0]) continue;
+    rows.push({
+      rowNum:         i + 1,
+      txnId:          String(data[i][0]),
+      date:           String(data[i][1]).substring(0, 10),
+      sender:         String(data[i][2]).trim(),
+      receiver:       String(data[i][3]).trim(),
+      amount:         Number(data[i][4]) || 0,
+      tag:            String(data[i][5]).trim(),
+      description:    String(data[i][6]).trim(),
+      status:         String(data[i][7]).trim(),
+      memo:           data[i][8] ? String(data[i][8]).trim() : '',
+      anomalyReasons: []
     });
   }
+
+  // ─2단계: 개별 행 기준 이상거래 재계산
+  rows.forEach(function(tx) {
+    if (tx.amount >= 1000)
+      tx.anomalyReasons.push('고액 거래');
+    if (tx.description.length < 10)
+      tx.anomalyReasons.push('사유 불충분');
+    if (tx.tag === '#기타' && tx.description.length < 20)
+      tx.anomalyReasons.push('태그 불일치 의심');
+  });
+
+  // ─3단계: 하루 기준 동일 페어 반복/금액 집중 감지
+  const dayPairCount  = {};
+  const dayPairAmount = {};
+  rows.forEach(function(tx) {
+    const key = tx.date + '|' + tx.sender + '|' + tx.receiver;
+    dayPairCount[key]  = (dayPairCount[key]  || 0) + 1;
+    dayPairAmount[key] = (dayPairAmount[key] || 0) + tx.amount;
+  });
+  rows.forEach(function(tx) {
+    const key = tx.date + '|' + tx.sender + '|' + tx.receiver;
+    if (dayPairCount[key] >= 3 &&
+        tx.anomalyReasons.indexOf('반복 거래') === -1) {
+      tx.anomalyReasons.push('반복 거래');
+    }
+    if (dayPairAmount[key] >= 500 &&
+        tx.anomalyReasons.indexOf('금액 집중') === -1) {
+      tx.anomalyReasons.push('금액 집중');
+    }
+    // 시트에 이상거래로 기록됐지만 사유가 없으면 "시스템 감지"
+    if (tx.status === '이상거래' && tx.anomalyReasons.length === 0) {
+      tx.anomalyReasons.push('시스템 감지');
+    }
+  });
+
+  // ─4단계: 이상거래 해당 행만 필터 후 반환
+  const result = rows.filter(function(tx) {
+    if (tx.status === '정상 확인됨') return false;
+    return tx.status === '이상거래' ||
+           tx.status === '최종적발' ||
+           tx.anomalyReasons.length > 0;
+});
   return result.reverse();
 }
 
@@ -226,7 +280,8 @@ function saveGuardMemo(rowNum, memo) {
   if (!sheet) return { success: false, msg: 'P2P거래로그 시트를 찾을 수 없습니다.' };
   if (rowNum < 2) return { success: false, msg: '유효하지 않은 행 번호입니다.' };
   try {
-    sheet.getRange(rowNum, 9).setValue(String(memo || '').trim()); // I열
+    sheet.getRange(rowNum, 9).setValue(String(memo || '').trim()); // I열: 메모
+    sheet.getRange(rowNum, 8).setValue('정상 확인됨');              // H열: 상태 변경
     return { success: true, msg: '메모가 저장되었습니다.' };
   } catch(e) {
     return { success: false, msg: '저장 오류: ' + e.message };

@@ -28,6 +28,8 @@
     #dashboard { display: none; }
     .card { background: var(--card-bg); border-radius: 15px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
     .card-title { font-size: 13px; color: #777; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+    .card-toggle-body { }
+    .card-toggle-body.collapsed { display: none; }
     .value-group { display: flex; justify-content: space-between; align-items: baseline; }
     .card-value { font-size: 24px; font-weight: bold; color: #2c3e50; }
     .card-rank  { font-size: 14px; color: var(--secondary-color); font-weight: bold; }
@@ -846,11 +848,16 @@
 
     <!-- ── 길드 카드 ────────────────────────────────────────────── -->
     <div class="card" id="guildCard" style="margin-bottom:20px; border-left:6px solid #1a6b3c; display:none;">
-      <!-- 헤더: 길드명 + 등수 -->
-      <div class="card-title" style="justify-content:space-between;">
+      <!-- 헤더: 길드명 + 등수 (토글) -->
+      <div class="card-title" style="justify-content:space-between;cursor:pointer;margin-bottom:0;" onclick="toggleCard('guildCardBody','guildCardArrow')">
         <span><i class="fas fa-shield-alt"></i> 우리 길드</span>
-        <span id="guildRankBadge" style="font-size:13px;color:#1a6b3c;font-weight:bold;">-</span>
+        <span style="display:flex;align-items:center;gap:8px;">
+          <span id="guildRankBadge" style="font-size:13px;color:#1a6b3c;font-weight:bold;">-</span>
+          <span id="guildMyGS" style="font-size:11px;color:#aaa;"></span>
+          <span id="guildCardArrow" style="font-size:12px;color:#aaa;transition:transform 0.3s;">▼</span>
+        </span>
       </div>
+      <div id="guildCardBody" class="card-toggle-body collapsed" style="margin-top:10px;">
 
       <!-- 길드명 + 슬로건 -->
       <div style="text-align:center;padding:14px 10px 10px;background:#f4faf6;border-radius:8px;margin-bottom:12px;">
@@ -886,6 +893,7 @@
           ※ 다른 길드의 점수는 비공개입니다
         </div>
       </div>
+      </div><!-- /guildCardBody -->
     </div>
 
     <!-- 길드 미배정 카드 (소속 길드가 없을 때만 표시) -->
@@ -992,14 +1000,18 @@
     <!-- ── 정기예금 카드 ── -->
 <div class="card" style="border-left:6px solid #2471a3;">
 
-  <!-- 카드 타이틀 -->
-  <div class="card-title">
+  <!-- 카드 타이틀 (토글) -->
+  <div class="card-title" style="cursor:pointer;margin-bottom:0;" onclick="toggleCard('depositCardBody','depositCardArrow')">
     <span>🏦 정기 예금</span>
-    <button onclick="openDepositHistoryModal()"
-      style="padding:4px 10px;background:#2471a3;color:white;border:none;border-radius:6px;font-size:12px;font-weight:bold;cursor:pointer;">
-      📋 내 예금 현황
-    </button>
+    <span style="display:flex;align-items:center;gap:8px;">
+      <button onclick="event.stopPropagation();openDepositHistoryModal()"
+        style="padding:4px 10px;background:#2471a3;color:white;border:none;border-radius:6px;font-size:12px;font-weight:bold;cursor:pointer;">
+        📋 내 예금 현황
+      </button>
+      <span id="depositCardArrow" style="font-size:12px;color:#aaa;transition:transform 0.3s;">▼</span>
+    </span>
   </div>
+  <div id="depositCardBody" class="card-toggle-body collapsed" style="margin-top:10px;">
 
   <!-- 활성 상품 정보 -->
   <div id="depositProdInfo" style="background:#eaf4fb;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:13px;">
@@ -1081,6 +1093,7 @@
   <div id="depositNoProduct" style="display:none;text-align:center;padding:20px;color:#aaa;font-size:13px;">
     현재 가입 가능한 예금 상품이 없습니다.
   </div>
+  </div><!-- /depositCardBody -->
 </div>
 
 <!-- ── 예금 현황 모달 ── -->
@@ -1722,7 +1735,11 @@ function closeP2PHistoryModal() {
     </div>
 
     <div class="card">
-      <div class="card-title"><span><i class="fas fa-chart-line"></i> 다음 달 입찰 시작가 (전체 항목)</span></div>
+      <div class="card-title" style="cursor:pointer;margin-bottom:0;" onclick="toggleCard('priceCardBody','priceCardArrow')">
+        <span><i class="fas fa-chart-line"></i> 다음 달 입찰 시작가 (전체 항목)</span>
+        <span id="priceCardArrow" style="font-size:12px;color:#aaa;transition:transform 0.3s;">▼</span>
+      </div>
+      <div id="priceCardBody" class="card-toggle-body collapsed" style="margin-top:10px;">
       <!-- 자리 배치도 -->
       <div id="seatGridWrap" style="display:none;margin-bottom:14px;"></div>
       <!-- 자리 외 항목 테이블 -->
@@ -1734,6 +1751,7 @@ function closeP2PHistoryModal() {
           </table>
         </div>
       </div>
+      </div><!-- /priceCardBody -->
     </div>
 
   </div></div>
@@ -4136,13 +4154,18 @@ function renderGuildCard(data) {
   document.getElementById('guildSlogan').innerText = data.slogan || '';
 
   var rankBadge = document.getElementById('guildRankBadge');
+  var myGSEl    = document.getElementById('guildMyGS');
   if (data.myRank) {
     var rankEmoji = ['', '🥇', '🥈', '🥉', '4️⃣', '5️⃣'];
     rankBadge.innerText = (rankEmoji[data.myRank] || '') + ' ' + data.myRank + '위';
     rankBadge.style.color = data.myRank === 1 ? '#d4ac0d' : '#1a6b3c';
+    if (myGSEl && data.myGS !== null && data.myGS !== undefined) {
+      myGSEl.innerText = 'GS ' + Number(data.myGS).toFixed(1) + '점';
+    }
   } else {
     rankBadge.innerText = '순위 산출 전';
     rankBadge.style.color = '#aaa';
+    if (myGSEl) myGSEl.innerText = '';
   }
 
   // ── 길드 멤버 ──
@@ -4205,6 +4228,21 @@ function renderGuildCard(data) {
         '<span style="font-size:12px;color:#888;">' + r.rank + '위</span>' +
       '</div>';
     }).join('');
+  }
+}
+
+// ── 카드 토글 함수 ─────────────────────────────────────────────
+function toggleCard(bodyId, arrowId) {
+  var body  = document.getElementById(bodyId);
+  var arrow = document.getElementById(arrowId);
+  if (!body) return;
+  var isCollapsed = body.classList.contains('collapsed');
+  if (isCollapsed) {
+    body.classList.remove('collapsed');
+    if (arrow) arrow.style.transform = 'rotate(180deg)';
+  } else {
+    body.classList.add('collapsed');
+    if (arrow) arrow.style.transform = 'rotate(0deg)';
   }
 }
 </script>

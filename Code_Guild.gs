@@ -15,10 +15,12 @@
 // ============================================================
 
 // --- GS 공식 가중치 (나중에 조정 시 여기만 수정) ---
-var GS_ALPHA        = 0.35;  // 브랜드가치 인당 증가량 (정규화) 가중치
-var GS_BETA         = 0.20;  // 격차 축소율 (정규화) 가중치
-var GS_MISSION_RATE = 0.15;  // 미션항 가중치
-var GS_PROJECT_RATE = 0.30;  // 학기 프로젝트 가중치
+// 월간 GS = α(0.50) + β(0.25) + 미션(0.25) → 월 최대 1.00
+// 시즌 GS = 5월 + 6월 + 7월 (최대 3.00) + 학기프로젝트 (최대 1.00) → 시즌 최대 4.00
+var GS_ALPHA        = 0.50;  // 인당 자산 증가량 가중치
+var GS_BETA         = 0.25;  // 격차 축소율 가중치
+var GS_MISSION_RATE = 0.25;  // 미션항 가중치
+var GS_PROJECT_RATE = 1.00;  // 학기 프로젝트 가중치 (시즌 종료 시 1회 별도 입력)
 
 // --- 캡 시스템: 개인 브랜드가치 기여 상한 = 길드 평균의 N배 ---
 var GS_CAP_MULTIPLIER = 2.0; // 평균의 2배 초과분은 잘라냄
@@ -687,6 +689,16 @@ function calcMonthlyGS() {
     var memberCount     = members.length;
     var perCapitaGrowth = (endAssetTotal - startAssets) / memberCount;
 
+    // 캡 시스템: 인당 증가량이 길드 평균 자산의 GS_CAP_MULTIPLIER배를 초과하면 잘라냄
+    // 특정 고자산 멤버가 GS를 독점 견인하는 것을 방지
+    var avgAsset = endAssetTotal / memberCount;
+    var capLimit = avgAsset * GS_CAP_MULTIPLIER;
+    if (perCapitaGrowth > capLimit) {
+      Logger.log("[calcMonthlyGS] " + guildId + " 캡 적용: perCapitaGrowth " +
+                 Math.round(perCapitaGrowth) + " → " + Math.round(capLimit));
+      perCapitaGrowth = capLimit;
+    }
+
     // 표준편차 계산 (표본, n-1)
     var startStdDev = prevRow ? prevRow.endStdDev : _stdDev(assets);
     var endStdDev   = _stdDev(assets);
@@ -769,10 +781,16 @@ function runMonthlyGSManually() {
 
 /**
  * 시즌 종료 후 학기 프로젝트 점수를 입력합니다.
- * P열(프로젝트점수)과 Q열(적용값)을 업데이트하고
+ * P열(프로젝트점수)과 Q열(적용값 = score × 1.00)을 업데이트하고
  * R열(월간_GS)도 재계산합니다.
  *
- * 사용법 (Run_Master.gs에서 호출):
+ * 시즌 GS 구조:
+ *   월간 GS (5월) + 월간 GS (6월) + 월간 GS (7월) = 최대 3.00
+ *   + 학기 프로젝트 (score × 1.00)                = 최대 1.00
+ *   ─────────────────────────────────────────────────────────
+ *   시즌 GS 합계                                   = 최대 4.00
+ *
+ * 사용법 (Apps Script 편집기에서 직접 실행):
  *   setGuildProjectScore("2026-07", "GUILD_01", 88)
  *
  * @param {string} yearMonth  - 대상 월 (yyyy-MM)

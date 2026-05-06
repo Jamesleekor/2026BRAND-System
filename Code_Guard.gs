@@ -44,8 +44,10 @@ function getGuardDashboardData(period) {
   const transactions = [];
   const tagCount     = {};  // 태그별 건수
   const tagAmount    = {};  // 태그별 금액
+  const tagQuantity  = {};  // 태그별 총 수량 (K열 기반, K열 없으면 1로 간주)
   const sellerMap    = {};  // 학생별 판매 건수 및 금액 (sender)
   const buyerMap     = {};  // 학생별 구매 건수 (receiver)
+  const dateCountMap = {};  // 날짜별 거래 건수 (라인 차트용)
   // 네트워크: { "A→B": { from, to, count, total } }
   const edgeMap      = {};
 
@@ -53,7 +55,10 @@ function getGuardDashboardData(period) {
     const row = allData[i];
     if (!row[0]) continue; // 빈 행 스킵
 
-    const dateStr = String(row[1]).substring(0, 10);
+    // row[1]이 Date 객체면 formatDate로 안전하게 변환, 문자열이면 앞 10자 사용
+    const dateStr = (row[1] instanceof Date)
+      ? Utilities.formatDate(row[1], Session.getScriptTimeZone(), 'yyyy-MM-dd')
+      : String(row[1]).substring(0, 10);
     // 기간 필터 적용
     // 기간 필터 적용 (문자열 비교 — timezone 문제 없음)
     if (cutoff) {
@@ -61,13 +66,15 @@ function getGuardDashboardData(period) {
       if (dateStr < cutoffStr) continue;
     }
 
-    const sender  = String(row[2]).trim();
-    const recv    = String(row[3]).trim();
-    const amount  = Number(row[4]) || 0;
-    const tag     = String(row[5]).trim();
-    const desc    = String(row[6]).trim();
-    const status  = String(row[7]).trim();
-    const memo    = row[8] ? String(row[8]).trim() : '';
+    const sender   = String(row[2]).trim();
+    const recv     = String(row[3]).trim();
+    const amount   = Number(row[4]) || 0;
+    const tag      = String(row[5]).trim();
+    const desc     = String(row[6]).trim();
+    const status   = String(row[7]).trim();
+    const memo     = row[8] ? String(row[8]).trim() : '';
+    // K열(인덱스10): 수량. 빈칸이면 1로 간주 (기존 데이터 호환)
+    const quantity = (row[10] && Number(row[10]) > 0) ? Number(row[10]) : 1;
 
     // 이상거래 사유 재계산 (프론트에서 강조 표시용)
     const anomalyReasons = [];
@@ -86,12 +93,17 @@ function getGuardDashboardData(period) {
       description: desc,
       status,
       memo,
+      quantity,
       anomalyReasons  // 빈 배열이면 강조 없음
     });
 
     // 태그 통계
-    tagCount[tag]  = (tagCount[tag]  || 0) + 1;
-    tagAmount[tag] = (tagAmount[tag] || 0) + amount;
+    tagCount[tag]    = (tagCount[tag]    || 0) + 1;
+    tagAmount[tag]   = (tagAmount[tag]   || 0) + amount;
+    tagQuantity[tag] = (tagQuantity[tag] || 0) + quantity;
+
+    // 날짜별 거래 건수
+    dateCountMap[dateStr] = (dateCountMap[dateStr] || 0) + 1;
 
     // 판매자(sender) 통계
     if (!sellerMap[sender]) sellerMap[sender] = { count: 0, total: 0 };
@@ -152,20 +164,106 @@ function getGuardDashboardData(period) {
     .sort(function(a, b) { return b.count - a.count; })
     .slice(0, 3);
 
-  // 태그별 통계 배열
+  // 태그별 통계 배열 — 수량 기반 단가 계산
   const FIXED_TAGS = ['#학습도움', '#정서적지지', '#재능판매', '#권리 및 기회'];
-  const tagStats = Object.keys(tagCount).map(function(tag) {
-    const avg = FIXED_TAGS.indexOf(tag) !== -1
-      ? Math.round(tagAmount[tag] / tagCount[tag])
-      : null;
-    return { tag, count: tagCount[tag], amount: tagAmount[tag], avgAmount: avg };
+  const tagStats = Object.keys(tagCount).map(function(t) {
+    const isFixed   = FIXED_TAGS.indexOf(t) !== -1;
+    const totalQty  = tagQuantity[t] || tagCount[t]; // 수량 없으면 건수로 fallback
+    const unitPrice = isFixed ? Math.round(tagAmount[t] / totalQty) : null;
+    return {
+      tag:        t,
+      count:      tagCount[t],
+      amount:     tagAmount[t],
+      quantity:   totalQty,
+      unitPrice:  unitPrice,   // 수량 기반 단가 (건당 평균 금액)
+      avgAmount:  unitPrice    // 기존 필드명 호환용
+    };
   }).sort(function(a, b) { return b.count - a.count; });
+
+  // 날짜별 거래 건수 배열 (라인 차트용) — 날짜순 정렬
+  const dateStats = Object.keys(dateCountMap)
+    .sort()
+    .map(function(d) { return { date: d, count: dateCountMap[d] }; });
 
   // 주간 요약 텍스트 자동 생성
   const topTag   = tagStats.length > 0 ? tagStats[0].tag : '-';
   const weekSummary = `이번 기간 총 ${totalCount}건, 총 $${totalAmount.toLocaleString()} 거래 발생. ` +
     `최다 태그: ${topTag}. 이상거래 의심 ${anomalySuspectCount}건 / 최종 적발 ${anomalyFinalCount}건. ` +
     (topSellers.length > 0 ? `최다 판매자: ${topSellers[0].name}(${topSellers[0].count}건).` : '');
+
+  // ── 브리핑 리포트 생성 ────────────────────────────────────────
+  // 불평등 지수 데이터 가져오기 (getInequalityData 재사용)
+  let ineqSummary = '';
+  try {
+    const ineq = getInequalityData();
+    if (ineq && ineq.success) {
+      const g = ineq.giniAsset;
+      const top20pct = Math.round(ineq.shareTop20 * 100);
+      let giniDesc = '';
+      if      (g < 0.20) giniDesc = '매우 평등한 상태로, 북유럽 복지국가 수준입니다.';
+      else if (g < 0.30) giniDesc = '비교적 평등한 편으로, 독일·일본과 비슷한 수준입니다.';
+      else if (g < 0.35) giniDesc = '우리나라 평균과 비슷한 수준입니다.';
+      else if (g < 0.45) giniDesc = '불평등이 다소 심한 편으로, 미국과 비슷한 수준입니다.';
+      else if (g < 0.55) giniDesc = '불평등이 심각한 수준으로, 남미 국가들과 비슷합니다.';
+      else               giniDesc = '극심한 불평등 상태입니다.';
+
+      // 지니계수 이력에서 직전 값 비교
+      let prevGiniStr = '';
+      if (ineq.history && ineq.history.length >= 2) {
+        const prev = ineq.history[ineq.history.length - 2].giniAsset;
+        const diff = g - prev;
+        prevGiniStr = diff > 0
+          ? `지난 브리핑(${prev.toFixed(3)})보다 불평등이 소폭 심화되었습니다.`
+          : diff < 0
+          ? `지난 브리핑(${prev.toFixed(3)})보다 불평등이 소폭 완화되었습니다.`
+          : `지난 브리핑과 동일한 수준을 유지하고 있습니다.`;
+      }
+
+      ineqSummary =
+        `현재 우리 반 자산 지니계수는 ${g.toFixed(3)}입니다.\n` +
+        `이를 쉽게 설명하면, 상위 20% 학생이 우리 반 전체 자산의 약 ${top20pct}%를 보유하고 있는 상태입니다.\n` +
+        (prevGiniStr ? prevGiniStr + '\n' : '') +
+        `${giniDesc}`;
+    }
+  } catch(e) {
+    ineqSummary = '(불평등 지수 데이터를 불러오지 못했습니다.)';
+  }
+
+  // 태그별 시세 요약 (단가 있는 태그만)
+  const priceLines = tagStats
+    .filter(function(t) { return t.unitPrice !== null; })
+    .map(function(t) {
+      return `${t.tag.padEnd(8)} — 거래 건수 ${t.count}건 / 총 수량 ${t.quantity}건 / 건당 단가 $${t.unitPrice.toLocaleString()}`;
+    }).join('\n');
+
+  // 기간 문자열
+  let periodLabel = '이번 주';
+  if (period === 'month') periodLabel = '이번 달';
+  if (period === 'all')   periodLabel = '전체 기간';
+
+  const today = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy.MM.dd');
+
+  const briefingReport =
+    `📊 B.R.A.N.D 경제 브리핑 — ${periodLabel} (${today} 기준)\n` +
+    `\n━━ 1. 거래 현황 ━━\n` +
+    `이번 기간 우리 반에서는 총 ${totalCount}건, 총 $${totalAmount.toLocaleString()}의 거래가 발생했습니다.\n` +
+    (tagStats.length > 0
+      ? `가장 활발한 거래 유형은 ${tagStats[0].tag}(${tagStats[0].count}건)이며,\n` +
+        tagStats.slice(1, 3).map(function(t) { return `${t.tag}(${t.count}건)`; }).join(', ') +
+        (tagStats.length > 1 ? '이 뒤를 이었습니다.' : '')
+      : '') +
+    `\n\n━━ 2. 주목할 학생 ━━\n` +
+    (topSellers.length > 0 ? `가장 활발히 판매한 학생: ${topSellers[0].name} (${topSellers[0].count}건, $${topSellers[0].total.toLocaleString()})\n` : '') +
+    (topBuyers.length  > 0 ? `가장 활발히 구매한 학생: ${topBuyers[0].name}  (${topBuyers[0].count}건, $${topBuyers[0].total.toLocaleString()})` : '') +
+    `\n\n━━ 3. 이상거래 모니터링 ━━\n` +
+    `이상거래 의심 ${anomalySuspectCount}건이 감지되었으며, 이 중 최종 적발은 ${anomalyFinalCount}건입니다.\n` +
+    `경제 수호대가 지속적으로 모니터링하고 있습니다.` +
+    (ineqSummary
+      ? `\n\n━━ 4. 우리 반 경제 불평등 리포트 ━━\n${ineqSummary}`
+      : '') +
+    (priceLines
+      ? `\n\n━━ 5. 태그별 거래 시세 현황 ━━\n${priceLines}`
+      : '');
 
   // ── 네트워크 노드/엣지 (시각화용) ───────────────────────────
   // 노드: 거래에 등장한 모든 학생
@@ -196,7 +294,9 @@ function getGuardDashboardData(period) {
       topSellers,
       topBuyers,
       tagStats,
-      weekSummary
+      weekSummary,
+      briefingReport,
+      dateStats
     },
     network: { nodes, edges }
   };
@@ -217,7 +317,9 @@ function getP2PAlertsForGuard() {
     rows.push({
       rowNum:         i + 1,
       txnId:          String(data[i][0]),
-      date:           String(data[i][1]).substring(0, 10),
+      date:           (data[i][1] instanceof Date)
+                        ? Utilities.formatDate(data[i][1], Session.getScriptTimeZone(), 'yyyy-MM-dd')
+                        : String(data[i][1]).substring(0, 10),
       sender:         String(data[i][2]).trim(),
       receiver:       String(data[i][3]).trim(),
       amount:         Number(data[i][4]) || 0,

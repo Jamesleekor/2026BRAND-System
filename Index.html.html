@@ -1453,10 +1453,20 @@ function requestCancelDeposit(depId, amount) {
     </div>
 
     <!-- 거래 설명 -->
-    <div style="margin-bottom:12px;">
+    <div style="margin-bottom:8px;">
       <label style="font-size:12px;color:#555;display:block;margin-bottom:4px;">❗거래 설명 (필수)</label>
       <input type="text" id="p2pDesc" placeholder="판매할 서비스 내용 ⚠️실제 물건이나 돈은 절대 거래 금지"
         style="width:100%;padding:9px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;box-sizing:border-box;">
+    </div>
+
+    <!-- 수량 (기타 태그 제외) -->
+    <div id="p2pQuantityWrap" style="margin-bottom:8px;">
+      <label style="font-size:12px;color:#555;display:block;margin-bottom:4px;">📦 수량 <span style="color:#888;font-weight:normal;">(서비스 제공 횟수·건수)</span></label>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <input type="number" id="p2pQuantity" min="1" max="999" value="1" placeholder="예: 10"
+          style="width:100px;padding:9px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;box-sizing:border-box;">
+        <span style="font-size:12px;color:#888;">※ 문제 10개 도움 → 10 입력. #기타 태그는 수량 입력 불필요.</span>
+      </div>
     </div>
 
     <!-- 세금 안내 -->
@@ -1511,6 +1521,20 @@ function loadP2PReceiverList() {
     .getP2PReceiverList(window._currentStudentName);
 }
 
+// ── 태그 변경 시 수량 입력칸 표시/숨기기 ────────────────────────
+document.querySelectorAll('input[name="p2pTag"]').forEach(function(radio) {
+  radio.addEventListener('change', function() {
+    var wrap = document.getElementById('p2pQuantityWrap');
+    if (!wrap) return;
+    if (this.value === '#기타') {
+      wrap.style.display = 'none';
+      document.getElementById('p2pQuantity').value = '1';
+    } else {
+      wrap.style.display = 'block';
+    }
+  });
+});
+
 // ── 금액 빠른 입력 버튼 ───────────────────────────────────────
 function setP2PAmount(amount) {
   var input = document.getElementById('p2pAmount');
@@ -1521,18 +1545,22 @@ function setP2PAmount(amount) {
 
 // ── P2P 거래 실행 ────────────────────────────────────────────
 function submitP2P() {
-  var receiver = document.getElementById('p2pReceiver').value;
-  var amount   = parseInt(document.getElementById('p2pAmount').value);
-  var tagEl    = document.querySelector('input[name="p2pTag"]:checked');
-  var tag      = tagEl ? tagEl.value : '';
-  var desc     = document.getElementById('p2pDesc').value.trim();
+  var receiver   = document.getElementById('p2pReceiver').value;
+  var amount     = parseInt(document.getElementById('p2pAmount').value);
+  var tagEl      = document.querySelector('input[name="p2pTag"]:checked');
+  var tag        = tagEl ? tagEl.value : '';
+  var desc       = document.getElementById('p2pDesc').value.trim();
+  var quantityEl = document.getElementById('p2pQuantity');
+  var quantity   = (tag !== '#기타' && quantityEl) ? (parseInt(quantityEl.value) || 1) : 1;
 
   if (!receiver) return alert('받는 학생을 선택해주세요.');
   if (!amount || amount <= 0) return alert('금액을 입력해주세요.');
   if (!tag) return alert('거래 태그를 선택해주세요.');
   if (!desc) return alert('거래 설명을 입력해주세요.');
+  if (tag !== '#기타' && quantity < 1) return alert('수량은 1 이상이어야 합니다.');
 
-  if (!confirm(receiver + ' 학생에게 $' + amount.toLocaleString() + ' 거래하시겠습니까?\n(상대방은 소득세 10% 차감 후 수령)')) return;
+  var quantityText = (tag !== '#기타') ? '\n수량: ' + quantity + '건' : '';
+  if (!confirm(receiver + ' 학생에게 $' + amount.toLocaleString() + ' 거래하시겠습니까?' + quantityText + '\n(상대방은 소득세 10% 차감 후 수령)')) return;
 
   // 버튼 비활성화 (중복 클릭 방지)
   var btn = document.querySelector('[onclick="submitP2P()"]');
@@ -1550,8 +1578,11 @@ function submitP2P() {
         document.getElementById('p2pAmount').value = '';
         document.getElementById('p2pDesc').value = '';
         document.getElementById('p2pReceiver').value = '';
+        document.getElementById('p2pQuantity').value = '1';
         var checkedTag = document.querySelector('input[name="p2pTag"]:checked');
         if (checkedTag) checkedTag.checked = false;
+        var wrap = document.getElementById('p2pQuantityWrap');
+        if (wrap) wrap.style.display = 'block';
         // 대시보드 캐시 갱신
         if (window._lastDashboardData) {
           window._lastDashboardData.personal.balance = res.newBalance;
@@ -1564,7 +1595,7 @@ function submitP2P() {
       if (btn) { btn.disabled = false; btn.innerText = '🤝 거래 실행하기'; }
       alert('서버 오류: ' + err.message);
     })
-    .p2pTransfer(window._currentStudentName, receiver, amount, tag, desc);
+    .p2pTransfer(window._currentStudentName, receiver, amount, tag, desc, quantity);
 }
 
 // ── P2P 거래 내역 모달 열기 ──────────────────────────────────

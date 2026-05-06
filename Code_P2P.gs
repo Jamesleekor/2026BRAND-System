@@ -43,7 +43,11 @@ function getP2PReceiverList(studentName) {
 // amount       : 거래 금액
 // tag          : 태그 (#학습도움 / #정서적지지 / #재능판매 / #권리 및 기회 / #기타)
 // description  : 거래 설명
-function p2pTransfer(senderName, receiverName, amount, tag, description) {
+// quantity     : 거래 수량 (기본값 1, #기타 태그는 미사용)
+function p2pTransfer(senderName, receiverName, amount, tag, description, quantity) {
+  // 수량 정규화: 미입력 또는 #기타 태그면 1로 처리
+  const FIXED_TAGS = ['#학습도움', '#정서적지지', '#재능판매', '#권리 및 기회'];
+  quantity = (FIXED_TAGS.indexOf(tag) !== -1) ? (Math.max(1, Math.floor(Number(quantity) || 1))) : 1;
   // ── 기본 유효성 검사 ─────────────────────────────────────────
   if (!receiverName || !receiverName.trim()) {
     return { success: false, msg: '받는 학생을 선택해주세요.' };
@@ -198,14 +202,17 @@ function p2pTransfer(senderName, receiverName, amount, tag, description) {
   if (p2pSheet) {
     const txnId = 'TXN_' + new Date().getTime() + '_' + Math.random().toString(36).substr(2, 4);
     p2pSheet.appendRow([
-      txnId,
-      today,
-      senderName,
-      receiverName,
-      amount,
-      tag,
-      description.trim(),
-      isAnomaly ? '이상거래' : '정상'
+      txnId,                           // A: 거래ID
+      today,                           // B: 날짜
+      senderName,                      // C: 보내는학생
+      receiverName,                    // D: 받는학생
+      amount,                          // E: 금액
+      tag,                             // F: 태그
+      description.trim(),              // G: 거래설명
+      isAnomaly ? '이상거래' : '정상', // H: 상태
+      '',                              // I: 수호대메모 (빈칸)
+      '',                              // J: 평점 (빈칸)
+      quantity                         // K: 수량
     ]);
   }
 

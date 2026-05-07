@@ -832,6 +832,10 @@ setTimeout(function() { loadEmergencyStatus(); }, 500);
         style="flex:1;padding:13px;border:none;background:transparent;cursor:pointer;font-weight:bold;font-size:13px;">
         📋 세션 출석
       </button>
+      <button class="guild-tab-btn" data-tab="mission"  onclick="switchGuildTab('mission')"
+        style="flex:1;padding:13px;border:none;background:transparent;cursor:pointer;font-weight:bold;font-size:13px;">
+        🎯 미션 참여
+      </button>
     </div>
 
     <!-- 탭 내용 영역 -->
@@ -1039,6 +1043,66 @@ setTimeout(function() { loadEmergencyStatus(); }, 500);
         <div id="sesResult" style="margin-top:10px;font-size:13px;text-align:center;"></div>
       </div>
 
+      <!-- ── 탭 5: 미션 참여 ────────────────────────────────── -->
+      <div id="guildTab_mission" class="guild-tab-content" style="display:none;">
+        <div style="background:#e8f4fd;border:1px solid #aed6f1;border-radius:8px;
+                    padding:10px 14px;font-size:12px;color:#1f618d;margin-bottom:16px;">
+          ℹ️ 길드와 미션을 선택하면 멤버가 자동으로 불러와집니다. 기본값은 모두 참여(O)입니다.
+        </div>
+
+        <!-- 길드 + 미션 선택 -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+          <div>
+            <label style="font-size:13px;font-weight:bold;display:block;margin-bottom:6px;">길드</label>
+            <select id="misGuildId" onchange="loadMissionMembers()"
+              style="width:100%;padding:9px;border:1px solid #ddd;border-radius:6px;font-size:14px;box-sizing:border-box;">
+              <option value="">— 길드 선택 —</option>
+              <option value="GUILD_01">GUILD_01</option>
+              <option value="GUILD_02">GUILD_02</option>
+              <option value="GUILD_03">GUILD_03</option>
+              <option value="GUILD_04">GUILD_04</option>
+              <option value="GUILD_05">GUILD_05</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:13px;font-weight:bold;display:block;margin-bottom:6px;">미션</label>
+            <select id="misMissionId" onchange="loadMissionMembers()"
+              style="width:100%;padding:9px;border:1px solid #ddd;border-radius:6px;font-size:14px;box-sizing:border-box;">
+              <option value="">— 미션 선택 —</option>
+              <option value="M01">M01</option><option value="M02">M02</option>
+              <option value="M03">M03</option><option value="M04">M04</option>
+              <option value="M05">M05</option><option value="M06">M06</option>
+              <option value="M07">M07</option><option value="M08">M08</option>
+              <option value="M09">M09</option><option value="M10">M10</option>
+              <option value="M11">M11</option><option value="M12">M12</option>
+              <option value="M13">M13</option><option value="M14">M14</option>
+              <option value="M15">M15</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-bottom:14px;">
+          <label style="font-size:13px;font-weight:bold;display:block;margin-bottom:6px;">날짜</label>
+          <input type="date" id="misDate"
+            style="width:100%;padding:9px;border:1px solid #ddd;border-radius:6px;font-size:14px;box-sizing:border-box;">
+        </div>
+
+        <!-- 멤버 참여 토글 -->
+        <div style="margin-bottom:16px;">
+          <label style="font-size:13px;font-weight:bold;display:block;margin-bottom:8px;">참여 체크</label>
+          <div id="misMembersList" style="background:#f9f9f9;border-radius:8px;padding:12px;min-height:60px;">
+            <span style="color:#aaa;font-size:13px;">길드와 미션을 먼저 선택하세요.</span>
+          </div>
+        </div>
+
+        <!-- 저장 버튼 -->
+        <button id="misSubmitBtn" onclick="doSaveMissionParticipation()"
+          style="width:100%;padding:12px;background:#1a5276;color:white;border:none;
+                 border-radius:8px;font-weight:bold;font-size:15px;cursor:pointer;">
+          🎯 참여 저장
+        </button>
+        <div id="misResult" style="margin-top:10px;font-size:13px;text-align:center;"></div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -1079,7 +1143,7 @@ function closeGuildModal() {
 
 // ── 탭 전환 ────────────────────────────────────────────────
 function switchGuildTab(tabName) {
-  var tabs = ['status', 'announce', 'manual', 'session'];
+  var tabs = ['status', 'announce', 'manual', 'session', 'mission'];
   tabs.forEach(function(t) {
     var content = document.getElementById('guildTab_' + t);
     if (content) content.style.display = (t === tabName) ? 'block' : 'none';
@@ -1490,6 +1554,105 @@ function doSaveSessionAttendance() {
       resultEl.innerText = '❌ ' + err.message;
     })
     .saveGuildSessionAttendanceUI(guildId, sesDate, attMap);
+}
+
+// ────────────────────────────────────────────────────────────
+// 탭 5: 미션 참여
+// ────────────────────────────────────────────────────────────
+function loadMissionMembers() {
+  var guildId   = document.getElementById('misGuildId').value;
+  var missionId = document.getElementById('misMissionId').value;
+  var listEl    = document.getElementById('misMembersList');
+
+  if (!guildId || !missionId) {
+    listEl.innerHTML = '<span style="color:#aaa;font-size:13px;">길드와 미션을 먼저 선택하세요.</span>';
+    return;
+  }
+  listEl.innerHTML = '<span style="color:#aaa;font-size:13px;">멤버 불러오는 중...</span>';
+
+  google.script.run
+    .withSuccessHandler(function(members) {
+      if (!members || members.length === 0) {
+        listEl.innerHTML = '<span style="color:#c0392b;font-size:13px;">⚠️ 길드 멤버가 없습니다. 길드_구성 시트를 확인하세요.</span>';
+        return;
+      }
+      listEl.innerHTML = members.map(function(name) {
+        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #eee;">' +
+          '<span style="font-size:14px;color:#2c3e50;font-weight:bold;">' + name + '</span>' +
+          '<div style="display:flex;gap:6px;">' +
+            '<button type="button" data-name="' + name + '" data-att="O" data-active="true" ' +
+              'onclick="toggleMissionAtt(this, \'O\')" ' +
+              'style="padding:5px 14px;border-radius:6px;border:none;background:#27ae60;color:white;font-weight:bold;cursor:pointer;font-size:13px;">O</button>' +
+            '<button type="button" data-name="' + name + '" data-att="X" data-active="false" ' +
+              'onclick="toggleMissionAtt(this, \'X\')" ' +
+              'style="padding:5px 14px;border-radius:6px;border:none;background:#e0e0e0;color:#666;font-weight:bold;cursor:pointer;font-size:13px;">X</button>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    })
+    .withFailureHandler(function(err) {
+      listEl.innerHTML = '<span style="color:#c0392b;font-size:13px;">❌ ' + err.message + '</span>';
+    })
+    .getGuildMembersForSession(guildId);
+}
+
+function toggleMissionAtt(btn, value) {
+  var name = btn.getAttribute('data-name');
+  var siblings = document.querySelectorAll('#misMembersList button[data-name="' + CSS.escape(name) + '"]');
+  siblings.forEach(function(b) {
+    var v = b.getAttribute('data-att');
+    if (v === value) {
+      b.setAttribute('data-active', 'true');
+      b.style.background = (v === 'O') ? '#27ae60' : '#e74c3c';
+      b.style.color = 'white';
+    } else {
+      b.setAttribute('data-active', 'false');
+      b.style.background = '#e0e0e0';
+      b.style.color = '#666';
+    }
+  });
+}
+
+function doSaveMissionParticipation() {
+  var guildId   = document.getElementById('misGuildId').value;
+  var missionId = document.getElementById('misMissionId').value;
+  var misDate   = document.getElementById('misDate').value;
+  var resultEl  = document.getElementById('misResult');
+  var btn       = document.getElementById('misSubmitBtn');
+
+  if (!guildId)   { resultEl.style.color='#c0392b'; resultEl.innerText='❌ 길드를 선택하세요.'; return; }
+  if (!missionId) { resultEl.style.color='#c0392b'; resultEl.innerText='❌ 미션을 선택하세요.'; return; }
+  if (!misDate)   { resultEl.style.color='#c0392b'; resultEl.innerText='❌ 날짜를 선택하세요.'; return; }
+
+  var activeBtns = document.querySelectorAll('#misMembersList button[data-active="true"]');
+  if (activeBtns.length === 0) {
+    resultEl.style.color = '#c0392b';
+    resultEl.innerText = '❌ 멤버가 로드되지 않았습니다. 길드와 미션을 다시 선택하세요.';
+    return;
+  }
+
+  var attMap = {};
+  activeBtns.forEach(function(b) {
+    attMap[b.getAttribute('data-name')] = b.getAttribute('data-att');
+  });
+
+  if (!confirm(guildId + ' / ' + missionId + ' / ' + misDate + '\n참여: ' + Object.keys(attMap).length + '명\n\n저장하시겠습니까?')) return;
+
+  btn.disabled = true; btn.innerText = '저장 중...';
+  resultEl.innerText = '';
+
+  google.script.run
+    .withSuccessHandler(function(res) {
+      btn.disabled = false; btn.innerText = '🎯 참여 저장';
+      resultEl.style.color = res.success ? '#1e8449' : '#c0392b';
+      resultEl.innerText = (res.success ? '✅ ' : '❌ ') + res.msg;
+    })
+    .withFailureHandler(function(err) {
+      btn.disabled = false; btn.innerText = '🎯 참여 저장';
+      resultEl.style.color = '#c0392b';
+      resultEl.innerText = '❌ ' + err.message;
+    })
+    .saveMissionParticipationUI(guildId, missionId, misDate, attMap);
 }
 </script>
 

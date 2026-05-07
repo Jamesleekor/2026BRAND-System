@@ -138,9 +138,11 @@ function _checkAndPostGlobalAlert(studentName, achName, achGrade) {
     msg = `🏆 [${studentName}] 학생이 업적 ${count}개 달성! 대단한 업적 수집가가 탄생했습니다!`;
   }
 
-  // ② 유일/초월 등급 획득 (더 우선순위 높음)
-  if (achGrade === '유일' || achGrade === '초월') {
-    const gradeLabel = achGrade === '유일' ? '🌌 유일' : '✨ 초월';
+  // ② 유일/초월/에픽 등급 획득 (더 우선순위 높음)
+  if (achGrade === '유일' || achGrade === '초월' || achGrade === '에픽') {
+    const gradeLabel = achGrade === '유일' ? '🌌 유일'
+                     : achGrade === '초월' ? '✨ 초월'
+                     : '🔮 에픽';
     noticeId = `GRADE_${achGrade}_${studentName}_${new Date().getTime()}`;
     msg = `${gradeLabel} 등급 업적 [${achName}] 발현! [${studentName}] 학생의 이름이 아카식 레코드의 최상단에 기록됩니다!`;
   }

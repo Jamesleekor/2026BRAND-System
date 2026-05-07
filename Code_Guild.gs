@@ -18,7 +18,8 @@
 // 월간 GS = α(0.50) + β(0.25) + 미션(0.25) → 월 최대 1.00
 // 시즌 GS = 5월 + 6월 + 7월 (최대 3.00) + 학기프로젝트 (최대 1.00) → 시즌 최대 4.00
 var GS_ALPHA        = 0.50;  // 인당 자산 증가량 가중치
-var GS_BETA         = 0.25;  // 격차 축소율 가중치
+var GS_MISSION_PARTICIPATION = 0.15;  // 길드 미션 참여 횟수 가중치
+var GS_SESSION_ATTENDANCE    = 0.10;  // 세션 참석 횟수 가중치
 var GS_MISSION_RATE = 0.25;  // 미션항 가중치
 var GS_PROJECT_RATE = 1.00;  // 학기 프로젝트 가중치 (시즌 종료 시 1회 별도 입력)
 
@@ -51,7 +52,9 @@ var SHEET_NAMES = {
   ASSET_USE      : "자산사용",
   P2P_LOG        : "P2P거래로그",
   ACHIEVEMENT    : "학생업적달성",
-  ACHIEVEMENT_MASTER : "업적마스터"
+  ACHIEVEMENT_MASTER : "업적마스터",
+  PEER_EVAL    : "길드_동료평가",
+  ACTIVITY_LOG : "길드활동로그"
 };
 
 // --- 미션 상태값 상수 ---
@@ -620,18 +623,19 @@ function calcMonthlyGS() {
   // 최종점수 먼저 갱신
   calcAllGuildMissionFinalScores();
 
-  var ss      = SpreadsheetApp.getActiveSpreadsheet();
-  var mainSheet = ss.getSheetByName(SHEET_NAMES.MAIN);
-  var logSheet  = ss.getSheetByName(SHEET_NAMES.MISSION_LOG);
-  var gsSheet   = ss.getSheetByName(SHEET_NAMES.GS_MONTHLY);
+  var ss          = SpreadsheetApp.getActiveSpreadsheet();
+  var mainSheet   = ss.getSheetByName(SHEET_NAMES.MAIN);
+  var logSheet    = ss.getSheetByName(SHEET_NAMES.MISSION_LOG);
+  var gsSheet     = ss.getSheetByName(SHEET_NAMES.GS_MONTHLY);
+  var actSheet    = ss.getSheetByName("길드활동로그"); // 길드활동로그 시트
 
   if (!mainSheet || !logSheet || !gsSheet) {
     Logger.log("[calcMonthlyGS] 필수 시트 없음. 종료.");
     return;
   }
 
-  var now        = new Date();
-  var yearMonth  = Utilities.formatDate(now, "Asia/Seoul", "yyyy-MM");
+  var now       = new Date();
+  var yearMonth = Utilities.formatDate(now, "Asia/Seoul", "yyyy-MM");
 
   // 이미 이번 달 계산됐으면 중복 방지
   var gsData = gsSheet.getDataRange().getValues();
@@ -642,34 +646,71 @@ function calcMonthlyGS() {
     }
   }
 
-  // 메인 시트에서 학생별 자산 조회
-  // 메인 시트 컬럼: A=학생명, B=브랜드가치, C=자산보유량, ...
-  var mainData    = mainSheet.getDataRange().getValues();
-  var assetMap    = {}; // { 학생명: 자산보유량 }
+  // ── 메인 시트에서 학생별 자산 조회 ───────────────────────────
+  var mainData = mainSheet.getDataRange().getValues();
+  var assetMap = {}; // { 학생명: 자산보유량 }
   for (var j = 1; j < mainData.length; j++) {
     var sName  = String(mainData[j][0]).trim();
     var sAsset = parseFloat(mainData[j][2]) || 0;
     if (sName) assetMap[sName] = sAsset;
   }
 
-  // 미션 항목 점수 집계 (길드별 가중 합산)
-  // 길드_미션로그: I열=최종점수
+  // ── 미션 점수 집계 (길드별 가중 합산) ─────────────────────────
   var missionScoreMap = {}; // { guildId: 합산점수 }
   GUILD_IDS.forEach(function(g) { missionScoreMap[g] = 0; });
 
   var logData = logSheet.getDataRange().getValues();
   for (var k = 1; k < logData.length; k++) {
-    var mId     = String(logData[k][0]).trim();
-    var gId     = String(logData[k][1]).trim();
-    var mScore  = parseFloat(logData[k][8]) || 0; // I열
-    var weight  = MISSION_WEIGHTS[mId] || 0;
+    var mId    = String(logData[k][0]).trim();
+    var gId    = String(logData[k][1]).trim();
+    var mScore = parseFloat(logData[k][8]) || 0; // I열
+    var weight = MISSION_WEIGHTS[mId] || 0;
     if (missionScoreMap.hasOwnProperty(gId)) {
       missionScoreMap[gId] += mScore * weight;
     }
   }
 
-  // 길드별 GS 계산
-  var gsResults = []; // [{ guildId, gs, ... }]
+  // ── 길드활동로그에서 참여/출석 횟수 집계 ──────────────────────
+  // 길드활동로그 컬럼: A=날짜, B=유형(미션/세션), C=미션ID, D=학생명, E=참여여부(O/X)
+  // 길드별로 집계: { guildId: { missionCount: N, sessionCount: N } }
+  var actMap = {}; // { guildId: { missionCount, sessionCount } }
+  GUILD_IDS.forEach(function(g) {
+    actMap[g] = { missionCount: 0, sessionCount: 0 };
+  });
+
+  // ── 길드활동로그 → 미션 참여 횟수만 집계 ─────────────────────
+  if (actSheet) {
+    var actData         = actSheet.getDataRange().getValues();
+    var mbSheet         = ss.getSheetByName(SHEET_NAMES.GUILD_MEMBERS);
+    var studentGuildMap = _buildStudentGuildMap(mbSheet);
+
+    for (var a = 1; a < actData.length; a++) {
+      var aType   = String(actData[a][1]).trim(); // B열: 유형
+      var aName   = String(actData[a][3]).trim(); // D열: 학생명
+      var aResult = String(actData[a][4]).trim(); // E열: O/X
+
+      if (aResult !== "O" || aType !== "미션") continue;
+      var aGuildId = studentGuildMap[aName];
+      if (!aGuildId || !actMap[aGuildId]) continue;
+      actMap[aGuildId].missionCount++;
+    }
+  }
+
+  // ── 길드_세션출석 → 세션 참석 횟수 집계 ─────────────────────
+  // 컬럼: A=날짜, B=길드ID, C=학생명, D=출석여부(O/X)
+  var sesSheet = ss.getSheetByName("길드_세션출석");
+  if (sesSheet) {
+    var sesData = sesSheet.getDataRange().getValues();
+    for (var s = 1; s < sesData.length; s++) {
+      var sGuildId = String(sesData[s][1]).trim(); // B열: 길드ID
+      var sResult  = String(sesData[s][3]).trim(); // D열: O/X
+      if (sResult !== "O") continue;
+      if (!actMap[sGuildId]) continue;
+      actMap[sGuildId].sessionCount++;
+    }
+  }
+  // ── 길드별 GS 계산 ────────────────────────────────────────────
+  var gsResults = [];
 
   GUILD_IDS.forEach(function(guildId) {
     var members = _getGuildMembers(guildId);
@@ -680,17 +721,15 @@ function calcMonthlyGS() {
       return assetMap[name] || 0;
     });
 
-    // 시작 자산은 전월 GS 시트에서 가져오거나, 첫 달이면 현재값 사용
-    // (단순화: 현재 값을 종료 자산으로 보고, 시작 자산은 이전 월 종료 자산)
-    var prevRow = _getPrevMonthGSRow(gsSheet, guildId, yearMonth);
+    // 시작 자산: 전월 GS 시트에서, 없으면 현재값
+    var prevRow     = _getPrevMonthGSRow(gsSheet, guildId, yearMonth);
     var startAssets = prevRow ? prevRow.endAssetTotal : _sum(assets);
 
     var endAssetTotal   = _sum(assets);
     var memberCount     = members.length;
     var perCapitaGrowth = (endAssetTotal - startAssets) / memberCount;
 
-    // 캡 시스템: 인당 증가량이 길드 평균 자산의 GS_CAP_MULTIPLIER배를 초과하면 잘라냄
-    // 특정 고자산 멤버가 GS를 독점 견인하는 것을 방지
+    // 캡 시스템: 고자산 멤버 독점 방지
     var avgAsset = endAssetTotal / memberCount;
     var capLimit = avgAsset * GS_CAP_MULTIPLIER;
     if (perCapitaGrowth > capLimit) {
@@ -699,35 +738,34 @@ function calcMonthlyGS() {
       perCapitaGrowth = capLimit;
     }
 
-    // 표준편차 계산 (표본, n-1)
-    var startStdDev = prevRow ? prevRow.endStdDev : _stdDev(assets);
-    var endStdDev   = _stdDev(assets);
+    // ── 참여/출석 점수 계산 ─────────────────────────────────────
+    // 길드 전체 참여 횟수 합산 → 인당 평균으로 정규화
+    var actData_guild    = actMap[guildId] || { missionCount: 0, sessionCount: 0 };
+    // 인당 평균 참여 횟수 (소수점 허용)
+    var avgMissionPart   = memberCount > 0 ? actData_guild.missionCount / memberCount : 0;
+    var avgSessionAttend = memberCount > 0 ? actData_guild.sessionCount / memberCount : 0;
 
-    // 격차 축소율
-    var gapReduction = 0;
-    if (startStdDev > 0) {
-      gapReduction = Math.max(0, (startStdDev - endStdDev) / startStdDev * 100);
-    }
+    var missionPartVal  = GS_MISSION_PARTICIPATION * avgMissionPart;
+    var sessionAttendVal = GS_SESSION_ATTENDANCE   * avgSessionAttend;
 
-    // GS 계산
+    // ── GS 합산 ──────────────────────────────────────────────────
     var alphaVal   = GS_ALPHA        * perCapitaGrowth;
-    var betaVal    = GS_BETA         * gapReduction;
     var missionVal = GS_MISSION_RATE * (missionScoreMap[guildId] || 0);
-    var totalGS    = alphaVal + betaVal + missionVal;
+    var totalGS    = alphaVal + missionPartVal + sessionAttendVal + missionVal;
 
     gsResults.push({
-      guildId        : guildId,
-      startAssetTotal: startAssets,
-      endAssetTotal  : endAssetTotal,
-      perCapitaGrowth: Math.round(perCapitaGrowth),
-      startStdDev    : Math.round(startStdDev),
-      endStdDev      : Math.round(endStdDev),
-      gapReduction   : Math.round(gapReduction * 100) / 100,
-      missionScore   : Math.round(missionScoreMap[guildId] || 0),
-      alphaVal       : Math.round(alphaVal * 100) / 100,
-      betaVal        : Math.round(betaVal * 100) / 100,
-      missionVal     : Math.round(missionVal * 100) / 100,
-      totalGS        : Math.round(totalGS * 100) / 100
+      guildId          : guildId,
+      startAssetTotal  : startAssets,
+      endAssetTotal    : endAssetTotal,
+      perCapitaGrowth  : Math.round(perCapitaGrowth),
+      avgMissionPart   : Math.round(avgMissionPart * 100) / 100,
+      avgSessionAttend : Math.round(avgSessionAttend * 100) / 100,
+      missionScore     : Math.round(missionScoreMap[guildId] || 0),
+      alphaVal         : Math.round(alphaVal * 100) / 100,
+      missionPartVal   : Math.round(missionPartVal * 100) / 100,
+      sessionAttendVal : Math.round(sessionAttendVal * 100) / 100,
+      missionVal       : Math.round(missionVal * 100) / 100,
+      totalGS          : Math.round(totalGS * 100) / 100
     });
   });
 
@@ -735,32 +773,32 @@ function calcMonthlyGS() {
   gsResults.sort(function(a, b) { return b.totalGS - a.totalGS; });
   gsResults.forEach(function(r, idx) { r.rank = idx + 1; });
 
-  // 길드_GS_월간 시트에 기록
-  // 컬럼: A=월, B=길드ID,
-  //   C=시작_브랜드가치합계, D=종료_브랜드가치합계,
-  //   E=인당_증가량(캡적용), F=정규화_증가점수,
-  //   G=시작_표준편차, H=종료_표준편차,
-  //   I=격차축소율, J=정규화_격차점수,
-  //   K=미션점수합계, L=정규화_미션점수,
-  //   M=알파_적용값, N=베타_적용값, O=미션항_적용값,
-  //   P=학기프로젝트점수, Q=프로젝트_적용값,
-  //   R=월간_GS_합계, S=월간_순위
+  // ── 길드_GS_월간 시트에 기록 ──────────────────────────────────
+  // 컬럼 구조 (기존과 동일한 위치 유지, 베타 항목 내용만 교체):
+  //   A=월, B=길드ID,
+  //   C=시작_자산합계, D=종료_자산합계,
+  //   E=인당_증가량(캡적용),
+  //   F=인당_미션참여횟수, G=인당_세션출석횟수,   ← 기존 F=정규화증가, G=시작표준편차 자리 재활용
+  //   H=미션점수합계,
+  //   I=알파_적용값, J=미션참여_적용값, K=세션출석_적용값, L=미션항_적용값,
+  //   M=월간_GS_합계, N=월간_순위
+  //   (P, Q, R, S 열은 setGuildProjectScore 가 나중에 채움 — 위치 고정)
   gsResults.forEach(function(r) {
     gsSheet.appendRow([
-      yearMonth,
-      r.guildId,
-      r.startAssetTotal,
-      r.endAssetTotal,
-      r.perCapitaGrowth,
-      r.startStdDev,
-      r.endStdDev,
-      r.gapReduction,
-      r.missionScore,
-      r.alphaVal,
-      r.betaVal,
-      r.missionVal,
-      r.totalGS,
-      r.rank
+      yearMonth,            // A
+      r.guildId,            // B
+      r.startAssetTotal,    // C
+      r.endAssetTotal,      // D
+      r.perCapitaGrowth,    // E
+      r.avgMissionPart,     // F  ← 인당 미션 참여 횟수
+      r.avgSessionAttend,   // G  ← 인당 세션 출석 횟수
+      r.missionScore,       // H
+      r.alphaVal,           // I
+      r.missionPartVal,     // J  ← 미션참여 적용값
+      r.sessionAttendVal,   // K  ← 세션출석 적용값
+      r.missionVal,         // L
+      r.totalGS,            // M
+      r.rank                // N
     ]);
   });
 
@@ -770,6 +808,7 @@ function calcMonthlyGS() {
     "GS 산출", 5
   );
 }
+
 
 /**
  * 수동으로 월간 GS를 즉시 실행할 때 사용합니다.
@@ -807,37 +846,32 @@ function setGuildProjectScore(yearMonth, guildId, score) {
 
   var ss      = SpreadsheetApp.getActiveSpreadsheet();
   var gsSheet = ss.getSheetByName(SHEET_NAMES.GS_MONTHLY);
-  if (!gsSheet) throw new Error("시트 없음: " + SHEET_NAMES.GS_MONTHLY);
+  if (!gsSheet) throw new Error("길드_GS_월간 시트를 찾을 수 없습니다.");
 
-  // 컬럼: A=월(0), B=길드ID(1), ... P=학기프로젝트점수(15), Q=프로젝트적용값(16),
-  //        R=월간_GS(17), S=순위(18)
-  var data = gsSheet.getDataRange().getValues();
-  var found = false;
+  var data       = gsSheet.getDataRange().getValues();
+  var projectVal = GS_PROJECT_RATE * score;
+  var updated    = false;
 
   for (var i = 1; i < data.length; i++) {
     if (String(data[i][0]).trim() !== yearMonth) continue;
-    if (String(data[i][1]).trim() !== guildId) continue;
+    if (String(data[i][1]).trim() !== guildId)   continue;
 
-    var projectVal = GS_PROJECT_RATE * score;
+    // 현재 totalGS(M열=인덱스12) + 프로젝트 적용값
+    var currentGS = parseFloat(data[i][12]) || 0;
+    var newTotalGS = Math.round((currentGS + projectVal) * 100) / 100;
 
-    // 기존 GS에서 이전 프로젝트 적용값 제거 후 새 값 반영
-    var prevProjectVal = parseFloat(data[i][16]) || 0;
-    var prevTotalGS    = parseFloat(data[i][17]) || 0;
-    var newTotalGS     = Math.round((prevTotalGS - prevProjectVal + projectVal) * 100) / 100;
-
-    gsSheet.getRange(i + 1, 16).setValue(score);                              // P열
-    gsSheet.getRange(i + 1, 17).setValue(Math.round(projectVal * 100) / 100); // Q열
-    gsSheet.getRange(i + 1, 18).setValue(newTotalGS);                         // R열
+    gsSheet.getRange(i + 1, 15).setValue(score);                              // O열: 학기프로젝트점수
+    gsSheet.getRange(i + 1, 16).setValue(Math.round(projectVal * 100) / 100); // P열: 프로젝트적용값
+    gsSheet.getRange(i + 1, 13).setValue(newTotalGS);                         // M열: 월간_GS 업데이트
+    updated = true;
 
     Logger.log("[setGuildProjectScore] " + yearMonth + " / " + guildId +
                " → 프로젝트: " + score + "점, 새 GS: " + newTotalGS);
-    found = true;
     break;
   }
 
-  if (!found) {
-    throw new Error("해당 월/길드 행 없음: " + yearMonth + " / " + guildId +
-                    " (먼저 calcMonthlyGS를 실행했는지 확인하세요)");
+  if (!updated) {
+    throw new Error("해당 월/길드 행을 찾을 수 없습니다: " + yearMonth + " / " + guildId);
   }
 
   // 순위 재산정
@@ -849,6 +883,7 @@ function setGuildProjectScore(yearMonth, guildId, score) {
   );
 }
 
+
 /**
  * 특정 월의 GS 순위를 재산정합니다. (R열 기준)
  */
@@ -858,12 +893,12 @@ function _recalcGSRank(gsSheet, yearMonth) {
 
   for (var i = 1; i < data.length; i++) {
     if (String(data[i][0]).trim() !== yearMonth) continue;
-    rows.push({ rowIndex: i + 1, totalGS: parseFloat(data[i][17]) || 0 });
+    rows.push({ rowIndex: i + 1, totalGS: parseFloat(data[i][12]) || 0 }); // M열 = 인덱스 12
   }
 
   rows.sort(function(a, b) { return b.totalGS - a.totalGS; });
   rows.forEach(function(r, idx) {
-    gsSheet.getRange(r.rowIndex, 19).setValue(idx + 1); // S열: 순위
+    gsSheet.getRange(r.rowIndex, 14).setValue(idx + 1); // N열 = 14번째
   });
 }
 
@@ -1423,8 +1458,8 @@ function getGuildCardDataForStudent(studentName) {
       if (String(gsData[x][0]).trim() !== yearMonth) continue;
       rawRanks.push({
         guildId : String(gsData[x][1]).trim(),
-        rank    : parseInt(gsData[x][18]) || 0,   // S열
-        totalGS : parseFloat(gsData[x][17]) || 0  // R열
+        rank    : parseInt(gsData[x][13]) || 0,   // N열
+        totalGS : parseFloat(gsData[x][12]) || 0  // M열
       });
     }
 
@@ -1527,4 +1562,333 @@ function saveGuildSessionAttendanceUI(guildId, sessionDate, attendanceMap) {
   } catch (e) {
     return { success: false, msg: e.message || String(e) };
   }
+}
+
+/**
+ * 미션 참여 기록 저장 — AuctionAdmin 탭 5에서 호출
+ * 길드활동로그 시트에 개인별 O/X 기록
+ *
+ * @param {string} guildId
+ * @param {string} missionId   - M01~M15
+ * @param {string} date        - YYYY-MM-DD
+ * @param {object} attendanceMap - { 학생명: "O" | "X" }
+ * @returns {object} { success, msg }
+ */
+function saveMissionParticipationUI(guildId, missionId, date, attendanceMap) {
+  try {
+    if (!guildId || !missionId || !date || !attendanceMap) {
+      throw new Error("필수 파라미터가 누락되었습니다.");
+    }
+
+    var ss       = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet    = ss.getSheetByName("길드활동로그");
+    if (!sheet) throw new Error("길드활동로그 시트를 찾을 수 없습니다. 시트를 먼저 생성해주세요.");
+
+    var dateObj   = new Date(date);
+    var inputTime = new Date();
+
+    Object.keys(attendanceMap).forEach(function(studentName) {
+      sheet.appendRow([
+        dateObj,                // A: 날짜
+        "미션",                 // B: 유형
+        missionId,              // C: 미션ID
+        studentName,            // D: 학생명
+        attendanceMap[studentName] // E: O/X
+      ]);
+    });
+
+    var n = Object.keys(attendanceMap).length;
+    Logger.log("[saveMissionParticipationUI] " + guildId + " / " + missionId + " / " + date + " → " + n + "명 기록.");
+    return { success: true, msg: guildId + " " + missionId + " " + date + " 참여 " + n + "명 저장 완료." };
+  } catch (e) {
+    return { success: false, msg: e.message || String(e) };
+  }
+}
+
+
+// ============================================================
+// 섹션 13 — 동료 평가 시스템
+// ============================================================
+
+/**
+ * 동료 평가를 제출합니다.
+ * 같은 미션에서 같은 평가자→피평가자 조합은 중복 제출 불가.
+ *
+ * @param {string} missionId    - 미션 코드 또는 "PROJECT"
+ * @param {string} evaluatorName - 평가자 학생명
+ * @param {string} targetName    - 피평가자 학생명
+ * @param {number} score         - 1~10 정수
+ * @param {string} comment       - 후기 (자유 텍스트)
+ */
+function submitPeerEval(missionId, evaluatorName, targetName, score, comment) {
+  if (!missionId || !evaluatorName || !targetName || score === undefined) {
+    throw new Error("submitPeerEval: 필수 파라미터가 누락되었습니다.");
+  }
+  if (evaluatorName === targetName) {
+    throw new Error("자기 자신은 평가할 수 없습니다.");
+  }
+  score = parseInt(score);
+  if (isNaN(score) || score < 1 || score > 10) {
+    throw new Error("점수는 1~10 사이의 정수여야 합니다.");
+  }
+
+  var ss         = SpreadsheetApp.getActiveSpreadsheet();
+  var evalSheet  = ss.getSheetByName("길드_동료평가");
+  var mbSheet    = ss.getSheetByName(SHEET_NAMES.GUILD_MEMBERS);
+
+  if (!evalSheet) throw new Error("길드_동료평가 시트를 찾을 수 없습니다.");
+
+  // 평가자의 길드 확인
+  var studentGuildMap = _buildStudentGuildMap(mbSheet);
+  var guildId         = studentGuildMap[evaluatorName];
+  if (!guildId) throw new Error("평가자의 소속 길드를 찾을 수 없습니다.");
+
+  // 피평가자도 같은 길드인지 확인
+  if (studentGuildMap[targetName] !== guildId) {
+    throw new Error("같은 길드원만 평가할 수 있습니다.");
+  }
+
+  // 중복 제출 방지 (A+C+D 조합)
+  var existing = evalSheet.getDataRange().getValues();
+  for (var i = 1; i < existing.length; i++) {
+    if (String(existing[i][0]).trim() === missionId &&
+        String(existing[i][2]).trim() === evaluatorName &&
+        String(existing[i][3]).trim() === targetName) {
+      throw new Error("이미 이 미션에서 해당 길드원을 평가했습니다.");
+    }
+  }
+
+  // 기록
+  evalSheet.appendRow([
+    missionId,                                                         // A: 미션ID
+    guildId,                                                           // B: 길드ID
+    evaluatorName,                                                     // C: 평가자
+    targetName,                                                        // D: 피평가자
+    score,                                                             // E: 점수
+    comment || "",                                                     // F: 후기
+    Utilities.formatDate(new Date(), "Asia/Seoul", "yyyy-MM-dd HH:mm:ss"), // G: 작성일시
+    false                                                              // H: 공개여부 (FALSE)
+  ]);
+
+  // 전원 작성 완료 여부 체크 → 완료 시 자동 공개
+  _checkAndRevealPeerEval(missionId, guildId, evalSheet, mbSheet);
+
+  Logger.log("[submitPeerEval] " + missionId + " / " + evaluatorName + " → " + targetName + " : " + score + "점");
+}
+
+
+/**
+ * 해당 미션+길드의 전원 작성 완료 여부를 확인하고,
+ * 완료 시 H열(공개여부)을 TRUE로 일괄 전환합니다.
+ *
+ * 완료 조건: 길드 내 N명이 각자 (N-1)명을 평가했을 때
+ */
+function _checkAndRevealPeerEval(missionId, guildId, evalSheet, mbSheet) {
+  var members    = _getGuildMembers(guildId);      // 활성 멤버 목록
+  var memberCount = members.length;
+  if (memberCount < 2) return;
+
+  var required   = memberCount * (memberCount - 1); // 총 필요 평가 수
+  var data       = evalSheet.getDataRange().getValues();
+
+  // 이 미션+길드의 현재 제출 건수 카운트 (공개 여부 무관)
+  var submitted  = 0;
+  var targetRows = []; // 행 번호 (1-based)
+  for (var i = 1; i < data.length; i++) {
+    if (String(data[i][0]).trim() === missionId &&
+        String(data[i][1]).trim() === guildId) {
+      submitted++;
+      targetRows.push(i + 1);
+    }
+  }
+
+  if (submitted >= required) {
+    // 전원 완료 → H열 TRUE로 일괄 전환
+    targetRows.forEach(function(rowNum) {
+      evalSheet.getRange(rowNum, 8).setValue(true);
+    });
+    Logger.log("[_checkAndRevealPeerEval] " + missionId + "/" + guildId + " 전원 완료 → 공개 전환");
+  }
+}
+
+
+/**
+ * 특정 학생이 특정 미션에서 받은 동료 평가 결과를 반환합니다.
+ * H열=TRUE(공개)인 행만 반환 → 평가자 이름은 포함하지 않음(익명).
+ *
+ * @param {string} studentName
+ * @param {string} missionId
+ * @returns {object} { revealed: boolean, myAvg: number|null, guildAvg: number|null, reviews: string[] }
+ */
+function getPeerEvalResult(studentName, missionId) {
+  var ss        = SpreadsheetApp.getActiveSpreadsheet();
+  var evalSheet = ss.getSheetByName("길드_동료평가");
+  if (!evalSheet) return { revealed: false, myAvg: null, guildAvg: null, reviews: [] };
+
+  var mbSheet         = ss.getSheetByName(SHEET_NAMES.GUILD_MEMBERS);
+  var studentGuildMap = _buildStudentGuildMap(mbSheet);
+  var guildId         = studentGuildMap[studentName];
+  if (!guildId) return { revealed: false, myAvg: null, guildAvg: null, reviews: [] };
+
+  var data         = evalSheet.getDataRange().getValues();
+  var myScores     = [];
+  var myReviews    = [];
+  var guildScores  = []; // 이 미션에서 길드 전체 점수 (공개된 것만)
+  var isRevealed   = false;
+
+  for (var i = 1; i < data.length; i++) {
+    var rowMission = String(data[i][0]).trim();
+    var rowGuild   = String(data[i][1]).trim();
+    var rowTarget  = String(data[i][3]).trim();
+    var rowScore   = parseFloat(data[i][4]) || 0;
+    var rowComment = String(data[i][5]).trim();
+    var rowPublic  = data[i][7]; // H열: 공개여부
+
+    if (rowMission !== missionId || rowGuild !== guildId) continue;
+    if (!rowPublic) continue; // 아직 비공개
+
+    isRevealed = true;
+    guildScores.push(rowScore);
+
+    if (rowTarget === studentName) {
+      myScores.push(rowScore);
+      if (rowComment) myReviews.push(rowComment);
+    }
+  }
+
+  var myAvg    = myScores.length    > 0 ? Math.round((_sum(myScores)    / myScores.length)    * 10) / 10 : null;
+  var guildAvg = guildScores.length > 0 ? Math.round((_sum(guildScores) / guildScores.length) * 10) / 10 : null;
+
+  return {
+    revealed  : isRevealed,
+    myAvg     : myAvg,
+    guildAvg  : guildAvg,
+    reviews   : myReviews
+  };
+}
+
+
+/**
+ * 특정 학생이 제출해야 할 동료 평가 목록과 이미 제출한 목록을 반환합니다.
+ * (Index 대시보드에서 "아직 평가 안 한 항목" 표시용)
+ *
+ * @param {string} studentName
+ * @param {string} missionId
+ * @returns {object} { pending: string[], done: string[] }  // 피평가자 이름 배열
+ */
+function getPeerEvalStatus(studentName, missionId) {
+  var ss        = SpreadsheetApp.getActiveSpreadsheet();
+  var mbSheet   = ss.getSheetByName(SHEET_NAMES.GUILD_MEMBERS);
+  var evalSheet = ss.getSheetByName("길드_동료평가");
+
+  var studentGuildMap = _buildStudentGuildMap(mbSheet);
+  var guildId         = studentGuildMap[studentName];
+  if (!guildId) return { pending: [], done: [] };
+
+  var members = _getGuildMembers(guildId).filter(function(n) { return n !== studentName; });
+
+  var done = [];
+  if (evalSheet) {
+    var data = evalSheet.getDataRange().getValues();
+    for (var i = 1; i < data.length; i++) {
+      if (String(data[i][0]).trim() === missionId &&
+          String(data[i][2]).trim() === studentName) {
+        done.push(String(data[i][3]).trim());
+      }
+    }
+  }
+
+  var pending = members.filter(function(n) { return done.indexOf(n) === -1; });
+  return { pending: pending, done: done };
+}
+
+
+/**
+ * 학생 대시보드용: 모든 미션(+PROJECT)의 동료 평가 결과를 한 번에 반환합니다.
+ *
+ * @param {string} studentName
+ * @returns {object} { missionId: { revealed, myAvg, guildAvg, reviews }, ... }
+ */
+function getAllPeerEvalResults(studentName) {
+  var missionIds = Object.keys(MISSION_WEIGHTS).concat(["PROJECT"]);
+  var result     = {};
+  missionIds.forEach(function(mid) {
+    result[mid] = getPeerEvalResult(studentName, mid);
+  });
+  return result;
+}
+
+
+/**
+ * UI 래퍼: Index.html에서 동료 평가 제출 시 호출
+ * @returns {object} { success: boolean, msg: string }
+ */
+function submitPeerEvalUI(missionId, targetName, score, comment) {
+  try {
+    var studentName = Session.getActiveUser().getEmail(); // 필요 시 학생명으로 교체
+    // ※ B.R.A.N.D는 학생명 기반이므로 실제로는 getStudentData()로 이름을 가져와야 합니다.
+    // Index.html에서 studentName을 파라미터로 넘기는 방식 권장.
+    submitPeerEval(missionId, studentName, targetName, score, comment);
+    return { success: true, msg: "평가가 제출되었습니다." };
+  } catch (e) {
+    return { success: false, msg: e.message };
+  }
+}
+
+/**
+ * UI 래퍼 (학생명 명시 버전) — Index.html에서 호출
+ */
+function submitPeerEvalByName(missionId, evaluatorName, targetName, score, comment) {
+  try {
+    submitPeerEval(missionId, evaluatorName, targetName, score, comment);
+    return { success: true, msg: "평가가 제출되었습니다." };
+  } catch (e) {
+    return { success: false, msg: e.message };
+  }
+}
+
+/**
+ * UI 래퍼: 학생 대시보드에서 동료 평가 결과 조회
+ */
+function getAllPeerEvalResultsUI(studentName) {
+  try {
+    return { success: true, data: getAllPeerEvalResults(studentName) };
+  } catch (e) {
+    return { success: false, msg: e.message, data: {} };
+  }
+}
+
+/**
+ * UI 래퍼: 특정 미션의 평가 현황 조회 (누구를 아직 안 했는지)
+ */
+function getPeerEvalStatusUI(studentName, missionId) {
+  try {
+    return { success: true, data: getPeerEvalStatus(studentName, missionId) };
+  } catch (e) {
+    return { success: false, msg: e.message, data: { pending: [], done: [] } };
+  }
+}
+
+
+// ============================================================
+// 헬퍼: 학생명 → 길드ID 매핑 캐시 생성
+// ============================================================
+
+/**
+ * 길드_구성 시트를 읽어 { 학생명: 길드ID } 객체를 반환합니다.
+ * 탈퇴일이 있는 행은 제외.
+ */
+function _buildStudentGuildMap(mbSheet) {
+  var map = {};
+  if (!mbSheet) return map;
+  var data = mbSheet.getDataRange().getValues();
+  for (var i = 1; i < data.length; i++) {
+    var gId      = String(data[i][0]).trim();
+    var name     = String(data[i][2]).trim();
+    var leaveDate = data[i][5];
+    if (name && gId && (!leaveDate || leaveDate === "")) {
+      map[name] = gId;
+    }
+  }
+  return map;
 }

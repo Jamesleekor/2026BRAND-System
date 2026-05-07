@@ -396,6 +396,39 @@
       100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
     }
 
+    /* ── 에픽(Epic) 등급 칭호 뱃지 ── */
+    .title-badge-epic {
+      background: linear-gradient(135deg, #1a0533 0%, #3d0f6e 30%, #7b2fff 55%, #3d0f6e 75%, #1a0533 100%);
+      background-size: 250% 250%;
+      color: #e0c4ff;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: bold;
+      display: inline-block;
+      margin-right: 4px;
+      border: 1px solid rgba(123,47,255,0.6);
+      text-shadow:
+        0 0 6px  #bf80ff,
+        0 0 14px #9b40ff,
+        0 0 26px rgba(123,47,255,0.6);
+      animation:
+        epicBgShift  5s ease-in-out infinite,
+        epicBoxGlow  3s ease-in-out infinite;
+      letter-spacing: 0.5px;
+      cursor: default;
+    }
+    @keyframes epicBgShift {
+      0%   { background-position: 0%   50%; }
+      50%  { background-position: 100% 50%; }
+      100% { background-position: 0%   50%; }
+    }
+    @keyframes epicBoxGlow {
+      0%   { box-shadow: 0 0 6px  2px rgba(123,47,255,0.5), 0 0 14px 3px rgba(123,47,255,0.25); }
+      50%  { box-shadow: 0 0 14px 4px rgba(160,80,255,0.8), 0 0 28px 6px rgba(123,47,255,0.45); }
+      100% { box-shadow: 0 0 6px  2px rgba(123,47,255,0.5), 0 0 14px 3px rgba(123,47,255,0.25); }
+    }
+
     /* ── 초월(Transcendental) 등급 칭호 뱃지 ── */
     .title-badge-transcendental {
       /* 다크 골드 & 흑연색 그라데이션 */
@@ -563,6 +596,7 @@
     .wof-grade { font-size: 11px; padding: 2px 8px; border-radius: 10px; margin: 0 8px; }
     .wof-grade.희귀   { background:#3498db; color:white; }
     .wof-grade.유니크 { background:linear-gradient(135deg,#e74c3c,#9b59b6); color:white; }
+    .wof-grade.에픽   { background:linear-gradient(135deg,#3d0f6e,#7b2fff); color:#e0c4ff; }
     .wof-grade.히든   { background:#f1c40f; color:#2c3e50; }
     .wof-grade.유일   { background:linear-gradient(135deg,#8e44ad,#f39c12); color:white; }
     .wof-grade.초월   { background:linear-gradient(135deg,#1a1a1a,#b8860b); color:#ffd700; }
@@ -883,6 +917,17 @@
         </div>
       </div>
 
+      <!-- 동료 평가 결과 -->
+      <div style="margin-bottom:14px;">
+        <div style="font-size:12px;color:#888;margin-bottom:6px;font-weight:bold;">
+          🤝 동료 평가
+          <span style="font-size:10px;color:#aaa;font-weight:normal;margin-left:4px;">· 전원 제출 후 공개</span>
+        </div>
+        <div id="peerEvalList" style="display:grid;grid-template-columns:repeat(2,1fr);gap:5px;">
+          <span style="font-size:12px;color:#aaa;">로딩 중...</span>
+        </div>
+      </div>
+
       <!-- 전체 길드 순위 (이름 + 등수만, 점수 비공개) -->
       <div>
         <div style="font-size:12px;color:#888;margin-bottom:6px;font-weight:bold;">📊 전체 순위</div>
@@ -894,6 +939,64 @@
         </div>
       </div>
       </div><!-- /guildCardBody -->
+    </div>
+
+    <!-- ── 동료 평가 제출 모달 ─────────────────────────────────── -->
+    <div id="peerEvalModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+         background:rgba(0,0,0,0.5);z-index:9000;overflow-y:auto;">
+      <div style="background:#fff;border-radius:14px;max-width:420px;margin:40px auto;padding:24px 20px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <div style="font-size:16px;font-weight:bold;color:#1a6b3c;">🤝 동료 평가 제출</div>
+          <span onclick="closePeerEvalModal()" style="cursor:pointer;font-size:18px;color:#aaa;">✕</span>
+        </div>
+        <div id="peerEvalMissionLabel" style="font-size:12px;color:#888;margin-bottom:14px;"></div>
+
+        <!-- 미평가 목록 -->
+        <div id="peerEvalPendingSection">
+          <div style="font-size:12px;color:#555;margin-bottom:8px;font-weight:bold;">📋 아직 평가하지 않은 길드원</div>
+          <div id="peerEvalPendingList" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;"></div>
+        </div>
+
+        <!-- 평가 입력 폼 -->
+        <div id="peerEvalForm" style="display:none;">
+          <div style="font-size:13px;font-weight:bold;color:#2c3e50;margin-bottom:10px;">
+            <span id="peerEvalTargetName" style="color:#1a6b3c;"></span> 님 평가
+          </div>
+
+          <!-- 별점 -->
+          <div style="margin-bottom:14px;">
+            <div style="font-size:12px;color:#888;margin-bottom:6px;">점수 (1~10)</div>
+            <div id="peerEvalStars" style="display:flex;gap:4px;flex-wrap:wrap;">
+              <!-- JS로 생성 -->
+            </div>
+            <div style="font-size:11px;color:#aaa;margin-top:4px;">선택한 점수: <span id="peerEvalScoreDisplay" style="font-weight:bold;color:#1a6b3c;">-</span></div>
+          </div>
+
+          <!-- 후기 -->
+          <div style="margin-bottom:16px;">
+            <div style="font-size:12px;color:#888;margin-bottom:6px;">후기 (선택)</div>
+            <textarea id="peerEvalComment" rows="3" placeholder="이 길드원의 기여를 짧게 적어주세요..."
+              style="width:100%;box-sizing:border-box;border:1px solid #ddd;border-radius:8px;
+                     padding:8px;font-size:12px;resize:none;"></textarea>
+          </div>
+
+          <div style="display:flex;gap:8px;">
+            <button onclick="backToPeerEvalList()"
+              style="flex:1;padding:10px;background:#f5f5f5;border:none;border-radius:8px;
+                     font-size:13px;cursor:pointer;color:#555;">← 목록으로</button>
+            <button onclick="submitPeerEvalForm()"
+              style="flex:2;padding:10px;background:#1a6b3c;border:none;border-radius:8px;
+                     font-size:13px;font-weight:bold;color:#fff;cursor:pointer;">제출하기</button>
+          </div>
+        </div>
+
+        <!-- 완료 메시지 -->
+        <div id="peerEvalDoneMsg" style="display:none;text-align:center;padding:20px 0;">
+          <div style="font-size:32px;margin-bottom:8px;">✅</div>
+          <div style="font-size:14px;color:#1a6b3c;font-weight:bold;">이 미션의 모든 평가를 완료했습니다!</div>
+          <div style="font-size:12px;color:#aaa;margin-top:4px;">결과는 전원 제출 후 공개됩니다.</div>
+        </div>
+      </div>
     </div>
 
     <!-- 길드 미배정 카드 (소속 길드가 없을 때만 표시) -->
@@ -2186,6 +2289,7 @@ function closeP2PHistoryModal() {
 
     var badgeClass = 'title-badge';
     if      (grade === '유니크') badgeClass = 'title-badge-unique';
+    else if (grade === '에픽')   badgeClass = 'title-badge-epic';
     else if (grade === '히든')   badgeClass = 'title-badge-hidden';
     else if (grade === '유일')   badgeClass = 'title-badge-only';
     else if (grade === '초월')   badgeClass = 'title-badge-transcendental';
@@ -2705,6 +2809,7 @@ function closeP2PHistoryModal() {
 
     var badgeClass = 'title-badge-rare'; // 기본: 희귀
     if (grade === '유니크') badgeClass = 'title-badge-unique';
+    else if (grade === '에픽') badgeClass = 'title-badge-epic';
     else if (grade === '히든') {
       badgeClass = 'title-badge-hidden';
       // 히든 업적인 경우 힌트 가져오기
@@ -2884,6 +2989,7 @@ function closeP2PHistoryModal() {
     // 이모지 결정
     var emoji = '🎉';
     if (alert.msg.indexOf('초월') !== -1)           emoji = '✨';
+    else if (alert.msg.indexOf('에픽') !== -1)       emoji = '🔮';
     else if (alert.msg.indexOf('유일') !== -1)       emoji = '🌌';
     else if (alert.msg.indexOf('히든') !== -1)       emoji = '🔮';
     else if (alert.msg.indexOf('그랜드마스터') !== -1) emoji = '🏆';
@@ -4140,6 +4246,8 @@ function loadGuildCardForStudent(studentName) {
   google.script.run
     .withSuccessHandler(function(data) {
       renderGuildCard(data);
+      // 길드 카드 성공 후 동료 평가 결과도 로드
+      loadPeerEvalResults(studentName);
     })
     .withFailureHandler(function(err) {
       // 길드 시스템 미가동 시에도 대시보드는 정상 동작해야 하므로 조용히 숨김
@@ -4147,10 +4255,23 @@ function loadGuildCardForStudent(studentName) {
       var none = document.getElementById('guildNoneCard');
       if (card) card.style.display = 'none';
       if (none) none.style.display = 'none';
-      // 콘솔에만 기록 (학생에게 alert 띄우지 않음)
       if (window.console) console.log('[guildCard] load failed: ' + err.message);
     })
     .getGuildCardDataForStudent(studentName);
+}
+
+/**
+ * 동료 평가 결과 로드 및 렌더링
+ */
+function loadPeerEvalResults(studentName) {
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (res && res.success) renderPeerEvalList(res.data);
+    })
+    .withFailureHandler(function(err) {
+      if (window.console) console.log('[peerEval] load failed: ' + err.message);
+    })
+    .getAllPeerEvalResultsUI(studentName);
 }
 
 /**
@@ -4241,6 +4362,34 @@ function renderGuildCard(data) {
   document.getElementById('guildMissionSummary').innerText =
     '(' + (data.missionClearedCount || 0) + ' / 8 클리어)';
 
+  // 동료 평가 목록 초기 상태 설정 (결과는 loadPeerEvalResults가 채움)
+  var peerList = document.getElementById('peerEvalList');
+  if (peerList) {
+    peerList.innerHTML = GUILD_MISSION_META_STUDENT.map(function(m) {
+      return '<div id="peerEvalItem_' + m.id + '" ' +
+        'onclick="openPeerEvalModal(\'' + m.id + '\',\'' + m.name + '\')" ' +
+        'style="background:#f5f5f5;border-radius:6px;padding:6px 8px;cursor:pointer;' +
+        'display:flex;align-items:center;gap:6px;border:1px solid #eee;">' +
+        '<div style="flex:1;min-width:0;">' +
+          '<div style="font-size:11px;font-weight:bold;color:#888;">' + m.id + '</div>' +
+          '<div style="font-size:10px;color:#aaa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + m.name + '</div>' +
+        '</div>' +
+        '<span style="font-size:11px;color:#bbb;">⏳</span>' +
+      '</div>';
+    }).join('') +
+    // PROJECT 항목
+    '<div id="peerEvalItem_PROJECT" ' +
+    'onclick="openPeerEvalModal(\'PROJECT\',\'최종 프로젝트\')" ' +
+    'style="background:#f5f5f5;border-radius:6px;padding:6px 8px;cursor:pointer;' +
+    'display:flex;align-items:center;gap:6px;border:1px solid #eee;grid-column:span 2;">' +
+    '<div style="flex:1;min-width:0;">' +
+      '<div style="font-size:11px;font-weight:bold;color:#888;">PROJECT</div>' +
+      '<div style="font-size:10px;color:#aaa;">최종 프로젝트</div>' +
+    '</div>' +
+    '<span style="font-size:11px;color:#bbb;">⏳</span>' +
+    '</div>';
+  }
+
   // ── 전체 길드 순위 (이름 + 등수만, 점수 비공개) ──
   var rankList = document.getElementById('guildRankList');
   if (!data.allRanks || data.allRanks.length === 0) {
@@ -4275,6 +4424,224 @@ function toggleCard(bodyId, arrowId) {
     body.classList.add('collapsed');
     if (arrow) arrow.style.transform = 'rotate(0deg)';
   }
+}
+
+// ============================================================
+// 동료 평가 — 결과 렌더링 및 모달
+// ============================================================
+
+// 모달 상태
+var _peerEvalCurrentMissionId   = null;
+var _peerEvalCurrentMissionName = null;
+var _peerEvalCurrentTarget      = null;
+var _peerEvalCurrentScore       = null;
+
+/**
+ * getAllPeerEvalResultsUI 응답으로 peerEvalList 각 항목 업데이트
+ * data 형식: { M01: { revealed, myAvg, guildAvg, reviews }, ... }
+ */
+function renderPeerEvalList(data) {
+  if (!data) return;
+  var allIds = Object.keys(GUILD_MISSION_META_STUDENT.reduce(function(acc, m) {
+    acc[m.id] = true; return acc;
+  }, {})).concat(['PROJECT']);
+
+  // GUILD_MISSION_META_STUDENT 기반으로 처리
+  var mids = GUILD_MISSION_META_STUDENT.map(function(m) { return m.id; }).concat(['PROJECT']);
+  mids.forEach(function(mid) {
+    var el = document.getElementById('peerEvalItem_' + mid);
+    if (!el) return;
+    var info = data[mid];
+    if (!info) return;
+
+    var mName = mid === 'PROJECT' ? '최종 프로젝트' :
+      (GUILD_MISSION_META_STUDENT.find(function(m) { return m.id === mid; }) || {}).name || mid;
+
+    if (info.revealed && info.myAvg !== null) {
+      // 공개됨 — 점수 표시
+      var scoreColor = info.myAvg >= 8 ? '#1a6b3c' : info.myAvg >= 5 ? '#d35400' : '#c0392b';
+      el.style.background   = '#f4faf6';
+      el.style.borderColor  = '#1a6b3c44';
+      el.style.cursor       = 'default';
+      el.onclick            = null;
+      el.innerHTML =
+        '<div style="flex:1;min-width:0;">' +
+          '<div style="font-size:11px;font-weight:bold;color:#888;">' + mid + '</div>' +
+          '<div style="font-size:10px;color:#aaa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + mName + '</div>' +
+        '</div>' +
+        '<div style="text-align:right;">' +
+          '<div style="font-size:13px;font-weight:bold;color:' + scoreColor + ';">' + info.myAvg.toFixed(1) + '</div>' +
+          '<div style="font-size:9px;color:#bbb;">/ 10</div>' +
+        '</div>';
+    } else if (!info.revealed) {
+      // 미공개 — 평가하기 버튼 상태 유지 (클릭 가능)
+      el.style.background  = '#f5f5f5';
+      el.style.borderColor = '#eee';
+      el.style.cursor      = 'pointer';
+      el.onclick           = function() { openPeerEvalModal(mid, mName); };
+      el.innerHTML =
+        '<div style="flex:1;min-width:0;">' +
+          '<div style="font-size:11px;font-weight:bold;color:#888;">' + mid + '</div>' +
+          '<div style="font-size:10px;color:#aaa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + mName + '</div>' +
+        '</div>' +
+        '<span style="font-size:10px;color:#1a6b3c;font-weight:bold;">평가▶</span>';
+    }
+  });
+}
+
+/**
+ * 동료 평가 모달 열기
+ */
+function openPeerEvalModal(missionId, missionName) {
+  _peerEvalCurrentMissionId   = missionId;
+  _peerEvalCurrentMissionName = missionName;
+  _peerEvalCurrentTarget      = null;
+  _peerEvalCurrentScore       = null;
+
+  var modal = document.getElementById('peerEvalModal');
+  if (!modal) return;
+
+  document.getElementById('peerEvalMissionLabel').innerText = '📌 ' + missionId + ' · ' + missionName;
+  document.getElementById('peerEvalForm').style.display    = 'none';
+  document.getElementById('peerEvalDoneMsg').style.display = 'none';
+  document.getElementById('peerEvalPendingSection').style.display = 'block';
+  document.getElementById('peerEvalPendingList').innerHTML =
+    '<span style="font-size:12px;color:#aaa;">불러오는 중...</span>';
+
+  modal.style.display = 'block';
+
+  // 미평가 목록 로드
+  var sName = window._currentStudentName;
+  if (!sName) return;
+
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (!res || !res.success) return;
+      var pending = res.data.pending || [];
+      var done    = res.data.done    || [];
+      var listEl  = document.getElementById('peerEvalPendingList');
+
+      if (pending.length === 0) {
+        document.getElementById('peerEvalPendingSection').style.display = 'none';
+        document.getElementById('peerEvalDoneMsg').style.display        = 'block';
+        return;
+      }
+
+      listEl.innerHTML = pending.map(function(name) {
+        return '<button onclick="selectPeerEvalTarget(\'' + name + '\')" ' +
+          'style="padding:6px 14px;background:#eafaf1;border:1px solid #1a6b3c44;' +
+          'border-radius:20px;font-size:12px;color:#1a6b3c;cursor:pointer;">' +
+          name + '</button>';
+      }).join('') +
+      (done.length > 0 ?
+        '<div style="width:100%;margin-top:6px;font-size:10px;color:#bbb;">✅ 완료: ' + done.join(', ') + '</div>'
+        : '');
+    })
+    .withFailureHandler(function() {})
+    .getPeerEvalStatusUI(sName, missionId);
+}
+
+/**
+ * 피평가자 선택 → 평가 입력 폼으로 전환
+ */
+function selectPeerEvalTarget(targetName) {
+  _peerEvalCurrentTarget = targetName;
+  _peerEvalCurrentScore  = null;
+
+  document.getElementById('peerEvalPendingSection').style.display = 'none';
+  document.getElementById('peerEvalForm').style.display           = 'block';
+  document.getElementById('peerEvalTargetName').innerText         = targetName;
+  document.getElementById('peerEvalComment').value                = '';
+  document.getElementById('peerEvalScoreDisplay').innerText       = '-';
+
+  // 1~10 점수 버튼 생성
+  var starsEl = document.getElementById('peerEvalStars');
+  starsEl.innerHTML = '';
+  for (var i = 1; i <= 10; i++) {
+    (function(score) {
+      var btn = document.createElement('button');
+      btn.innerText = score;
+      btn.style.cssText = 'width:32px;height:32px;border-radius:6px;border:1px solid #ddd;' +
+        'background:#f5f5f5;font-size:13px;font-weight:bold;cursor:pointer;color:#555;';
+      btn.onclick = function() {
+        _peerEvalCurrentScore = score;
+        document.getElementById('peerEvalScoreDisplay').innerText = score + '점';
+        // 선택 표시
+        var btns = starsEl.querySelectorAll('button');
+        btns.forEach(function(b) {
+          b.style.background = '#f5f5f5';
+          b.style.color      = '#555';
+          b.style.borderColor = '#ddd';
+        });
+        btn.style.background  = '#1a6b3c';
+        btn.style.color       = '#fff';
+        btn.style.borderColor = '#1a6b3c';
+      };
+      starsEl.appendChild(btn);
+    })(i);
+  }
+}
+
+/**
+ * 목록으로 돌아가기
+ */
+function backToPeerEvalList() {
+  _peerEvalCurrentTarget = null;
+  _peerEvalCurrentScore  = null;
+  document.getElementById('peerEvalForm').style.display           = 'none';
+  document.getElementById('peerEvalPendingSection').style.display = 'block';
+}
+
+/**
+ * 동료 평가 제출
+ */
+function submitPeerEvalForm() {
+  if (!_peerEvalCurrentScore) {
+    alert('점수를 선택해주세요.');
+    return;
+  }
+  var sName   = window._currentStudentName;
+  var comment = document.getElementById('peerEvalComment').value.trim();
+
+  var submitBtn = document.querySelector('#peerEvalForm button:last-child');
+  if (submitBtn) { submitBtn.disabled = true; submitBtn.innerText = '제출 중...'; }
+
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = '제출하기'; }
+      if (!res || !res.success) {
+        alert('오류: ' + (res ? res.msg : '알 수 없는 오류'));
+        return;
+      }
+      // 제출 성공 → 모달 내 목록 새로고침
+      _peerEvalCurrentTarget = null;
+      _peerEvalCurrentScore  = null;
+      document.getElementById('peerEvalForm').style.display = 'none';
+      openPeerEvalModal(_peerEvalCurrentMissionId, _peerEvalCurrentMissionName);
+      // 동료평가 결과 목록도 갱신
+      loadPeerEvalResults(sName);
+    })
+    .withFailureHandler(function(err) {
+      if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = '제출하기'; }
+      alert('제출 실패: ' + err.message);
+    })
+    .submitPeerEvalByName(
+      _peerEvalCurrentMissionId,
+      sName,
+      _peerEvalCurrentTarget,
+      _peerEvalCurrentScore,
+      comment
+    );
+}
+
+/**
+ * 모달 닫기
+ */
+function closePeerEvalModal() {
+  var modal = document.getElementById('peerEvalModal');
+  if (modal) modal.style.display = 'none';
+  _peerEvalCurrentTarget = null;
+  _peerEvalCurrentScore  = null;
 }
 </script>
 

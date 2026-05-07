@@ -24,7 +24,7 @@ function getAllStudentsHonorBoard() {
     gradeMap[achId] = grade;
     
     // 유니크 이상 업적에 자동 이모지 할당
-    if (grade === '유니크' || grade === '히든' || grade === '유일') {
+    if (grade === '유니크' || grade === '에픽' || grade === '히든' || grade === '유일') {
       emojiMap[achId] = getEmojiForAchievement(achId);
     }
   }

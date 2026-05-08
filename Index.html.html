@@ -2276,6 +2276,28 @@ function closeP2PHistoryModal() {
     }
   }
 
+  // ── 업적ID → 이모지 매핑 ─────────────────────────────────────
+  function getEmojiForAchievement(achId) {
+    var map = {
+      'ECO-002':'💰','ECO-003':'💎','ECO-004':'🏆',
+      'LIFE-002':'🌟','LIFE-003':'⏰','LIFE-004':'📚',
+      'LIFE-005':'🎯','LIFE-006':'🌈','LIFE-007':'💪',
+      'LIFE-008':'🔥','LIFE-009':'✨','LIFE-010':'🎨',
+      'MVP-001':'👑','MVP-002':'🥇',
+      'STU-001':'🎓','STU-002':'📖','STU-003':'🌺',
+      'TEAM-001':'🤝','TEAM-002':'🎭',
+      'CONS-001':'🍪','CONS-002':'🎁',
+      'CHAL-001':'⚡','CHAL-002':'🚀','CHAL-003':'🌊',
+      'CHAL-004':'🔮','CHAL-005':'🎪',
+      'HID-001':'🕵️','HID-002':'🎩','HID-003':'💫','HID-004':'🛍','HID-005':'🏅',
+      'START-001':'🌱','START-002':'🌿','START-003':'🌳',
+      'ECO-015':'🗽','LIFE-017':'🔥','LIFE-019':'💥',
+      'RANK-007':'🌌','CHAL-008':'0️⃣','CHAL-009':'🔝',
+      'CHAL-010':'🌑','CHAL-011':'🐦‍🔥','CHAL-013':'🏆','CHAL-014':'⚔️'
+    };
+    return map[achId] || '';
+  }
+
   // ── 칭호 뱃지 갱신 (이름 위 별도 영역에 표시) ───────────────
   function updateTitleBadge(titleText) {
     var badgeArea = document.getElementById('titleBadgeArea');
@@ -2286,6 +2308,11 @@ function closeP2PHistoryModal() {
     // 장착 중인 칭호의 등급 확인
     var equippedAch = (window._achievements || []).find(function(a){ return a.equipped; });
     var grade = equippedAch ? (equippedAch.grade || '희귀') : '희귀';
+    var achId = equippedAch ? (equippedAch.achId || '') : '';
+
+    // 이모지 앞에 붙이기
+    var emoji = getEmojiForAchievement(achId);
+    var displayText = emoji ? emoji + ' ' + titleText : titleText;
 
     var badgeClass = 'title-badge';
     if      (grade === '유니크') badgeClass = 'title-badge-unique';
@@ -2298,7 +2325,7 @@ function closeP2PHistoryModal() {
     var badge = document.createElement('span');
     badge.className = badgeClass;
     badge.style.position = 'relative';
-    badge.innerText = titleText;
+    badge.innerText = displayText;
 
     // 초월 등급 파티클 동적 생성
     if (grade === '초월') {

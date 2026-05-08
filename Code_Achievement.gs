@@ -94,7 +94,7 @@ function getStudentAchievements(studentName) {
       if (dateVal instanceof Date) {
         dateVal = Utilities.formatDate(dateVal, Session.getScriptTimeZone(), 'yyyy-MM-dd');
       }
-      const achId = String(data[i][1]);
+      const achId = String(data[i][1]).trim();
       result.push({
         achId:     achId,
         achName:   String(data[i][2]),
@@ -388,6 +388,7 @@ function getAchievementData(studentName) {
       // 자동 부여 업적은 신청 드롭다운에서 제외
       const AUTO_GRANTED_IDS = new Set(['ACH-001','ACH-002','ECO-001','ECO-002','HID-004',
         'RANK-001','RANK-002','RANK-003','RANK-004','RANK-005','RANK-006', 'RANK-007']);
+      const grade = String(mData[m][5] || '희귀').trim();  // ← 이 줄 추가
       allAchievements.push({
         achId,
         achName:     isHidden && !earned ? '???' : achName,
@@ -395,7 +396,8 @@ function getAchievementData(studentName) {
         hint:        isHidden && !earned ? hint : '',
         isHidden,
         earned,
-        autoGranted: AUTO_GRANTED_IDS.has(achId)
+        autoGranted: AUTO_GRANTED_IDS.has(achId),
+        grade                                                // ← 이 줄 추가
       });
     }
   }

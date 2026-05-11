@@ -355,45 +355,53 @@
       pointer-events: auto;
     }
     .title-badge-only {
-      background: linear-gradient(135deg, #8e44ad, #c0392b, #f39c12, #f1c40f, #2ecc71, #3498db, #9b59b6, #8e44ad);
+      background: linear-gradient(135deg, #0d0d0d 0%, #1a0505 30%, #4a0000 55%, #1a0505 75%, #0d0d0d 100%);
       background-size: 300% 300%;
-      color: white;
+      color: #ff9999;
       padding: 3px 10px;
       border-radius: 12px;
       font-size: 12px;
       font-weight: bold;
       display: inline-block;
       margin-right: 4px;
-      border: 2px solid #f1c40f;
-      box-shadow: 0 0 15px rgba(241,196,15,0.9), 0 0 25px rgba(155,89,182,0.6), inset 0 0 10px rgba(255,255,255,0.4);
-      text-shadow: 0 0 8px rgba(0,0,0,0.8), 1px 1px 3px rgba(0,0,0,0.5);
-      animation: onlyGradient 3s ease infinite, onlyGlow 2s ease infinite;
+      border: 1.5px solid #ff3333;
+      box-shadow: 0 0 10px rgba(255,50,50,0.8), 0 0 22px rgba(255,50,50,0.3), inset 0 0 10px rgba(200,0,0,0.2);
+      text-shadow: 0 0 8px #ff4444, 0 0 18px rgba(255,50,50,0.9);
+      animation: onlyShift 5s ease-in-out infinite, onlyPulse 2s ease-in-out infinite, onlyBreath 3.5s ease-in-out infinite;
+      letter-spacing: 0.5px;
       position: relative;
       overflow: hidden;
+      cursor: default;
     }
     .title-badge-only::before {
       content: '';
       position: absolute;
       top: -50%;
-      left: -50%;
-      width: 200%;
+      left: -60%;
+      width: 40%;
       height: 200%;
-      background: linear-gradient(45deg, transparent, rgba(255,255,255,0.4), transparent);
-      animation: onlyShine 3s ease infinite;
+      background: linear-gradient(90deg, transparent, rgba(255,180,180,0.3), transparent);
+      animation: onlyShine 3.5s ease-in-out infinite;
     }
-    @keyframes onlyGradient {
+    @keyframes onlyShift {
       0%   { background-position: 0% 50%; }
       50%  { background-position: 100% 50%; }
       100% { background-position: 0% 50%; }
     }
-    @keyframes onlyGlow {
-      0%   { box-shadow: 0 0 15px rgba(241,196,15,0.9), 0 0 25px rgba(155,89,182,0.6), inset 0 0 10px rgba(255,255,255,0.4); }
-      50%  { box-shadow: 0 0 25px rgba(241,196,15,1), 0 0 35px rgba(155,89,182,0.8), inset 0 0 15px rgba(255,255,255,0.6); }
-      100% { box-shadow: 0 0 15px rgba(241,196,15,0.9), 0 0 25px rgba(155,89,182,0.6), inset 0 0 10px rgba(255,255,255,0.4); }
+    @keyframes onlyPulse {
+      0%   { box-shadow: 0 0 10px rgba(255,50,50,0.8),  0 0 22px rgba(255,50,50,0.3),  inset 0 0 10px rgba(200,0,0,0.2); }
+      50%  { box-shadow: 0 0 20px rgba(255,50,50,1),    0 0 38px rgba(255,50,50,0.5),  inset 0 0 16px rgba(200,0,0,0.35); }
+      100% { box-shadow: 0 0 10px rgba(255,50,50,0.8),  0 0 22px rgba(255,50,50,0.3),  inset 0 0 10px rgba(200,0,0,0.2); }
+    }
+    @keyframes onlyBreath {
+      0%   { opacity: 0.78; transform: scale(1); }
+      50%  { opacity: 1;    transform: scale(1.06); }
+      100% { opacity: 0.78; transform: scale(1); }
     }
     @keyframes onlyShine {
-      0%   { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
-      100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+      0%   { left: -60%; }
+      60%  { left: 130%; }
+      100% { left: 130%; }
     }
 
     /* ── 에픽(Epic) 등급 칭호 뱃지 ── */
@@ -2269,7 +2277,9 @@ function closeP2PHistoryModal() {
             window._achData.myAchievements.forEach(function(a){ a.equipped = (a.sheetRow === sheetRow); });
           }
           if (window._achData) renderAchievementModal(window._achData);
-          var equipped = window._achievements.find(function(a){ return a.sheetRow === sheetRow; });
+          var equipped = (window._achData && window._achData.myAchievements)
+            ? window._achData.myAchievements.find(function(a){ return a.sheetRow === sheetRow; })
+            : window._achievements.find(function(a){ return a.sheetRow === sheetRow; });
           updateTitleBadge(equipped ? equipped.achName : null);
         }
       }).equipAchievement(name, sheetRow);
@@ -2827,7 +2837,7 @@ function closeP2PHistoryModal() {
     var achId = '';
     
     for (var i = 0; i < achievements.length; i++) {
-      if (title.includes(achievements[i].achName)) {
+      if (title === achievements[i].achName || title.endsWith(' ' + achievements[i].achName)) {
         grade = achievements[i].grade || '희귀';
         achId = achievements[i].achId;
         break;
@@ -3055,8 +3065,9 @@ function closeP2PHistoryModal() {
             ? '<span class="wof-count">' + item.count + '명 달성 중</span>'
             : '<span class="wof-count wof-zero">아직 없음</span>';
           var gradeClass = item.grade || '희귀';
+          var displayName = (item.emoji ? item.emoji + ' ' : '') + item.achName;
           html += '<div class="wof-row">' +
-            '<span class="wof-name">' + item.achName + '</span>' +
+            '<span class="wof-name">' + displayName + '</span>' +
             '<span class="wof-grade ' + gradeClass + '">' + item.grade + '</span>' +
             countText +
           '</div>';

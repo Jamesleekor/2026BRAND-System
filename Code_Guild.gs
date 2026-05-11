@@ -222,32 +222,25 @@ function verifyMissionM02(guildId, startDate, endDate) {
     return { cleared: false, resultText: "업적 시트 없음", detail: {} };
   }
 
-  // 업적마스터에서 업적ID → 카테고리 맵 생성
-  // 업적마스터 컬럼 구조: A=업적ID, B=업적명, C=카테고리, ...
-  var masterData    = masterSheet.getDataRange().getValues();
-  var categoryMap   = {};
-  for (var i = 1; i < masterData.length; i++) {
-    var achId  = String(masterData[i][0]).trim();
-    var achCat = String(masterData[i][2]).trim();
-    if (achId) categoryMap[achId] = achCat;
-  }
+  // 미션 시작일 고정: 5월 8일 이후 달성분만 인정
+  var missionStart = new Date("2026-05-08T00:00:00");
+  var effectiveStart = (start > missionStart) ? start : missionStart;
 
-  // 기간 내 각 멤버의 신규 업적 달성 목록 조회
+  // 기간 내 각 멤버의 신규 업적 달성 목록 조회 (업적ID 기준)
   // 학생업적달성 컬럼 구조: A=학생명, B=업적ID, C=달성일시, ...
-  var achieveData = achieveSheet.getDataRange().getValues();
-  var memberAchieveMap = {}; // { 학생명: [카테고리, ...] }
+  var achieveData      = achieveSheet.getDataRange().getValues();
+  var memberAchieveMap = {}; // { 학생명: [업적ID, ...] }
   members.forEach(function(name) { memberAchieveMap[name] = []; });
 
   for (var j = 1; j < achieveData.length; j++) {
     var studentName = String(achieveData[j][0]).trim();
     var achId       = String(achieveData[j][1]).trim();
-    var achDate     = new Date(achieveData[j][2]);
+    var achDate     = new Date(achieveData[j][4]);
 
     if (!memberAchieveMap.hasOwnProperty(studentName)) continue;
-    if (achDate < start || achDate > end) continue;
+    if (achDate < effectiveStart || achDate > end) continue; // 5/8 이후만 인정
 
-    var cat = categoryMap[achId] || "기타";
-    memberAchieveMap[studentName].push(cat);
+    memberAchieveMap[studentName].push(achId); // 카테고리 아닌 업적ID 저장
   }
 
   // 검증 1: 전원 최소 1개 달성 여부
@@ -263,18 +256,18 @@ function verifyMissionM02(guildId, startDate, endDate) {
     };
   }
 
-  // 검증 2: 카테고리 중복 여부 (각 멤버의 첫 번째 달성 업적 카테고리 기준)
-  var usedCategories = [];
+  // 검증 2: 업적ID 중복 여부 (선착순 — 첫 번째 달성 업적ID 기준)
+  var usedAchIds    = [];
   var duplicateFound = false;
   var duplicateInfo  = "";
 
   members.forEach(function(name) {
-    var firstCat = memberAchieveMap[name][0];
-    if (usedCategories.indexOf(firstCat) !== -1) {
+    var firstId = memberAchieveMap[name][0];
+    if (usedAchIds.indexOf(firstId) !== -1) {
       duplicateFound = true;
-      duplicateInfo  = "카테고리 중복: " + firstCat + " (" + name + ")";
+      duplicateInfo  = "업적 중복: " + firstId + " (" + name + ")";
     } else {
-      usedCategories.push(firstCat);
+      usedAchIds.push(firstId);
     }
   });
 
@@ -647,13 +640,51 @@ function calcMonthlyGS() {
   }
 
   // ── 메인 시트에서 학생별 자산 조회 ───────────────────────────
-  var mainData = mainSheet.getDataRange().getValues();
-  var assetMap = {}; // { 학생명: 자산보유량 }
-  for (var j = 1; j < mainData.length; j++) {
-    var sName  = String(mainData[j][0]).trim();
-    var sAsset = parseFloat(mainData[j][2]) || 0;
-    if (sName) assetMap[sName] = sAsset;
+  // ── 메인 시트에서 학생별 현재 브랜드가치 조회 (종료값용) ───────
+var mainData = mainSheet.getDataRange().getValues();
+var assetMap = {}; // { 학생명: 현재브랜드가치 }
+for (var j = 1; j < mainData.length; j++) {
+  var sName  = String(mainData[j][1]).trim();
+  var sAsset = parseFloat(mainData[j][2]) || 0;
+  if (sName) assetMap[sName] = sAsset;
+}
+
+// ── 브랜드가치추적 시트에서 월 시작값 조회 ───────────────────
+// 컬럼: A=학생명, B~=날짜별 브랜드가치 (헤더가 날짜)
+var trackSheet   = ss.getSheetByName("브랜드가치추적");
+var startAssetMapByStudent = {}; // { 학생명: 월시작 브랜드가치 }
+
+if (trackSheet) {
+  var trackData  = trackSheet.getDataRange().getValues();
+  var trackHeaders = trackData[0]; // 1행: 날짜 헤더
+
+  // 이번 달 1일 찾기 (없으면 이번 달 내 가장 첫 번째 날짜)
+  var monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  var monthEnd   = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+  var startColIdx = -1;
+  var closestDate = null;
+
+  for (var h = 1; h < trackHeaders.length; h++) {
+    var hDate = new Date(trackHeaders[h]);
+    if (isNaN(hDate)) continue;
+    hDate.setHours(0, 0, 0, 0);
+    if (hDate >= monthStart && hDate <= monthEnd) {
+      if (closestDate === null || hDate < closestDate) {
+        closestDate  = hDate;
+        startColIdx  = h;
+      }
+    }
   }
+
+  if (startColIdx !== -1) {
+    for (var t = 1; t < trackData.length; t++) {
+      var tName  = String(trackData[t][0]).trim();
+      var tAsset = parseFloat(trackData[t][startColIdx]) || 0;
+      if (tName) startAssetMapByStudent[tName] = tAsset;
+    }
+  }
+}
 
   // ── 미션 점수 집계 (길드별 가중 합산) ─────────────────────────
   var missionScoreMap = {}; // { guildId: 합산점수 }
@@ -723,7 +754,17 @@ function calcMonthlyGS() {
 
     // 시작 자산: 전월 GS 시트에서, 없으면 현재값
     var prevRow     = _getPrevMonthGSRow(gsSheet, guildId, yearMonth);
-    var startAssets = prevRow ? prevRow.endAssetTotal : _sum(assets);
+    // 브랜드가치추적에서 월 시작값 합산, 없으면 전월 종료값, 그것도 없으면 현재값
+    var startAssets;
+    if (Object.keys(startAssetMapByStudent).length > 0) {
+      startAssets = members.reduce(function(sum, name) {
+        return sum + (startAssetMapByStudent[name] || assetMap[name] || 0);
+      }, 0);
+    } else if (prevRow) {
+      startAssets = prevRow.endAssetTotal;
+    } else {
+      startAssets = _sum(assets);
+    }
 
     var endAssetTotal   = _sum(assets);
     var memberCount     = members.length;
@@ -767,6 +808,20 @@ function calcMonthlyGS() {
       missionVal       : Math.round(missionVal * 100) / 100,
       totalGS          : Math.round(totalGS * 100) / 100
     });
+  });
+
+  // 순위 산정
+  // ── 교체 후 ───────────────────────────────────────────────────
+
+  // 알파 정규화: 전체 길드 중 최대 인당 증가량 기준
+  var maxPerCapita = Math.max.apply(null, gsResults.map(function(r) {
+    return r.perCapitaGrowth > 0 ? r.perCapitaGrowth : 0;
+  }));
+
+  gsResults.forEach(function(r) {
+    var normalizedAlpha = maxPerCapita > 0 ? (r.perCapitaGrowth / maxPerCapita) : 0;
+    r.alphaVal        = Math.round(normalizedAlpha * GS_ALPHA * 1000) / 1000;
+    r.totalGS         = Math.round((r.alphaVal + r.missionPartVal + r.sessionAttendVal + r.missionVal) * 1000); // ← 1000 곱해서 정수
   });
 
   // 순위 산정
@@ -849,7 +904,7 @@ function setGuildProjectScore(yearMonth, guildId, score) {
   if (!gsSheet) throw new Error("길드_GS_월간 시트를 찾을 수 없습니다.");
 
   var data       = gsSheet.getDataRange().getValues();
-  var projectVal = GS_PROJECT_RATE * score;
+  var projectVal = Math.round(GS_PROJECT_RATE * score * 1000); // 동일 스케일
   var updated    = false;
 
   for (var i = 1; i < data.length; i++) {
@@ -1455,7 +1510,11 @@ function getGuildCardDataForStudent(studentName) {
     var rawRanks  = []; // 이번 달 행 추출
 
     for (var x = 1; x < gsData.length; x++) {
-      if (String(gsData[x][0]).trim() !== yearMonth) continue;
+      var cellVal = gsData[x][0];
+      var cellYM  = cellVal instanceof Date
+        ? Utilities.formatDate(cellVal, "Asia/Seoul", "yyyy-MM")
+        : String(cellVal).trim().substring(0, 7);
+      if (cellYM !== yearMonth) continue;
       rawRanks.push({
         guildId : String(gsData[x][1]).trim(),
         rank    : parseInt(gsData[x][13]) || 0,   // N열
@@ -1891,4 +1950,14 @@ function _buildStudentGuildMap(mbSheet) {
     }
   }
   return map;
+}
+
+function debugGSSheet() {
+  var ss    = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName("길드_GS_월간");
+  var data  = sheet.getDataRange().getValues();
+  Logger.log("A2값: " + JSON.stringify(data[1][0]));
+  Logger.log("M2값: " + JSON.stringify(data[1][12]));
+  Logger.log("N2값: " + JSON.stringify(data[1][13]));
+  Logger.log("yearMonth비교: " + Utilities.formatDate(new Date(), "Asia/Seoul", "yyyy-MM"));
 }

@@ -24,7 +24,7 @@ function getAllStudentsHonorBoard() {
     gradeMap[achId] = grade;
     
     // 유니크 이상 업적에 자동 이모지 할당
-    if (grade === '유니크' || grade === '에픽' || grade === '히든' || grade === '유일') {
+    if (grade === '유니크' || grade === '에픽' || grade === '히든' || grade === '유일' || grade === '초월') {
       emojiMap[achId] = getEmojiForAchievement(achId);
     }
   }
@@ -96,7 +96,8 @@ function getWallOfFame() {
     const name  = String(mData[m][1]).trim();
     const isHid = String(mData[m][3]).toUpperCase() === 'TRUE';
     const grade = String(mData[m][5] || '희귀').trim();
-    achList.push({ achId: id, achName: isHid ? '🔒 ???' : name, grade, isHidden: isHid, count: 0 });
+    const emoji = getEmojiForAchievement(id);
+    achList.push({ achId: id, achName: isHid ? '🔒 ???' : name, grade, isHidden: isHid, count: 0, emoji: isHid ? '' : emoji });
     achMap[id]  = achList.length - 1;
   }
 
@@ -329,4 +330,3 @@ function _readGiniHistory(ss) {
     return [];
   }
 }
-

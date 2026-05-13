@@ -347,6 +347,16 @@ function getAchievementData(studentName) {
   const logSheet    = ss.getSheetByName(SHEET_ACH_LOG);
   const notifySheet = ss.getSheetByName(SHEET_GLOBAL_NOTIFY);
 
+  // ★ gradeMap 생성
+  const gradeMap = {};
+  if (masterSheet) {
+    const mData = masterSheet.getDataRange().getValues();
+    for (let m = 1; m < mData.length; m++) {
+      if (!mData[m][0]) continue;
+      gradeMap[String(mData[m][0]).trim()] = String(mData[m][5] || '희귀').trim();
+    }
+  }
+
   // 1. 내가 달성한 업적 목록
   const myAchievements = [];
   let equippedTitle = null;
@@ -359,13 +369,15 @@ function getAchievementData(studentName) {
         dateVal = Utilities.formatDate(dateVal, Session.getScriptTimeZone(), 'yyyy-MM-dd');
       }
       const equipped = achData[i][5] === true || String(achData[i][5]).toUpperCase() === 'TRUE';
+      const achId = String(achData[i][1]).trim();
       const ach = {
-        achId:     String(achData[i][1]),
+        achId:     achId,
         achName:   String(achData[i][2]),
         condition: String(achData[i][3]),
         date:      String(dateVal),
         equipped:  equipped,
-        sheetRow:  i + 1
+        sheetRow:  i + 1,
+        grade:     gradeMap[achId] || '희귀'  // ★ 추가
       };
       myAchievements.push(ach);
       if (equipped) equippedTitle = ach.achName;

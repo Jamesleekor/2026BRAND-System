@@ -200,6 +200,26 @@
       white-space: nowrap;
     }
 
+    /* ── 업적 도감 모달 ── */
+    #achDexModal {
+      display: none;
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6); z-index: 1000;
+      justify-content: center; align-items: center;
+    }
+    #achDexModal.open { display: flex; }
+    .ach-dex-box {
+      background: white; border-radius: 15px; padding: 24px;
+      width: 92%; max-width: 560px; max-height: 85vh;
+      overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+    }
+    .dex-filter-btn {
+      padding: 4px 10px; border: none; border-radius: 12px;
+      font-size: 11px; font-weight: bold; cursor: pointer;
+      background: #ecf0f1; color: #555; transition: opacity 0.15s;
+    }
+    .dex-filter-btn.active { outline: 2px solid #fff; box-shadow: 0 0 0 3px rgba(0,0,0,0.25); }
+
     /* ── 업적 모달 ── */
     #achModal {
       display: none;
@@ -779,6 +799,7 @@
           <button id="job2Btn" onclick="scrollToJob2()" style="padding:6px 12px;font-size:12px;background:#8e44ad;color:white;border:none;border-radius:5px;cursor:pointer;font-weight:bold;display:none;white-space:nowrap;">💼 2차 직업</button>
           <button id="job2BtnLocked" style="padding:6px 12px;font-size:12px;background:#ccc;color:#888;border:none;border-radius:5px;cursor:default;font-weight:bold;white-space:nowrap;">🔒 2차 직업</button>
           <button onclick="openAchModal()" style="padding:6px 12px;font-size:12px;background:linear-gradient(135deg,#f39c12,#e74c3c);color:white;border:none;border-radius:5px;cursor:pointer;font-weight:bold;white-space:nowrap;">🏅 나의 업적</button>
+          <button onclick="openAchDexModal()" style="padding:6px 12px;font-size:12px;background:linear-gradient(135deg,#1a1a2e,#2c3e7a);color:white;border:none;border-radius:5px;cursor:pointer;font-weight:bold;white-space:nowrap;">📖 업적 도감</button>
           <button onclick="openShopModal()" style="padding:6px 12px;font-size:12px;background:linear-gradient(135deg,#27ae60,#2ecc71);color:white;border:none;border-radius:5px;cursor:pointer;font-weight:bold;white-space:nowrap;">🏪 상점</button>
           <button class="mailbox-btn" onclick="openMailModal()" id="mailBtn">
             ✉️ 우편함
@@ -1028,8 +1049,9 @@
       <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">
         <div id="totalTax" style="font-size:20px;font-weight:bold;">$ 0</div>
         <div style="font-size:13px;color:#888;">
-          내가 낸 세금:
-          <strong id="myPersonalTax" style="color:var(--primary-color);">$ 0</strong>
+          세금: <strong id="myPersonalTax" style="color:var(--primary-color);">$ 0</strong>
+           &nbsp;|&nbsp;
+          기부금: <strong id="myDonation" style="color:#27ae60;">$ 0</strong>
         </div>
       </div>
       <div style="font-size:11px;color:#bbb;margin-bottom:6px;">목표: $ 50,000</div>
@@ -1975,6 +1997,35 @@ function closeP2PHistoryModal() {
   </div>
 </div>
 
+<!-- ── 업적 도감 모달 ── -->
+<div id="achDexModal">
+  <div class="ach-dex-box">
+    <div class="ach-modal-title">
+      <span>📖 전체 업적 도감</span>
+      <button class="ach-close-btn" onclick="closeAchDexModal()">✕</button>
+    </div>
+    <!-- 검색 + 등급 필터 -->
+    <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
+      <input id="achDexSearch" type="text" placeholder="🔍 업적 이름 검색..."
+        oninput="filterAchDex()"
+        style="flex:1;min-width:140px;padding:7px 10px;border-radius:8px;border:1px solid #ddd;font-size:13px;outline:none;">
+      <div style="display:flex;gap:4px;flex-wrap:wrap;">
+        <button class="dex-filter-btn active" data-grade="전체" onclick="setDexGrade(this,'전체')">전체</button>
+        <button class="dex-filter-btn" data-grade="희귀"   onclick="setDexGrade(this,'희귀')"   style="background:#3498db;color:white;">희귀</button>
+        <button class="dex-filter-btn" data-grade="유니크" onclick="setDexGrade(this,'유니크')" style="background:linear-gradient(135deg,#e74c3c,#9b59b6);color:white;">유니크</button>
+        <button class="dex-filter-btn" data-grade="에픽"   onclick="setDexGrade(this,'에픽')"   style="background:linear-gradient(135deg,#3d0f6e,#7b2fff);color:#e0c4ff;">에픽</button>
+        <button class="dex-filter-btn" data-grade="히든"   onclick="setDexGrade(this,'히든')"   style="background:#f1c40f;color:#2c3e50;">히든</button>
+        <button class="dex-filter-btn" data-grade="유일"   onclick="setDexGrade(this,'유일')"   style="background:linear-gradient(135deg,#8e44ad,#f39c12);color:white;">유일</button>
+        <button class="dex-filter-btn" data-grade="초월"   onclick="setDexGrade(this,'초월')"   style="background:linear-gradient(135deg,#1a1a1a,#b8860b);color:#ffd700;">초월</button>
+      </div>
+    </div>
+    <div style="font-size:11px;color:#aaa;margin-bottom:8px;">
+      <span id="achDexCount">0</span>개 표시 중
+    </div>
+    <div id="achDexList" style="background:#1a1a2e;border-radius:10px;max-height:55vh;overflow-y:auto;"></div>
+  </div>
+</div>
+
 <!-- ── 우편함 모달 ── -->
 <div id="mailModal">
   <div class="mail-modal-box">
@@ -2149,6 +2200,98 @@ function closeP2PHistoryModal() {
     else if (silverTiers.includes(tierName))      body.classList.add('tier-silver');
   }
 
+  // ── 업적 도감 모달 열기/닫기/렌더링 ─────────────────────────
+  var _dexGrade = '전체';
+
+  function openAchDexModal() {
+    document.getElementById('achDexModal').classList.add('open');
+    document.getElementById('achDexSearch').value = '';
+    _dexGrade = '전체';
+    document.querySelectorAll('.dex-filter-btn').forEach(function(b) {
+      b.classList.toggle('active', b.dataset.grade === '전체');
+    });
+    if (window._achData) {
+      renderAchDex(window._achData.allAchievements || []);
+    } else {
+      document.getElementById('achDexList').innerHTML = '<div style="padding:20px;text-align:center;color:#888;">데이터 로딩 중...<br><small>먼저 나의 업적을 한 번 열어주세요.</small></div>';
+      document.getElementById('achDexCount').textContent = '0';
+      // 데이터 없으면 직접 로드
+      google.script.run.withSuccessHandler(function(data) {
+        window._achData = data;
+        renderAchDex(data.allAchievements || []);
+      }).getAchievementData(window._currentStudentName);
+    }
+  }
+
+  function closeAchDexModal() {
+    document.getElementById('achDexModal').classList.remove('open');
+  }
+
+  function setDexGrade(btn, grade) {
+    _dexGrade = grade;
+    document.querySelectorAll('.dex-filter-btn').forEach(function(b) {
+      b.classList.toggle('active', b.dataset.grade === grade);
+    });
+    filterAchDex();
+  }
+
+  function filterAchDex() {
+    if (!window._achData) return;
+    var keyword = document.getElementById('achDexSearch').value.trim().toLowerCase();
+    var list = window._achData.allAchievements || [];
+    var filtered = list.filter(function(ach) {
+      var gradeMatch = (_dexGrade === '전체') || ((ach.grade || '희귀') === _dexGrade) || (ach.isHidden && _dexGrade === '히든');
+      var nameMatch  = !keyword || ach.achName.toLowerCase().indexOf(keyword) !== -1 ||
+                       (ach.condition && ach.condition.toLowerCase().indexOf(keyword) !== -1);
+      return gradeMatch && nameMatch;
+    });
+    renderAchDex(filtered);
+  }
+
+  function renderAchDex(list) {
+    var html = '';
+    if (list.length === 0) {
+      html = '<div style="padding:30px;text-align:center;color:#555;font-size:14px;">조건에 맞는 업적이 없습니다.</div>';
+    } else {
+      list.forEach(function(ach) {
+        var grade = ach.grade || '희귀';
+        if (ach.isHidden && !ach.earned) {
+          html += '<div style="padding:9px 14px;border-bottom:1px solid #2d2d44;display:flex;align-items:center;gap:8px;" title="힌트: ' + (ach.hint || '') + '">' +
+            '<div style="flex:1;">' +
+              '<div style="display:flex;align-items:center;gap:6px;">' +
+                '<span style="font-size:13px;font-weight:bold;color:#555;">🔒 ???</span>' +
+                '<span class="wof-grade 히든">히든</span>' +
+              '</div>' +
+              '<div style="font-size:11px;color:#444;margin-top:2px;">마우스를 올려 힌트 확인</div>' +
+            '</div>' +
+          '</div>';
+        } else if (ach.earned) {
+          html += '<div style="padding:9px 14px;border-bottom:1px solid #2d2d44;display:flex;align-items:center;gap:8px;">' +
+            '<div style="flex:1;">' +
+              '<div style="display:flex;align-items:center;gap:6px;">' +
+                '<span style="font-size:13px;font-weight:bold;color:#2ecc71;">✅ ' + ach.achName + '</span>' +
+                '<span class="wof-grade ' + grade + '">' + grade + '</span>' +
+              '</div>' +
+              '<div style="font-size:11px;color:#7fb3a0;margin-top:2px;">' + ach.condition + '</div>' +
+            '</div>' +
+          '</div>';
+        } else {
+          html += '<div style="padding:9px 14px;border-bottom:1px solid #2d2d44;display:flex;align-items:center;gap:8px;">' +
+            '<div style="flex:1;">' +
+              '<div style="display:flex;align-items:center;gap:6px;">' +
+                '<span style="font-size:13px;font-weight:bold;color:#e74c3c;">⬜ ' + ach.achName + '</span>' +
+                '<span class="wof-grade ' + grade + '">' + grade + '</span>' +
+              '</div>' +
+              '<div style="font-size:11px;color:#c0785a;margin-top:2px;">' + ach.condition + '</div>' +
+            '</div>' +
+          '</div>';
+        }
+      });
+    }
+    document.getElementById('achDexList').innerHTML = html;
+    document.getElementById('achDexCount').textContent = list.length;
+  }
+
   // ── 업적 모달 열기/닫기 ──────────────────────────────────────
   function openAchModal() {
     // 서버에서 전체 업적 도감 데이터를 새로 가져옴
@@ -2170,15 +2313,19 @@ function closeP2PHistoryModal() {
     var myIds = new Set((data.myAchievements || []).map(function(a){ return a.achId; }));
     var pendingSet = new Set(data.pendingIds || []);
 
-    // ① 달성한 업적 목록
+    // ① 달성한 업적 목록 (등급 뱃지 포함)
     var earnedHtml = '<div style="font-weight:bold;font-size:13px;color:#7f8c8d;margin:8px 0 6px;">✅ 달성한 업적</div>';
     if (data.myAchievements && data.myAchievements.length > 0) {
       earnedHtml += data.myAchievements.map(function(ach) {
         var btnClass = ach.equipped ? 'equipped' : 'unequipped';
         var btnText  = ach.equipped ? '✓ 장착 중' : '장착하기';
+        var grade    = ach.grade || '희귀';
         return '<div class="ach-row">' +
           '<div class="ach-info">' +
-            '<div class="ach-name">' + ach.achName + '</div>' +
+            '<div style="display:flex;align-items:center;gap:6px;">' +
+              '<div class="ach-name">' + ach.achName + '</div>' +
+              '<span class="wof-grade ' + grade + '">' + grade + '</span>' +
+            '</div>' +
             '<div class="ach-cond">' + ach.condition + '</div>' +
             '<div class="ach-date">달성일: ' + ach.date + '</div>' +
           '</div>' +
@@ -2189,25 +2336,7 @@ function closeP2PHistoryModal() {
       earnedHtml += '<div class="ach-empty" style="padding:10px;">아직 달성한 업적이 없습니다.</div>';
     }
 
-    // ② 전체 도감 (미달성 포함) — 검정 배경 테마
-    var allHtml = '<div style="font-weight:bold;font-size:13px;color:#7f8c8d;margin:16px 0 6px;">📖 전체 업적 도감</div>';
-    allHtml += '<div style="max-height:220px;overflow-y:auto;border-radius:10px;background:#1a1a2e;">';
-    (data.allAchievements || []).forEach(function(ach) {
-      if (ach.earned) {
-        allHtml += '<div style="padding:8px 14px;border-bottom:1px solid #2d2d44;">' +
-          '<div style="font-size:13px;font-weight:bold;color:#2ecc71;">✅ ' + ach.achName + '</div>' +
-          '<div style="font-size:11px;color:#7fb3a0;margin-top:2px;">' + ach.condition + '</div></div>';
-      } else if (ach.isHidden) {
-        allHtml += '<div style="padding:8px 14px;border-bottom:1px solid #2d2d44;" title="힌트: ' + ach.hint + '">' +
-          '<div style="font-size:13px;font-weight:bold;color:#555;">🔒 ???</div>' +
-          '<div style="font-size:11px;color:#444;margin-top:2px;">히든 업적 — 마우스를 올려 힌트 확인</div></div>';
-      } else {
-        allHtml += '<div style="padding:8px 14px;border-bottom:1px solid #2d2d44;">' +
-          '<div style="font-size:13px;font-weight:bold;color:#e74c3c;">⬜ ' + ach.achName + '</div>' +
-          '<div style="font-size:11px;color:#c0785a;margin-top:2px;">' + ach.condition + '</div></div>';
-      }
-    });
-    allHtml += '</div>';
+    var allHtml = '';
 
     // ③ 일반 업적 신청 폼
     var unearned = (data.allAchievements || []).filter(function(a){ return !a.earned && !a.isHidden && !a.autoGranted; });
@@ -2416,7 +2545,8 @@ function closeP2PHistoryModal() {
     }
 
     // 개인 납세액 + 반 전체 복지 기금
-    document.getElementById('myPersonalTax').innerText = '$ ' + Number(data.personalTax || 0).toLocaleString();
+    document.getElementById('myPersonalTax').innerText = '$ ' + Number((data.personalTax || 0) - (data.myDonation || 0)).toLocaleString();
+    document.getElementById('myDonation').innerText     = '$ ' + Number(data.myDonation || 0).toLocaleString();
     document.getElementById('totalTax').innerText      = '$ ' + Number(data.classTotalTax || 0).toLocaleString();
 
     // 복지 기금 프로그레스 바 (목표 50,000 기준)
@@ -2550,7 +2680,7 @@ function closeP2PHistoryModal() {
             return;
           }
           var num   = seat.item.replace(/[^0-9]/g, '');
-          var price = Number(seat.price).toLocaleString();
+          var price = Math.round(Number(seat.price)).toLocaleString();
           html += '<div style="border:1px solid #ddd;border-radius:8px;padding:8px 4px;text-align:center;background:#fff;">' +
             '<div style="font-size:13px;font-weight:bold;color:#2c3e50;">자리' + num + '</div>' +
             '<div style="font-size:11px;color:#e67e22;margin-top:3px;">(' + price + ')</div>' +
@@ -2571,7 +2701,7 @@ function closeP2PHistoryModal() {
           priceTableBody.innerHTML = otherItems.map(function(item) {
             return '<tr>' +
               '<td style="font-size:0.9em;">' + item.item + '</td>' +
-              '<td style="font-weight:bold;color:#e67e22;text-align:right;">$ ' + Number(item.price).toLocaleString() + '</td>' +
+              '<td style="font-weight:bold;color:#e67e22;text-align:right;">$ ' + Math.round(Number(item.price)).toLocaleString() + '</td>' +
             '</tr>';
           }).join('');
           if (priceTableWrap) priceTableWrap.style.display = 'block';

@@ -290,6 +290,14 @@ function getStudentData(studentName, password) {
       balanceRank: studentRow[COL_RANK_A - 1]
     },
     personalTax:   Number(studentRow[COL_TAX - 1]) || 0,
+    myDonation:    (function() {
+      var spendSh = ss.getSheetByName(SHEET_SPEND);
+      if (!spendSh || spendSh.getLastRow() < 2) return 0;
+      var spendData = spendSh.getRange(2, 1, spendSh.getLastRow() - 1, 5).getValues();
+      return spendData.reduce(function(sum, row) {
+        return (row[1] === studentName && row[3] === '기부') ? sum + (Number(row[4]) || 0) : sum;
+      }, 0);
+    })(),
     classTotalTax: totalTax,
     job:           jobResult,
     auctionPrices: auctionPrices,

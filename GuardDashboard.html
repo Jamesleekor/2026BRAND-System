@@ -695,8 +695,8 @@ function renderStats() {
 
   // Top 구매자 / 판매자
   document.getElementById('topGrid').innerHTML =
-    topCard('💸 최다 구매자 Top 3', s.topBuyers  || [], '건') +
-    topCard('🏆 최다 판매자 Top 3', s.topSellers || [], '건');
+    topCard('💸 최다 구매자 Top 3', s.topSellers || [], '건') +
+    topCard('🏆 최다 판매자 Top 3', s.topBuyers  || [], '건');
 }
 
 // ── 도넛 차트 ─────────────────────────────────────────────────

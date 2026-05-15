@@ -114,7 +114,11 @@ function executeSnackPurchase(studentName, itemName, price) {
     dateStr, studentName, brand, 0, -price, curValue, newAsset, `[간식구매] ${itemName}`
   ]);
 
-  updateRankings();
+  // Firebase 개별 학생 스냅샷 갱신 (전체 랭킹 재계산 불필요)
+  try { syncOneStudentToFirebase(studentName); } catch(e) {
+    Logger.log('[Firebase 동기화 실패] ' + e.message);
+  }
+
   return { success: true, newBalance: newAsset };
   } catch(e) {
     return { success: false, msg: '오류가 발생했습니다: ' + e.message };

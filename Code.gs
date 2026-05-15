@@ -121,6 +121,11 @@ function onOpen() {
     .addItem('⏰ [추적] 브랜드가치 자동 기록 설정', 'setupDailyTrackerTrigger')
     .addItem('📋 [백업] 백업 목록 확인',           'showBackupList')
     .addItem('⏰ [예금] 만기 자동 처리 트리거 설정', 'setupDepositTrigger')
+    .addSeparator()
+    .addItem('🔥 [Firebase] 전체 학생 스냅샷 동기화', 'syncAllStudentsToFirebase')
+    .addSeparator()
+    .addItem('⚡ [속도] 워밍업 트리거 설정 (수업시간 자동 유지)', 'setupWarmupTrigger')
+    .addItem('🛑 [속도] 워밍업 트리거 삭제',                    'removeWarmupTrigger')
     .addToUi();
 }
 
@@ -129,6 +134,46 @@ function finalizeDailyTracker() {
   SpreadsheetApp.getUi().alert('✅ 오늘의 브랜드 가치가 추적 시트에 최종 기록되었습니다.');
 }
 
+
+// ════════════════════════════════════════════════════════════════
+// 3-0. 비밀번호 검증만 수행 (Firebase 캐시 히트 시 호출)
+// 시트 접근을 메인 시트 1회로 최소화
+// ════════════════════════════════════════════════════════════════
+function verifyStudentPassword(studentName, password) {
+  if (!_validateStudentName(studentName)) {
+    return { success: false, msg: '유효하지 않은 이름입니다.' };
+  }
+  if (!_validatePassword(password)) {
+    return { success: false, msg: '유효하지 않은 비밀번호입니다.' };
+  }
+  studentName = String(studentName).trim();
+
+  const ss       = SpreadsheetApp.getActiveSpreadsheet();
+  const mainSheet = ss.getSheetByName(SHEET_MAIN);
+  const mainData  = mainSheet.getDataRange().getValues();
+
+  for (let i = 1; i < mainData.length; i++) {
+    if (String(mainData[i][COL_NAME - 1]).trim() === studentName) {
+      const correctPw  = String(mainData[i][COL_PASSWORD - 1]).trim();
+      const inputPw    = (password === null || password === undefined) ? null : String(password).trim();
+      if (inputPw !== null && correctPw && inputPw !== correctPw) {
+        return { success: false, msg: '비밀번호가 일치하지 않습니다.' };
+      }
+      // 로그인 기록
+      try {
+        const loginLog = ss.getSheetByName('로그인_로그');
+        if (loginLog) {
+          const now     = new Date();
+          const dateStr = Utilities.formatDate(now, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+          const timeStr = Utilities.formatDate(now, Session.getScriptTimeZone(), 'HH:mm:ss');
+          loginLog.appendRow([dateStr, studentName, timeStr]);
+        }
+      } catch(e) {}
+      return { success: true };
+    }
+  }
+  return { success: false, msg: '학생을 찾을 수 없습니다.' };
+}
 
 // ════════════════════════════════════════════════════════════════
 // 3. 학생 대시보드 데이터 (Index.html 에서 호출)
@@ -144,32 +189,7 @@ function getStudentData(studentName, password) {
   studentName = String(studentName).trim();
   // ─────────────────────────────────────────────────────────────
 
-  const cache = CacheService.getScriptCache();
-  const cacheKey = 'student_' + studentName;
-  
-  // 캐시에서 먼저 확인 (10분 유효)
-  const cached = cache.get(cacheKey);
-  if (cached) {
-    const data = JSON.parse(cached);
-    // 비밀번호만 재확인
-    if (data.success && password === data._password) {
-      delete data._password;
-      // 복지기금 합계는 캐시를 무시하고 항상 실시간 계산 (기부 후 즉시 반영)
-      try {
-        const ss2      = SpreadsheetApp.getActiveSpreadsheet();
-        const main2    = ss2.getSheetByName(SHEET_MAIN);
-        if (main2) {
-          const md2 = main2.getDataRange().getValues();
-          let liveTax = 0;
-          for (let i = 1; i < md2.length; i++) liveTax += Number(md2[i][COL_TAX - 1]) || 0;
-          data.classTotalTax = liveTax;
-        }
-      } catch(e) {}
-      return data;
-    }
-  }
-
-  const ss       = SpreadsheetApp.getActiveSpreadsheet();
+  const ss        = SpreadsheetApp.getActiveSpreadsheet();
   const mainSheet = ss.getSheetByName(SHEET_MAIN);
   const mainData  = mainSheet.getDataRange().getValues();
 
@@ -183,37 +203,23 @@ function getStudentData(studentName, password) {
   }
   if (!studentRow) return { success: false, msg: '학생을 찾을 수 없습니다. 이름을 다시 확인해주세요.' };
 
-  // 만기 예금 먼저 처리 (이후 studentRow를 다시 읽어야 최신 자산 반영)
-  checkAndPayDeposits(studentName);
-
-  // 만기 처리 후 최신 자산 반영을 위해 해당 학생 행 재조회
-  const freshMainData = mainSheet.getDataRange().getValues();
-  for (let i = 1; i < freshMainData.length; i++) {
-    if (String(freshMainData[i][COL_NAME - 1]).trim() === String(studentName).trim()) {
-      studentRow = freshMainData[i];
-      break;
-    }
+  // 비밀번호 확인 (I열 = 인덱스 8)
+  const correctPassword = String(studentRow[COL_PASSWORD - 1]).trim();
+  const inputPassword   = (password === null || password === undefined) ? null : String(password).trim();
+  if (inputPassword !== null && correctPassword && inputPassword !== correctPassword) {
+    return { success: false, msg: '비밀번호가 일치하지 않습니다.' };
   }
 
   // 로그인 기록
   try {
     const loginLog = ss.getSheetByName('로그인_로그');
     if (loginLog) {
-      const now = new Date();
+      const now     = new Date();
       const dateStr = Utilities.formatDate(now, Session.getScriptTimeZone(), 'yyyy-MM-dd');
       const timeStr = Utilities.formatDate(now, Session.getScriptTimeZone(), 'HH:mm:ss');
       loginLog.appendRow([dateStr, studentName, timeStr]);
     }
   } catch(e) {}
-
-
-  // 비밀번호 확인 (I열 = 인덱스 8)
-  const correctPassword = String(studentRow[COL_PASSWORD - 1]).trim();
-  const inputPassword = (password === null || password === undefined) ? null : String(password).trim();
-  
-  if (inputPassword !== null && correctPassword && inputPassword !== correctPassword) {
-    return { success: false, msg: '비밀번호가 일치하지 않습니다.' };
-  }
 
   // 전체 반 누적 복지 기금 (H열 합산)
   let totalTax = 0;
@@ -254,32 +260,31 @@ function getStudentData(studentName, password) {
   const honor = Number(studentRow[COL_VALUE - 1]) || 0;
   let tier = { name: '새싹', icon: '🌱', min: 0, max: 5000 };
   if      (honor >= 100000) tier = { name: '그랜드마스터', icon: '🏆', min: 100000, max: 100000 };
-  else if (honor >= 85000)  tier = { name: '천상의 마스터',       icon: '👑', min: 85000,  max: 100000 };
-  else if (honor >= 75000)  tier = { name: '마스터',       icon: '👑', min: 75000,  max: 85000 };
+  else if (honor >= 85000)  tier = { name: '천상의 마스터', icon: '👑', min: 85000,  max: 100000 };
+  else if (honor >= 75000)  tier = { name: '마스터',        icon: '👑', min: 75000,  max: 85000  };
   else if (honor >= 65000)  tier = { name: '영원의 결정',   icon: '💠', min: 50000,  max: 75000  };
   else if (honor >= 60000)  tier = { name: '무결 다이아',   icon: '💠', min: 50000,  max: 65000  };
-  else if (honor >= 55000)  tier = { name: '세공된 다이아',   icon: '💠', min: 50000,  max: 60000  };
+  else if (honor >= 55000)  tier = { name: '세공된 다이아', icon: '💠', min: 50000,  max: 60000  };
   else if (honor >= 50000)  tier = { name: '다이아 원석',   icon: '💠', min: 50000,  max: 55000  };
-  else if (honor >= 45000)  tier = { name: '홍염의 정점',     icon: '💎', min: 30000,  max: 50000  };
-  else if (honor >= 40000)  tier = { name: '각성한 루비',     icon: '💎', min: 30000,  max: 45000  };
-  else if (honor >= 35000)  tier = { name: '연마된 루비',     icon: '💎', min: 30000,  max: 40000  };
+  else if (honor >= 45000)  tier = { name: '홍염의 정점',   icon: '💎', min: 30000,  max: 50000  };
+  else if (honor >= 40000)  tier = { name: '각성한 루비',   icon: '💎', min: 30000,  max: 45000  };
+  else if (honor >= 35000)  tier = { name: '연마된 루비',   icon: '💎', min: 30000,  max: 40000  };
   else if (honor >= 30000)  tier = { name: '루비 원석',     icon: '💎', min: 30000,  max: 35000  };
-  else if (honor >= 27500)  tier = { name: '태양의 황금',         icon: '🥇', min: 20000,  max: 30000  };
-  else if (honor >= 25000)  tier = { name: '정련된 골드',         icon: '🥇', min: 20000,  max: 27500  };
-  else if (honor >= 22500)  tier = { name: '제련된 골드',         icon: '🥇', min: 20000,  max: 25000  };
-  else if (honor >= 20000)  tier = { name: '금 광석',         icon: '🥇', min: 20000,  max: 22500  };
-  else if (honor >= 17500)  tier = { name: '은빛 극점',         icon: '🥈', min: 17500,  max: 20000  };
-  else if (honor >= 15000)  tier = { name: '진화한 실버',         icon: '🥈', min: 10000,  max: 17500  };
-  else if (honor >= 12500)  tier = { name: '성장한 실버',         icon: '🥈', min: 10000,  max: 15000  };
-  else if (honor >= 10000)  tier = { name: '거친 실버',         icon: '🥈', min: 10000,  max: 12500  };
-  else if (honor >= 7500)   tier = { name: '빛나는 브론즈',       icon: '🥉', min: 7500,   max: 10000  };
-  else if (honor >= 5000)   tier = { name: '브론즈',       icon: '🥉', min: 5000,   max: 7500  };
+  else if (honor >= 27500)  tier = { name: '태양의 황금',   icon: '🥇', min: 20000,  max: 30000  };
+  else if (honor >= 25000)  tier = { name: '정련된 골드',   icon: '🥇', min: 20000,  max: 27500  };
+  else if (honor >= 22500)  tier = { name: '제련된 골드',   icon: '🥇', min: 20000,  max: 25000  };
+  else if (honor >= 20000)  tier = { name: '금 광석',       icon: '🥇', min: 20000,  max: 22500  };
+  else if (honor >= 17500)  tier = { name: '은빛 극점',     icon: '🥈', min: 17500,  max: 20000  };
+  else if (honor >= 15000)  tier = { name: '진화한 실버',   icon: '🥈', min: 10000,  max: 17500  };
+  else if (honor >= 12500)  tier = { name: '성장한 실버',   icon: '🥈', min: 10000,  max: 15000  };
+  else if (honor >= 10000)  tier = { name: '거친 실버',     icon: '🥈', min: 10000,  max: 12500  };
+  else if (honor >= 7500)   tier = { name: '빛나는 브론즈', icon: '🥉', min: 7500,   max: 10000  };
+  else if (honor >= 5000)   tier = { name: '브론즈',        icon: '🥉', min: 5000,   max: 7500   };
 
-  // 업적 자동 체크 (로그인 시마다 조건 확인)
-  checkAndGrantAchievements(studentName, Number(studentRow[COL_ASSET - 1]) || 0, Number(studentRow[COL_TAX - 1]) || 0, honor);
-  checkAndPayDeposits(studentName);
+  // 비상사태 상태
+  const emergency = getEmergencyStatus();
 
-  const result = {
+  return {
     success:       true,
     personal: {
       name:        studentRow[COL_NAME - 1],
@@ -290,32 +295,65 @@ function getStudentData(studentName, password) {
       balanceRank: studentRow[COL_RANK_A - 1]
     },
     personalTax:   Number(studentRow[COL_TAX - 1]) || 0,
-    myDonation:    (function() {
-      var spendSh = ss.getSheetByName(SHEET_SPEND);
-      if (!spendSh || spendSh.getLastRow() < 2) return 0;
-      var spendData = spendSh.getRange(2, 1, spendSh.getLastRow() - 1, 5).getValues();
-      return spendData.reduce(function(sum, row) {
-        return (row[1] === studentName && row[3] === '기부') ? sum + (Number(row[4]) || 0) : sum;
-      }, 0);
-    })(),
+    myDonation:    0,  // 부가 로드(getStudentDataSub)에서 채워짐
     classTotalTax: totalTax,
     job:           jobResult,
     auctionPrices: auctionPrices,
     tierData:      tier,
-    snacks:        getSnackData(),
-    achievements:  getStudentAchievements(studentName),
-    job2:          getSecondaryJobForStudent(studentName),
-    jobMarket:     getJobData(),
-    emergency:     getEmergencyStatus()
+    emergency:     emergency
+    // snacks / achievements / job2 / jobMarket 은 getStudentDataSub() 에서 반환
   };
-  
-  // ── 캐시 저장 ──────────────────────────────────────────────
-  result._password = correctPassword;
-  cache.put(cacheKey, JSON.stringify(result), 600); // 10분
-  
-  delete result._password;
-  return result;
-  // ───────────────────────────────────────────────────────────
+}
+
+// ════════════════════════════════════════════════════════════════
+// 3-1. 학생 대시보드 부가 데이터 (로그인 후 백그라운드에서 호출)
+// 간식·업적·2차직업·기부내역 등 무거운 조회를 분리하여
+// 핵심 화면이 먼저 뜬 뒤 순차적으로 채워지도록 함
+// ════════════════════════════════════════════════════════════════
+function getStudentDataSub(studentName) {
+  if (!_validateStudentName(studentName)) {
+    return { success: false, msg: '유효하지 않은 이름입니다.' };
+  }
+  studentName = String(studentName).trim();
+
+  const ss        = SpreadsheetApp.getActiveSpreadsheet();
+  const mainSheet = ss.getSheetByName(SHEET_MAIN);
+  const mainData  = mainSheet.getDataRange().getValues();
+
+  // 업적 자동체크에 필요한 현재 자산/납세/브랜드가치 조회
+  let asset = 0, tax = 0, honor = 0;
+  for (let i = 1; i < mainData.length; i++) {
+    if (String(mainData[i][COL_NAME - 1]).trim() === studentName) {
+      asset = Number(mainData[i][COL_ASSET - 1]) || 0;
+      tax   = Number(mainData[i][COL_TAX - 1])   || 0;
+      honor = Number(mainData[i][COL_VALUE - 1])  || 0;
+      break;
+    }
+  }
+
+  // 업적 자동 체크 (조건 달성 시 시트 쓰기 발생 — 부가 호출로 이동)
+  checkAndGrantAchievements(studentName, asset, tax, honor);
+
+  // 기부 내역 (자산사용 시트)
+  let myDonation = 0;
+  try {
+    const spendSh = ss.getSheetByName(SHEET_SPEND);
+    if (spendSh && spendSh.getLastRow() >= 2) {
+      const spendData = spendSh.getRange(2, 1, spendSh.getLastRow() - 1, 5).getValues();
+      myDonation = spendData.reduce(function(sum, row) {
+        return (row[1] === studentName && row[3] === '기부') ? sum + (Number(row[4]) || 0) : sum;
+      }, 0);
+    }
+  } catch(e) {}
+
+  return {
+    success:    true,
+    snacks:     getSnackData(),
+    achievements: getStudentAchievements(studentName),
+    job2:       getSecondaryJobForStudent(studentName),
+    jobMarket:  getJobData(),
+    myDonation: myDonation
+  };
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -461,6 +499,11 @@ function updateRankings() {
   const rA = _calcRank(aArr);
   main.getRange(2, COL_RANK_A, rA.length, 1).setValues(rA.map(r => [r]));
   main.getRange(2, COL_RANK_V, rV.length, 1).setValues(rV.map(r => [r]));
+
+  // 랭킹 갱신 후 Firebase 스냅샷 자동 동기화
+  try { syncAllStudentsToFirebase(); } catch(e) {
+    Logger.log('[Firebase 동기화 실패] ' + e.message);
+  }
 }
 
 function _calcRank(arr) {
@@ -851,21 +894,14 @@ function donateToWelfare(studentName, amount, message) {
     spendSheet.appendRow([today, studentName, data[studentRowIdx][COL_BRAND - 1], '기부', amount, newAsset, memo]);
   }
 
-  // 캐시 무효화: 기부자 본인 + 전체 학생 캐시 삭제
-  // (복지기금 합계는 전 학생에게 동일하게 보여야 하므로 전체 무효화)
-  const cache = CacheService.getScriptCache();
-  cache.remove('student_' + studentName);
-  // 다른 학생들의 캐시도 무효화 (메인 시트에서 이름 목록 조회)
-  const allNames = mainSheet.getDataRange().getValues()
-    .slice(1)
-    .map(r => String(r[COL_NAME - 1]).trim())
-    .filter(n => n && n !== studentName);
-  allNames.forEach(n => cache.remove('student_' + n));
-
-  updateRankings();
+  // Firebase 개별 학생 스냅샷 갱신 (전체 랭킹 재계산 불필요)
+  try { syncOneStudentToFirebase(studentName); } catch(e) {
+    Logger.log('[Firebase 동기화 실패] ' + e.message);
+  }
 
   return {
-    success: true,
+    success:    true,
+    newBalance: newAsset,
     msg: `$${amount.toLocaleString()} 기부 완료! 따뜻한 마음 감사합니다 💚`
   };
   } catch(e) {
@@ -1149,5 +1185,287 @@ function _calcGini(lorenzPoints) {
 
   const gini = (0.5 - areaUnderLorenz) / 0.5;
   return Math.max(0, Math.min(1, gini)); // 0~1 클램프
+}
+
+
+// ════════════════════════════════════════════════════════════════
+// GAS 워밍업 — 콜드스타트 방지
+// setupWarmupTrigger() 를 메뉴에서 1회 실행하면
+// 평일 08:00~17:00 매 1분마다 keepAlive() 가 자동 호출되어
+// GAS 인스턴스가 활성 상태를 유지함 → 버튼 클릭 응답속도 개선
+// ════════════════════════════════════════════════════════════════
+
+/** 아무것도 하지 않는 빈 함수 — 인스턴스 활성화용 */
+function keepAlive() {
+  // intentionally empty
+}
+
+/** 워밍업 트리거 설정 (1분 간격, 기존 워밍업 트리거 중복 방지) */
+function setupWarmupTrigger() {
+  // 기존 워밍업 트리거 모두 삭제 (중복 방지)
+  ScriptApp.getProjectTriggers().forEach(function(t) {
+    if (t.getHandlerFunction() === 'keepAlive') {
+      ScriptApp.deleteTrigger(t);
+    }
+  });
+  // 1분 간격 트리거 등록
+  ScriptApp.newTrigger('keepAlive')
+    .timeBased()
+    .everyMinutes(1)
+    .create();
+  SpreadsheetApp.getUi().alert(
+    '✅ 워밍업 트리거가 설정되었습니다.\n' +
+    '매 1분마다 keepAlive()가 실행되어 GAS 인스턴스를 활성 상태로 유지합니다.\n' +
+    '수업이 없는 주말·방학에는 [워밍업 트리거 삭제]로 중단하세요.'
+  );
+}
+
+/** 워밍업 트리거 삭제 */
+function removeWarmupTrigger() {
+  var count = 0;
+  ScriptApp.getProjectTriggers().forEach(function(t) {
+    if (t.getHandlerFunction() === 'keepAlive') {
+      ScriptApp.deleteTrigger(t);
+      count++;
+    }
+  });
+  SpreadsheetApp.getUi().alert(
+    count > 0
+      ? '✅ 워밍업 트리거 ' + count + '개를 삭제했습니다.'
+      : 'ℹ️ 삭제할 워밍업 트리거가 없습니다.'
+  );
+}
+
+// ════════════════════════════════════════════════════════════════
+// 경로: students/{이름}/snapshot
+// 호출 시점:
+//   - updateRankings() 완료 후 자동 호출 (포인트 지급, MVP 등 모든 변경 후)
+//   - 메뉴 > [Firebase] 전체 학생 스냅샷 동기화 (수동)
+//   - syncOneStudentToFirebase(name) : 개별 학생 변경 시 (대출·자산차감 등)
+// ════════════════════════════════════════════════════════════════
+
+const FIREBASE_URL = 'https://brand-503cd-default-rtdb.asia-southeast1.firebasedatabase.app';
+const FIREBASE_API_KEY = 'AIzaSyAspOwJq6u54YBDWIx_WVOjhQHCupmriNc';
+
+/**
+ * 티어 계산 헬퍼 (getStudentData와 동일한 로직)
+ */
+function _calcTier(honor) {
+  if      (honor >= 100000) return { name: '그랜드마스터', icon: '🏆', min: 100000, max: 100000 };
+  else if (honor >= 85000)  return { name: '천상의 마스터', icon: '👑', min: 85000,  max: 100000 };
+  else if (honor >= 75000)  return { name: '마스터',        icon: '👑', min: 75000,  max: 85000  };
+  else if (honor >= 65000)  return { name: '영원의 결정',   icon: '💠', min: 50000,  max: 75000  };
+  else if (honor >= 60000)  return { name: '무결 다이아',   icon: '💠', min: 50000,  max: 65000  };
+  else if (honor >= 55000)  return { name: '세공된 다이아', icon: '💠', min: 50000,  max: 60000  };
+  else if (honor >= 50000)  return { name: '다이아 원석',   icon: '💠', min: 50000,  max: 55000  };
+  else if (honor >= 45000)  return { name: '홍염의 정점',   icon: '💎', min: 30000,  max: 50000  };
+  else if (honor >= 40000)  return { name: '각성한 루비',   icon: '💎', min: 30000,  max: 45000  };
+  else if (honor >= 35000)  return { name: '연마된 루비',   icon: '💎', min: 30000,  max: 40000  };
+  else if (honor >= 30000)  return { name: '루비 원석',     icon: '💎', min: 30000,  max: 35000  };
+  else if (honor >= 27500)  return { name: '태양의 황금',   icon: '🥇', min: 20000,  max: 30000  };
+  else if (honor >= 25000)  return { name: '정련된 골드',   icon: '🥇', min: 20000,  max: 27500  };
+  else if (honor >= 22500)  return { name: '제련된 골드',   icon: '🥇', min: 20000,  max: 25000  };
+  else if (honor >= 20000)  return { name: '금 광석',       icon: '🥇', min: 20000,  max: 22500  };
+  else if (honor >= 17500)  return { name: '은빛 극점',     icon: '🥈', min: 17500,  max: 20000  };
+  else if (honor >= 15000)  return { name: '진화한 실버',   icon: '🥈', min: 10000,  max: 17500  };
+  else if (honor >= 12500)  return { name: '성장한 실버',   icon: '🥈', min: 10000,  max: 15000  };
+  else if (honor >= 10000)  return { name: '거친 실버',     icon: '🥈', min: 10000,  max: 12500  };
+  else if (honor >= 7500)   return { name: '빛나는 브론즈', icon: '🥉', min: 7500,   max: 10000  };
+  else if (honor >= 5000)   return { name: '브론즈',        icon: '🥉', min: 5000,   max: 7500   };
+  else                      return { name: '새싹',          icon: '🌱', min: 0,      max: 5000   };
+}
+
+/**
+ * Firebase REST API로 단일 경로에 데이터를 PUT
+ * @param {string} path - DB 경로 (예: 'students/김민준/snapshot')
+ * @param {Object} data - 저장할 객체
+ */
+function _firebasePut(path, data) {
+  const url = FIREBASE_URL + '/' + encodeURI(path) + '.json?key=' + FIREBASE_API_KEY;
+  const options = {
+    method: 'put',
+    contentType: 'application/json',
+    payload: JSON.stringify(data),
+    muteHttpExceptions: true
+  };
+  const res = UrlFetchApp.fetch(url, options);
+  if (res.getResponseCode() !== 200) {
+    throw new Error('Firebase PUT 실패 [' + path + '] ' + res.getContentText());
+  }
+}
+
+/**
+ * 전체 학생 스냅샷을 Firebase에 동기화
+ * updateRankings() 완료 후 자동 호출 + 메뉴에서 수동 실행 가능
+ */
+function syncAllStudentsToFirebase() {
+  const ss        = SpreadsheetApp.getActiveSpreadsheet();
+  const mainSheet = ss.getSheetByName(SHEET_MAIN);
+  const mainData  = mainSheet.getDataRange().getValues();
+
+  // 1인1역 데이터 맵
+  const jobSheet = ss.getSheetByName(SHEET_JOB);
+  const jobMap   = {};
+  if (jobSheet) {
+    const jobData = jobSheet.getDataRange().getValues();
+    for (let j = 1; j < jobData.length; j++) {
+      const jName = String(jobData[j][0]).trim();
+      if (jName) jobMap[jName] = {
+        title:  jobData[j][1] || '미배정',
+        salary: Number(jobData[j][2]) || 0,
+        area:   jobData[j][3] || '-'
+      };
+    }
+  }
+
+  // 경매 시세
+  const auctionSheet  = ss.getSheetByName(SHEET_AUCTION);
+  const auctionPrices = [];
+  if (auctionSheet) {
+    const aData = auctionSheet.getDataRange().getValues();
+    for (let m = 1; m < aData.length; m++) {
+      if (!aData[m][0]) continue;
+      auctionPrices.push({
+        item:  '[' + aData[m][0] + '] ' + (aData[m][1] || ''),
+        price: Number(aData[m][11]) || 0
+      });
+    }
+  }
+
+  // 전체 반 복지기금
+  let classTotalTax = 0;
+  for (let i = 1; i < mainData.length; i++) {
+    classTotalTax += Number(mainData[i][COL_TAX - 1]) || 0;
+  }
+
+  // 비상사태
+  const emergency = getEmergencyStatus();
+
+  // updatedAt 타임스탬프
+  const updatedAt = Utilities.formatDate(
+    new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss'
+  );
+
+  // 학생별 스냅샷 생성 및 Firebase PUT
+  const errors = [];
+  for (let i = 1; i < mainData.length; i++) {
+    const row  = mainData[i];
+    const name = String(row[COL_NAME - 1]).trim();
+    if (!name) continue;
+
+    const honor = Number(row[COL_VALUE - 1]) || 0;
+    const snapshot = {
+      name:          name,
+      brand:         row[COL_BRAND - 1] || '',
+      honor:         honor,
+      balance:       Number(row[COL_ASSET - 1]) || 0,
+      honorRank:     Number(row[COL_RANK_V - 1]) || 0,
+      balanceRank:   Number(row[COL_RANK_A - 1]) || 0,
+      personalTax:   Number(row[COL_TAX - 1]) || 0,
+      classTotalTax: classTotalTax,
+      job:           jobMap[name] || { title: '미배정', salary: 0, area: '-' },
+      tierData:      _calcTier(honor),
+      auctionPrices: auctionPrices,
+      emergency:     emergency,
+      updatedAt:     updatedAt
+    };
+
+    try {
+      _firebasePut('students/' + name + '/snapshot', snapshot);
+    } catch(e) {
+      errors.push(name + ': ' + e.message);
+      Logger.log('[Firebase 동기화 오류] ' + name + ' - ' + e.message);
+    }
+  }
+
+  if (errors.length === 0) {
+    Logger.log('[Firebase] 전체 학생 스냅샷 동기화 완료 (' + (mainData.length - 1) + '명)');
+  } else {
+    Logger.log('[Firebase] 동기화 완료 (오류 ' + errors.length + '건): ' + errors.join(', '));
+  }
+}
+
+/**
+ * 개별 학생 스냅샷을 Firebase에 동기화
+ * 대출 승인, 자산 차감 등 단일 학생 데이터 변경 시 호출
+ * @param {string} studentName - 동기화할 학생 이름
+ */
+function syncOneStudentToFirebase(studentName) {
+  if (!studentName) return;
+  studentName = String(studentName).trim();
+
+  const ss        = SpreadsheetApp.getActiveSpreadsheet();
+  const mainSheet = ss.getSheetByName(SHEET_MAIN);
+  const mainData  = mainSheet.getDataRange().getValues();
+
+  let studentRow = null;
+  for (let i = 1; i < mainData.length; i++) {
+    if (String(mainData[i][COL_NAME - 1]).trim() === studentName) {
+      studentRow = mainData[i];
+      break;
+    }
+  }
+  if (!studentRow) return;
+
+  // 1인1역
+  const jobSheet = ss.getSheetByName(SHEET_JOB);
+  let jobResult  = { title: '미배정', salary: 0, area: '-' };
+  if (jobSheet) {
+    const jobData = jobSheet.getDataRange().getValues();
+    for (let j = 1; j < jobData.length; j++) {
+      if (String(jobData[j][0]).trim() === studentName) {
+        jobResult = {
+          title:  jobData[j][1] || '미배정',
+          salary: Number(jobData[j][2]) || 0,
+          area:   jobData[j][3] || '-'
+        };
+        break;
+      }
+    }
+  }
+
+  // 경매 시세
+  const auctionSheet  = ss.getSheetByName(SHEET_AUCTION);
+  const auctionPrices = [];
+  if (auctionSheet) {
+    const aData = auctionSheet.getDataRange().getValues();
+    for (let m = 1; m < aData.length; m++) {
+      if (!aData[m][0]) continue;
+      auctionPrices.push({
+        item:  '[' + aData[m][0] + '] ' + (aData[m][1] || ''),
+        price: Number(aData[m][11]) || 0
+      });
+    }
+  }
+
+  // 전체 반 복지기금
+  let classTotalTax = 0;
+  for (let i = 1; i < mainData.length; i++) {
+    classTotalTax += Number(mainData[i][COL_TAX - 1]) || 0;
+  }
+
+  const honor    = Number(studentRow[COL_VALUE - 1]) || 0;
+  const snapshot = {
+    name:          studentName,
+    brand:         studentRow[COL_BRAND - 1] || '',
+    honor:         honor,
+    balance:       Number(studentRow[COL_ASSET - 1]) || 0,
+    honorRank:     Number(studentRow[COL_RANK_V - 1]) || 0,
+    balanceRank:   Number(studentRow[COL_RANK_A - 1]) || 0,
+    personalTax:   Number(studentRow[COL_TAX - 1]) || 0,
+    classTotalTax: classTotalTax,
+    job:           jobResult,
+    tierData:      _calcTier(honor),
+    auctionPrices: auctionPrices,
+    emergency:     getEmergencyStatus(),
+    updatedAt:     Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss')
+  };
+
+  try {
+    _firebasePut('students/' + studentName + '/snapshot', snapshot);
+    Logger.log('[Firebase] ' + studentName + ' 스냅샷 동기화 완료');
+  } catch(e) {
+    Logger.log('[Firebase 동기화 오류] ' + studentName + ' - ' + e.message);
+  }
 }
 

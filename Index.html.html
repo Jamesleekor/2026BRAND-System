@@ -7,6 +7,31 @@
   <title>5학년 4반 BRAND 시스템</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey:            "AIzaSyAspOwJq6u54YBDWIx_WVOjhQHCupmriNc",
+      authDomain:        "brand-503cd.firebaseapp.com",
+      databaseURL:       "https://brand-503cd-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId:         "brand-503cd",
+      storageBucket:     "brand-503cd.firebasestorage.app",
+      messagingSenderId: "443808653648",
+      appId:             "1:443808653648:web:56081109d74a2f32298c55"
+    };
+    const app = initializeApp(firebaseConfig);
+    const db  = getDatabase(app);
+
+    // 전역으로 노출 (일반 스크립트에서 호출 가능하도록)
+    window._fbGetStudentSnapshot = function(studentName) {
+      return get(ref(db, 'students/' + studentName + '/snapshot'))
+        .then(function(snap) {
+          return snap.exists() ? snap.val() : null;
+        });
+    };
+  </script>
   <style>
     :root {
       --primary-color: #3d85c8;
@@ -1256,6 +1281,8 @@ var _selectedWeeks  = 0;      // 선택된 주수
 // showDashboard 함수 내 loadP2PReceiverList(); 바로 아래에 추가:
 // loadDepositProduct();
 function loadDepositProduct() {
+  var prodName = document.getElementById('depositProdName');
+  if (prodName) prodName.innerText = '불러오는 중...';
   google.script.run
     .withSuccessHandler(function(prod) {
       _depositProd = prod;
@@ -1263,7 +1290,7 @@ function loadDepositProduct() {
     })
     .withFailureHandler(function(err) {
       console.log('예금 상품 로드 실패: ' + err.message);
-      document.getElementById('depositProdName').innerText = '상품 정보를 불러올 수 없습니다.';
+      if (prodName) prodName.innerText = '상품 정보를 불러올 수 없습니다.';
     })
     .getActiveDepositProduct();
 }
@@ -1515,8 +1542,12 @@ function requestCancelDeposit(depId, amount) {
 
   if (!confirm('⚠️ 이 작업은 되돌릴 수 없습니다.\n정말 해지하시겠습니까?')) return;
 
+  var cancelBtn = document.querySelector('[onclick*="requestCancelDeposit(' + depId + '"]');
+  if (cancelBtn) { cancelBtn.disabled = true; cancelBtn.innerText = '⏳ 처리 중...'; }
+
   google.script.run
     .withSuccessHandler(function(res) {
+      if (cancelBtn) { cancelBtn.disabled = false; cancelBtn.innerText = '중도 해지'; }
       if (res.success) {
         alert(res.msg);
         var balEl = document.getElementById('myBalance');
@@ -1529,6 +1560,7 @@ function requestCancelDeposit(depId, amount) {
       }
     })
     .withFailureHandler(function(err) {
+      if (cancelBtn) { cancelBtn.disabled = false; cancelBtn.innerText = '중도 해지'; }
       alert('서버 오류: ' + err.message);
     })
     .cancelDeposit(window._currentStudentName, depId);
@@ -2115,10 +2147,10 @@ function closeP2PHistoryModal() {
     '제련된 골드':     'https://raw.githubusercontent.com/Jamesleekor/brand-assets/main/tier_icon/rankicon_gold2.png',
     '정련된 골드':     'https://raw.githubusercontent.com/Jamesleekor/brand-assets/main/tier_icon/rankicon_gold3.png',
     '태양의 황금':     'https://raw.githubusercontent.com/Jamesleekor/brand-assets/main/tier_icon/rankicon_gold4.png',
-    '루비 원석':       'https://lh3.googleusercontent.com/d/15X9xtvv7FdCJHoSArO2CwbV4fnHNN3UF=s200',
-    '연마된 루비':     'https://lh3.googleusercontent.com/d/1REEir6vppC6iPRh6mOynTHWD4Vx-Ttgf=s200',
-    '각성한 루비':     'https://lh3.googleusercontent.com/d/1MDwOHkjH0u50P5gkB1WrfXrvkpRCNLcS=s200',
-    '홍염의 정점':     'https://lh3.googleusercontent.com/d/1EfCQf-t_gBpIohmamSb3yOCbeOzISMJc=s200',
+    '루비 원석':       'https://raw.githubusercontent.com/Jamesleekor/brand-assets/main/tier_icon/rankicon_ruby1.png',
+    '연마된 루비':     'https://raw.githubusercontent.com/Jamesleekor/brand-assets/main/tier_icon/rankicon_ruby2.png',
+    '각성한 루비':     'https://raw.githubusercontent.com/Jamesleekor/brand-assets/main/tier_icon/rankicon_ruby3.png',
+    '홍염의 정점':     'https://raw.githubusercontent.com/Jamesleekor/brand-assets/main/tier_icon/rankicon_ruby4.png',
     '다이아 원석':     'https://lh3.googleusercontent.com/d/1Q407DyyD5wndI-rVvKjt6981cRGXxIqN=s200',
     '세공된 다이아':   'https://lh3.googleusercontent.com/d/1XYMWlQ3QWFeIf0bO_z2Kn8CxJpmPq4Gb=s200',
     '무결 다이아':     'https://lh3.googleusercontent.com/d/1Wdb5TSQ3HH_c4Ea0lSBMt7iH4m5L9dlU=s200',
@@ -2130,21 +2162,87 @@ function closeP2PHistoryModal() {
 
   // ── 로그인 함수 ─────────────────────────────────────────────
   function login() {
-   var name = document.getElementById('studentName').value.trim();
-   var password = document.getElementById('studentPassword').value.trim();
-  
-   if (!name) { alert('이름을 입력해주세요.'); return; }
-   if (!password) { alert('비밀번호를 입력해주세요.'); return; }
+    var name     = document.getElementById('studentName').value.trim();
+    var password = document.getElementById('studentPassword').value.trim();
+
+    if (!name)     { alert('이름을 입력해주세요.'); return; }
+    if (!password) { alert('비밀번호를 입력해주세요.'); return; }
 
     var btn = document.querySelector('.login-btn');
     btn.innerText = '데이터를 불러오는 중...';
     btn.disabled  = true;
 
+    // ── Firebase 스냅샷 우선 시도 ──────────────────────────────
+    // Firebase에 캐시된 데이터가 있으면 즉시 화면 표시 (0.3초 목표)
+    // 없거나 실패하면 GAS로 폴백 (최초 로그인 or 동기화 전)
+    if (typeof window._fbGetStudentSnapshot === 'function') {
+      window._fbGetStudentSnapshot(name)
+        .then(function(snapshot) {
+          if (snapshot) {
+            // ── Firebase 히트: 비밀번호 검증은 GAS에 맡기고 화면 먼저 표시 ──
+            // GAS에 비밀번호만 검증 요청 (시트 최소 접근)
+            google.script.run
+              .withSuccessHandler(function(authResult) {
+                btn.innerText = '데이터 불러오기';
+                btn.disabled  = false;
+                if (!authResult.success) { alert(authResult.msg); return; }
+
+                // 비밀번호 확인 완료 → Firebase 스냅샷으로 대시보드 즉시 표시
+                var data = {
+                  success:       true,
+                  personal: {
+                    name:        snapshot.name,
+                    brand:       snapshot.brand,
+                    honor:       snapshot.honor,
+                    balance:     snapshot.balance,
+                    honorRank:   snapshot.honorRank,
+                    balanceRank: snapshot.balanceRank
+                  },
+                  personalTax:   snapshot.personalTax   || 0,
+                  myDonation:    snapshot.myDonation    || 0,
+                  classTotalTax: snapshot.classTotalTax || 0,
+                  job:           snapshot.job           || { title: '미배정', salary: 0, area: '-' },
+                  auctionPrices: snapshot.auctionPrices || [],
+                  tierData:      snapshot.tierData,
+                  emergency:     snapshot.emergency     || { active: false },
+                  achievements:  snapshot.achievements  || []
+                };
+                showDashboard(data);
+
+                // 부가 데이터 백그라운드 로드
+                _loadSubData(name);
+              })
+              .withFailureHandler(function(err) {
+                btn.innerText = '데이터 불러오기';
+                btn.disabled  = false;
+                alert('서버 오류: ' + err.message);
+              })
+              .verifyStudentPassword(name, password);
+
+          } else {
+            // ── Firebase 미스: GAS 폴백 ──
+            _loginViaGAS(name, password, btn);
+          }
+        })
+        .catch(function() {
+          // ── Firebase 오류: GAS 폴백 ──
+          _loginViaGAS(name, password, btn);
+        });
+    } else {
+      // ── Firebase SDK 미로드: GAS 폴백 ──
+      _loginViaGAS(name, password, btn);
+    }
+  }
+
+  // ── GAS 직접 로그인 (폴백 / Firebase 미사용 시) ──────────────
+  function _loginViaGAS(name, password, btn) {
     google.script.run
       .withSuccessHandler(function(data) {
         btn.innerText = '데이터 불러오기';
         btn.disabled  = false;
+        if (!data.success) { alert(data.msg); return; }
         showDashboard(data);
+        _loadSubData(name);
       })
       .withFailureHandler(function(err) {
         btn.innerText = '데이터 불러오기';
@@ -2154,6 +2252,34 @@ function closeP2PHistoryModal() {
       .getStudentData(name, password);
   }
 
+  // ── 부가 데이터 백그라운드 로드 (공통) ───────────────────────
+  function _loadSubData(name) {
+    google.script.run
+      .withSuccessHandler(function(sub) {
+        if (!sub || !sub.success) return;
+        if (sub.snacks !== undefined)      fillSnackMarket(sub.snacks);
+        if (sub.achievements !== undefined) window._achData = sub.achievements;
+        if (sub.job2 !== undefined || sub.jobMarket !== undefined) {
+          var tempData = window._lastDashboardData || {};
+          tempData.job2      = sub.job2;
+          tempData.jobMarket = sub.jobMarket;
+          renderJob2Section(tempData);
+        }
+        if (sub.myDonation !== undefined && window._lastDashboardData) {
+          window._lastDashboardData.myDonation = sub.myDonation;
+          var personalTax = window._lastDashboardData.personalTax || 0;
+          document.getElementById('myDonation').innerText =
+            '$ ' + Number(sub.myDonation).toLocaleString();
+          document.getElementById('myPersonalTax').innerText =
+            '$ ' + Number(personalTax - sub.myDonation).toLocaleString();
+        }
+      })
+      .withFailureHandler(function(err) {
+        console.log('[SubData 로드 실패] ' + err.message);
+      })
+      .getStudentDataSub(name);
+  }
+
   // ── 로그아웃 함수 ─────────────────────────────────────────────
   function logout() {
     // 스킨 / 폰트 / 캐릭터 / 티어 초기화
@@ -2161,6 +2287,9 @@ function closeP2PHistoryModal() {
     applyFont(null);
     applyCharacter(null);
     applyTierBorderClass('');   // 티어 테두리 클래스 전체 제거
+
+    // 전광판 폴링 정리 (재로그인 시 중복 실행 방지)
+    if (_alertPolling) { clearInterval(_alertPolling); _alertPolling = null; }
 
     // 전역 변수 초기화
     window._currentStudentName = null;
@@ -2210,16 +2339,24 @@ function closeP2PHistoryModal() {
     document.querySelectorAll('.dex-filter-btn').forEach(function(b) {
       b.classList.toggle('active', b.dataset.grade === '전체');
     });
-    if (window._achData) {
-      renderAchDex(window._achData.allAchievements || []);
+    if (window._achData && window._achData.allAchievements && window._achData.allAchievements.length > 0) {
+      renderAchDex(window._achData.allAchievements);
     } else {
-      document.getElementById('achDexList').innerHTML = '<div style="padding:20px;text-align:center;color:#888;">데이터 로딩 중...<br><small>먼저 나의 업적을 한 번 열어주세요.</small></div>';
+      // 부가 데이터 미로드 상태 — 직접 조회
+      document.getElementById('achDexList').innerHTML =
+        '<div style="padding:20px;text-align:center;color:#888;">불러오는 중...</div>';
       document.getElementById('achDexCount').textContent = '0';
-      // 데이터 없으면 직접 로드
-      google.script.run.withSuccessHandler(function(data) {
-        window._achData = data;
-        renderAchDex(data.allAchievements || []);
-      }).getAchievementData(window._currentStudentName);
+      google.script.run
+        .withSuccessHandler(function(data) {
+          if (!data) return;
+          window._achData = data;
+          renderAchDex(data.allAchievements || []);
+        })
+        .withFailureHandler(function(err) {
+          document.getElementById('achDexList').innerHTML =
+            '<div style="padding:20px;text-align:center;color:#e74c3c;">로드 실패: ' + err.message + '</div>';
+        })
+        .getStudentAchievements(window._currentStudentName);
     }
   }
 
@@ -2365,19 +2502,37 @@ function closeP2PHistoryModal() {
     var proof = document.getElementById('achApplyProof').value.trim();
     if (!sel)   return alert('신청할 업적을 선택해주세요.');
     if (!proof) return alert('증빙 내용을 입력해주세요.');
-    google.script.run.withSuccessHandler(function(res) {
-      alert(res.msg);
-      if (res.success) openAchModal(); // 새로고침
-    }).submitAchievement(window._currentStudentName, sel, proof);
+    var btn = document.querySelector('[onclick="submitAchApply()"]');
+    if (btn) { btn.disabled = true; btn.innerText = '⏳ 신청 중...'; }
+    google.script.run
+      .withSuccessHandler(function(res) {
+        if (btn) { btn.disabled = false; btn.innerText = '📬 업적 신청하기'; }
+        alert(res.msg);
+        if (res.success) openAchModal();
+      })
+      .withFailureHandler(function(err) {
+        if (btn) { btn.disabled = false; btn.innerText = '📬 업적 신청하기'; }
+        alert('오류: ' + err.message);
+      })
+      .submitAchievement(window._currentStudentName, sel, proof);
   }
 
   function submitSpecialReport() {
     var proof = document.getElementById('achSpecialProof').value.trim();
     if (!proof) return alert('보고서 내용을 입력해주세요.');
-    google.script.run.withSuccessHandler(function(res) {
-      alert(res.msg);
-      if (res.success) document.getElementById('achSpecialProof').value = '';
-    }).submitAchievement(window._currentStudentName, '특별보고', proof);
+    var btn = document.querySelector('[onclick="submitSpecialReport()"]');
+    if (btn) { btn.disabled = true; btn.innerText = '⏳ 제출 중...'; }
+    google.script.run
+      .withSuccessHandler(function(res) {
+        if (btn) { btn.disabled = false; btn.innerText = '📬 특별 보고서 제출'; }
+        alert(res.msg);
+        if (res.success) document.getElementById('achSpecialProof').value = '';
+      })
+      .withFailureHandler(function(err) {
+        if (btn) { btn.disabled = false; btn.innerText = '📬 특별 보고서 제출'; }
+        alert('오류: ' + err.message);
+      })
+      .submitAchievement(window._currentStudentName, '특별보고', proof);
   }
 
   // ── 칭호 장착/해제 ──────────────────────────────────────────
@@ -2493,6 +2648,31 @@ function closeP2PHistoryModal() {
     badgeArea.appendChild(badge);
   }
 
+  // ── 간식 거래소 렌더링 (핵심/부가 양쪽에서 호출 가능) ────────
+  function fillSnackMarket(snacks) {
+    var snackBody = document.getElementById('snackMarketBody');
+    if (!snackBody) return;
+    if (!snacks || snacks.length === 0) {
+      snackBody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:15px;">판매 중인 간식이 없습니다.</td></tr>';
+      return;
+    }
+    snackBody.innerHTML = snacks.map(function(s) {
+      var soldOut = s.stock <= 0;
+      return '<tr style="border-bottom:1px solid #f5f5f5;">' +
+        '<td style="padding:8px 0;font-weight:bold;">' + s.name + '</td>' +
+        '<td style="padding:8px 0;text-align:right;color:#e74c3c;font-weight:bold;">$ ' + s.price.toLocaleString() + '</td>' +
+        '<td style="padding:8px 0;text-align:right;color:' + (s.stock <= 5 ? 'red' : '#888') + ';">' + s.stock + '개</td>' +
+        '<td style="padding:8px 0;text-align:right;">' +
+          '<button onclick="doBuyItem(\'' + s.name.replace(/'/g, "\\'") + '\',' + s.price + ',' + s.stock + ',' + (s.weeklyLimit !== null ? s.weeklyLimit : 'null') + ')"' +
+          ' style="padding:4px 10px;font-size:12px;border:none;border-radius:5px;cursor:' + (soldOut ? 'not-allowed' : 'pointer') + ';' +
+          'background:' + (soldOut ? '#ccc' : '#e74c3c') + ';color:white;font-weight:bold;"' +
+          (soldOut ? ' disabled' : '') + '>' +
+          (soldOut ? '품절' : '구매') +
+        '</button></td>' +
+      '</tr>';
+    }).join('');
+  }
+
   // ── 대시보드 렌더링 함수 ─────────────────────────────────────
   function showDashboard(data) {
     if (!data.success) {
@@ -2527,11 +2707,11 @@ function closeP2PHistoryModal() {
         '고용 한파'       : '📉 고용 한파 발령 중! 일부 직업이 구조조정되었습니다.',
         '자산 동결'       : '🔒 자산 동결 발령 중! 보유 자산의 ' + emg.freezeRate + '%만 사용 가능합니다.'
       };
-      banner.style.display     = 'block';
-      banner.style.background  = bgMap[emg.type]    || '#fdecea';
-      banner.style.color       = colorMap[emg.type] || '#c0392b';
-      banner.style.border      = '2px solid ' + (colorMap[emg.type] || '#c0392b');
       var endStr = emg.endsAt ? ' (해제 예정: ' + emg.endsAt + ')' : '';
+      banner.style.cssText = 'display:block;background:' + (bgMap[emg.type] || '#fdecea') +
+        ';color:' + (colorMap[emg.type] || '#c0392b') +
+        ';border:2px solid ' + (colorMap[emg.type] || '#c0392b') +
+        ';margin-bottom:16px;padding:14px 16px;border-radius:10px;font-size:14px;font-weight:bold;text-align:center;';
       banner.innerHTML = (msgMap[emg.type] || '🚨 비상사태 발령 중!') + endStr;
 
       // 자산 동결 시 사용 가능 금액 표시
@@ -2614,27 +2794,14 @@ function closeP2PHistoryModal() {
       }
     }
 
-    // 실시간 간식 거래소
+    // 실시간 간식 거래소 — 부가 로드 전 로딩 표시
     var snackBody = document.getElementById('snackMarketBody');
-    if (snackBody && data.snacks) {
-      if (data.snacks.length > 0) {
-        snackBody.innerHTML = data.snacks.map(function(s) {
-          var soldOut = s.stock <= 0;
-          return '<tr style="border-bottom:1px solid #f5f5f5;">' +
-            '<td style="padding:8px 0;font-weight:bold;">' + s.name + '</td>' +
-            '<td style="padding:8px 0;text-align:right;color:#e74c3c;font-weight:bold;">$ ' + s.price.toLocaleString() + '</td>' +
-            '<td style="padding:8px 0;text-align:right;color:' + (s.stock <= 5 ? 'red' : '#888') + ';">' + s.stock + '개</td>' +
-            '<td style="padding:8px 0;text-align:right;">' +
-              '<button onclick="doBuyItem(\'' + s.name.replace(/'/g, "\\'") + '\',' + s.price + ',' + s.stock + ',' + (s.weeklyLimit !== null ? s.weeklyLimit : 'null') + ')"' +
-              ' style="padding:4px 10px;font-size:12px;border:none;border-radius:5px;cursor:' + (soldOut ? 'not-allowed' : 'pointer') + ';' +
-              'background:' + (soldOut ? '#ccc' : '#e74c3c') + ';color:white;font-weight:bold;"' +
-              (soldOut ? ' disabled' : '') + '>' +
-              (soldOut ? '품절' : '구매') +
-            '</button></td>' +
-          '</tr>';
-        }).join('');
+    if (snackBody) {
+      if (data.snacks !== undefined) {
+        // 핵심 데이터에 snacks가 있으면 바로 렌더링 (하위 호환)
+        fillSnackMarket(data.snacks);
       } else {
-        snackBody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:15px;">판매 중인 간식이 없습니다.</td></tr>';
+        snackBody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:15px;color:#aaa;">불러오는 중...</td></tr>';
       }
     }
 
@@ -3481,15 +3648,21 @@ function closeP2PHistoryModal() {
   }
 
   function equipShopItem(itemId) {
+    var btn = event && event.target ? event.target : null;
+    if (btn) { btn.disabled = true; btn.innerText = '⏳'; }
     google.script.run
       .withSuccessHandler(function(res) {
+        if (btn) { btn.disabled = false; btn.innerText = '장착'; }
         if (!res.success) { alert('오류: ' + res.msg); return; }
         if (res.category === '스킨')   applySkin(res.resourceVal);
         if (res.category === '폰트')   applyFont(res.resourceVal);
         if (res.category === '캐릭터') applyCharacter(res.resourceVal);
         openShopModal(); // 상태 새로고침
       })
-      .withFailureHandler(function(err) { alert('오류: ' + err.message); })
+      .withFailureHandler(function(err) {
+        if (btn) { btn.disabled = false; btn.innerText = '장착'; }
+        alert('오류: ' + err.message);
+      })
       .equipShopItem(window._currentStudentName, itemId);
   }
 
@@ -3685,18 +3858,41 @@ function closeP2PHistoryModal() {
     var amount = parseInt(document.getElementById('donateAmount').value, 10);
     var msg    = document.getElementById('donateMsg').value.trim();
     if (!amount || amount <= 0) { alert('기부할 금액을 입력해주세요.'); return; }
+
+    // 잔액 사전 검증
+    var curBalance = window._lastDashboardData ? (window._lastDashboardData.personal.balance || 0) : 0;
+    if (amount > curBalance) { alert('잔액이 부족합니다. (현재: $' + curBalance.toLocaleString() + ')'); return; }
+
     if (!confirm('$' + amount.toLocaleString() + '을(를) 복지 기금에 기부하시겠습니까?')) return;
+
+    var btn = document.querySelector('[onclick="submitDonate()"]');
+    if (btn) { btn.disabled = true; btn.innerText = '⏳ 처리 중...'; }
+
+    // ── UI 선반영: 잔액 즉시 차감 표시 ──
+    var newBal = curBalance - amount;
+    document.getElementById('myBalance').innerText = '$ ' + newBal.toLocaleString();
+    if (window._lastDashboardData) window._lastDashboardData.personal.balance = newBal;
+    closeDonateModal();
 
     google.script.run
       .withSuccessHandler(function(res) {
-        if (!res.success) { alert('오류: ' + res.msg); return; }
-        alert('💚 ' + res.msg);
-        closeDonateModal();
-        // 기록 캐시 무효화 (다음 열기 시 새로고침)
+        if (btn) { btn.disabled = false; btn.innerText = '💚 기부하기'; }
+        if (!res.success) {
+          // 실패 시 잔액 롤백
+          document.getElementById('myBalance').innerText = '$ ' + curBalance.toLocaleString();
+          if (window._lastDashboardData) window._lastDashboardData.personal.balance = curBalance;
+          alert('오류: ' + res.msg);
+          return;
+        }
         _historyData = null;
-        // 복지기금 / 잔액 수치는 다음 로그인 시 갱신
       })
-      .withFailureHandler(function(err) { alert('오류: ' + err.message); })
+      .withFailureHandler(function(err) {
+        if (btn) { btn.disabled = false; btn.innerText = '💚 기부하기'; }
+        // 실패 시 잔액 롤백
+        document.getElementById('myBalance').innerText = '$ ' + curBalance.toLocaleString();
+        if (window._lastDashboardData) window._lastDashboardData.personal.balance = curBalance;
+        alert('오류: ' + err.message);
+      })
       .donateToWelfare(window._currentStudentName, amount, msg);
   }
 
@@ -3726,13 +3922,16 @@ function closeP2PHistoryModal() {
 
   // 신용점수 로드 및 카드 업데이트
   function loadCreditScore() {
+    var gradeEl = document.getElementById('creditGrade');
+    if (gradeEl) gradeEl.innerText = '불러오는 중...';
     google.script.run
       .withSuccessHandler(function(res) {
         if (!res) return;
         updateCreditCard(res);
-        window._creditData = res; // 모달에서 재사용
+        window._creditData = res;
       })
       .withFailureHandler(function(e) {
+        if (gradeEl) gradeEl.innerText = '-';
         console.log('신용점수 로드 실패: ' + e.message);
       })
       .getCreditScoreForStudent(window._currentStudentName);
@@ -3881,12 +4080,15 @@ function closeP2PHistoryModal() {
 
   // 대출 상태 로드 및 카드 버튼 업데이트
   function loadLoanStatus() {
+    var statusEl = document.getElementById('loanStatusArea');
+    if (statusEl) statusEl.innerText = '불러오는 중...';
     google.script.run
       .withSuccessHandler(function(res) {
         _loanData = res;
         updateLoanBtnArea(res);
       })
       .withFailureHandler(function(e) {
+        if (statusEl) statusEl.innerText = '로드 실패';
         console.log('대출 상태 로드 실패: ' + e.message);
       })
       .getLoanStatus(window._currentStudentName);
@@ -4232,30 +4434,50 @@ function confirmBuyItem() {
   var qty = parseInt(document.getElementById('buyQtyInput').value) || 1;
   if (qty < 1) { alert('수량은 1개 이상이어야 합니다.'); return; }
 
+  var price      = window._buyModalPrice || 0;
+  var totalCost  = price * qty;
+  var curBalance = window._lastDashboardData ? (window._lastDashboardData.personal.balance || 0) : 0;
+
+  // 잔액 사전 검증
+  if (totalCost > curBalance) {
+    alert('잔액이 부족합니다.\n필요: $' + totalCost.toLocaleString() + ' / 현재: $' + curBalance.toLocaleString());
+    return;
+  }
+
   // 버튼 비활성화 (중복 클릭 방지)
   var btn = document.getElementById('buyConfirmBtn');
   btn.disabled = true;
   btn.textContent = '처리 중...';
 
+  // ── UI 선반영: 모달 닫고 잔액 즉시 차감 표시 ──
+  var newBal = curBalance - totalCost;
+  closeBuyModal();
+  document.getElementById('myBalance').innerText = '$ ' + newBal.toLocaleString();
+  if (window._lastDashboardData) window._lastDashboardData.personal.balance = newBal;
+
   google.script.run
     .withSuccessHandler(function(res) {
       btn.disabled = false;
       btn.textContent = '구매하기';
-      closeBuyModal();
       if (res.success) {
-        alert('✅ 구매 완료!\n' + window._buyModalItem + ' ' + res.quantity + '개를 $' + (res.price * res.quantity).toLocaleString() + '에 구매했습니다.\n잔액: $' + res.newBalance.toLocaleString());
-        if (window._lastDashboardData) {
-          window._lastDashboardData.personal.balance = res.newBalance;
+        // 서버 확정 잔액으로 최종 반영 (혹시 차이 있을 경우 보정)
+        if (res.newBalance !== undefined) {
+          document.getElementById('myBalance').innerText = '$ ' + Number(res.newBalance).toLocaleString();
+          if (window._lastDashboardData) window._lastDashboardData.personal.balance = res.newBalance;
         }
-        loadDashboard();
       } else {
+        // 실패 시 잔액 롤백
+        document.getElementById('myBalance').innerText = '$ ' + curBalance.toLocaleString();
+        if (window._lastDashboardData) window._lastDashboardData.personal.balance = curBalance;
         alert('❌ ' + res.msg);
       }
     })
     .withFailureHandler(function(err) {
       btn.disabled = false;
       btn.textContent = '구매하기';
-      closeBuyModal();
+      // 실패 시 잔액 롤백
+      document.getElementById('myBalance').innerText = '$ ' + curBalance.toLocaleString();
+      if (window._lastDashboardData) window._lastDashboardData.personal.balance = curBalance;
       alert('오류가 발생했습니다: ' + err.message);
     })
     .buyItem(window._currentStudentName, window._buyModalItem, qty);

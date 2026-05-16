@@ -695,8 +695,8 @@ function renderStats() {
 
   // Top 구매자 / 판매자
   document.getElementById('topGrid').innerHTML =
-    topCard('💸 최다 구매자 Top 3', s.topSellers || [], '건') +
-    topCard('🏆 최다 판매자 Top 3', s.topBuyers  || [], '건');
+    topCard('💸 최다 구매자 Top 3', s.topBuyers  || [], '건') +
+    topCard('🏆 최다 판매자 Top 3', s.topSellers || [], '건');
 }
 
 // ── 도넛 차트 ─────────────────────────────────────────────────
@@ -1016,7 +1016,7 @@ function renderNetwork() {
               : node.totalActivity >= 5      ? '#d29922'
               : '#58a6ff';
     return { name: node.name, x: x, y: y, r: r, color: color,
-             sellCount: node.sellCount, totalActivity: node.totalActivity };
+             sellCount: node.sellCount, buyCount: node.buyCount, totalActivity: node.totalActivity };
   });
 
   // ── 엣지 데이터 준비 ─────────────────────────────────────
@@ -1123,7 +1123,7 @@ function drawNetwork(canvas) {
 }
 
 function drawTooltip(ctx, node) {
-  var lines   = [node.name, '판매: ' + node.sellCount + '건', '총 활동: ' + node.totalActivity + '건'];
+  var lines   = [node.name, '판매: ' + node.sellCount + '건', '구매: ' + node.buyCount + '건', '총 활동: ' + node.totalActivity + '건'];
   var padding = 8;
   var lineH   = 18;
   var boxW    = 110;

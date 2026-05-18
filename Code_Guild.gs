@@ -1479,6 +1479,41 @@ function getGuildCardDataForStudent(studentName) {
     if (name) members.push({ name: name, port: port });
   }
 
+  // ── 길드원 장착 캐릭터 조회 ─────────────────────────────────────
+  // 상점_아이템 + 상점_구매로그를 한 번씩만 읽어서 멤버별 캐릭터(이모지/URL) 매핑
+  try {
+    var shopItemSheet = ss.getSheetByName(SHEET_SHOP_ITEMS);
+    var shopLogSheet  = ss.getSheetByName(SHEET_SHOP_LOG);
+    if (shopItemSheet && shopLogSheet) {
+      // 캐릭터 아이템 ID → resourceVal(이모지 또는 이미지 URL) 매핑
+      var charResourceMap = {};
+      var iData = shopItemSheet.getDataRange().getValues();
+      for (var ci = 1; ci < iData.length; ci++) {
+        if (String(iData[ci][1]).trim() === '캐릭터') {
+          charResourceMap[String(iData[ci][0]).trim()] = String(iData[ci][7]).trim();
+        }
+      }
+      // 구매로그에서 현재 장착(TRUE) 상태인 캐릭터 찾기 (나중 행이 최신)
+      var memberCharMap = {};
+      var slData = shopLogSheet.getDataRange().getValues();
+      for (var sl = 1; sl < slData.length; sl++) {
+        var slName   = String(slData[sl][1]).trim();
+        var isEq     = (slData[sl][6] === true) || (String(slData[sl][6]).toUpperCase() === 'TRUE');
+        var slItemId = String(slData[sl][2]).trim();
+        if (isEq && charResourceMap[slItemId]) {
+          memberCharMap[slName] = charResourceMap[slItemId];
+        }
+      }
+      // members 배열에 charVal 필드 추가
+      members = members.map(function(m) {
+        return { name: m.name, port: m.port, charVal: memberCharMap[m.name] || '' };
+      });
+    }
+  } catch (charErr) {
+    Logger.log('[getGuildCardDataForStudent] 캐릭터 조회 오류: ' + charErr.message);
+    // 오류 시 charVal 없이 기존 동작 유지
+  }
+
   // 내 길드 미션 클리어 현황
   var logSheet  = ss.getSheetByName(SHEET_NAMES.MISSION_LOG);
   var results   = {};

@@ -244,19 +244,12 @@ function autoEndEmergency() {
 }
 
 
-// ── 예금 만기 자동 처리 트리거 설정 ──────────────────────────────
-function setupDepositTrigger() {
-  const triggers = ScriptApp.getProjectTriggers();
-  for (let i = 0; i < triggers.length; i++) {
-    if (triggers[i].getHandlerFunction() === 'runDailyDepositCheck') {
-      ScriptApp.deleteTrigger(triggers[i]);
-    }
-  }
-  ScriptApp.newTrigger('runDailyDepositCheck')
-    .timeBased().everyDays(1).atHour(12).nearMinute(30).create();
-  SpreadsheetApp.getUi().alert('✅ 매일 12:30 예금 만기 자동 처리 트리거가 설정되었습니다.');
-}
-
-function runDailyDepositCheck() {
-  checkAndPayDeposits(null); // null = 전체 학생 처리
-}
+// ════════════════════════════════════════════════════════════════
+// ※ [이동 완료] 아래 두 함수는 Code_Deposit.gs 하단으로 이동되었습니다.
+//
+//     • setupDepositTrigger()   → Code_Deposit.gs 맨 아래
+//     • runDailyDepositCheck()  → Code_Deposit.gs 맨 아래
+//
+//   예금 트리거 관련 코드를 수정할 때는 Code_Deposit.gs를 열어주세요.
+//   GAS 트리거는 함수명으로 등록되므로 기존 트리거는 정상 작동합니다.
+// ════════════════════════════════════════════════════════════════

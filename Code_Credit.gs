@@ -107,6 +107,22 @@ function getCreditGrade(score) {
 }
 
 // ── 전체 학생 신용점수 주간 스냅샷 저장 (매주 월요일 오전 트리거) ──
+//
+// ⚠️ [성능 모니터링 포인트]
+//   calcCreditScore() 1회 = 시트 5개(메인, 가입예금, 자산사용, P2P로그, 적발로그) 읽기.
+//   현재 22명 기준 → 22 × 5 = 110번 시트 읽기가 순차 실행됩니다.
+//   GAS 스크립트 실행 시간 제한은 6분이며, 시트 데이터가 쌓일수록 느려집니다.
+//
+//   [문제가 될 수 있는 시점]
+//   - 학년 말 누적 데이터가 많아진 경우 (특히 P2P거래로그, 자산사용 시트)
+//   - 학생 수가 30명 이상으로 늘어나는 경우
+//
+//   [개선 방향 (문제 발생 시 검토)]
+//   - 5개 시트를 함수 바깥에서 한 번만 읽은 뒤 데이터를 파라미터로 넘기는 방식으로
+//     calcCreditScore()를 리팩터링하면 시트 읽기 횟수를 22번으로 줄일 수 있음
+//   - 단, calcCreditScore()는 단독 호출(대출 심사 등)도 하므로
+//     시트 데이터를 선택적으로 받을 수 있는 구조(옵셔널 파라미터)가 필요함
+
 function recordCreditScoreSnapshot() {
   const ss        = SpreadsheetApp.getActiveSpreadsheet();
   const mainSheet = ss.getSheetByName(SHEET_MAIN);

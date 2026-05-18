@@ -3,6 +3,11 @@
 // P2P거래로그 시트 I열(수호대메모) 추가 필요
 // ════════════════════════════════════════════════════════════════
 
+// ── 수호대 이상거래 고액 기준 ────────────────────────────────────
+// ※ 이 상수 하나를 바꾸면 getGuardDashboardData()와 getP2PAlertsForGuard()
+//   두 함수 모두 동시에 반영됩니다. 기준 변경 시 여기만 수정하세요.
+const GUARD_HIGH_AMOUNT = 1000; // $1,000 이상 거래 = 고액 거래로 분류
+
 // ── 수호대 비밀번호 설정 (AuctionAdmin에서 호출) ─────────────────
 function setGuardPassword(pw) {
   if (!pw || !String(pw).trim()) return { success: false, msg: '비밀번호를 입력해주세요.' };
@@ -78,7 +83,7 @@ function getGuardDashboardData(period) {
 
     // 이상거래 사유 재계산 (프론트에서 강조 표시용)
     const anomalyReasons = [];
-    if (amount >= 2000)        anomalyReasons.push('고액 거래');
+    if (amount >= GUARD_HIGH_AMOUNT) anomalyReasons.push('고액 거래');
     if (desc.length < 10)      anomalyReasons.push('사유 불충분');
     if (tag === '#기타' && desc.length < 20) anomalyReasons.push('태그 불일치 의심');
 
@@ -333,7 +338,7 @@ function getP2PAlertsForGuard() {
 
   // ─2단계: 개별 행 기준 이상거래 재계산
   rows.forEach(function(tx) {
-    if (tx.amount >= 1000)
+    if (tx.amount >= GUARD_HIGH_AMOUNT)
       tx.anomalyReasons.push('고액 거래');
     if (tx.description.length < 10)
       tx.anomalyReasons.push('사유 불충분');

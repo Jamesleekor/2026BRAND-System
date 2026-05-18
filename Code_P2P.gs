@@ -29,9 +29,11 @@ function getP2PReceiverList(studentName) {
 
     if (!name) continue;
     if (name === String(studentName).trim()) continue;   // 본인 제외
-    if (honor < 20000) continue;                         // 금 광석 미만 제외
+    // 금 광석 미만 제외: _calcTier()를 통해 TIER_ORDER 인덱스로 비교합니다.
+    // ※ 기준 티어를 바꾸려면 '금 광석' 문자열만 다른 티어명으로 변경하세요.
+    //   숫자(20000)를 직접 수정하지 마세요 — _calcTier()와 이중 관리가 됩니다.
+    if (TIER_ORDER.indexOf(_calcTier(honor).name) < TIER_ORDER.indexOf('금 광석')) continue; // 금 광석 미만 제외
     if (!approvedSet.has(name)) continue;                // 2차 직업 미승인 제외
-
     result.push({ name, brand });
   }
   return result;

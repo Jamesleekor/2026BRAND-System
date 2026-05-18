@@ -257,29 +257,10 @@ function getStudentData(studentName, password) {
   }
 
   // 브랜드 등급 계산
+  // ※ 티어 기준값은 _calcTier() 함수 하나에서만 관리합니다.
+  //   기준값 변경이 필요할 경우 이 함수가 아닌 _calcTier()만 수정하세요.
   const honor = Number(studentRow[COL_VALUE - 1]) || 0;
-  let tier = { name: '새싹', icon: '🌱', min: 0, max: 5000 };
-  if      (honor >= 100000) tier = { name: '그랜드마스터', icon: '🏆', min: 100000, max: 100000 };
-  else if (honor >= 85000)  tier = { name: '천상의 마스터', icon: '👑', min: 85000,  max: 100000 };
-  else if (honor >= 75000)  tier = { name: '마스터',        icon: '👑', min: 75000,  max: 85000  };
-  else if (honor >= 65000)  tier = { name: '영원의 결정',   icon: '💠', min: 50000,  max: 75000  };
-  else if (honor >= 60000)  tier = { name: '무결 다이아',   icon: '💠', min: 50000,  max: 65000  };
-  else if (honor >= 55000)  tier = { name: '세공된 다이아', icon: '💠', min: 50000,  max: 60000  };
-  else if (honor >= 50000)  tier = { name: '다이아 원석',   icon: '💠', min: 50000,  max: 55000  };
-  else if (honor >= 45000)  tier = { name: '홍염의 정점',   icon: '💎', min: 30000,  max: 50000  };
-  else if (honor >= 40000)  tier = { name: '각성한 루비',   icon: '💎', min: 30000,  max: 45000  };
-  else if (honor >= 35000)  tier = { name: '연마된 루비',   icon: '💎', min: 30000,  max: 40000  };
-  else if (honor >= 30000)  tier = { name: '루비 원석',     icon: '💎', min: 30000,  max: 35000  };
-  else if (honor >= 27500)  tier = { name: '태양의 황금',   icon: '🥇', min: 20000,  max: 30000  };
-  else if (honor >= 25000)  tier = { name: '정련된 골드',   icon: '🥇', min: 20000,  max: 27500  };
-  else if (honor >= 22500)  tier = { name: '제련된 골드',   icon: '🥇', min: 20000,  max: 25000  };
-  else if (honor >= 20000)  tier = { name: '금 광석',       icon: '🥇', min: 20000,  max: 22500  };
-  else if (honor >= 17500)  tier = { name: '은빛 극점',     icon: '🥈', min: 17500,  max: 20000  };
-  else if (honor >= 15000)  tier = { name: '진화한 실버',   icon: '🥈', min: 10000,  max: 17500  };
-  else if (honor >= 12500)  tier = { name: '성장한 실버',   icon: '🥈', min: 10000,  max: 15000  };
-  else if (honor >= 10000)  tier = { name: '거친 실버',     icon: '🥈', min: 10000,  max: 12500  };
-  else if (honor >= 7500)   tier = { name: '빛나는 브론즈', icon: '🥉', min: 7500,   max: 10000  };
-  else if (honor >= 5000)   tier = { name: '브론즈',        icon: '🥉', min: 5000,   max: 7500   };
+  const tier  = _calcTier(honor);
 
   // 비상사태 상태
   const emergency = getEmergencyStatus();
@@ -1297,7 +1278,24 @@ function _firebasePut(path, data) {
 /**
  * 전체 학생 스냅샷을 Firebase에 동기화
  * updateRankings() 완료 후 자동 호출 + 메뉴에서 수동 실행 가능
- */
+ ⚠️ [성능 모니터링 포인트]
+ *   이 함수는 학생 수만큼 Firebase HTTP PUT 요청을 순차 실행합니다.
+ *   현재 22명 기준 → 1회 호출 시 HTTP 요청 22번 발생.
+ *   그리고 p2pTransfer(), executeAuctionSold(), applyDailyPoints() 등
+ *   자산이 변동되는 모든 작업이 updateRankings()를 통해 이 함수를 호출합니다.
+ *
+ *   [문제가 될 수 있는 시점]
+ *   - 학생 수가 크게 늘거나 (30명 이상)
+ *   - 동시에 여러 P2P 거래가 발생해 GAS 실행 시간 6분 한계에 근접할 때
+ *
+ *   [개선 방향 (문제 발생 시 검토)]
+ *   - executeSnackPurchase()처럼 당사자만 syncOneStudentToFirebase()로 갱신
+ *   - 예: p2pTransfer()에서 updateRankings() 대신 syncOneStudentToFirebase()를
+ *     송·수신자 2명에게만 호출하면 HTTP 요청이 22번 → 2번으로 줄어듦
+ *   - 단, 랭킹 순위 계산은 별도 유지해야 하므로 updateRankings()를
+ *     syncAllStudentsToFirebase() 없이 호출하는 분리 구조가 필요함
+ *  */
+ 
 function syncAllStudentsToFirebase() {
   const ss        = SpreadsheetApp.getActiveSpreadsheet();
   const mainSheet = ss.getSheetByName(SHEET_MAIN);

@@ -66,7 +66,7 @@
     /* 대시보드 */
     #dashboard { display: none; }
     .card { background: var(--card-bg); border-radius: 15px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-    .card-title { font-size: 13px; color: var(--text-secondary); margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+    .card-title { font-size: 16px; color: var(--text-secondary); margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
     .card-toggle-body { }
     .card-toggle-body.collapsed { display: none; }
     .value-group { display: flex; justify-content: space-between; align-items: baseline; }
@@ -86,10 +86,10 @@
     }
     #historyModal.open { display: flex; }
     .history-modal-box {
-      background: white; border-radius: 15px; padding: 0;
+      background: #1c2333; border-radius: 15px; padding: 0;
       width: 92%; max-width: 500px; max-height: 88vh;
       overflow: hidden; display: flex; flex-direction: column;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
     }
     .history-header {
       background: linear-gradient(135deg, #2c3e50, #3d85c8);
@@ -98,35 +98,35 @@
       flex-shrink: 0;
     }
     .history-tabs {
-      display: flex; background: #f8f9fa;
-      border-bottom: 2px solid #eee; flex-shrink: 0;
+      display: flex; background: #161b22;
+      border-bottom: 2px solid #30363d; flex-shrink: 0;
     }
     .history-tab {
       flex: 1; padding: 9px 0; text-align: center;
       font-size: 13px; font-weight: bold; cursor: pointer;
-      color: #888; border: none; background: none;
+      color: #6e7681; border: none; background: none;
     }
-    .history-tab.active { color: #3d85c8; border-bottom: 3px solid #3d85c8; background: white; }
+    .history-tab.active { color: #4da8f5; border-bottom: 3px solid #4da8f5; background: #1c2333; }
     .history-summary {
       display: flex; gap: 8px; padding: 12px 16px;
-      background: #f8f9fa; flex-shrink: 0;
+      background: #21262d; flex-shrink: 0;
     }
     .history-stat {
-      flex: 1; background: white; border-radius: 8px; padding: 8px 10px;
-      text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+      flex: 1; background: #161b22; border-radius: 8px; padding: 8px 10px;
+      text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.3);
     }
-    .history-stat-label { font-size: 10px; color: #888; margin-bottom: 3px; }
+    .history-stat-label { font-size: 10px; color: #6e7681; margin-bottom: 3px; }
     .history-stat-val   { font-size: 14px; font-weight: bold; }
-    .history-stat-val.plus  { color: #27ae60; }
-    .history-stat-val.minus { color: #e74c3c; }
+    .history-stat-val.plus  { color: #3fb950; }
+    .history-stat-val.minus { color: #f85149; }
     .history-list { overflow-y: auto; flex: 1; padding: 8px 0; }
     .history-row {
       display: flex; align-items: center; padding: 9px 16px;
-      border-bottom: 1px solid #f5f5f5; font-size: 13px;
+      border-bottom: 1px solid #21262d; font-size: 13px;
     }
     .history-row:last-child { border-bottom: none; }
-    .history-date  { color: #aaa; font-size: 11px; width: 80px; flex-shrink: 0; }
-    .history-memo  { flex: 1; color: #2c3e50; }
+    .history-date  { color: #6e7681; font-size: 11px; width: 80px; flex-shrink: 0; }
+    .history-memo  { flex: 1; color: #e6edf3; }
     .history-delta { font-weight: bold; width: 70px; text-align: right; flex-shrink: 0; }
 
     /* ── 기부 모달 ── */
@@ -138,9 +138,9 @@
     }
     #donateModal.open { display: flex; }
     .donate-modal-box {
-      background: white; border-radius: 15px; padding: 24px;
+      background: #1c2333; border-radius: 15px; padding: 24px;
       width: 88%; max-width: 400px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
     }
 
     /* 간식 테이블 */
@@ -248,16 +248,16 @@
     }
     #achDexModal.open { display: flex; }
     .ach-dex-box {
-      background: white; border-radius: 15px; padding: 24px;
+      background: #1c2333; border-radius: 15px; padding: 24px;
       width: 92%; max-width: 560px; max-height: 85vh;
-      overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+      overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.5);
     }
     .dex-filter-btn {
-      padding: 4px 10px; border: none; border-radius: 12px;
+      padding: 4px 10px; border: 1px solid #30363d; border-radius: 12px;
       font-size: 11px; font-weight: bold; cursor: pointer;
-      background: #ecf0f1; color: #555; transition: opacity 0.15s;
+      background: #21262d; color: #8b949e; transition: opacity 0.15s;
     }
-    .dex-filter-btn.active { outline: 2px solid #fff; box-shadow: 0 0 0 3px rgba(0,0,0,0.25); }
+    .dex-filter-btn.active { outline: 2px solid #4da8f5; box-shadow: 0 0 0 3px rgba(77,168,245,0.2); }
 
     /* ── 업적 모달 ── */
     #achModal {
@@ -268,26 +268,26 @@
     }
     #achModal.open { display: flex; }
     .ach-modal-box {
-      background: white; border-radius: 15px; padding: 24px;
+      background: #1c2333; border-radius: 15px; padding: 24px;
       width: 90%; max-width: 480px; max-height: 80vh;
-      overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+      overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.5);
     }
     .ach-modal-title {
-      font-size: 18px; font-weight: bold; color: #2c3e50;
+      font-size: 18px; font-weight: bold; color: #e6edf3;
       margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;
     }
     .ach-close-btn {
-      background: none; border: none; font-size: 22px; cursor: pointer; color: #95a5a6;
+      background: none; border: none; font-size: 22px; cursor: pointer; color: #6e7681;
     }
     .ach-row {
       display: flex; align-items: center; gap: 10px;
-      padding: 10px 0; border-bottom: 1px solid #f0f0f0;
+      padding: 10px 0; border-bottom: 1px solid #21262d;
     }
     .ach-row:last-child { border-bottom: none; }
     .ach-info { flex: 1; }
-    .ach-name { font-weight: bold; font-size: 15px; color: #2c3e50; }
-    .ach-cond { font-size: 12px; color: #888; margin-top: 2px; }
-    .ach-date { font-size: 11px; color: #bbb; margin-top: 2px; }
+    .ach-name { font-weight: bold; font-size: 15px; color: #e6edf3; }
+    .ach-cond { font-size: 12px; color: #6e7681; margin-top: 2px; }
+    .ach-date { font-size: 11px; color: #6e7681; margin-top: 2px; }
     .ach-equip-btn {
       padding: 5px 12px; border: none; border-radius: 20px;
       font-size: 12px; font-weight: bold; cursor: pointer; white-space: nowrap;
@@ -297,9 +297,9 @@
       color: white;
     }
     .ach-equip-btn.unequipped {
-      background: #ecf0f1; color: #555;
+      background: #21262d; color: #8b949e; border: 1px solid #30363d;
     }
-    .ach-empty { text-align: center; padding: 30px; color: #bbb; font-size: 15px; }
+    .ach-empty { text-align: center; padding: 30px; color: #6e7681; font-size: 15px; }
     
     /* ── 명예의 전당 테이블 ── */
     .honor-board-container {
@@ -654,20 +654,20 @@
     .wof-card { background: var(--card-bg); border-radius: 15px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
     .wof-row {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 10px 0; border-bottom: 1px solid #f5f5f5;
+      padding: 10px 0; border-bottom: 1px solid #21262d;
       font-size: 14px;
     }
     .wof-row:last-child { border-bottom: none; }
-    .wof-name { flex: 1; font-weight: bold; color: #2c3e50; }
+    .wof-name { flex: 1; font-weight: bold; color: var(--text-primary); } /* #2c3e50→다크 배경 가독성 개선 */
     .wof-grade { font-size: 11px; padding: 2px 8px; border-radius: 10px; margin: 0 8px; }
     .wof-grade.희귀   { background:#3498db; color:white; }
     .wof-grade.유니크 { background:linear-gradient(135deg,#e74c3c,#9b59b6); color:white; }
     .wof-grade.에픽   { background:linear-gradient(135deg,#3d0f6e,#7b2fff); color:#e0c4ff; }
-    .wof-grade.히든   { background:#f1c40f; color:#2c3e50; }
+    .wof-grade.히든   { background:#f1c40f; color:#1c2333; }
     .wof-grade.유일   { background:linear-gradient(135deg,#8e44ad,#f39c12); color:white; }
     .wof-grade.초월   { background:linear-gradient(135deg,#1a1a1a,#b8860b); color:#ffd700; }
-    .wof-count { font-size: 13px; font-weight: bold; color: #e74c3c; white-space: nowrap; }
-    .wof-zero  { color: #bbb; }
+    .wof-count { font-size: 13px; font-weight: bold; color: #f85149; white-space: nowrap; }
+    .wof-zero  { color: #6e7681; }
 
     /* ══════════════════════════════════════════════════════
        상점 시스템
@@ -680,9 +680,9 @@
     }
     #shopModal.open { display: flex; }
     .shop-modal-box {
-      background: white; border-radius: 15px; padding: 0;
+      background: #1c2333; border-radius: 15px; padding: 0;
       width: 92%; max-width: 480px; max-height: 88vh;
-      overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+      overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.5);
       display: flex; flex-direction: column;
     }
     .shop-header {
@@ -694,53 +694,55 @@
     .shop-header-title { font-size: 18px; font-weight: bold; }
     .shop-balance { font-size: 13px; color: #a8d8f0; }
     .shop-tabs {
-      display: flex; background: #f8f9fa;
-      border-bottom: 2px solid #eee; flex-shrink: 0;
+      display: flex; background: #161b22;
+      border-bottom: 2px solid #30363d; flex-shrink: 0;
     }
     .shop-tab {
       flex: 1; padding: 10px 0; text-align: center;
       font-size: 13px; font-weight: bold; cursor: pointer;
-      color: #888; border: none; background: none;
+      color: #6e7681; border: none; background: none;
       transition: all 0.2s;
     }
-    .shop-tab.active { color: #3d85c8; border-bottom: 3px solid #3d85c8; background: white; }
+    .shop-tab.active { color: #4da8f5; border-bottom: 3px solid #4da8f5; background: #1c2333; }
     .shop-items { padding: 14px; overflow-y: auto; flex: 1; }
     .shop-item-card {
-      border: 2px solid #eee; border-radius: 12px; padding: 14px;
+      border: 1px solid #30363d; border-radius: 12px; padding: 14px;
       margin-bottom: 10px; display: flex; gap: 12px; align-items: center;
       transition: border-color 0.2s;
     }
-    .shop-item-card.owned   { border-color: #2ecc71; background: #f0fff4; }
+    .shop-item-card.owned   { border-color: #3fb950; background: #0d2e1a; }
     .shop-item-card.locked  { opacity: 0.55; }
-    .shop-item-card.buyable { border-color: #3d85c8; }
+    .shop-item-card.buyable { border-color: #4da8f5; }
     .shop-item-icon  { font-size: 30px; flex-shrink: 0; }
     .shop-item-info  { flex: 1; min-width: 0; }
-    .shop-item-name  { font-size: 15px; font-weight: bold; color: #2c3e50; }
-    .shop-item-cond  { font-size: 11px; color: #888; margin-top: 2px; }
-    .shop-item-price { font-size: 13px; color: #e74c3c; font-weight: bold; margin-top: 4px; }
+    .shop-item-name  { font-size: 15px; font-weight: bold; color: #e6edf3; }
+    .shop-item-cond  { font-size: 11px; color: #6e7681; margin-top: 2px; }
+    .shop-item-price { font-size: 13px; color: #f85149; font-weight: bold; margin-top: 4px; }
     .shop-buy-btn {
       padding: 8px 14px; border-radius: 8px; border: none;
       font-size: 12px; font-weight: bold; cursor: pointer; white-space: nowrap; flex-shrink: 0;
     }
-    .shop-buy-btn.can-buy { background: #3d85c8; color: white; }
-    .shop-buy-btn.owned-lbl { background: #2ecc71; color: white; cursor: default; }
-    .shop-buy-btn.locked-lbl { background: #ccc; color: #888; cursor: default; }
+    .shop-buy-btn.can-buy { background: #4da8f5; color: white; }
+    .shop-buy-btn.owned-lbl { background: #3fb950; color: white; cursor: default; }
+    .shop-buy-btn.locked-lbl { background: #30363d; color: #6e7681; cursor: default; }
     .shop-preview-btn {
       font-size: 12px; padding: 4px 10px; border-radius: 6px;
-      border: 1px solid #3d85c8; background: white; color: #3d85c8;
+      border: 1px solid #4da8f5; background: #21262d; color: #4da8f5;
       cursor: pointer; white-space: nowrap;
     }
-    .shop-preview-btn:hover { background: #eaf2fb; }
+    .shop-preview-btn:hover { background: #1c2333; }
 
     /* 스킨 CSS 변수 */
     /* ── 이미지 배경 스킨 공통 설정 ── */
-    body[class*="skin-"] {
+    /* ★ 개별 body.skin-XXX 규칙 제거 → body.skin-on 단일 클래스로 통합 관리 ★ */
+    body.skin-on {
       background-size: cover;
-      background-position: top center;
-      background-repeat: repeat;
+      background-position: center center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
     }
     /* 이미지 하단 페이드아웃 오버레이 */
-    body[class*="skin-"]::after {
+    body.skin-on::after {
       content: '';
       position: fixed;
       left: 0; right: 0; bottom: 0;
@@ -749,30 +751,15 @@
       pointer-events: none;
       z-index: 0;
     }
-    body[class*="skin-"] .container {
+    body.skin-on .container {
       position: relative;
       z-index: 1;
     }
-    body[class*="skin-"] .card,
-    body[class*="skin-"] .table-wrapper,
-    body[class*="skin-"] [style*="background:#f8f9fa"] {
+    body.skin-on .card,
+    body.skin-on .table-wrapper {
       background: rgba(255,255,255,0.82) !important;
       backdrop-filter: blur(2px);
     }
-
-    /* ── 스킨 12종 ── */
-    body.skin-abstract         { background-image: url('https://lh3.googleusercontent.com/d/1MlMlvLkAsFcdoSgv_8bEwNBWmg8grlgT'); --primary-color:#6c3fc5; --secondary-color:#f39c12; --bg-color:transparent; --card-bg:rgba(255,255,255,0.82); }
-    body.skin-colorful_glass   { background-image: url('https://lh3.googleusercontent.com/d/1fUgRthL_1YoZgZJbC6MF0_6shH2_1hsy'); --primary-color:#0077b6; --secondary-color:#00b4d8; --bg-color:transparent; --card-bg:rgba(255,255,255,0.82); }
-    body.skin-red_brick        { background-image: url('https://lh3.googleusercontent.com/d/1gzm2gT2xixkWoz-dw--CirRlNPzOgiy4'); --primary-color:#c0392b; --secondary-color:#e67e22; --bg-color:transparent; --card-bg:rgba(255,255,255,0.82); }
-    body.skin-hideout          { background-image: url('https://lh3.googleusercontent.com/d/1zD9p8DUgmU1GDf-GPb8QmsVgieCiZMF9'); --primary-color:#2d6a4f; --secondary-color:#52b788; --bg-color:transparent; --card-bg:rgba(255,255,255,0.82); }
-    body.skin-ocean_fairy      { background-image: url('https://lh3.googleusercontent.com/d/1IVEWOHz_rzeZf6YPyDjTrIdZ80WTZakd'); --primary-color:#0096c7; --secondary-color:#48cae4; --bg-color:transparent; --card-bg:rgba(255,255,255,0.82); }
-    body.skin-snowflower       { background-image: url('https://lh3.googleusercontent.com/d/1eSopdeGz01BPXmTJYe0AQyUdfT4PvNfM'); --primary-color:#5c85d6; --secondary-color:#a8d8ea; --bg-color:transparent; --card-bg:rgba(255,255,255,0.82); }
-    body.skin-pink_lake        { background-image: url('https://lh3.googleusercontent.com/d/1M5YQAJzkJQyOmIMPLigq6ASjjQIxU5z-'); --primary-color:#c9184a; --secondary-color:#ff85a1; --bg-color:transparent; --card-bg:rgba(255,255,255,0.82); }
-    body.skin-full_moon        { background-image: url('https://lh3.googleusercontent.com/d/1sUoZn7sRwhVFwloCHe_GjEsHgImGihe1'); --primary-color:#3d5a80; --secondary-color:#98c1d9; --bg-color:transparent; --card-bg:rgba(255,255,255,0.82); }
-    body.skin-white_dragon     { background-image: url('https://lh3.googleusercontent.com/d/1zGkNvTPs8WWFTUjnd549QoPORH80z-_c'); --primary-color:#4a4e69; --secondary-color:#9a8c98; --bg-color:transparent; --card-bg:rgba(255,255,255,0.82); }
-    body.skin-wish_tree        { background-image: url('https://lh3.googleusercontent.com/d/1TKsqUcO6KEg3xMxrvNnNhm7kPInQxvNo'); --primary-color:#386641; --secondary-color:#6a994e; --bg-color:transparent; --card-bg:rgba(255,255,255,0.82); }
-    body.skin-milky_way        { background-image: url('https://lh3.googleusercontent.com/d/11ubsdy-OKHJSaTPLMUr-llYJCW3SUnwf'); --primary-color:#7b2d8b; --secondary-color:#c77dff; --bg-color:transparent; --card-bg:rgba(255,255,255,0.82); }
-    body.skin-palace_of_wizard { background-image: url('https://lh3.googleusercontent.com/d/1NDFBtsZhJ6peUHqsqLrNy6n18vJ-vWn-'); --primary-color:#3a0ca3; --secondary-color:#7209b7; --bg-color:transparent; --card-bg:rgba(255,255,255,0.82); }
     /* 캐릭터 표시 영역 */
     #charImgArea { transition: opacity 0.3s; }
     #charImg { box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
@@ -786,12 +773,16 @@
     /* 고정 헤더 */
     #dashHeader {
       position: sticky; top: 0; z-index: 200;
-      background: linear-gradient(160deg, #1a1a2e 0%, #16213e 55%, #0f3460 100%);
-      padding: 10px 14px 8px;
+      background:
+        linear-gradient(180deg, rgba(100,110,135,0.28) 0%, transparent 22%, transparent 78%, rgba(0,0,0,0.42) 100%),
+        repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(200,210,230,0.048) 2px, rgba(200,210,230,0.048) 3px),
+        linear-gradient(160deg, #292f3c 0%, #1f2430 45%, #191e29 100%);
+      border-bottom: 1px solid rgba(0,0,0,0.55);
+      padding: 12px 14px 12px;
       margin: -20px -20px 0;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+      box-shadow: 0 4px 22px rgba(0,0,0,0.68), inset 0 1px 0 rgba(180,190,210,0.08);
+      overflow: hidden;
     }
-    #dashHeader > div:first-child { margin-bottom: 6px; }
 
     /* 티어 배너 */
     #tierBanner {
@@ -849,7 +840,7 @@
     body.tier-grandmaster { --tier-color:#ffd700; --tier-rgb:255,215,0;   --hfrom:#0d0a00; --hto:#1a1400; }
 
     body[class*="tier-"] #dashHeader {
-      background: linear-gradient(160deg, var(--hfrom,#1a1a2e) 0%, var(--hto,#0f3460) 100%);
+      /* 단일 메탈 테마 고정 — 티어별 색상 오버라이드 없음 */
     }
     body[class*="tier-"] #tierBanner {
       border-color: rgba(var(--tier-rgb,255,255,255), 0.3);
@@ -923,7 +914,7 @@
       border-color: rgba(77,168,245,0.3);
       box-shadow: 0 4px 24px rgba(77,168,245,0.08);
     }
-    .card-title { font-size: 13px; color: var(--text-secondary); margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+    .card-title { font-size: 16px; color: var(--text-secondary); margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
     .card-toggle-body.collapsed { display: none; }
     .value-group { display: flex; justify-content: space-between; align-items: baseline; }
     .card-value  { font-size: 24px; font-weight: bold; color: var(--text-primary); animation: statFadeUp 0.5s ease both; }
@@ -1147,7 +1138,7 @@
     body.tier-grandmaster { --tier-color:#ffd700; --tier-rgb:255,215,0;   --hfrom:#0d0a00; --hto:#1a1400; }
 
     body[class*="tier-"] #dashHeader {
-      background: linear-gradient(160deg, var(--hfrom,#0d1117) 0%, var(--hto,#0d1117) 100%);
+      /* 단일 메탈 테마 고정 — 티어별 색상 오버라이드 없음 */
     }
     body[class*="tier-"] #tierBanner {
       border-color: rgba(var(--tier-rgb,255,255,255), 0.3);
@@ -1161,12 +1152,16 @@
     /* ── 고정 헤더 ── */
     #dashHeader {
       position: sticky; top: 0; z-index: 200;
-      background: linear-gradient(160deg, #1a1a2e 0%, #16213e 55%, #0f3460 100%);
-      padding: 10px 14px 8px;
+      background:
+        linear-gradient(180deg, rgba(100,110,135,0.28) 0%, transparent 22%, transparent 78%, rgba(0,0,0,0.42) 100%),
+        repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(200,210,230,0.048) 2px, rgba(200,210,230,0.048) 3px),
+        linear-gradient(160deg, #292f3c 0%, #1f2430 45%, #191e29 100%);
+      border-bottom: 1px solid rgba(0,0,0,0.55);
+      padding: 12px 14px 12px;
       margin: -20px -20px 0;
-      box-shadow: 0 2px 16px rgba(0,0,0,0.5);
+      box-shadow: 0 4px 22px rgba(0,0,0,0.68), inset 0 1px 0 rgba(180,190,210,0.08);
+      overflow: hidden;
     }
-    #dashHeader > div:first-child { margin-bottom: 6px; }
     #tierBanner {
       display: flex; align-items: center; gap: 10px;
       background: rgba(255,255,255,0.05);
@@ -1183,36 +1178,31 @@
     .dash-icon-btn:hover { background: rgba(255,255,255,0.14); }
 
     /* ── 스킨 적용 시 카드 처리 (다크 배경 유지) ── */
-    body[class*="skin-"] {
+    /* ★ body.skin-on 단일 클래스로 통합 — 개별 body.skin-XXX 규칙 불필요 ★ */
+    body.skin-on {
       background-size: cover;
-      background-position: top center;
-      background-repeat: repeat;
+      background-position: center center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
     }
-    body[class*="skin-"]::after {
+    body.skin-on::after {
       content: ''; position: fixed; left: 0; right: 0; bottom: 0;
       height: 35%; background: linear-gradient(to bottom, transparent, var(--bg-color));
       pointer-events: none; z-index: 0;
     }
-    body[class*="skin-"] .container { position: relative; z-index: 1; }
-    body[class*="skin-"] .card,
-    body[class*="skin-"] .table-wrapper {
+    body.skin-on .container { position: relative; z-index: 1; }
+    /* 스킨 활성 시 --card-bg CSS 변수를 다크로 재정의
+       → var(--card-bg)를 쓰는 모달박스·wof-card 등 모든 요소가 자동으로 다크 배경을 받음 */
+    body.skin-on {
+      --card-bg: rgba(22,27,34,0.88);
+    }
+    body.skin-on .card,
+    body.skin-on .hud-card,
+    body.skin-on .wof-card,
+    body.skin-on .table-wrapper {
       background: rgba(22,27,34,0.88) !important;
       backdrop-filter: blur(6px);
     }
-
-    /* ── 스킨 12종 ── */
-    body.skin-abstract         { background-image: url('https://lh3.googleusercontent.com/d/1MlMlvLkAsFcdoSgv_8bEwNBWmg8grlgT'); }
-    body.skin-colorful_glass   { background-image: url('https://lh3.googleusercontent.com/d/1fUgRthL_1YoZgZJbC6MF0_6shH2_1hsy'); }
-    body.skin-red_brick        { background-image: url('https://lh3.googleusercontent.com/d/1gzm2gT2xixkWoz-dw--CirRlNPzOgiy4'); }
-    body.skin-hideout          { background-image: url('https://lh3.googleusercontent.com/d/1zD9p8DUgmU1GDf-GPb8QmsVgieCiZMF9'); }
-    body.skin-ocean_fairy      { background-image: url('https://lh3.googleusercontent.com/d/1IVEWOHz_rzeZf6YPyDjTrIdZ80WTZakd'); }
-    body.skin-snowflower       { background-image: url('https://lh3.googleusercontent.com/d/1eSopdeGz01BPXmTJYe0AQyUdfT4PvNfM'); }
-    body.skin-pink_lake        { background-image: url('https://lh3.googleusercontent.com/d/1M5YQAJzkJQyOmIMPLigq6ASjjQIxU5z-'); }
-    body.skin-full_moon        { background-image: url('https://lh3.googleusercontent.com/d/1sUoZn7sRwhVFwloCHe_GjEsHgImGihe1'); }
-    body.skin-white_dragon     { background-image: url('https://lh3.googleusercontent.com/d/1zGkNvTPs8WWFTUjnd549QoPORH80z-_c'); }
-    body.skin-wish_tree        { background-image: url('https://lh3.googleusercontent.com/d/1TKsqUcO6KEg3xMxrvNnNhm7kPInQxvNo'); }
-    body.skin-milky_way        { background-image: url('https://lh3.googleusercontent.com/d/11ubsdy-OKHJSaTPLMUr-llYJCW3SUnwf'); }
-    body.skin-palace_of_wizard { background-image: url('https://lh3.googleusercontent.com/d/1NDFBtsZhJ6peUHqsqLrNy6n18vJ-vWn-'); }
 
     /* ── 캐릭터 영역 ── */
     #charImgArea { transition: opacity 0.3s; }
@@ -1223,7 +1213,7 @@
       filter: contrast(1.05);
     }
     /* 다크 배경에서는 screen 모드가 더 적합 (흰배경 PNG를 배경에 녹임) */
-    body:not([class*="skin-"]) #charImg {
+    body:not(.skin-on) #charImg {
       mix-blend-mode: screen;
       filter: brightness(1.0) contrast(1.0);
     }
@@ -1243,6 +1233,16 @@
 
     /* ── 카운트업 애니메이션 ── */
     @keyframes statFadeUp { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
+
+    /* ════ 단일테마 게이지바: 시안→틸 그라디언트 + 글로우 빛번짐 ════ */
+    #tierProgressBar,
+    #creditBar,
+    #achStatBar {
+      background: linear-gradient(90deg, #48dbfb 0%, #1dd1a1 100%) !important;
+      box-shadow:
+        0 0 8px  rgba(72, 219, 251, 0.55),
+        0 0 18px rgba(29, 209, 161, 0.30);
+    }
 
     /* ── 메시지 박스 ── */
     .history-modal-box,
@@ -1421,25 +1421,87 @@
       font-size: 12px; color: #bc8cff; font-weight: 600; margin-bottom: 4px;
     }
     .job-market-desc {
-      font-size: 11px; color: var(--text-muted); line-height: 1.4;
+      font-size: 11px; color: var(--text-secondary); line-height: 1.4; /* #484f58→#8b949e: 가독성 개선 */
     }
 
     /* ══ 헤더 캐릭터 거울 ══ */
     #charImgArea { position: relative; }
 
+    /* ── 이름 메탈 플레이트 ── */
+    .hdr-plate {
+      flex: 1; min-width: 0; position: relative;
+      background: linear-gradient(145deg, #353c50 0%, #232a3a 60%, #2a3244 100%);
+      border-radius: 14px; padding: 9px 14px;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.06),
+        inset 0 -2px 4px rgba(0,0,0,0.45),
+        0 2px 14px rgba(0,0,0,0.55);
+    }
+    /* 그라디언트 테두리: 상단 밝음 → 하단 어둠 */
+    .hdr-plate::before {
+      content: '';
+      position: absolute; inset: 0;
+      border-radius: 14px;
+      padding: 1.5px;
+      background: linear-gradient(
+        175deg,
+        rgba(225,218,200,0.65) 0%,
+        rgba(155,160,175,0.22) 42%,
+        rgba(20,22,30,0.72)    100%
+      );
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: destination-out;
+      mask-composite: exclude;
+      pointer-events: none;
+    }
 
-    /* ── 헤더 버튼 ── */
+
+    /* ── 헤더 버튼 (메탈 키캡) ── */
     .hdr-btn {
       display: flex; flex-direction: column; align-items: center;
-      gap: 2px; padding: 7px 10px;
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 10px; color: #fff;
+      gap: 4px; padding: 11px 14px;
+      background: linear-gradient(175deg, #2e3545 0%, #1c2230 100%);
+      border: none;
+      border-radius: 16px; color: #d0c8b0;
       cursor: pointer; font-family: inherit;
-      position: relative;
-      transition: background 0.15s;
+      position: relative; min-width: 62px;
+      box-shadow:
+        inset 0 2px 0   rgba(255,255,255,0.14),
+        inset 0 -3px 0  rgba(0,0,0,0.58),
+        inset 2px 0 0   rgba(255,255,255,0.04),
+        0 6px 20px      rgba(0,0,0,0.72);
+      transition: box-shadow 0.12s, transform 0.1s;
     }
-    .hdr-btn:hover { background: rgba(255,255,255,0.14); }
+    /* 그라디언트 테두리: 상단 밝음 → 하단 어둠 */
+    .hdr-btn::before {
+      content: '';
+      position: absolute; inset: 0;
+      border-radius: 16px;
+      padding: 1.5px;
+      background: linear-gradient(
+        175deg,
+        rgba(215,208,188,0.58) 0%,
+        rgba(130,135,150,0.18) 45%,
+        rgba(15,18,26,0.75)    100%
+      );
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: destination-out;
+      mask-composite: exclude;
+      pointer-events: none;
+    }
+    .hdr-btn:hover {
+      transform: translateY(-1px);
+      box-shadow:
+        inset 0 2px 0  rgba(255,255,255,0.18),
+        inset 0 -3px 0 rgba(0,0,0,0.48),
+        0 8px 24px     rgba(0,0,0,0.78);
+    }
+    .hdr-btn:active {
+      transform: translateY(1px);
+      box-shadow: inset 0 3px 7px rgba(0,0,0,0.52), 0 2px 6px rgba(0,0,0,0.5);
+    }
+    .hdr-btn i { font-size: 17px; }
+    .hdr-btn-label { font-size: 9px; font-weight: 700; letter-spacing: 0.4px; }
 
     /* ── 신용등급 + 티어 카드 높이 ── */
     #creditCard.hud-card,
@@ -1459,11 +1521,11 @@
     }
 
     /* ── 직업 카드 ── */
-    #jobTitle { font-size: 22px !important; font-weight: 800 !important; }
+    #jobTitle { font-size: 27px !important; font-weight: 800 !important; }
     .job-salary-badge {
       display: inline-flex; align-items: center;
       background: rgba(77,168,245,0.18);
-      color: var(--accent-blue); font-size: 15px; font-weight: 800;
+      color: var(--accent-blue); font-size: 20px; font-weight: 800;
       padding: 4px 14px; border-radius: 20px;
     }
     .job-area-text {
@@ -1473,6 +1535,235 @@
 
     /* ── 2차 직업 카드 ── */
     #job2MyStatus { margin-bottom: 8px; }
+
+    /* ══════════════════════════════════════════════════════
+       ★ 성좌 맵 (Constellation Map) — Step 3
+    ══════════════════════════════════════════════════════ */
+
+    /* ── Galaxy View 그리드 ── */
+    .const-galaxy-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      padding: 4px 0;
+    }
+    .const-galaxy-card {
+      background: var(--card-bg-2);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 16px 14px;
+      cursor: pointer;
+      transition: transform 0.18s, box-shadow 0.18s, border-color 0.18s;
+      position: relative;
+      overflow: hidden;
+    }
+    .const-galaxy-card:hover {
+      transform: translateY(-2px) scale(1.02);
+      border-color: rgba(77,168,245,0.45);
+      box-shadow: 0 6px 24px rgba(77,168,245,0.12);
+    }
+    /* 5번째 카드(홀수): 2열 그리드에서 전체 너비로 중앙 정렬 */
+    .const-galaxy-card:last-child:nth-child(odd) {
+      grid-column: 1 / -1;
+      max-width: 100%;
+    }
+    .const-galaxy-card .galaxy-emoji    { font-size: 26px; margin-bottom: 6px; display: block; }
+    .const-galaxy-card .galaxy-name     { font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 3px; }
+    .const-galaxy-card .galaxy-count    { font-size: 11px; color: var(--text-muted); margin-bottom: 8px; }
+    .const-galaxy-card .galaxy-prog-bar {
+      height: 3px; background: var(--border-color); border-radius: 2px; overflow: hidden;
+    }
+    .const-galaxy-card .galaxy-prog-fill { height: 100%; border-radius: 2px; transition: width 0.6s ease; }
+
+    /* 뒤로가기 버튼 */
+    .const-back-btn {
+      background: none; border: 1px solid var(--border-color);
+      color: var(--text-secondary); padding: 5px 12px;
+      border-radius: 8px; font-size: 12px; cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .const-back-btn:hover { background: var(--border-color); color: var(--text-primary); }
+
+    /* ── Constellation Viewport ── */
+    #constViewport {
+      position: relative; width: 100%; height: 480px;
+      border-radius: 10px; overflow: hidden;
+      cursor: grab;
+      background: radial-gradient(ellipse at 50% 40%,
+        rgba(72,219,251,0.03) 0%, transparent 70%);
+    }
+    #constSVG    { overflow: visible; }
+    /* constNodesContainer 자체는 pointer-events:none → 빈 공간 클릭이 canvas로 통과 (드래그 팬용)
+       단, .const-node 자식은 pointer-events:all → 툴팁 hover 작동 */
+    #constNodesContainer { pointer-events: none; }
+    .const-node          { pointer-events: all !important; }
+    /* 드래그 팬용 캔버스 래퍼: JS가 width/height·transform을 동적으로 제어 */
+    #constCanvas {
+      position: absolute; top: 0; left: 0;
+      transform-origin: top left;
+    }
+    #constViewport:active { cursor: grabbing; }
+
+    /* ── SVG 연결선 ── */
+    .const-line { fill: none; stroke-linecap: round; transition: stroke 0.3s, opacity 0.3s; }
+    .const-line.state-LOCKED {
+      stroke: rgba(255,255,255,0.1); stroke-width: 1.5; stroke-dasharray: 4 6;
+    }
+    .const-line.state-ACHIEVED {
+      stroke: #48dbfb; stroke-width: 2; opacity: 0.9;
+      filter: drop-shadow(0 0 4px rgba(72,219,251,0.8));
+      stroke-dasharray: 14 5;
+      animation: flowLine 3s linear infinite;
+    }
+    @keyframes flowLine {
+      from { stroke-dashoffset: 0; }
+      to   { stroke-dashoffset: -57; } /* dasharray 합산(14+5=19)×3 */
+    }
+
+    /* ── 노드 공통 ── */
+    .const-node {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      display: flex; flex-direction: column; align-items: center;
+      pointer-events: auto; cursor: pointer;
+      animation: nodeAppear 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+    @keyframes nodeAppear {
+      from { opacity: 0; transform: translate(-50%, -50%) scale(0.4); }
+      to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    }
+    .node-star {
+      width: 34px; height: 34px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .const-node:hover .node-star { transform: scale(1.22); }
+    .node-label {
+      font-size: 9px; color: var(--text-secondary);
+      margin-top: 4px; text-align: center;
+      max-width: 58px; line-height: 1.2;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      pointer-events: none;
+    }
+    .const-node.state-ACHIEVED .node-label,
+    .const-node.state-FIRST    .node-label { color: var(--text-primary); font-weight: 600; }
+
+    /* ── 노드 상태별 스타일 ── */
+    .const-node.state-LOCKED .node-star {
+      background: #161b22; border: 1.5px solid #30363d;
+    }
+    .const-node.state-READY .node-star {
+      background: #21262d; border: 1.5px solid rgba(255,255,255,0.22);
+      animation: nodePulse 2.2s ease-in-out infinite;
+    }
+    @keyframes nodePulse {
+      0%, 100% { box-shadow: 0 0 0 0   rgba(255,255,255,0.0); }
+      50%       { box-shadow: 0 0 0 6px rgba(255,255,255,0.06); }
+    }
+    .node-lock { font-size: 12px; opacity: 0.45; user-select: none; }
+
+    /* ── 달성 노드 공통: 부드러운 글로우 펄스 ── */
+    .const-node.state-ACHIEVED .node-star,
+    .const-node.state-FIRST    .node-star {
+      animation: starGlow 2.8s ease-in-out infinite;
+    }
+    /* FIRST는 추가로 크기 맥박 */
+    .const-node.state-FIRST .node-star {
+      animation: starGlow 2.8s ease-in-out infinite, starPulse 1.8s ease-in-out infinite;
+    }
+    @keyframes starGlow {
+      0%, 100% { filter: brightness(1)   saturate(1);   }
+      50%       { filter: brightness(1.5) saturate(1.25); }
+    }
+    @keyframes starPulse {
+      0%, 100% { transform: scale(1);    }
+      50%       { transform: scale(1.14); }
+    }
+
+    /* ── 티어별 달성 노드 (ACHIEVED / FIRST 공통) ── */
+    .const-node.state-ACHIEVED.tier-희귀 .node-star,
+    .const-node.state-FIRST.tier-희귀   .node-star {
+      background: radial-gradient(circle at 35% 35%, #48dbfb, #00b4cc);
+      box-shadow: 0 0 10px rgba(72,219,251,0.6), 0 0 28px rgba(72,219,251,0.28);
+    }
+    .const-node.state-ACHIEVED.tier-유니크 .node-star,
+    .const-node.state-FIRST.tier-유니크   .node-star {
+      background: radial-gradient(circle at 35% 35%, #74b9ff, #4da8f5);
+      box-shadow: 0 0 10px rgba(77,168,245,0.6), 0 0 28px rgba(77,168,245,0.28);
+    }
+    .const-node.state-ACHIEVED.tier-에픽 .node-star,
+    .const-node.state-FIRST.tier-에픽   .node-star {
+      background: radial-gradient(circle at 35% 35%, #a29bfe, #7b2fff);
+      box-shadow: 0 0 12px rgba(123,47,255,0.7), 0 0 30px rgba(123,47,255,0.30);
+    }
+    .const-node.state-ACHIEVED.tier-유일 .node-star,
+    .const-node.state-FIRST.tier-유일   .node-star {
+      background: radial-gradient(circle at 35% 35%, #fdcb6e, #f39c12);
+      box-shadow: 0 0 12px rgba(243,156,18,0.75), 0 0 32px rgba(243,156,18,0.35);
+    }
+    .const-node.state-ACHIEVED.tier-초월 .node-star,
+    .const-node.state-FIRST.tier-초월   .node-star {
+      background: radial-gradient(circle at 35% 35%, #ffeaa7, #f9ca24);
+      box-shadow: 0 0 14px rgba(249,202,36,0.85), 0 0 36px rgba(249,202,36,0.40),
+                  0 0 60px rgba(249,202,36,0.14);
+    }
+
+    /* 히든(블랙홀) 노드 — 상태 무관 */
+    .const-node.tier-히든 .node-star {
+      background: radial-gradient(circle at center, #3d0080 0%, #0d001a 45%, transparent 100%);
+      box-shadow:
+        0 0 0 2px rgba(120,0,255,0.3),
+        0 0 20px rgba(80,0,200,0.25),
+        inset 0 0 8px rgba(0,0,0,0.9);
+      animation: blackholeSpin 8s linear infinite;
+    }
+    @keyframes blackholeSpin {
+      0%   { box-shadow: 0 0 0 2px rgba(120,0,255,0.3), 0 0 20px rgba(80,0,200,0.25), 0 0 0 4px rgba(60,0,180,0.15), inset 0 0 8px #000; }
+      50%  { box-shadow: 0 0 0 2px rgba(180,0,255,0.5), 0 0 28px rgba(120,0,255,0.4), 0 0 0 4px rgba(100,0,220,0.25), inset 0 0 8px #000; }
+      100% { box-shadow: 0 0 0 2px rgba(120,0,255,0.3), 0 0 20px rgba(80,0,200,0.25), 0 0 0 4px rgba(60,0,180,0.15), inset 0 0 8px #000; }
+    }
+
+    /* FIRST 전용: 위성 궤도 */
+    .node-satellite {
+      position: absolute; width: 6px; height: 6px;
+      background: #ffd700; border-radius: 50%;
+      top: 50%; left: 50%; margin: -3px 0 0 -3px;
+      transform-origin: 0 0;
+      animation: satelliteOrbit 3s linear infinite;
+      box-shadow: 0 0 5px #ffd700;
+    }
+    @keyframes satelliteOrbit {
+      from { transform: rotate(0deg)   translateX(20px) rotate(0deg); }
+      to   { transform: rotate(360deg) translateX(20px) rotate(-360deg); }
+    }
+
+    /* ── Glassmorphism Tooltip ── */
+    #constTooltip {
+      display: none; position: absolute; z-index: 200;
+      width: 212px;
+      background: rgba(13,17,23,0.93);
+      border: 1px solid rgba(72,219,251,0.28);
+      border-radius: 10px; padding: 10px 12px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 6px 24px rgba(0,0,0,0.55), 0 0 14px rgba(72,219,251,0.08);
+      pointer-events: none;
+    }
+    #constTooltip.visible { display: block; }
+    .ctt-tier {
+      font-size: 10px; font-weight: 700;
+      padding: 1px 7px; border-radius: 8px;
+      display: inline-block; margin-bottom: 5px;
+    }
+    .ctt-tier.tier-희귀  { background:linear-gradient(135deg,#48dbfb,#1dd1a1); color:#0d2d1e; }
+    .ctt-tier.tier-유니크 { background:linear-gradient(135deg,#4da8f5,#3498db); color:#fff; }
+    .ctt-tier.tier-에픽  { background:linear-gradient(135deg,#a29bfe,#7b2fff); color:#fff; }
+    .ctt-tier.tier-유일  { background:linear-gradient(135deg,#fdcb6e,#f39c12); color:#5d3a00; }
+    .ctt-tier.tier-초월  { background:linear-gradient(135deg,#1a1a1a,#b8860b); color:#ffd700; }
+    .ctt-tier.tier-히든  { background:linear-gradient(135deg,#3d0080,#0d001a); color:#d1a6ff; }
+    .ctt-name  { font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+    .ctt-hint  { font-size: 11px; color: var(--text-secondary); margin-bottom: 6px; line-height: 1.4; }
+    .ctt-count { font-size: 11px; color: var(--text-muted); }
 
 </style>
 </head>
@@ -1512,68 +1803,71 @@
     <div id="dashHeader">
     <div id="emergencyBanner" style="display:none;margin-bottom:8px;padding:10px 14px;border-radius:8px;font-size:13px;font-weight:bold;text-align:center;"></div>
 
-    <!-- ── 헤더 본체: 캐릭터 + 버튼행 ── -->
-    <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-bottom:8px;">
-      <!-- 버튼 우측 정렬 -->
-      <button id="job2Btn"       onclick="scrollToJob2()"  style="display:none;">💼</button>
-      <button id="job2BtnLocked"                            style="display:none;">🔒</button>
-      <button class="hdr-btn" onclick="openMailModal()" id="mailBtn" title="우편함">
-        <span style="font-size:16px;">✉️</span>
-        <span style="font-size:10px;font-weight:600;">우편함</span>
-        <span id="mailBadge" class="mail-badge" style="display:none;position:absolute;top:-3px;right:-3px;background:#f85149;color:#fff;border-radius:50%;width:14px;height:14px;font-size:9px;display:none;align-items:center;justify-content:center;">0</span>
-      </button>
-      <button class="hdr-btn" onclick="logout()" title="로그아웃">
-        <span style="font-size:16px;">🚪</span>
-        <span style="font-size:10px;font-weight:600;">로그아웃</span>
-      </button>
-      <button class="hdr-btn" id="refreshDashboardBtn" onclick="loadDashboard()" title="새로고침">
-        <span style="font-size:16px;">🔄</span>
-        <span style="font-size:10px;font-weight:600;">새로고침</span>
-      </button>
-    </div>
+    <!-- ── 헤더 본체: 캐릭터 + 이름/브랜드 + 버튼 (한 줄) ── -->
+    <div style="display:flex;align-items:center;gap:10px;">
 
-    <!-- ── 캐릭터 + 칭호 + 이름 행 ── -->
-    <div style="display:flex;align-items:center;gap:12px;">
-      <!-- 캐릭터 영역 -->
+      <!-- 캐릭터 영역 (150~200% 확대: 56px → 90px) -->
       <div id="charImgArea" style="display:none;flex-shrink:0;position:relative;">
         <img id="charImg" src="" alt="캐릭터"
-          style="width:56px;height:56px;object-fit:contain;display:block;mix-blend-mode:screen;filter:brightness(1.05);">
-        <span id="charEmoji" style="display:none;font-size:40px;line-height:56px;width:56px;text-align:center;"></span>
+          style="width:90px;height:90px;object-fit:contain;display:block;mix-blend-mode:screen;filter:brightness(1.05);">
+        <span id="charEmoji" style="display:none;font-size:64px;line-height:90px;width:90px;text-align:center;"></span>
         <!-- 거울 반사 -->
-        <div style="position:absolute;top:56px;left:0;width:56px;height:20px;overflow:hidden;pointer-events:none;">
+        <div style="position:absolute;top:90px;left:0;width:90px;height:38px;overflow:hidden;pointer-events:none;
+                    -webkit-mask-image:linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, transparent 100%);
+                    mask-image:linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, transparent 100%);">
           <img id="charImgMirror" src="" alt=""
-            style="width:56px;height:56px;object-fit:contain;transform:scaleY(-1);mix-blend-mode:screen;opacity:0.25;filter:brightness(0.6);">
+            style="width:90px;height:90px;object-fit:contain;transform:scaleY(-1);mix-blend-mode:screen;opacity:0.55;filter:brightness(0.65) blur(0.5px);">
         </div>
       </div>
 
-      <!-- 칭호 + 이름 글래스 패널 -->
-      <div style="flex:1;min-width:0;background:rgba(255,255,255,0.07);
-                  border:1px solid rgba(255,255,255,0.12);
-                  border-radius:12px;padding:8px 14px;
-                  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);">
+      <!-- 칭호 + 이름 + 브랜드명 메탈 플레이트 -->
+      <div class="hdr-plate">
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
           <span id="titleBadgeArea"></span>
-          <h3 id="welcomeMsg" style="margin:0;font-size:16px;font-weight:800;
-                                     color:#fff;letter-spacing:-0.3px;
+          <h3 id="welcomeMsg" style="margin:0;font-size:15px;font-weight:800;
+                                     color:#e8e2d6;letter-spacing:-0.3px;
                                      white-space:nowrap;overflow:hidden;
-                                     text-overflow:ellipsis;max-width:180px;">반갑습니다!</h3>
+                                     text-overflow:ellipsis;max-width:150px;">반갑습니다!</h3>
         </div>
+        <!-- 브랜드명 -->
+        <div id="hdrBrandName" style="font-size:11px;font-weight:600;
+                                      color:rgba(185,178,165,0.75);
+                                      margin-top:2px;white-space:nowrap;overflow:hidden;
+                                      text-overflow:ellipsis;letter-spacing:0.3px;"></div>
+      </div>
+
+      <!-- 버튼 그룹 (FA 아이콘으로 교체) -->
+      <div style="display:flex;flex-direction:row;gap:6px;flex-shrink:0;">
+        <button class="hdr-btn" onclick="openMailModal()" id="mailBtn" title="우편함">
+          <i class="fas fa-envelope"></i>
+          <span class="hdr-btn-label">우편함</span>
+          <span id="mailBadge" class="mail-badge" style="display:none;position:absolute;top:-3px;right:-3px;background:#f85149;color:#fff;border-radius:50%;width:14px;height:14px;font-size:9px;align-items:center;justify-content:center;">0</span>
+        </button>
+        <button class="hdr-btn" onclick="logout()" title="로그아웃">
+          <i class="fas fa-right-from-bracket"></i>
+          <span class="hdr-btn-label">로그아웃</span>
+        </button>
+        <button class="hdr-btn" id="refreshDashboardBtn" onclick="loadDashboard()" title="새로고침">
+          <i class="fas fa-rotate-right"></i>
+          <span class="hdr-btn-label">새로고침</span>
+        </button>
       </div>
     </div>
 
-    <!-- ── 티어 진행 배너 ── -->
-    <div id="tierBanner" style="margin-top:8px;">
-      <img id="hdrTierBadgeImg" src="" alt=""
-        style="display:none;width:28px;height:28px;object-fit:contain;flex-shrink:0;mix-blend-mode:screen;">
-      <div style="flex:1;min-width:0;">
-        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px;">
-          <span id="hdrTierName" style="font-size:12px;font-weight:700;color:var(--tier-color,#f5a623);">새싹</span>
-          <span id="hdrTierProgressText" style="font-size:10px;color:rgba(255,255,255,0.5);">승급까지...</span>
-        </div>
-        <div style="height:4px;background:rgba(255,255,255,0.1);border-radius:4px;overflow:hidden;">
-          <div id="hdrTierProgressBar" style="height:100%;background:var(--tier-color,#f5a623);border-radius:4px;width:0%;transition:width 1s ease;"></div>
-        </div>
-        <div id="hdrTierNextText" style="font-size:10px;color:rgba(255,255,255,0.4);margin-top:2px;">로딩 중...</div>
+    <!-- 장식 스파클 -->
+    <span style="position:absolute;bottom:8px;right:12px;font-size:11px;
+                 color:rgba(200,192,168,0.35);pointer-events:none;line-height:1;">✦</span>
+
+    <!-- JS 참조 보존용 숨김 요소 (화면에 표시 안 됨) -->
+    <div style="display:none;">
+      <button id="job2Btn"       onclick="scrollToJob2()"></button>
+      <button id="job2BtnLocked"></button>
+      <div id="tierBanner">
+        <img id="hdrTierBadgeImg" src="" alt="">
+        <span id="hdrTierName"></span>
+        <span id="hdrTierProgressText"></span>
+        <div id="hdrTierProgressBar" style="width:0%;"></div>
+        <div id="hdrTierNextText"></div>
       </div>
     </div>
   </div><!-- /dashHeader -->
@@ -1627,26 +1921,37 @@
           <span style="font-size:10px;color:var(--text-muted);">상세 ▸</span>
         </div>
 
-        <!-- SVG 아크 게이지 (등급 텍스트는 SVG 외부 div) -->
-        <div style="position:relative;display:flex;justify-content:center;margin:2px 0;">
-          <svg width="100" height="58" viewBox="0 0 100 58" style="overflow:visible;">
-            <path d="M 10 54 A 40 40 0 0 1 90 54" fill="none" stroke="#30363d" stroke-width="8" stroke-linecap="round"/>
-            <path id="creditArcFill" d="M 10 54 A 40 40 0 0 1 90 54" fill="none"
-              stroke="#8e44ad" stroke-width="8" stroke-linecap="round"
-              stroke-dasharray="125.66" stroke-dashoffset="125.66"
-              style="transition:stroke-dashoffset 0.8s ease,stroke 0.4s;"/>
+        <!-- SVG 아크 게이지 (등급 텍스트는 SVG 외부 div)
+             ▸ 설계: width=180, height=108, r=80
+               배경아크: M 10 100 A 80 80 0 0 1 170 100
+               아크 길이 = π×80 ≈ 251.33 (stroke-dasharray/offset)
+               등급 레이블: 꼭짓점(y=20)~베이스(y=100) 시각 중심 → top≈44px
+        -->
+        <div style="position:relative;display:flex;justify-content:center;margin:0;">
+          <svg width="180" height="108" viewBox="0 0 180 108" style="overflow:visible;display:block;">
+            <defs>
+              <linearGradient id="arcGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%"   stop-color="#48dbfb"/>
+                <stop offset="100%" stop-color="#1dd1a1"/>
+              </linearGradient>
+            </defs>
+            <path d="M 10 100 A 80 80 0 0 1 170 100" fill="none" stroke="#30363d" stroke-width="12" stroke-linecap="round"/>
+            <path id="creditArcFill" d="M 10 100 A 80 80 0 0 1 170 100" fill="none"
+              stroke="url(#arcGrad)" stroke-width="12" stroke-linecap="round"
+              stroke-dasharray="251.33" stroke-dashoffset="251.33"
+              style="transition:stroke-dashoffset 0.8s ease;filter:drop-shadow(0 0 6px rgba(72,219,251,0.6));"/>
           </svg>
-          <!-- 등급 레이블 - SVG 위에 절대 위치로 올림 -->
-          <div style="position:absolute;top:14px;left:50%;transform:translateX(-50%);text-align:center;pointer-events:none;">
-            <div id="creditGradeBadge" style="font-size:22px;font-weight:900;color:#8e44ad;line-height:1;">-</div>
+          <!-- 등급 레이블: 아크 내부 시각적 중심에 배치 -->
+          <div style="position:absolute;top:44px;left:50%;transform:translateX(-50%);text-align:center;pointer-events:none;">
+            <div id="creditGradeBadge" style="font-size:40px;font-weight:900;color:#8e44ad;line-height:1;">-</div>
           </div>
         </div>
 
-        <div style="text-align:center;margin-top:2px;">
-          <div id="creditScoreText" style="font-size:13px;font-weight:700;color:var(--text-primary);">- / 1000</div>
-          <div id="creditDeltaText" style="font-size:11px;color:var(--text-muted);margin-top:1px;">이력 없음</div>
+        <div style="text-align:center;margin-top:0;">
+          <div id="creditScoreText" style="font-size:17px;font-weight:700;color:var(--text-primary);">- / 1000</div>
+          <div id="creditDeltaText" style="font-size:12px;color:var(--text-muted);margin-top:2px;">이력 없음</div>
           <div id="creditBarWrap" style="display:none;">
-            <div style="background:#30363d;border-radius:6px;height:6px;overflow:hidden;margin-top:6px;">
+            <div style="background:#30363d;border-radius:6px;height:6px;margin-top:6px;">
               <div id="creditBar" style="height:6px;border-radius:6px;background:#8e44ad;width:0%;transition:width 0.5s;"></div>
             </div>
           </div>
@@ -1668,14 +1973,14 @@
       <!-- 티어 카드 -->
       <div class="card hud-card tier-card-home" id="tierCardHome" style="margin-bottom:0;text-align:center;border-top:2px solid var(--tier-color,#f1c40f);">
         <img id="tierBadgeImg" src="" alt="티어"
-          style="width:86px;height:86px;object-fit:contain;display:none;margin:8px auto 8px;mix-blend-mode:screen;">
-        <div style="font-size:18px;font-weight:800;color:var(--tier-color,#f1c40f);margin-bottom:6px;letter-spacing:-0.3px;">
+          style="width:150px;height:150px;object-fit:contain;display:none;margin:2px auto 2px;mix-blend-mode:screen;">
+        <div style="font-size:20px;font-weight:800;color:var(--tier-color,#f1c40f);margin-bottom:4px;letter-spacing:-0.3px;">
           <span id="tierName">새싹</span>
         </div>
-        <div id="tierNextText" class="tier-next-text" style="margin-bottom:10px;line-height:1.5;padding:0 4px;">
+        <div id="tierNextText" class="tier-next-text" style="margin-bottom:8px;line-height:1.4;padding:0 4px;font-size:11px;">
           [...] 등급까지 ...P
         </div>
-        <div style="width:100%;background:#21262d;border-radius:6px;height:7px;overflow:hidden;margin-bottom:6px;">
+        <div style="width:100%;background:#21262d;border-radius:6px;height:7px;margin-bottom:2px;">
           <div id="tierProgressBar" style="height:7px;border-radius:6px;background:var(--tier-color,#f1c40f);width:0%;transition:width 1s ease;"></div>
         </div>
         <div class="tier-progress-num" style="display:flex;justify-content:space-between;">
@@ -1695,9 +2000,9 @@
       <!-- 현재 직업 카드 -->
       <div class="card hud-card" style="margin-bottom:0;border-top:2px solid var(--accent-blue);">
         <div class="card-title"><span>💼 현재 나의 직업</span></div>
-        <div id="jobTitle" style="font-size:22px;font-weight:800;color:var(--text-primary);margin-bottom:10px;letter-spacing:-0.5px;">로딩 중...</div>
+        <div id="jobTitle" style="font-size:27px;font-weight:800;color:var(--text-primary);margin-bottom:10px;letter-spacing:-0.5px;text-align:center;">로딩 중...</div>
         <div style="margin-bottom:10px;">
-          <span id="jobSalary" class="job-salary-badge">$ 0</span>
+          <span id="jobSalary" class="job-salary-badge">일급: <span style="color:#48dbfb;">$0</span></span>
         </div>
         <div id="jobArea" class="job-area-text">담당 구역: -</div>
         <!-- 기존 JS 호환 숨김 요소 -->
@@ -1977,13 +2282,13 @@
 <!-- ── P2P 거래 내역 모달 ── -->
 <div id="p2pHistoryModal"
   style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1001;justify-content:center;align-items:center;">
-  <div style="background:white;border-radius:15px;width:92%;max-width:500px;max-height:88vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,0.3);">
+  <div style="background:#1c2333;border-radius:15px;width:92%;max-width:500px;max-height:88vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,0.5);">
     <div style="background:linear-gradient(135deg,#16a085,#1abc9c);color:white;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
       <div style="font-size:17px;font-weight:bold;">📋 나의 P2P 거래 내역</div>
       <button onclick="closeP2PHistoryModal()" style="background:rgba(255,255,255,0.2);border:none;color:white;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:15px;">✕</button>
     </div>
     <div id="p2pHistoryList" style="overflow-y:auto;flex:1;padding:12px;">
-      <div style="text-align:center;padding:30px;color:#bbb;">로딩 중...</div>
+      <div style="text-align:center;padding:30px;color:#6e7681;">로딩 중...</div>
     </div>
   </div>
 </div>
@@ -2012,8 +2317,8 @@
       <!-- ════ 상점 탭 ════ -->
       <div class="dash-panel" id="panel-shop2">
         <div class="card" style="text-align:center;padding:28px 20px;">
-          <div style="font-size:40px;margin-bottom:10px;">🏪</div>
-          <div style="font-size:17px;font-weight:bold;color:#2c3e50;margin-bottom:6px;">BRAND 상점</div>
+          <div style="font-size:100px;margin-bottom:10px;">🏪</div>
+          <div style="font-size:28px;font-weight:bold;color:#6bfff5;margin-bottom:6px;">BRAND 상점</div>
           <div style="font-size:13px;color:#888;margin-bottom:16px;">스킨, 폰트, 캐릭터를 구매하고 장착하세요</div>
           <button onclick="openShopModal()"
             style="padding:10px 28px;background:linear-gradient(135deg,#2c3e50,#3d85c8);color:white;border:none;border-radius:10px;font-size:14px;font-weight:bold;cursor:pointer;">
@@ -2022,7 +2327,7 @@
         </div>
     <div class="card" style="margin-bottom:20px;">
       <h3 style="margin-top:0;margin-bottom:10px;"><i class="fa-solid fa-cookie-bite"></i> 실시간 물품 거래소</h3>
-      <div style="max-height:220px;overflow-y:auto;">
+      <div style="max-height:600px;overflow-y:auto;">
       <table style="width:100%;text-align:left;border-collapse:collapse;">
         <thead>
           <tr style="border-bottom:2px solid #eee;">
@@ -2050,7 +2355,7 @@
             <span id="achStatTotal" style="font-size:13px;color:#555;">달성 <b>-</b> / 전체 <b>-</b></span>
             <span id="achStatPct" style="font-size:16px;font-weight:900;color:#e67e22;">--%</span>
           </div>
-          <div style="height:8px;background:#eee;border-radius:6px;overflow:hidden;margin-bottom:12px;">
+          <div style="height:8px;background:#21262d;border-radius:6px;margin-bottom:12px;">
             <div id="achStatBar" style="height:100%;background:linear-gradient(90deg,#f39c12,#e74c3c);border-radius:6px;width:0%;transition:width 0.6s ease;"></div>
           </div>
           <div id="achStatGrades" style="display:flex;flex-wrap:wrap;gap:6px;font-size:12px;"></div>
@@ -2066,15 +2371,60 @@
             📖 업적 도감
           </button>
         </div>
-    <div class="wof-card">
-      <div style="font-size:15px;font-weight:bold;color:#2c3e50;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;">
-        <span>🏆 우리 반 업적 현황판</span>
-        <span style="font-size:11px;color:#888;font-weight:normal;">업적별 달성 인원</span>
+    <!-- ★ Step 4: 성좌 맵 컨테이너 (기존 wof-card 교체) -->
+    <div class="wof-card" id="constMapCard" style="position:relative; overflow:visible; padding:16px;">
+
+      <!-- 헤더: 제목 + 뒤로가기 버튼 -->
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <div id="constMapTitle" style="font-size:15px; font-weight:bold; color:var(--text-primary);">
+          🌌 미개척 성좌 맵
+        </div>
+        <button class="const-back-btn" id="constBackBtn"
+          onclick="ConstMap.backToGalaxy()"
+          style="display:none;">
+          ← 은하 목록
+        </button>
       </div>
-      <div id="wallOfFameList" style="max-height:320px;overflow-y:auto;">
-        <div style="text-align:center;padding:20px;color:#bbb;font-size:13px;">로딩 중...</div>
+
+      <!-- ── Galaxy View (은하 선택 화면) ── -->
+      <div id="constGalaxyView">
+        <div class="const-galaxy-grid" id="constGalaxyGrid">
+          <!-- ConstMap.init() 호출 시 JS가 은하 카드를 동적 삽입 -->
+        </div>
       </div>
-    </div>
+
+      <!-- ── Constellation View (성좌 상세 화면, 초기 숨김) ── -->
+      <div id="constConstellationView" style="display:none; opacity:0;">
+        <!-- 현재 은하 이름 -->
+        <div id="constGalaxyTitle"
+          style="font-size:12px; color:var(--text-secondary); margin-bottom:10px; letter-spacing:0.5px;">
+        </div>
+
+        <!-- 뷰포트: 드래그 팬 가능한 캔버스를 담는 클립 영역 -->
+        <div id="constViewport">
+
+          <!-- 드래그 팬 캔버스: JS가 width·height·transform을 동적 제어 -->
+          <div id="constCanvas">
+
+            <!-- Layer A: SVG — 연결선(path)만 담당 -->
+            <svg id="constSVG"
+              style="position:absolute; top:0; left:0; overflow:visible;">
+            </svg>
+
+            <!-- Layer B: HTML 노드 div들 — 별·라벨·위성 담당 -->
+            <div id="constNodesContainer"
+              style="position:absolute; top:0; left:0; width:100%; height:100%;">
+            </div>
+
+          </div><!-- /constCanvas -->
+
+        </div><!-- /constViewport -->
+      </div><!-- /constConstellationView -->
+
+      <!-- Glassmorphism Tooltip (constMapCard 기준 absolute) -->
+      <div id="constTooltip"></div>
+
+    </div><!-- /constMapCard -->
       </div><!-- /panel-ach -->
 
       <!-- ════ 길드 탭 ════ -->
@@ -2092,7 +2442,7 @@
       <div id="guildCardBody" class="card-toggle-body collapsed" style="margin-top:10px;">
 
       <!-- 길드명 + 슬로건 -->
-      <div style="text-align:center;padding:14px 10px 10px;background:#f4faf6;border-radius:8px;margin-bottom:12px;">
+      <div style="text-align:center;padding:14px 10px 10px;background:rgba(26,107,60,0.12);border:1px solid rgba(26,107,60,0.25);border-radius:8px;margin-bottom:12px;">
         <div id="guildName" style="font-size:20px;font-weight:bold;color:#1a6b3c;margin-bottom:4px;">길드명 로딩 중...</div>
         <div id="guildSlogan" style="font-size:12px;color:#7f8c8d;font-style:italic;"></div>
       </div>
@@ -2129,7 +2479,7 @@
       <!-- 전체 길드 순위 (이름 + 등수만, 점수 비공개) -->
       <div>
         <div style="font-size:12px;color:#888;margin-bottom:6px;font-weight:bold;">📊 전체 순위</div>
-        <div id="guildRankList" style="background:#f9f9f9;border-radius:8px;padding:8px;">
+        <div id="guildRankList" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:8px;">
           <span style="font-size:12px;color:#aaa;">로딩 중...</span>
         </div>
         <div style="font-size:10px;color:#bbb;margin-top:4px;text-align:right;">
@@ -2254,22 +2604,22 @@
 <div id="donateModal">
   <div class="donate-modal-box">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
-      <div style="font-size:17px;font-weight:bold;color:#2c3e50;">💚 복지 기금 기부</div>
-      <button onclick="closeDonateModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#95a5a6;">✕</button>
+      <div style="font-size:17px;font-weight:bold;color:#e6edf3;">💚 복지 기금 기부</div>
+      <button onclick="closeDonateModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#6e7681;">✕</button>
     </div>
-    <div style="background:#f0fff4;border-radius:10px;padding:12px;margin-bottom:16px;font-size:13px;color:#27ae60;text-align:center;">
+    <div style="background:#0d2e1a;border-radius:10px;padding:12px;margin-bottom:16px;font-size:13px;color:#3fb950;text-align:center;">
       현재 보유 자산: <strong id="donateMyBalance">$ 0</strong>
     </div>
-    <div style="font-size:14px;color:#555;margin-bottom:8px;">기부할 금액을 입력하세요</div>
+    <div style="font-size:14px;color:#8b949e;margin-bottom:8px;">기부할 금액을 입력하세요</div>
     <input type="number" id="donateAmount" min="1" placeholder="예: 500"
-      style="width:100%;box-sizing:border-box;padding:11px;border:2px solid #eee;border-radius:8px;font-size:16px;outline:none;margin-bottom:6px;">
+      style="width:100%;box-sizing:border-box;padding:11px;border:1px solid #30363d;border-radius:8px;font-size:16px;outline:none;margin-bottom:6px;background:#21262d;color:#e6edf3;">
     <div style="display:flex;gap:6px;margin-bottom:14px;">
-      <button onclick="setDonateAmount(100)"  style="flex:1;padding:6px;background:#ecf0f1;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:bold;">+100</button>
-      <button onclick="setDonateAmount(500)"  style="flex:1;padding:6px;background:#ecf0f1;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:bold;">+500</button>
-      <button onclick="setDonateAmount(1000)" style="flex:1;padding:6px;background:#ecf0f1;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:bold;">+1000</button>
+      <button onclick="setDonateAmount(100)"  style="flex:1;padding:6px;background:#21262d;border:1px solid #30363d;border-radius:6px;cursor:pointer;font-size:12px;font-weight:bold;color:#8b949e;">+100</button>
+      <button onclick="setDonateAmount(500)"  style="flex:1;padding:6px;background:#21262d;border:1px solid #30363d;border-radius:6px;cursor:pointer;font-size:12px;font-weight:bold;color:#8b949e;">+500</button>
+      <button onclick="setDonateAmount(1000)" style="flex:1;padding:6px;background:#21262d;border:1px solid #30363d;border-radius:6px;cursor:pointer;font-size:12px;font-weight:bold;color:#8b949e;">+1000</button>
     </div>
     <input type="text" id="donateMsg" placeholder="한마디 (선택, 모든 학생에게 공개)"
-      style="width:100%;box-sizing:border-box;padding:10px;border:2px solid #eee;border-radius:8px;font-size:14px;outline:none;margin-bottom:14px;">
+      style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #30363d;border-radius:8px;font-size:14px;outline:none;margin-bottom:14px;background:#21262d;color:#e6edf3;">
     <button onclick="submitDonate()" style="width:100%;padding:12px;background:linear-gradient(135deg,#27ae60,#2ecc71);color:white;border:none;border-radius:8px;font-weight:bold;font-size:15px;cursor:pointer;">💚 기부하기</button>
   </div>
 </div>
@@ -2357,6 +2707,912 @@
 </div>
 
 <script>
+  // ══════════════════════════════════════════════════════════════
+  // ★ Step 5: 성좌 맵 정적 데이터 (GALAXY_META + GALAXY_MAP_DATA)
+  //   이 상수들은 절대 변하지 않는 구조 데이터다.
+  //   새 은하/노드 추가 시 이 블록만 수정하면 된다.
+  // ══════════════════════════════════════════════════════════════
+
+  // 은하별 시각 메타데이터 (emoji·강조색·글로우색)
+  var GALAXY_META = {
+    GALAXY_ECO:           { emoji: '💰', accent: '#f39c12', glow: 'rgba(243,156,18,0.25)',  bg: 'https://raw.githubusercontent.com/Jamesleekor/brand-assets/8567a4c0a73e7fb6e457f675c1ff47d105bb9342/Constellation/Helix_Nebula.webp'         },
+    GALAXY_GUILD:         { emoji: '⚔️',  accent: '#2ecc71', glow: 'rgba(46,204,113,0.25)', bg: 'https://raw.githubusercontent.com/Jamesleekor/brand-assets/8567a4c0a73e7fb6e457f675c1ff47d105bb9342/Constellation/The_Rosette_Nebula.jpg'       },
+    GALAXY_ACADEMICA:     { emoji: '📚', accent: '#3498db', glow: 'rgba(52,152,219,0.25)',  bg: 'https://raw.githubusercontent.com/Jamesleekor/brand-assets/8567a4c0a73e7fb6e457f675c1ff47d105bb9342/Constellation/Vulpecula_Nebula.webp'         },
+    GALAXY_CIVICA:        { emoji: '🏛️', accent: '#9b59b6', glow: 'rgba(155,89,182,0.25)', bg: 'https://raw.githubusercontent.com/Jamesleekor/brand-assets/8567a4c0a73e7fb6e457f675c1ff47d105bb9342/Constellation/Carina_Nebula.png'             },
+    GALAXY_TRANSCENDENCE: { emoji: '⚡', accent: '#e74c3c', glow: 'rgba(231,76,60,0.25)',  bg: 'https://raw.githubusercontent.com/Jamesleekor/brand-assets/8567a4c0a73e7fb6e457f675c1ff47d105bb9342/Constellation/Trantula%20Nebula.png'          }
+  };
+
+  // 5대 은하 전체 구조 데이터
+  var GALAXY_MAP_DATA = [
+
+    // ════════════════════════════════════════
+    // 🌌 경제 은하 (Nebula Oeconomica)
+    // ════════════════════════════════════════
+    {
+      id: 'GALAXY_ECO', name: '경제 은하',
+      description: '자본주의 시장 경제와 합리적 소비의 규칙을 관장하는 은하',
+      constellations: [
+        {
+          id: 'CONST_ECO_AUCTION', name: '경매의 지배자', type: 'linear',
+          nodes: [
+            { id:'ECO-007', title:'경매 승부사',   tier:'희귀', isHiddenPolicy:'normal', prerequisites:[],           gridPos:{x:1,y:1} },
+            { id:'ECO-023', title:'연승행진',       tier:'유니크',isHiddenPolicy:'normal', prerequisites:['ECO-007'], gridPos:{x:2,y:1} },
+            { id:'ECO-027', title:'막을 수 없는',   tier:'에픽', isHiddenPolicy:'normal', prerequisites:['ECO-023'], gridPos:{x:3,y:1} },
+            { id:'ECO-016', title:'경매 고수',      tier:'희귀', isHiddenPolicy:'normal', prerequisites:['ECO-007'], gridPos:{x:2,y:2} },
+            { id:'ECO-017', title:'경매의 신',      tier:'에픽', isHiddenPolicy:'normal', prerequisites:['ECO-016'], gridPos:{x:3,y:2} },
+            { id:'ECO-025', title:'타이밍의 신',    tier:'희귀', isHiddenPolicy:'normal', prerequisites:['ECO-007'], gridPos:{x:2,y:3} }
+          ]
+        },
+        {
+          id: 'CONST_ECO_SAVINGS', name: '복리의 마법', type: 'linear',
+          nodes: [
+            { id:'ECO-013', title:'이자의 축복',    tier:'희귀', isHiddenPolicy:'normal', prerequisites:[],           gridPos:{x:1,y:5} },
+            { id:'ECO-014', title:'복리의 마법사',  tier:'에픽', isHiddenPolicy:'normal', prerequisites:['ECO-013'], gridPos:{x:2,y:5} },
+            { id:'ECO-015', title:'경제적 자유',    tier:'초월', isHiddenPolicy:'normal', prerequisites:['ECO-014'], gridPos:{x:3,y:5} }
+          ]
+        },
+        {
+          id: 'CONST_ECO_CONSUMER', name: '현명한 자산가', type: 'convergent',
+          nodes: [
+            { id:'ECO-001', title:'황금 절약가',    tier:'희귀', isHiddenPolicy:'normal', prerequisites:[],                       gridPos:{x:4,y:1} },
+            { id:'ECO-006', title:'철벽의 금고',    tier:'희귀', isHiddenPolicy:'normal', prerequisites:[],                       gridPos:{x:4,y:2} },
+            { id:'ECO-008', title:'소비요정',       tier:'희귀', isHiddenPolicy:'normal', prerequisites:[],                       gridPos:{x:4,y:3} },
+            { id:'ECO-026', title:'전략적 짠돌이',  tier:'희귀', isHiddenPolicy:'normal', prerequisites:[],                       gridPos:{x:4,y:4} },
+            { id:'ACH-001', title:'자본가',         tier:'희귀', isHiddenPolicy:'normal', prerequisites:['ECO-001','ECO-006'],    gridPos:{x:5,y:2.5} },
+            { id:'ECO-024', title:'자수성가',       tier:'희귀', isHiddenPolicy:'normal', prerequisites:['ACH-001'],              gridPos:{x:6,y:2.5} },
+            { id:'ECO-029', title:'부유층',         tier:'에픽', isHiddenPolicy:'normal', prerequisites:['ECO-024'],              gridPos:{x:7,y:2.5} },
+            { id:'ECO-030', title:'재벌의 길',      tier:'초월', isHiddenPolicy:'normal', prerequisites:['ECO-029'],              gridPos:{x:8,y:2.5} }
+          ]
+        },
+        {
+          id: 'CONST_ECO_MARKET', name: '실물 경제의 개척자', type: 'radial',
+          nodes: [
+            { id:'ECO-021', title:'마켓의 신인',    tier:'희귀', isHiddenPolicy:'normal', prerequisites:[],           gridPos:{x:5,y:4} },
+            { id:'ECO-022', title:'장터 고수',      tier:'희귀', isHiddenPolicy:'normal', prerequisites:['ECO-021'], gridPos:{x:6,y:4} },
+            { id:'ECO-020', title:'팬클럽',         tier:'희귀', isHiddenPolicy:'normal', prerequisites:['ECO-021'], gridPos:{x:6,y:5} },
+            { id:'ECO-012', title:'부르주아',       tier:'유니크',isHiddenPolicy:'normal', prerequisites:['ECO-022'], gridPos:{x:7,y:4} },
+            { id:'ECO-002', title:'학급의 큰 손',   tier:'에픽', isHiddenPolicy:'normal', prerequisites:['ECO-012'], gridPos:{x:8,y:4} }
+          ]
+        },
+        {
+          id: 'CONST_ECO_GOVERNANCE', name: '노블레스 오블리주', type: 'linear',
+          nodes: [
+            { id:'ACH-002', title:'납세자',         tier:'희귀', isHiddenPolicy:'normal', prerequisites:[],           gridPos:{x:1,y:7} },
+            { id:'ECO-004', title:'기부 천사',      tier:'유니크',isHiddenPolicy:'normal', prerequisites:['ACH-002'], gridPos:{x:2,y:7} },
+            { id:'ECO-011', title:'통큰 기부왕',    tier:'유니크',isHiddenPolicy:'normal', prerequisites:['ECO-004'], gridPos:{x:3,y:7} },
+            { id:'ECO-018', title:'경제수호대원',   tier:'유니크',isHiddenPolicy:'normal', prerequisites:[],           gridPos:{x:2,y:8} },
+            { id:'ECO-028', title:'경제 수호대장',  tier:'에픽', isHiddenPolicy:'normal', prerequisites:['ECO-018'], gridPos:{x:3,y:8} }
+          ]
+        },
+        {
+          id: 'CONST_ECO_STANDALONE', name: '독립된 금융의 별들', type: 'standalone',
+          nodes: [
+            { id:'ECO-003', title:'보너스의 왕',        tier:'유니크',isHiddenPolicy:'normal', prerequisites:[], gridPos:{x:9,y:1} },
+            { id:'ECO-005', title:'라이벌',             tier:'유니크',isHiddenPolicy:'normal', prerequisites:[], gridPos:{x:9,y:3} },
+            { id:'ECO-009', title:'포인트의 연금술사',  tier:'유니크',isHiddenPolicy:'normal', prerequisites:[], gridPos:{x:9,y:5} },
+            { id:'ECO-010', title:'신용의 전당',        tier:'유니크',isHiddenPolicy:'normal', prerequisites:[], gridPos:{x:9,y:7} }
+          ]
+        }
+      ]
+    },
+
+    // ════════════════════════════════════════
+    // 🌌 연대·길드 은하 (Nebula Sodalitium)
+    // ════════════════════════════════════════
+    {
+      id: 'GALAXY_GUILD', name: '연대·길드 은하',
+      description: '사회적 자본, 협동심, 길드의 결속력과 공동체 미션을 다루는 은하',
+      constellations: [
+        {
+          id: 'CONST_GUILD_FOUNDATION', name: '연대의 시작과 확장', type: 'linear',
+          nodes: [
+            { id:'GUILD-001', title:'정식 길드원',   tier:'희귀', isHiddenPolicy:'normal', prerequisites:[],              gridPos:{x:1,y:2} },
+            { id:'GUILD-002', title:'팀 플레이어',   tier:'희귀', isHiddenPolicy:'normal', prerequisites:['GUILD-001'],  gridPos:{x:2,y:2} },
+            { id:'GUILD-004', title:'연대의 씨앗',   tier:'희귀', isHiddenPolicy:'normal', prerequisites:['GUILD-002'],  gridPos:{x:3,y:2} },
+            { id:'GUILD-008', title:'불패의 연대',   tier:'에픽', isHiddenPolicy:'normal', prerequisites:['GUILD-004'],  gridPos:{x:4,y:2} }
+          ]
+        },
+        {
+          id: 'CONST_GUILD_TACTICS', name: '길드의 전략적 분기', type: 'radial',
+          nodes: [
+            { id:'GUILD-003', title:'길드 교역관',   tier:'희귀', isHiddenPolicy:'normal', prerequisites:['GUILD-001'],  gridPos:{x:2,y:4} },
+            { id:'GUILD-007', title:'전략가',         tier:'유니크',isHiddenPolicy:'normal', prerequisites:['GUILD-003'],  gridPos:{x:3,y:4} },
+            { id:'GUILD-005', title:'길드 문학소년', tier:'희귀', isHiddenPolicy:'normal', prerequisites:['GUILD-001'],  gridPos:{x:2,y:5} },
+            { id:'GUILD-006', title:'길드 문학소녀', tier:'희귀', isHiddenPolicy:'normal', prerequisites:['GUILD-001'],  gridPos:{x:2,y:6} }
+          ]
+        },
+        {
+          id: 'CONST_GUILD_EMPIRE', name: '제국의 왕좌', type: 'linear',
+          nodes: [
+            { id:'GUILD-010', title:'뿌리깊은 나무', tier:'유니크',isHiddenPolicy:'normal', prerequisites:[],                            gridPos:{x:1,y:8} },
+            { id:'GUILD-011', title:'이달의 으뜸',   tier:'유니크',isHiddenPolicy:'normal', prerequisites:[],                            gridPos:{x:2,y:8} },
+            { id:'GUILD-012', title:'길드의 수호신', tier:'에픽', isHiddenPolicy:'normal', prerequisites:['GUILD-011'],                 gridPos:{x:3,y:8} },
+            { id:'GUILD-013', title:'최초의 왕좌',   tier:'유일', isHiddenPolicy:'normal', prerequisites:['GUILD-012','GUILD-008'],     gridPos:{x:4,y:8} },
+            { id:'GUILD-014', title:'시즌1의 황제',  tier:'초월', isHiddenPolicy:'normal', prerequisites:['GUILD-013','GUILD-010'],     gridPos:{x:5,y:8} }
+          ]
+        },
+        {
+          id: 'CONST_GUILD_STANDALONE', name: '전장을 뒤흔든 용사들', type: 'standalone',
+          nodes: [
+            { id:'GUILD-009', title:'역전의 용사',   tier:'에픽', isHiddenPolicy:'normal', prerequisites:[], gridPos:{x:5,y:5} }
+          ]
+        }
+      ]
+    },
+
+    // ════════════════════════════════════════
+    // 🌌 학업·성장 은하 (Nebula Academica)
+    // ════════════════════════════════════════
+    {
+      id: 'GALAXY_ACADEMICA', name: '학업·성장 은하',
+      description: '지적 호기심과 협력, 예술적 표현이 융합되어 빛을 발하는 성운',
+      constellations: [
+        {
+          id: 'CONST_ACA_SUBJECT', name: '트라이포스 마스터리', type: 'cluster',
+          nodes: [
+            { id:'STU-006', title:'글로벌 링크',    tier:'희귀', isHiddenPolicy:'normal', prerequisites:[],                           gridPos:{x:2,y:2} },
+            { id:'STU-007', title:'에테르',          tier:'희귀', isHiddenPolicy:'normal', prerequisites:[],                           gridPos:{x:4,y:2} },
+            { id:'STU-008', title:'크로니클',        tier:'에픽', isHiddenPolicy:'normal', prerequisites:[],                           gridPos:{x:3,y:4} },
+            { id:'STU-003', title:'기록 파괴자',     tier:'유니크',isHiddenPolicy:'normal', prerequisites:['STU-006','STU-007','STU-008'], gridPos:{x:3,y:3} }
+          ]
+        },
+        {
+          id: 'CONST_ACA_INQUIRY', name: '진리의 탐구자', type: 'linear',
+          nodes: [
+            { id:'STU-009', title:'지혜의 기록',     tier:'희귀', isHiddenPolicy:'normal', prerequisites:[],           gridPos:{x:1,y:6} },
+            { id:'STU-011', title:'질문 전문가',     tier:'유니크',isHiddenPolicy:'normal', prerequisites:['STU-009'], gridPos:{x:2,y:6} },
+            { id:'STU-012', title:'오답의 정복자',   tier:'유니크',isHiddenPolicy:'normal', prerequisites:['STU-011'], gridPos:{x:3,y:6} },
+            { id:'STU-010', title:'지식의 등대',     tier:'희귀', isHiddenPolicy:'normal', prerequisites:['STU-012'], gridPos:{x:4,y:6} }
+          ]
+        },
+        {
+          id: 'CONST_ACA_TEAMWORK', name: '시너지의 원천', type: 'radial',
+          nodes: [
+            { id:'TEAM-001', title:'최강의 팀',      tier:'유니크',isHiddenPolicy:'normal', prerequisites:[],            gridPos:{x:6,y:3} },
+            { id:'STU-001',  title:'협력 전문가',    tier:'유니크',isHiddenPolicy:'normal', prerequisites:['TEAM-001'], gridPos:{x:5,y:2} },
+            { id:'TEAM-004', title:'환상의 케미',    tier:'유니크',isHiddenPolicy:'normal', prerequisites:['TEAM-001'], gridPos:{x:7,y:2} },
+            { id:'TEAM-002', title:'A 수집가',       tier:'유니크',isHiddenPolicy:'normal', prerequisites:['TEAM-001'], gridPos:{x:5,y:4} },
+            { id:'TEAM-003', title:'소수정예',       tier:'유니크',isHiddenPolicy:'normal', prerequisites:['TEAM-001'], gridPos:{x:7,y:4} }
+          ]
+        },
+        {
+          id: 'CONST_ACA_EXPRESSION', name: '창조와 논리의 언어', type: 'standalone',
+          nodes: [
+            { id:'ART-001',  title:'최고의 금손',        tier:'유니크',isHiddenPolicy:'normal', prerequisites:[], gridPos:{x:8,y:6} },
+            { id:'ART-002',  title:'뮤즈',               tier:'유니크',isHiddenPolicy:'normal', prerequisites:[], gridPos:{x:9,y:6} },
+            { id:'STU-005',  title:'언어의 연금술사',    tier:'유니크',isHiddenPolicy:'normal', prerequisites:[], gridPos:{x:8,y:7} },
+            { id:'STU-013',  title:'명언 수집가',        tier:'유니크',isHiddenPolicy:'normal', prerequisites:[], gridPos:{x:9,y:7} },
+            { id:'STU-014',  title:'토론의 지배자',      tier:'에픽', isHiddenPolicy:'normal', prerequisites:[], gridPos:{x:8,y:8} },
+            { id:'STU-002',  title:'미래 설계자',        tier:'유니크',isHiddenPolicy:'normal', prerequisites:[], gridPos:{x:9,y:8} }
+          ]
+        }
+      ]
+    },
+
+    // ════════════════════════════════════════
+    // 🌌 학급 생활 은하 (Nebula Civica)
+    // ════════════════════════════════════════
+    {
+      id: 'GALAXY_CIVICA', name: '학급 생활 은하',
+      description: '미시 사회의 규칙, 리더십, 긍정적인 커뮤니티 형성을 상징하는 은하',
+      constellations: [
+        {
+          id: 'CONST_CIV_START', name: '첫걸음', type: 'radial',
+          nodes: [
+            { id:'START-001', title:'첫 발걸음',      tier:'희귀', isHiddenPolicy:'normal', prerequisites:[],              gridPos:{x:2,y:2} },
+            { id:'START-002', title:'침묵을 깬 자',   tier:'희귀', isHiddenPolicy:'normal', prerequisites:['START-001'],  gridPos:{x:1,y:3} },
+            { id:'START-003', title:'조용한 기여자',  tier:'희귀', isHiddenPolicy:'normal', prerequisites:['START-001'],  gridPos:{x:3,y:3} }
+          ]
+        },
+        {
+          id: 'CONST_CIV_INTEGRITY', name: '성실의 증명', type: 'linear',
+          nodes: [
+            { id:'CONS-002', title:'얼리버드',        tier:'희귀', isHiddenPolicy:'normal', prerequisites:[],              gridPos:{x:4,y:1} },
+            { id:'LIFE-005', title:'완벽한 출석',     tier:'에픽', isHiddenPolicy:'normal', prerequisites:['CONS-002'],   gridPos:{x:5,y:1} },
+            { id:'LIFE-006', title:'무결점',          tier:'희귀', isHiddenPolicy:'normal', prerequisites:['LIFE-005'],   gridPos:{x:6,y:1} }
+          ]
+        },
+        {
+          id: 'CONST_CIV_RESPONSIBILITY', name: '직업과 책임', type: 'radial',
+          nodes: [
+            { id:'LIFE-009', title:'다재다능',        tier:'희귀', isHiddenPolicy:'normal', prerequisites:[],              gridPos:{x:5,y:3} },
+            { id:'LIFE-010', title:'올라운더',        tier:'유니크',isHiddenPolicy:'normal', prerequisites:['LIFE-009'],   gridPos:{x:4,y:4} },
+            { id:'LIFE-014', title:'장인의 긍지',     tier:'유니크',isHiddenPolicy:'normal', prerequisites:['LIFE-009'],   gridPos:{x:6,y:4} },
+            { id:'LIFE-008', title:'멀티클래스',      tier:'희귀', isHiddenPolicy:'normal', prerequisites:['LIFE-009'],   gridPos:{x:5,y:5} }
+          ]
+        },
+        {
+          id: 'CONST_CIV_ENVIRONMENT', name: '공간의 지배자', type: 'linear',
+          nodes: [
+            { id:'LIFE-013', title:'공간정화자',      tier:'희귀', isHiddenPolicy:'normal', prerequisites:[],              gridPos:{x:7,y:2} },
+            { id:'LIFE-015', title:'정리의 달인',     tier:'희귀', isHiddenPolicy:'normal', prerequisites:['LIFE-013'],   gridPos:{x:8,y:2} },
+            { id:'LIFE-016', title:'정리의 달인2',    tier:'희귀', isHiddenPolicy:'normal', prerequisites:['LIFE-015'],   gridPos:{x:9,y:2} }
+          ]
+        },
+        {
+          id: 'CONST_CIV_GOVERNANCE', name: '민주주의와 리더십', type: 'linear',
+          nodes: [
+            { id:'LIFE-003', title:'아이디어 뱅크',   tier:'유니크',isHiddenPolicy:'normal', prerequisites:[],              gridPos:{x:7,y:4} },
+            { id:'LIFE-011', title:'입법가',          tier:'희귀', isHiddenPolicy:'normal', prerequisites:['LIFE-003'],   gridPos:{x:8,y:4} },
+            { id:'LIFE-020', title:'만장일치',        tier:'에픽', isHiddenPolicy:'normal', prerequisites:['LIFE-011'],   gridPos:{x:9,y:4} }
+          ]
+        },
+        {
+          id: 'CONST_CIV_COMMUNITY', name: '커뮤니티의 기둥들', type: 'standalone',
+          nodes: [
+            { id:'MVP-001',  title:'주간MVP',         tier:'희귀', isHiddenPolicy:'normal', prerequisites:[],              gridPos:{x:1,y:6} },
+            { id:'MVP-002',  title:'월간MVP',         tier:'에픽', isHiddenPolicy:'normal', prerequisites:['MVP-001'],    gridPos:{x:2,y:6} },
+            { id:'LIFE-021', title:'마당발',          tier:'에픽', isHiddenPolicy:'normal', prerequisites:[],              gridPos:{x:3,y:6} },
+            { id:'LIFE-017', title:'긍정의 화신',     tier:'초월', isHiddenPolicy:'normal', prerequisites:[],              gridPos:{x:4,y:6} },
+            { id:'LIFE-012', title:'다독가',          tier:'희귀', isHiddenPolicy:'normal', prerequisites:[],              gridPos:{x:1,y:7} },
+            { id:'LIFE-002', title:'퀘스트 마스터',   tier:'희귀', isHiddenPolicy:'normal', prerequisites:[],              gridPos:{x:2,y:7} },
+            { id:'LIFE-007', title:'성장 중독',       tier:'에픽', isHiddenPolicy:'normal', prerequisites:[],              gridPos:{x:3,y:7} },
+            { id:'LIFE-018', title:'심야의 탐험가',   tier:'희귀', isHiddenPolicy:'normal', prerequisites:[],              gridPos:{x:4,y:7} },
+            { id:'LIFE-019', title:'징크스 파괴자',   tier:'초월', isHiddenPolicy:'normal', prerequisites:[],              gridPos:{x:5,y:7} },
+            { id:'CONS-001', title:'철인',            tier:'유니크',isHiddenPolicy:'normal', prerequisites:[],              gridPos:{x:6,y:7} }
+          ]
+        }
+      ]
+    },
+
+    // ════════════════════════════════════════
+    // 🌌 도전·초월 은하 (Nebula Transcendentalis)
+    // ════════════════════════════════════════
+    {
+      id: 'GALAXY_TRANSCENDENCE', name: '도전·초월 은하',
+      description: '한계를 뛰어넘고 불가능을 가능으로 만드는 헤비 유저들의 심연',
+      constellations: [
+        {
+          id: 'CONST_TRA_RANK', name: '랭크 브레이커 라인', type: 'linear',
+          nodes: [
+            { id:'RANK-001', title:'랭크 브레이커C',  tier:'유일', isHiddenPolicy:'normal',           prerequisites:[],            gridPos:{x:1,y:1}   },
+            { id:'RANK-002', title:'랭크 브레이커B',  tier:'유일', isHiddenPolicy:'normal',           prerequisites:['RANK-001'],  gridPos:{x:2,y:1.5} },
+            { id:'RANK-003', title:'랭크 브레이커A',  tier:'유일', isHiddenPolicy:'normal',           prerequisites:['RANK-002'],  gridPos:{x:3,y:2}   },
+            { id:'RANK-004', title:'랭크 브레이커S',  tier:'유일', isHiddenPolicy:'normal',           prerequisites:['RANK-003'],  gridPos:{x:4,y:2.5} },
+            { id:'RANK-005', title:'랭크 브레이커EX', tier:'유일', isHiddenPolicy:'normal',           prerequisites:['RANK-004'],  gridPos:{x:5,y:3}   },
+            { id:'RANK-006', title:'천상의 개척자',   tier:'유일', isHiddenPolicy:'normal',           prerequisites:['RANK-005'],  gridPos:{x:6,y:3.5} },
+            { id:'RANK-007', title:'초월자',          tier:'초월', isHiddenPolicy:'normal',           prerequisites:['RANK-006'],  gridPos:{x:7,y:4}   },
+            { id:'CHAL-015', title:'세계의 각인자',   tier:'초월', isHiddenPolicy:'hidden_until_first',prerequisites:['RANK-007'],  gridPos:{x:8,y:4.5} }
+          ]
+        },
+        {
+          id: 'CONST_TRA_LIMIT', name: '한계 돌파', type: 'linear',
+          nodes: [
+            { id:'CHAL-001', title:'한계돌파',         tier:'유니크',isHiddenPolicy:'normal', prerequisites:[],            gridPos:{x:1,y:5} },
+            { id:'CHAL-002', title:'도전의 화신',      tier:'에픽', isHiddenPolicy:'normal', prerequisites:['CHAL-001'],  gridPos:{x:2,y:5} },
+            { id:'CHAL-003', title:'불가능에 도전한',  tier:'유니크',isHiddenPolicy:'normal', prerequisites:['CHAL-002'],  gridPos:{x:3,y:5} }
+          ]
+        },
+        {
+          id: 'CONST_TRA_REVERSAL', name: '위기 극복과 역전', type: 'radial',
+          nodes: [
+            { id:'CHAL-004', title:'언더독',           tier:'에픽', isHiddenPolicy:'normal', prerequisites:[],            gridPos:{x:5,y:6} },
+            { id:'CHAL-005', title:'역전의 승부사',    tier:'유니크',isHiddenPolicy:'normal', prerequisites:['CHAL-004'],  gridPos:{x:4,y:7} },
+            { id:'CHAL-011', title:'불사조',           tier:'에픽', isHiddenPolicy:'normal', prerequisites:['CHAL-004'],  gridPos:{x:6,y:7} },
+            { id:'CHAL-014', title:'부활한 영웅',      tier:'유일', isHiddenPolicy:'normal', prerequisites:['CHAL-011'],  gridPos:{x:6,y:8} }
+          ]
+        },
+        {
+          id: 'CONST_TRA_MYTH', name: '신화적 성취', type: 'standalone',
+          nodes: [
+            { id:'CHAL-008', title:'앱솔루트 제로',   tier:'초월', isHiddenPolicy:'normal', prerequisites:[], gridPos:{x:8,y:1} },
+            { id:'CHAL-009', title:'더 제니스',       tier:'초월', isHiddenPolicy:'normal', prerequisites:[], gridPos:{x:9,y:2} },
+            { id:'CHAL-010', title:'이클립스',        tier:'초월', isHiddenPolicy:'normal', prerequisites:[], gridPos:{x:8,y:3} },
+            { id:'CHAL-012', title:'아틀라스',        tier:'유일', isHiddenPolicy:'normal', prerequisites:[], gridPos:{x:9,y:4} },
+            { id:'CHAL-013', title:'마스터피스',      tier:'초월', isHiddenPolicy:'normal', prerequisites:[], gridPos:{x:9,y:6} },
+            { id:'CHAL-006', title:'배후의 설계자',   tier:'희귀', isHiddenPolicy:'normal', prerequisites:[], gridPos:{x:8,y:7} },
+            { id:'CHAL-007', title:'스포츠맨',        tier:'에픽', isHiddenPolicy:'normal', prerequisites:[], gridPos:{x:9,y:8} }
+          ]
+        },
+        {
+          id: 'CONST_TRA_HIDDEN', name: '심연의 이면 (히든 블랙홀)', type: 'cluster',
+          nodes: [
+            { id:'HID-001', title:'버그 헌터',         tier:'히든', isHiddenPolicy:'hidden_until_first', prerequisites:[], gridPos:{x:1,y:8} },
+            { id:'HID-002', title:'역발상',            tier:'히든', isHiddenPolicy:'hidden_until_first', prerequisites:[], gridPos:{x:2,y:8} },
+            { id:'HID-003', title:'이스터에그 탐험대', tier:'히든', isHiddenPolicy:'hidden_until_first', prerequisites:[], gridPos:{x:3,y:8} },
+            { id:'HID-004', title:'업적수집가',        tier:'히든', isHiddenPolicy:'hidden_until_first', prerequisites:[], gridPos:{x:1,y:9} },
+            { id:'HID-005', title:'업적마스터',        tier:'히든', isHiddenPolicy:'hidden_until_first', prerequisites:[], gridPos:{x:2,y:9} },
+            { id:'HID-006', title:'영웅적 활약',       tier:'히든', isHiddenPolicy:'hidden_until_first', prerequisites:[], gridPos:{x:3,y:9} },
+            { id:'HID-007', title:'0000의 기적',       tier:'히든', isHiddenPolicy:'hidden_until_first', prerequisites:[], gridPos:{x:4,y:9} }
+          ]
+        }
+      ]
+    }
+
+  ]; // end GALAXY_MAP_DATA
+
+  // ══════════════════════════════════════════════════════════════
+  // ★ Step 6: ConstMap IIFE 모듈 (계산 레이어)
+  //   전역에는 'ConstMap' 하나만 노출. 내부 상태·함수는 외부 접근 불가.
+  //   렌더링(_renderGalaxyView 등)은 Step 7, 인터랙션은 Step 8에서 채움.
+  // ══════════════════════════════════════════════════════════════
+  var ConstMap = (function() {
+
+    // ── private 상태 (외부 접근 불가) ──────────────────────────
+    var _allNodeMap = null;   // nodeId → node 객체  (O(1) 탐색용)
+    var _wofMap     = null;   // achId  → wof 항목  (O(1) 탐색용)
+    var _myAchSet   = null;   // Set<achId>: 나의 달성 업적 집합
+    var _myName     = '';
+    var _panX       = 0;      // 드래그 팬 X 오프셋 (픽셀)
+    var _panY       = 0;      // 드래그 팬 Y 오프셋 (픽셀)
+    var _scale      = 1.0;    // 줌 배율 (0.3 ~ 3.0)
+
+    // ── Layer 1-A: 전체 노드 맵 구축 ───────────────────────────
+    // prerequisites에서 O(1)로 부모 노드를 찾기 위해 ID → node 맵을 만든다.
+    function _buildAllNodeMap() {
+      var map = {};
+      GALAXY_MAP_DATA.forEach(function(galaxy) {
+        galaxy.constellations.forEach(function(c) {
+          c.nodes.forEach(function(node) {
+            map[node.id] = node;
+          });
+        });
+      });
+      return map;
+    }
+
+    // ── Layer 1-B: WoF 배열 → achId 맵 변환 ────────────────────
+    // getWallOfFame() 반환 배열을 맵으로 변환해 119번 렌더링 시 O(1) 접근.
+    function _buildWofMap(data) {
+      var map = {};
+      (data || []).forEach(function(item) {
+        map[item.achId] = item;
+      });
+      return map;
+    }
+
+    // ── Layer 1-C: myAchievements 배열 → Set 변환 ──────────────
+    // has() 연산이 O(1)이 되어 _getNodeState() 호출 119회가 빨라진다.
+    //
+    // ★ window._achData 는 두 가지 구조로 세팅된다:
+    //   A) getStudentAchievements() 반환값 → flat 배열 [{achId, achName, ...}, ...]
+    //      (로그인 직후 _loadSubData가 먼저 완료된 경우)
+    //   B) getAchievementData() 반환값    → {myAchievements:[...], allAchievements:[...]}
+    //      (업적 모달/도감을 열었을 때)
+    //   → 두 경우를 모두 처리해야 _myAchSet이 올바르게 채워진다.
+    function _buildMyAchSet(achData) {
+      var set  = new Set();
+      var list = [];
+
+      if (!achData) {
+        list = [];
+      } else if (Array.isArray(achData)) {
+        // Case A: getStudentAchievements() → [{achId, ...}, ...] 형태
+        list = achData;
+      } else if (achData.myAchievements) {
+        // Case B: getAchievementData() → {myAchievements:[...]} 형태
+        list = achData.myAchievements;
+      }
+
+      list.forEach(function(a) {
+        if (a && a.achId) set.add(String(a.achId).trim());
+      });
+      return set;
+    }
+
+    // ── Layer 1-D: 노드 상태 계산 ──────────────────────────────
+    // LOCKED / READY / ACHIEVED / FIRST 중 하나를 반환.
+    // [].every() === true 이므로 prerequisites 없는 노드는 항상 READY 이상.
+    function _getNodeState(node) {
+      var prereqsMet = node.prerequisites.every(function(pid) {
+        return _myAchSet.has(pid);
+      });
+      var isMyAch = _myAchSet.has(node.id);
+      var wof     = _wofMap[node.id] || { firstAchiever: null };
+
+      if (!isMyAch) return prereqsMet ? 'READY' : 'LOCKED';
+      return (wof.firstAchiever === _myName) ? 'FIRST' : 'ACHIEVED';
+    }
+
+    // ── Layer 1-E: 히든 마스킹 판단 ────────────────────────────
+    // isHiddenPolicy: JSON의 종류 구분 / isHidden: DB의 실시간 상태.
+    // GAS가 최초 달성 시 D열을 FALSE로 변경 → 프론트는 DB를 신뢰.
+    function _isNodeMasked(node) {
+      if (node.isHiddenPolicy !== 'hidden_until_first') return false;
+      var wof = _wofMap[node.id] || { isHidden: true };
+      return wof.isHidden === true;
+    }
+
+    // ── Layer 1-F: 성좌 내 gridPos 경계값 계산 ─────────────────
+    function _computeBounds(nodes) {
+      var xs = nodes.map(function(n) { return n.gridPos.x; });
+      var ys = nodes.map(function(n) { return n.gridPos.y; });
+      return {
+        minX: Math.min.apply(null, xs), maxX: Math.max.apply(null, xs),
+        minY: Math.min.apply(null, ys), maxY: Math.max.apply(null, ys)
+      };
+    }
+
+    // ── Layer 1-G: gridPos → 픽셀 좌표 변환 ────────────────────
+    // || 1 : 모든 노드가 같은 좌표일 때 rangeX/Y = 0 → NaN 방지.
+    function _gridToPixel(gx, gy, bounds, vpW, vpH, pad) {
+      var rangeX = (bounds.maxX - bounds.minX) || 1;
+      var rangeY = (bounds.maxY - bounds.minY) || 1;
+      return {
+        px: pad + (gx - bounds.minX) / rangeX * (vpW - 2 * pad),
+        py: pad + (gy - bounds.minY) / rangeY * (vpH - 2 * pad)
+      };
+    }
+
+    // ── 렌더링·인터랙션 함수 선언 (Step 7~8에서 구현체 삽입) ────
+    // IIFE 내부에 미리 선언해두어야 public API(init 등)에서 참조 가능.
+    // ── Step 7-A: Galaxy View 렌더링 ───────────────────────────
+    // 5개 은하 카드를 #constGalaxyGrid 에 채운다.
+    // 각 카드: 이모지 · 은하명 · 달성 수 · 프로그레스 바.
+    function _renderGalaxyView() {
+      var grid = document.getElementById('constGalaxyGrid');
+      if (!grid) return;
+
+      var html = '';
+      GALAXY_MAP_DATA.forEach(function(galaxy) {
+        var meta = GALAXY_META[galaxy.id] || { emoji: '🌌', accent: '#4da8f5', glow: 'rgba(77,168,245,0.25)' };
+
+        // 은하 내 달성 현황 집계 (마스킹 중인 히든 노드는 카운트 제외)
+        var totalCount = 0, achievedCount = 0;
+        galaxy.constellations.forEach(function(c) {
+          c.nodes.forEach(function(node) {
+            if (_isNodeMasked(node)) return;
+            totalCount++;
+            var st = _getNodeState(node);
+            if (st === 'ACHIEVED' || st === 'FIRST') achievedCount++;
+          });
+        });
+
+        var pct = totalCount > 0 ? Math.round(achievedCount / totalCount * 100) : 0;
+
+        html += '<div class="const-galaxy-card"'
+              + ' onclick="ConstMap.openGalaxy(\'' + galaxy.id + '\')"'
+              + ' style="border-color:' + meta.glow + ';">'
+              + '<span class="galaxy-emoji">' + meta.emoji + '</span>'
+              + '<div class="galaxy-name">' + galaxy.name + '</div>'
+              + '<div class="galaxy-count">' + achievedCount + ' / ' + totalCount + ' 달성</div>'
+              + '<div class="galaxy-prog-bar">'
+              + '<div class="galaxy-prog-fill" style="width:' + pct + '%; background:' + meta.accent + ';"></div>'
+              + '</div>'
+              + '</div>';
+      });
+
+      grid.innerHTML = html;
+    }
+
+    // ── Step 7-B: SVG 연결선 렌더링 (성좌 뷰 전용 헬퍼) ────────
+    // 각 노드의 prerequisites[] 를 순회해 선을 그린다.
+    // · 수렴형(convergent): Q 베지어 (컨트롤 포인트를 도착점 쪽 75%로)
+    // · 나머지 타입: 직선 L
+    // · 노드 상태가 ACHIEVED/FIRST → state-ACHIEVED (실선+글로우)
+    // · 그 외 → state-LOCKED (점선+반투명)
+    function _renderSVGLines(galaxy, pixelMap, svg) {
+      galaxy.constellations.forEach(function(c) {
+        c.nodes.forEach(function(node) {
+          var toPos = pixelMap[node.id];
+          if (!toPos) return;
+
+          var st        = _getNodeState(node);
+          var lineState = (st === 'ACHIEVED' || st === 'FIRST') ? 'ACHIEVED' : 'LOCKED';
+
+          node.prerequisites.forEach(function(pid) {
+            var fromPos = pixelMap[pid];
+            if (!fromPos) return;
+
+            var x1 = fromPos.px, y1 = fromPos.py;
+            var x2 = toPos.px,   y2 = toPos.py;
+            var d;
+
+            if (c.type === 'convergent') {
+              // 수렴형: 컨트롤 포인트를 도착점 쪽으로 75% 당겨 곡선 생성
+              var cpx = x1 * 0.25 + x2 * 0.75;
+              var cpy = y1;
+              d = 'M ' + x1 + ' ' + y1 + ' Q ' + cpx + ' ' + cpy + ' ' + x2 + ' ' + y2;
+            } else {
+              // linear, radial, standalone — 모두 직선
+              d = 'M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2;
+            }
+
+            var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            path.setAttribute('d', d);
+            path.setAttribute('fill', 'none');
+            path.setAttribute('class', 'const-line state-' + lineState);
+            svg.appendChild(path);
+          });
+        });
+      });
+    }
+
+    // ── Step 7-C: 노드 div 렌더링 (성좌 뷰 전용 헬퍼) ──────────
+    // 각 노드를 position:absolute div 로 만들어 container 에 추가.
+    // · FIRST 달성자: 위성(node-satellite) 애니메이션 포함.
+    // · 히든 마스킹 중: tier-히든 클래스, 라벨 '???'.
+    // · animationDelay: 노드 순서 × 0.05s 로 순차 등장 효과.
+    function _renderNodeDivs(galaxy, pixelMap, container) {
+      var nodeIdx = 0;
+      galaxy.constellations.forEach(function(c) {
+        c.nodes.forEach(function(node) {
+          var pos = pixelMap[node.id];
+          if (!pos) return;
+
+          var state   = _getNodeState(node);
+          var isMask  = _isNodeMasked(node);
+          var label   = isMask ? '???' : node.title;
+          var tierCls = isMask ? 'tier-히든' : ('tier-' + node.tier);
+          var delay   = (nodeIdx * 0.05).toFixed(2);
+          nodeIdx++;
+
+          // FIRST 달성자만 위성 궤도 애니메이션 표시
+          var satellite = (state === 'FIRST')
+            ? '<div class="node-satellite"></div>'
+            : '';
+
+          var div            = document.createElement('div');
+          div.className      = 'const-node state-' + state + ' ' + tierCls;
+          div.dataset.nodeId = node.id;
+          div.style.left           = pos.px + 'px';
+          div.style.top            = pos.py + 'px';
+          div.style.animationDelay = delay + 's';
+          div.innerHTML = '<div class="node-star">' + satellite + '</div>'
+                        + '<div class="node-label">' + label + '</div>';
+          container.appendChild(div);
+        });
+      });
+    }
+
+    // ── Step 7-D: Constellation View 렌더링 ─────────────────────
+    // Galaxy View → Constellation View 전환 시 호출 (_openConstellation 에서).
+    // SVG 선 위에 노드 div 가 얹히도록 _renderSVGLines → _renderNodeDivs 순서로 실행.
+    function _renderConstellationView(gId) {
+      // 1. 은하 찾기
+      var galaxy = null;
+      for (var i = 0; i < GALAXY_MAP_DATA.length; i++) {
+        if (GALAXY_MAP_DATA[i].id === gId) { galaxy = GALAXY_MAP_DATA[i]; break; }
+      }
+      if (!galaxy) return;
+
+      var meta = GALAXY_META[gId] || { emoji: '🌌', accent: '#4da8f5', glow: 'rgba(77,168,245,0.25)', bg: '' };
+
+      // 2. 은하 제목 업데이트
+      var titleEl = document.getElementById('constGalaxyTitle');
+      if (titleEl) {
+        titleEl.textContent = meta.emoji + ' ' + galaxy.name;
+        titleEl.style.color = meta.accent;
+      }
+
+      // 2-b. 은하별 배경 이미지 적용
+      //   gradient 오버레이(50% 암화) + 배경 이미지를 background 단축속성 한 줄로 처리.
+      //   브라우저가 오버레이를 위, 이미지를 아래로 렌더링한다.
+      var vpBg = document.getElementById('constViewport');
+      if (vpBg) {
+        if (meta.bg) {
+          vpBg.style.background =
+            'linear-gradient(rgba(5,8,15,0.52),rgba(5,8,15,0.52)),' +
+            'url("' + meta.bg + '") center/cover no-repeat';
+        } else {
+          vpBg.style.background = '';  // 폴백: 기본 CSS 배경
+        }
+      }
+
+      // 3. 모든 노드 수집 → gridPos 경계값 계산
+      var allNodes = [];
+      galaxy.constellations.forEach(function(c) {
+        c.nodes.forEach(function(n) { allNodes.push(n); });
+      });
+      var bounds = _computeBounds(allNodes);
+
+      // 4. 뷰포트·캔버스 크기 계산
+      //    캔버스 = 노드 밀도 기반 동적 크기 (뷰포트보다 클 경우 드래그 팬으로 탐색)
+      var vp  = document.getElementById('constViewport');
+      var vpW = (vp && vp.offsetWidth)  ? vp.offsetWidth  : 600;
+      var vpH = (vp && vp.offsetHeight) ? vp.offsetHeight : 480;
+
+      var UNIT = 105;  // grid 1칸 ≈ 105px
+      var PAD  = 80;   // 노드 아이콘이 경계에서 잘리지 않도록 여백
+      var xSpread = (bounds.maxX - bounds.minX) || 1;
+      var ySpread = (bounds.maxY - bounds.minY) || 1;
+      var canvasW = Math.max(vpW, PAD * 2 + xSpread * UNIT);
+      var canvasH = Math.max(vpH, PAD * 2 + ySpread * UNIT);
+
+      // 캔버스 div 크기 및 팬·줌 초기화
+      var canvas = document.getElementById('constCanvas');
+      if (canvas) {
+        canvas.style.width     = canvasW + 'px';
+        canvas.style.height    = canvasH + 'px';
+        canvas.style.transform = 'translate(0px,0px) scale(1)';
+      }
+      _panX = 0; _panY = 0; _scale = 1.0;
+
+      // 5. SVG·노드 컨테이너 초기화
+      var svg       = document.getElementById('constSVG');
+      var container = document.getElementById('constNodesContainer');
+      if (svg)       svg.innerHTML       = '';
+      if (container) container.innerHTML = '';
+      if (!svg || !container) return;
+
+      // SVG를 캔버스와 같은 크기로 (overflow:visible 덕분에 path는 잘리지 않음)
+      svg.setAttribute('width',  canvasW);
+      svg.setAttribute('height', canvasH);
+
+      // 6. 노드 ID → 픽셀 좌표 맵 구축 (캔버스 크기 기준)
+      var pixelMap = {};
+      allNodes.forEach(function(node) {
+        pixelMap[node.id] = _gridToPixel(node.gridPos.x, node.gridPos.y, bounds, canvasW, canvasH, PAD);
+      });
+
+      // 7. 선 먼저 → 노드 div 나중 (선이 노드 아래에 깔리도록)
+      _renderSVGLines(galaxy, pixelMap, svg);
+      _renderNodeDivs(galaxy, pixelMap, container);
+    }
+    // ── Step 8-A: Glassmorphism 툴팁 표시 ──────────────────────
+    // anchorEl(.const-node)의 뷰포트 좌표 기준으로 #constMapCard 내부에 위치.
+    // 오른쪽·위쪽 화면 넘침 방지 로직 포함.
+    function _showTooltip(nodeId, anchorEl) {
+      var node = _allNodeMap ? _allNodeMap[nodeId] : null;
+      if (!node) return;
+      var tooltip = document.getElementById('constTooltip');
+      if (!tooltip) return;
+
+      var isMask    = _isNodeMasked(node);
+      var state     = _getNodeState(node);
+      var wof       = _wofMap[nodeId] || { count: 0, hint: '', firstAchiever: null };
+
+      var tierLabel = isMask ? '히든' : node.tier;
+      var tierCls   = isMask ? 'tier-히든' : ('tier-' + node.tier);
+      var nameText  = isMask ? '🔒 ???' : node.title;
+      var hintText  = isMask ? '' : (wof.hint || '');
+      var stateStr  = { LOCKED:'🔒 잠김', READY:'✨ 달성 가능', ACHIEVED:'✅ 달성', FIRST:'🥇 최초 달성' }[state] || '';
+      var countStr  = '👥 ' + (wof.count || 0) + '명 달성';
+
+      var html = '<span class="ctt-tier ' + tierCls + '">' + tierLabel + '</span>'
+               + '<div class="ctt-name">' + nameText + '</div>'
+               + (hintText ? '<div class="ctt-hint">💡 ' + hintText + '</div>' : '')
+               + '<div class="ctt-count">' + stateStr + ' · ' + countStr + '</div>'
+               + (wof.firstAchiever ? '<div class="ctt-count" style="color:#ffd700;margin-top:3px;">🥇 최초: ' + wof.firstAchiever + '</div>' : '');
+
+      tooltip.innerHTML  = html;
+      tooltip.style.display = 'block';
+
+      // ── 위치 계산 (부모 #constMapCard 기준 상대좌표) ──
+      var card = document.getElementById('constMapCard');
+      if (!card || !anchorEl) return;
+
+      var cardR   = card.getBoundingClientRect();
+      var ancR    = anchorEl.getBoundingClientRect();
+      var tipW    = 212;                           // CSS width: 212px
+      var tipH    = tooltip.offsetHeight || 120;
+
+      var left = ancR.left - cardR.left + ancR.width  / 2 - tipW / 2;
+      var top  = ancR.top  - cardR.top  - tipH - 10;
+
+      // 오른쪽 넘침 방지
+      if (left + tipW > cardR.width - 4) left = cardR.width - tipW - 4;
+      if (left < 4) left = 4;
+
+      // 위쪽 공간 부족 시 → 노드 아래에 표시
+      if (top < 4) top = ancR.top - cardR.top + ancR.height + 8;
+
+      tooltip.style.left = left + 'px';
+      tooltip.style.top  = top  + 'px';
+    }
+
+    // ── Step 8-B: 툴팁 숨기기 ──────────────────────────────────
+    function _hideTooltip() {
+      var tooltip = document.getElementById('constTooltip');
+      if (tooltip) tooltip.style.display = 'none';
+    }
+
+    // ── Step 8-C-1: 드래그 팬 (마우스·터치 공용) ────────────────
+    // viewport 1개에 리스너를 부착. _dragPanAttached 플래그로 중복 방지.
+    // 클램핑: 캔버스가 뷰포트 밖으로 완전히 빠져나가지 않도록.
+    function _attachDragPan(viewport) {
+      if (viewport._dragPanAttached) return;
+      viewport._dragPanAttached = true;
+
+      var dragging = false, startX, startY, startPanX, startPanY;
+
+      // 팬 적용 (스케일 고려한 클램핑 포함)
+      function applyPan(rawX, rawY) {
+        var canvas = document.getElementById('constCanvas');
+        if (!canvas) return;
+        var minX = Math.min(0, viewport.offsetWidth  - canvas.offsetWidth  * _scale);
+        var minY = Math.min(0, viewport.offsetHeight - canvas.offsetHeight * _scale);
+        _panX = Math.max(minX, Math.min(0, rawX));
+        _panY = Math.max(minY, Math.min(0, rawY));
+        canvas.style.transform = 'translate(' + _panX + 'px,' + _panY + 'px) scale(' + _scale + ')';
+      }
+
+      // 줌 적용 (마우스 위치 기준 고정 줌)
+      function applyZoom(newScale, pivotX, pivotY) {
+        var canvas = document.getElementById('constCanvas');
+        if (!canvas) return;
+        // 줌 전 피벗 아래 캔버스 좌표
+        var canvasX = (pivotX - _panX) / _scale;
+        var canvasY = (pivotY - _panY) / _scale;
+        _scale = Math.max(0.3, Math.min(3.0, newScale));
+        // 줌 후 같은 캔버스 좌표가 피벗 위치로 오도록 팬 재계산
+        applyPan(pivotX - canvasX * _scale, pivotY - canvasY * _scale);
+      }
+
+      // ── 마우스 드래그 ──
+      viewport.addEventListener('mousedown', function(e) {
+        if (e.target.closest('.const-node')) return;
+        dragging = true;
+        startX = e.clientX; startY = e.clientY;
+        startPanX = _panX;  startPanY = _panY;
+        e.preventDefault();
+      });
+      document.addEventListener('mousemove', function(e) {
+        if (!dragging) return;
+        applyPan(startPanX + e.clientX - startX, startPanY + e.clientY - startY);
+      });
+      document.addEventListener('mouseup', function() { dragging = false; });
+
+      // ── 마우스 휠 줌 ──
+      viewport.addEventListener('wheel', function(e) {
+        e.preventDefault();
+        var rect   = viewport.getBoundingClientRect();
+        var pivotX = e.clientX - rect.left;
+        var pivotY = e.clientY - rect.top;
+        applyZoom(_scale * (e.deltaY > 0 ? 0.9 : 1.1), pivotX, pivotY);
+      }, { passive: false });
+
+      // ── 더블클릭: 줌·팬 초기화 ──
+      viewport.addEventListener('dblclick', function(e) {
+        if (e.target.closest('.const-node')) return;
+        var canvas = document.getElementById('constCanvas');
+        if (!canvas) return;
+        _scale = 1.0; _panX = 0; _panY = 0;
+        canvas.style.transition = 'transform 0.3s ease';
+        canvas.style.transform  = 'translate(0px,0px) scale(1)';
+        setTimeout(function() { canvas.style.transition = ''; }, 320);
+      });
+
+      // ── 터치 드래그 (모바일·태블릿) ──
+      viewport.addEventListener('touchstart', function(e) {
+        if (e.touches.length !== 1) return;
+        if (e.target.closest('.const-node')) return;
+        dragging = true;
+        startX = e.touches[0].clientX; startY = e.touches[0].clientY;
+        startPanX = _panX;             startPanY = _panY;
+      }, { passive: true });
+      document.addEventListener('touchmove', function(e) {
+        if (!dragging || e.touches.length !== 1) return;
+        applyPan(startPanX + e.touches[0].clientX - startX,
+                 startPanY + e.touches[0].clientY - startY);
+      }, { passive: true });
+      document.addEventListener('touchend', function() { dragging = false; });
+    }
+
+    // ── Step 8-C: 이벤트 위임 연결 ─────────────────────────────
+    // 119개 노드마다 리스너를 붙이는 대신 container 1개에 2개만 붙인다.
+    // _constEventsAttached 플래그로 중복 등록 방지
+    // (container.innerHTML 교체 시 내부 DOM이 새로 생성되어도 container 자체는 유지).
+    function _attachNodeEvents(container) {
+      if (container._constEventsAttached) return;
+      container._constEventsAttached = true;
+
+      container.addEventListener('mouseover', function(e) {
+        var nodeEl = e.target.closest('.const-node');
+        if (!nodeEl) return;
+        var nodeId = nodeEl.dataset.nodeId;
+        if (nodeId) _showTooltip(nodeId, nodeEl);
+      });
+
+      container.addEventListener('mouseout', function(e) {
+        var nodeEl = e.target.closest('.const-node');
+        if (!nodeEl) return;
+        // 마우스가 노드 내부 자식 요소로 이동한 경우 툴팁 유지
+        if (nodeEl.contains(e.relatedTarget)) return;
+        _hideTooltip();
+      });
+    }
+
+    // ── Step 8-D: Galaxy View → Constellation View 전환 ────────
+    // 페이드 아웃(0.2s) → 렌더링 → 이벤트 위임 연결 → 페이드 인(0.25s).
+    // double-rAF 패턴: display:block 직후 opacity 트랜지션이 작동하도록.
+    function _openConstellation(galaxyId) {
+      var gv = document.getElementById('constGalaxyView');
+      var cv = document.getElementById('constConstellationView');
+      var bb = document.getElementById('constBackBtn');
+      if (!gv || !cv) return;
+
+      // Galaxy View 페이드 아웃
+      gv.style.transition = 'opacity 0.2s';
+      gv.style.opacity    = '0';
+
+      setTimeout(function() {
+        gv.style.display = 'none';
+        gv.style.opacity = '';        // 다음번 표시를 위해 초기화
+
+        // 뒤로가기 버튼 노출
+        if (bb) bb.style.display = 'inline-block';
+
+        // 성좌 렌더링 (SVG 선 + 노드 div)
+        _renderConstellationView(galaxyId);
+
+        // 이벤트 위임 연결 (중복 방지 포함)
+        var container = document.getElementById('constNodesContainer');
+        if (container) _attachNodeEvents(container);
+
+        // 드래그 팬 연결 (중복 방지 포함)
+        var vp = document.getElementById('constViewport');
+        if (vp) _attachDragPan(vp);
+
+        // Constellation View 페이드 인
+        cv.style.display    = 'block';
+        cv.style.opacity    = '0';
+        cv.style.transition = 'opacity 0.25s';
+        requestAnimationFrame(function() {
+          requestAnimationFrame(function() {
+            cv.style.opacity = '1';
+          });
+        });
+      }, 220);
+    }
+
+    // ── public API ─────────────────────────────────────────────
+    return {
+
+      /**
+       * 업적 탭 클릭 시 호출. 매번 _myAchSet·_wofMap 재빌드 후 Galaxy View 재렌더.
+       * @param {string} myName   - 로그인 학생명
+       * @param {object} achData  - getAchievementData() 반환값
+       */
+      init: function(myName, achData) {
+        _myName   = myName;
+
+        // 항상 재빌드: 업적은 언제든 늘어날 수 있고,
+        // loadWallOfFame()이 init()보다 늦게 끝날 수 있어 매번 갱신이 안전하다.
+        _myAchSet = _buildMyAchSet(achData);
+        _wofMap   = window._wofData ? _buildWofMap(window._wofData) : {};
+
+        // allNodeMap은 정적 구조 데이터 → 최초 1회만 생성
+        if (!_allNodeMap) _allNodeMap = _buildAllNodeMap();
+
+        // Galaxy View 항상 재렌더: 달성 수 변화가 즉시 반영되어야 함
+        _renderGalaxyView();
+      },
+
+      /** 은하 카드 클릭 시 호출 (onclick="ConstMap.openGalaxy('GALAXY_ECO')") */
+      openGalaxy: function(galaxyId) {
+        _openConstellation(galaxyId);
+      },
+
+      /** 뒤로가기 버튼 클릭 시 호출 (onclick="ConstMap.backToGalaxy()") */
+      backToGalaxy: function() {
+        var gv = document.getElementById('constGalaxyView');
+        var cv = document.getElementById('constConstellationView');
+        var bb = document.getElementById('constBackBtn');
+        if (!gv || !cv) return;
+
+        // Constellation View 페이드 아웃
+        cv.style.transition = 'opacity 0.2s';
+        cv.style.opacity    = '0';
+
+        setTimeout(function() {
+          cv.style.display = 'none';
+          if (bb) bb.style.display = 'none';
+
+          // 배경 이미지 초기화 (다음 은하 진입 시 새로 적용됨)
+          var vpBg = document.getElementById('constViewport');
+          if (vpBg) vpBg.style.background = '';
+
+          // Galaxy View 페이드 인
+          gv.style.display    = 'block';
+          gv.style.opacity    = '0';
+          gv.style.transition = 'opacity 0.25s';
+          requestAnimationFrame(function() {
+            requestAnimationFrame(function() {
+              gv.style.opacity = '1';
+            });
+          });
+        }, 220);
+      },
+
+      // Step 8에서 이벤트 위임 핸들러가 _showTooltip/_hideTooltip을 호출.
+      // HTML onclick에서 직접 호출할 수 있도록 public으로도 노출.
+      showTooltip: function(nodeId, el) { _showTooltip(nodeId, el); },
+      hideTooltip: function()           { _hideTooltip(); }
+    };
+
+  })(); // end ConstMap IIFE
+
   // ══════════════════════════════════════════════════════
   // ██ 탭 전환
   // ══════════════════════════════════════════════════════
@@ -2377,9 +3633,30 @@
         _loadSubData(window._currentStudentName);
       }
     }
-    // 업적 탭: 통계 카드 업데이트
-    if (tabId === 'ach' && window._achData) {
-      updateAchStats(window._achData.allAchievements||[], window._achData.myAchievements||[]);
+    // 업적 탭: 통계 카드 업데이트 + 성좌 맵 초기화
+    // ★ _achData는 두 가지 구조로 존재할 수 있다:
+    //   A) flat 배열 [{achId,...}]    — _loadSubData(getStudentAchievements) 결과
+    //   B) 객체 {allAchievements,myAchievements,...} — getAchievementData 결과
+    //   A 상태에서는 allAchievements가 없어 "전체 0"이 표시됨.
+    //   → allAchievements가 없으면 getAchievementData를 1회 호출해 전체 데이터 확보.
+    if (tabId === 'ach' && window._currentStudentName) {
+      if (window._achData && window._achData.allAchievements) {
+        // Case B: 완전한 데이터 보유 → 즉시 렌더
+        updateAchStats(window._achData.allAchievements, window._achData.myAchievements || []);
+        ConstMap.init(window._currentStudentName, window._achData);
+      } else {
+        // Case A(flat) or 미로드 → getAchievementData 1회 호출 후 캐시
+        google.script.run
+          .withSuccessHandler(function(data) {
+            if (!data) return;
+            window._achData = data;   // 이후 탭 재클릭 시 Case B로 진입
+            updateAchStats(data.allAchievements || [], data.myAchievements || []);
+            if (window._currentStudentName) {
+              ConstMap.init(window._currentStudentName, data);
+            }
+          })
+          .getAchievementData(window._currentStudentName);
+      }
     }
   }
 
@@ -3093,7 +4370,9 @@
     document.getElementById('dashboard').style.display = 'block';
 
     // 기본 정보
-    document.getElementById('welcomeMsg').innerText   = '👋 ' + data.personal.name + ' (' + data.personal.brand + ')';
+    document.getElementById('welcomeMsg').innerText   = data.personal.name;
+    var _hdrBrand = document.getElementById('hdrBrandName');
+    if (_hdrBrand) _hdrBrand.innerHTML = '<i class="fas fa-user" style="font-size:9px;margin-right:4px;opacity:0.55;"></i>' + (data.personal.brand || '');
     document.getElementById('myHonor').innerText      = Number(data.personal.honor).toLocaleString() + ' P';
     document.getElementById('honorRank').innerText    = data.personal.honorRank + '위';
     document.getElementById('myBalance').innerText    = '$ ' + Number(data.personal.balance).toLocaleString();
@@ -3144,7 +4423,7 @@
     // 1인1역 직업 정보
     if (data.job) {
       document.getElementById('jobTitle').innerText  = data.job.title || '미배정';
-      document.getElementById('jobSalary').innerText = '$ ' + Number(data.job.salary || 0).toLocaleString();
+      document.getElementById('jobSalary').innerHTML = '일급: <span style="color:#48dbfb;">$' + Number(data.job.salary || 0).toLocaleString() + '</span>';
       document.getElementById('jobArea').innerText   = '담당 구역: ' + (data.job.area || '-');
     }
 
@@ -3273,7 +4552,7 @@
           var num   = seat.item.replace(/[^0-9]/g, '');
           var price = Math.round(Number(seat.price)).toLocaleString();
           html += '<div style="border:1px solid #ddd;border-radius:8px;padding:8px 4px;text-align:center;background:#fff;">' +
-            '<div style="font-size:13px;font-weight:bold;color:#2c3e50;">자리' + num + '</div>' +
+            '<div style="font-size:13px;font-weight:bold;color:#e6edf3;">자리' + num + '</div>' +
             '<div style="font-size:11px;color:#e67e22;margin-top:3px;">(' + price + ')</div>' +
           '</div>';
         });
@@ -3727,7 +5006,11 @@ function requestCancelDeposit(depId, amount) {
 
     // 나의 2차 직업 상태
     if (data.job2) {
-      document.getElementById('job2MyName').innerText = data.job2.jobName;
+      // ── 버그 수정 1: job2MyStatus(부모 div)를 block으로 전환해야 이름/설명이 보임 ──
+      document.getElementById('job2MyStatus').style.display  = 'block';
+      document.getElementById('job2MyName').innerText        = data.job2.jobName  || '';
+      // ── 버그 수정 2: jobDesc 필드를 job2MyDesc에 채워야 설명이 표시됨 ──
+      document.getElementById('job2MyDesc').innerText        = data.job2.jobDesc  || '';
       document.getElementById('job2ApplyForm').style.display = 'none';
 
       // 나의 서비스 평점 표시
@@ -3737,26 +5020,28 @@ function requestCancelDeposit(depId, amount) {
           var stars = '';
           var avg = data.job2.ratingAvg;
           for (var s = 1; s <= 10; s++) {
-            stars += '<span style="color:' + (s <= Math.round(avg) ? '#f39c12' : '#ddd') + ';font-size:13px;">★</span>';
+            stars += '<span style="color:' + (s <= Math.round(avg) ? '#f39c12' : '#30363d') + ';font-size:13px;">★</span>';
           }
           ratingEl.innerHTML =
-            '<div style="margin-top:8px;padding:8px 10px;background:#fff8e1;border-radius:8px;font-size:12px;">' +
+            '<div style="margin-top:8px;padding:8px 10px;background:#21262d;border-radius:8px;font-size:12px;border:1px solid #30363d;">' +
               '⭐ 나의 서비스 품질: ' + stars +
               '<span style="color:#f39c12;font-weight:bold;margin-left:4px;">' + avg + '/10</span>' +
-              '<span style="color:#bbb;font-size:11px;margin-left:6px;">(' + data.job2.ratingCount + '명 평가)</span>' +
+              '<span style="color:#6e7681;font-size:11px;margin-left:6px;">(' + data.job2.ratingCount + '명 평가)</span>' +
             '</div>';
         } else {
           ratingEl.innerHTML =
-            '<div style="margin-top:8px;padding:8px 10px;background:#f8f9fa;border-radius:8px;font-size:12px;color:#aaa;">' +
+            '<div style="margin-top:8px;padding:8px 10px;background:#21262d;border-radius:8px;font-size:12px;color:#8b949e;border:1px solid #30363d;">' +
               '⭐ 나의 서비스 품질: 평가 5건 이상 시 공개됩니다.' +
               (data.job2.ratingCount > 0
                 ? ' (현재 ' + data.job2.ratingCount + '건)'
                 : '') +
             '</div>';
         }
-      } // 이미 있으면 신청폼 숨김
+      }
     } else {
-      document.getElementById('job2MyName').innerText = '없음';
+      // 2차 직업 없으면 상태 div 숨기고 신청 폼 표시
+      document.getElementById('job2MyStatus').style.display  = 'none';
+      document.getElementById('job2MyName').innerText        = '없음';
       document.getElementById('job2ApplyForm').style.display = 'block';
     }
 
@@ -3901,7 +5186,7 @@ function requestCancelDeposit(depId, amount) {
         ? renderTitleBadge(student.equippedTitle, student.achievements || [])
         : '<span style="color:#484f58;font-size:10px;font-style:italic;">칭호 미장착</span>';
       // 1위는 아바타 더 크게
-      var avatarSize = origIdx === 0 ? 80 : 68;
+      var avatarSize = origIdx === 0 ? 100 : 95;
       top3Html +=
         '<div class="honor-top3-card ' + rankClass + '">' +
           '<div class="honor-rank-badge">' + (origIdx+1) + '</div>' +
@@ -4161,11 +5446,20 @@ function requestCancelDeposit(depId, amount) {
   // ██ Wall of Fame (업적 현황판)
   // ══════════════════════════════════════════════════════════════
   function loadWallOfFame() {
+    // ★ Step 2: wallOfFameList가 없어도 GAS 호출은 항상 실행해야 한다.
+    //   나중에 이 div가 성좌 맵 컨테이너로 교체되면 container는 null이 되지만,
+    //   window._wofData는 성좌 맵 렌더링에 반드시 필요하므로 조기 반환하지 않는다.
     var container = document.getElementById('wallOfFameList');
-    if (!container) return;
-    container.innerHTML = '<div style="text-align:center;padding:20px;color:#bbb;font-size:13px;">로딩 중...</div>';
+    if (container) {
+      container.innerHTML = '<div style="text-align:center;padding:20px;color:#bbb;font-size:13px;">로딩 중...</div>';
+    }
     google.script.run
       .withSuccessHandler(function(data) {
+        // ★ 성좌 맵용: 데이터를 전역에 저장 (ConstMap.init()이 이 데이터를 사용)
+        window._wofData = data;
+
+        // 기존 wallOfFameList 렌더링 (container가 없으면 자동으로 건너뜀)
+        if (!container) return;
         if (!data || data.length === 0) {
           container.innerHTML = '<div style="text-align:center;padding:20px;color:#bbb;font-size:13px;">아직 등록된 업적이 없습니다.</div>';
           return;
@@ -4186,7 +5480,9 @@ function requestCancelDeposit(depId, amount) {
         container.innerHTML = html;
       })
       .withFailureHandler(function(err) {
-        container.innerHTML = '<div style="text-align:center;padding:20px;color:#e74c3c;font-size:13px;">⚠️ 현황판 로드 실패: ' + err.message + '</div>';
+        if (container) {
+          container.innerHTML = '<div style="text-align:center;padding:20px;color:#e74c3c;font-size:13px;">⚠️ 현황판 로드 실패: ' + err.message + '</div>';
+        }
       })
       .getWallOfFame();
   }
@@ -4222,16 +5518,30 @@ function requestCancelDeposit(depId, amount) {
     applyCharacter(char || '😊');
   }
 
-  function applySkin(skinKey) {
-    // 기존 스킨 클래스 제거
-    document.body.classList.remove(
-      'skin-ocean','skin-dark','skin-cherry',
-      'skin-abstract','skin-colorful_glass','skin-red_brick','skin-hideout',
-      'skin-ocean_fairy','skin-snowflower','skin-pink_lake','skin-full_moon',
-      'skin-white_dragon','skin-wish_tree','skin-milky_way','skin-palace_of_wizard'
-    );
-    if (skinKey && skinKey !== 'default') document.body.classList.add('skin-' + skinKey);
-    window._currentSkin = skinKey;
+  function applySkin(skinVal) {
+    // ★ 동적 스킨 시스템: skin-on 단일 클래스 + style.backgroundImage 직접 지정 ★
+    // 새 스킨을 추가할 때 이 함수를 수정할 필요 없음.
+    // 상점_아이템 시트에 카테고리='스킨', H컬럼=이미지URL 행만 추가하면 됨.
+
+    // 1) 기존 스킨 상태 초기화
+    document.body.classList.remove('skin-on');
+    document.body.style.backgroundImage = '';
+
+    // 2) 기본(default) 또는 빈 값이면 스킨 없이 종료
+    if (!skinVal || skinVal === 'default') {
+      window._currentSkin = 'default';
+      return;
+    }
+
+    // 3) H컬럼에 저장된 GitHub 이미지 URL을 그대로 사용
+    var url = skinVal;
+
+    // 4) URL이 확보된 경우에만 스킨 적용
+    if (url) {
+      document.body.style.backgroundImage = 'url(' + url + ')';
+      document.body.classList.add('skin-on');
+    }
+    window._currentSkin = skinVal;
   }
 
   var _previewTimer = null;
@@ -4683,15 +5993,16 @@ function requestCancelDeposit(depId, amount) {
     var btn = document.querySelector('[onclick="submitDonate()"]');
     if (btn) { btn.disabled = true; btn.innerText = '⏳ 처리 중...'; }
 
-    // ── UI 선반영: 잔액 즉시 차감 표시 ──
+    // ── UI 선반영: 잔액 즉시 차감 표시 (모달은 GAS 응답 후 닫음) ──
     var newBal = curBalance - amount;
     document.getElementById('myBalance').innerText = '$ ' + newBal.toLocaleString();
     if (window._lastDashboardData) window._lastDashboardData.personal.balance = newBal;
-    closeDonateModal();
+    // closeDonateModal() 제거 → 핸들러 안에서 처리 완료 후 닫음
 
     google.script.run
       .withSuccessHandler(function(res) {
         if (btn) { btn.disabled = false; btn.innerText = '💚 기부하기'; }
+        closeDonateModal(); // ← 성공 시 모달 닫기
         if (!res.success) {
           // 실패 시 잔액 롤백
           document.getElementById('myBalance').innerText = '$ ' + curBalance.toLocaleString();
@@ -4703,6 +6014,7 @@ function requestCancelDeposit(depId, amount) {
       })
       .withFailureHandler(function(err) {
         if (btn) { btn.disabled = false; btn.innerText = '💚 기부하기'; }
+        closeDonateModal(); // ← 실패 시에도 모달 닫기
         // 실패 시 잔액 롤백
         document.getElementById('myBalance').innerText = '$ ' + curBalance.toLocaleString();
         if (window._lastDashboardData) window._lastDashboardData.personal.balance = curBalance;
@@ -4838,7 +6150,7 @@ function requestCancelDeposit(depId, amount) {
             }
             ratingHtml =
               '<div style="margin-top:6px;display:flex;align-items:center;gap:4px;">' +
-                '<span style="font-size:11px;color:#888;">내 평점:</span>' +
+                '<span style="font-size:11px;color:#8b949e;">내 평점:</span>' +
                 stars +
                 '<span style="font-size:12px;color:#f39c12;font-weight:bold;margin-left:2px;">' + tx.rating + '/10</span>' +
               '</div>';
@@ -4855,7 +6167,7 @@ function requestCancelDeposit(depId, amount) {
             }
             ratingHtml =
               '<div style="margin-top:8px;">' +
-                '<div style="font-size:11px;color:#888;margin-bottom:4px;">거래 평가 (판매자에게 별점을 남겨주세요)</div>' +
+                '<div style="font-size:11px;color:#8b949e;margin-bottom:4px;">거래 평가 (판매자에게 별점을 남겨주세요)</div>' +
                 '<div id="stars_' + tx.txnId + '" style="display:flex;align-items:center;gap:0;">' +
                   starBtns +
                 '</div>' +
@@ -4872,7 +6184,7 @@ function requestCancelDeposit(depId, amount) {
   
         // ──────────────────────────────────────────────────────
   
-        return '<div style="padding:10px 12px;border-bottom:1px solid #f5f5f5;">' +
+        return '<div style="padding:10px 12px;border-bottom:1px solid #30363d;">' +
           '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">' +
             '<div style="font-size:13px;font-weight:bold;color:#2c3e50;">' +
               '<span style="color:' + color + ';margin-right:4px;">' + icon + '</span>' +
@@ -4880,17 +6192,66 @@ function requestCancelDeposit(depId, amount) {
             '</div>' +
             '<div style="font-size:15px;font-weight:bold;color:' + color + ';">' + amtStr + '</div>' +
           '</div>' +
-          '<div style="font-size:11px;color:#888;">' +
+          '<div style="font-size:11px;color:#8b949e;">' +
             tx.date + ' · ' +
-            '<span style="background:#eaf4ff;color:#3d85c8;padding:1px 6px;border-radius:3px;">' + tx.tag + '</span>' +
+            '<span style="background:rgba(61,133,200,0.2);color:#79c0ff;padding:1px 6px;border-radius:3px;">' + tx.tag + '</span>' +
           '</div>' +
-          '<div style="font-size:12px;color:#555;margin-top:3px;">' + tx.description + '</div>' +
+          '<div style="font-size:12px;color:#8b949e;margin-top:3px;">' + tx.description + '</div>' +
           ratingHtml +
         '</div>';
       }).join('');
   
       container.innerHTML = html;
     }
+
+  // ── 별점 선택 시 하이라이트 ──────────────────────────────────
+  function selectRating(txnId, val, clickedBtn) {
+    var starsContainer = document.getElementById('stars_' + txnId);
+    if (!starsContainer) return;
+
+    // 모든 별 색상 초기화 후 선택된 것까지 노란색으로
+    var btns = starsContainer.querySelectorAll('button');
+    btns.forEach(function(btn) {
+      var bVal = parseInt(btn.getAttribute('data-val'));
+      btn.style.color = bVal <= val ? '#f39c12' : '#ddd';
+    });
+
+    // 선택값 저장 (컨테이너 data 속성 활용)
+    starsContainer.setAttribute('data-selected', val);
+
+    // 제출 버튼 표시
+    var rateBtn = document.getElementById('rateBtn_' + txnId);
+    if (rateBtn) rateBtn.style.display = 'inline-block';
+  }
+
+  // ── 평점 제출 ────────────────────────────────────────────────
+  function submitRating(txnId) {
+    var starsContainer = document.getElementById('stars_' + txnId);
+    if (!starsContainer) return;
+
+    var selected = parseInt(starsContainer.getAttribute('data-selected') || '0');
+    if (!selected || selected < 1 || selected > 10) {
+      alert('별점을 선택해주세요.'); return;
+    }
+
+    var btn = document.getElementById('rateBtn_' + txnId);
+    if (btn) { btn.disabled = true; btn.innerText = '저장 중...'; }
+
+    google.script.run
+      .withSuccessHandler(function(res) {
+        if (res.success) {
+          openP2PHistoryModal();
+        } else {
+          alert('평점 저장 실패: ' + res.msg);
+          if (btn) { btn.disabled = false; btn.innerText = '평점 제출'; }
+        }
+      })
+      .withFailureHandler(function(err) {
+        alert('서버 오류: ' + err.message);
+        if (btn) { btn.disabled = false; btn.innerText = '평점 제출'; }
+      })
+      .rateP2PTransaction(txnId, window._currentStudentName, selected);
+  }
 
   // ══════════════════════════════════════════════════════════
   // 신용등급 카드 / 모달
@@ -4937,17 +6298,18 @@ function requestCancelDeposit(depId, amount) {
       else                     { deltaEl.innerText = '변동 없음';  deltaEl.style.color = '#484f58'; }
     }
 
-    // SVG 아크 게이지 업데이트
+    // SVG 아크 게이지 업데이트 (stroke는 SVG linearGradient #arcGrad 고정, JS는 offset만 제어)
     var pct = Math.min(100, Math.round(((data.score || 0) / 1000) * 100));
     var arc = document.getElementById('creditArcFill');
     if (arc) {
-      var totalLen = 125.66;
+      var totalLen = 251.33; // r=80 반원 아크 길이: π×80 ≈ 251.33 (SVG 변경 시 함께 수정)
       arc.style.strokeDashoffset = totalLen - (pct / 100 * totalLen);
-      arc.style.stroke = color;
     }
-    // creditBar (숨김이지만 JS 호환)
+    // creditBar — 단일테마 시안/틸 (CSS에서 공통 적용, JS는 width만 제어)
     var bar = document.getElementById('creditBar');
-    if (bar) { bar.style.width = pct + '%'; bar.style.background = color; }
+    if (bar) {
+      bar.style.width = pct + '%';
+    }
 
     // 카드 테두리색
     var card = document.getElementById('creditCard');
@@ -4992,11 +6354,11 @@ function requestCancelDeposit(depId, amount) {
     function scoreBar(label, val, max, color2) {
       var pct = max > 0 ? Math.min(100, Math.round((val / max) * 100)) : 0;
       return '<div style="margin-bottom:10px;">' +
-        '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px;">' +
+        '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px;color:#8b949e;">' +
           '<span>' + label + '</span>' +
-          '<span style="font-weight:bold;">' + val + ' / ' + max + '</span>' +
+          '<span style="font-weight:bold;color:#e6edf3;">' + val + ' / ' + max + '</span>' +
         '</div>' +
-        '<div style="background:#e0e0e0;border-radius:4px;height:8px;overflow:hidden;">' +
+        '<div style="background:#30363d;border-radius:4px;height:8px;overflow:hidden;">' +
           '<div style="height:8px;border-radius:4px;background:' + color2 + ';width:' + pct + '%;transition:width 0.5s;"></div>' +
         '</div>' +
       '</div>';
@@ -5007,12 +6369,12 @@ function requestCancelDeposit(depId, amount) {
     // 등급 + 총점 헤더
     html += '<div style="text-align:center;margin-bottom:16px;">' +
       '<div style="font-size:48px;font-weight:900;color:' + color + ';">' + grade + '</div>' +
-      '<div style="font-size:22px;font-weight:bold;color:#2c3e50;">' + score + ' / 1000점</div>' +
+      '<div style="font-size:22px;font-weight:bold;color:#e6edf3;">' + score + ' / 1000점</div>' +
     '</div>';
 
     // 점수 분해
-    html += '<div style="background:#f8f9fa;border-radius:10px;padding:14px;margin-bottom:14px;">';
-    html += '<div style="font-size:13px;font-weight:bold;color:#555;margin-bottom:10px;">📊 점수 구성</div>';
+    html += '<div style="background:#21262d;border-radius:10px;padding:14px;margin-bottom:14px;border:1px solid #30363d;">';
+    html += '<div style="font-size:13px;font-weight:bold;color:#8b949e;margin-bottom:10px;">📊 점수 구성</div>';
     html += scoreBar('트랙A — 브랜드가치 상대점수', data.trackA || 0, 400, '#8e44ad');
     html += scoreBar('투자 성실도 (예금 유지)', data.invest || 0, 200, '#2471a3');
     html += scoreBar('사회적 기여 (기부 + 평판)', data.social || 0, 200, '#1e8449');
@@ -5022,35 +6384,35 @@ function requestCancelDeposit(depId, amount) {
     // 세부 정보
     if (data.detail) {
       var d = data.detail;
-      html += '<div style="background:#f8f9fa;border-radius:10px;padding:14px;margin-bottom:14px;">';
-      html += '<div style="font-size:13px;font-weight:bold;color:#555;margin-bottom:8px;">🔍 세부 내역</div>';
-      html += '<div style="font-size:12px;color:#666;line-height:2;">' +
-        '기부 점수: <b>' + (d.donationScore || 0) + '점</b> &nbsp;|&nbsp; ' +
-        'P2P 평판: <b>' + (d.ratingScore || 0) + '점</b> (평가 ' + (d.ratingCount || 0) + '건)<br>' +
-        '예금 유지 일수: <b>' + (d.totalDepositDays || 0) + '일</b><br>' +
-        '수호대 적발: <b>' + (d.penaltyCount || 0) + '회</b> &nbsp;|&nbsp; ' +
-        '이상거래 감지: <b>' + (d.anomalyCount || 0) + '건</b>' +
+      html += '<div style="background:#21262d;border-radius:10px;padding:14px;margin-bottom:14px;border:1px solid #30363d;">';
+      html += '<div style="font-size:13px;font-weight:bold;color:#8b949e;margin-bottom:8px;">🔍 세부 내역</div>';
+      html += '<div style="font-size:12px;color:#8b949e;line-height:2;">' +
+        '기부 점수: <b style="color:#e6edf3;">' + (d.donationScore || 0) + '점</b> &nbsp;|&nbsp; ' +
+        'P2P 평판: <b style="color:#e6edf3;">' + (d.ratingScore || 0) + '점</b> (평가 ' + (d.ratingCount || 0) + '건)<br>' +
+        '예금 유지 일수: <b style="color:#e6edf3;">' + (d.totalDepositDays || 0) + '일</b><br>' +
+        '수호대 적발: <b style="color:#e6edf3;">' + (d.penaltyCount || 0) + '회</b> &nbsp;|&nbsp; ' +
+        '이상거래 감지: <b style="color:#e6edf3;">' + (d.anomalyCount || 0) + '건</b>' +
       '</div>';
       html += '</div>';
     }
 
     // 대출 조건
-    html += '<div style="background:#f8f9fa;border-radius:10px;padding:14px;margin-bottom:14px;">';
-    html += '<div style="font-size:13px;font-weight:bold;color:#555;margin-bottom:8px;">💳 대출 가능 조건</div>';
+    html += '<div style="background:#21262d;border-radius:10px;padding:14px;margin-bottom:14px;border:1px solid #30363d;">';
+    html += '<div style="font-size:13px;font-weight:bold;color:#8b949e;margin-bottom:8px;">💳 대출 가능 조건</div>';
     if (grade === '대출불가') {
-      html += '<div style="font-size:13px;color:#e74c3c;">현재 신용등급으로는 대출이 불가합니다.</div>';
+      html += '<div style="font-size:13px;color:#f85149;">현재 신용등급으로는 대출이 불가합니다.</div>';
     } else {
-      html += '<div style="font-size:13px;color:#2c3e50;line-height:2;">' +
+      html += '<div style="font-size:13px;color:#8b949e;line-height:2;">' +
         '최대 대출 한도: <b style="color:' + color + ';">$ ' + maxLoan.toLocaleString() + '</b> (현재 자산의 ' + Math.round(loanRate*100) + '%)<br>' +
-        '주간 금리: <b>' + weeklyRate + '%</b>' +
+        '주간 금리: <b style="color:#e6edf3;">' + weeklyRate + '%</b>' +
       '</div>';
     }
     html += '</div>';
 
     // 꺾은선 그래프 (이력이 있는 경우)
     if (data.history && data.history.length >= 2) {
-      html += '<div style="background:#f8f9fa;border-radius:10px;padding:14px;">';
-      html += '<div style="font-size:13px;font-weight:bold;color:#555;margin-bottom:8px;">📈 신용점수 이력</div>';
+      html += '<div style="background:#21262d;border-radius:10px;padding:14px;border:1px solid #30363d;">';
+      html += '<div style="font-size:13px;font-weight:bold;color:#8b949e;margin-bottom:8px;">📈 신용점수 이력</div>';
       html += renderCreditChart(data.history, color);
       html += '</div>';
     }
@@ -5297,7 +6659,7 @@ function requestCancelDeposit(depId, amount) {
      ══════════════════════════════════════════════════ -->
 <div id="creditModal"
   style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1001;justify-content:center;align-items:center;">
-  <div style="background:white;border-radius:15px;width:92%;max-width:480px;max-height:88vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,0.3);">
+  <div style="background:#1c2333;border-radius:15px;width:92%;max-width:480px;max-height:88vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,0.5);">
     <!-- 모달 헤더 -->
     <div style="background:linear-gradient(135deg,#6c3483,#8e44ad);color:white;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
       <div style="font-size:17px;font-weight:bold;">⭐ 나의 신용등급 상세</div>
@@ -5305,37 +6667,37 @@ function requestCancelDeposit(depId, amount) {
     </div>
     <!-- 모달 본문 -->
     <div id="creditModalBody" style="overflow-y:auto;flex:1;padding:16px;">
-      <div style="text-align:center;padding:30px;color:#bbb;">로딩 중...</div>
+      <div style="text-align:center;padding:30px;color:#6e7681;">로딩 중...</div>
     </div>
   </div>
 </div>
 
 <!-- ── 구매 수량 선택 모달 ──────────────────────────────────── -->
-<div id="buyModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;">
-  <div style="background:white;margin:120px auto;max-width:320px;border-radius:12px;padding:24px;position:relative;">
-    <button onclick="closeBuyModal()" style="position:absolute;top:12px;right:12px;background:none;border:none;font-size:20px;cursor:pointer;">✕</button>
-    <h3 style="margin-top:0;margin-bottom:16px;">🛒 구매하기</h3>
+<div id="buyModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.75);z-index:9999;">
+  <div style="background:#1c2333;margin:120px auto;max-width:320px;border-radius:12px;padding:24px;position:relative;box-shadow:0 10px 40px rgba(0,0,0,0.5);">
+    <button onclick="closeBuyModal()" style="position:absolute;top:12px;right:12px;background:none;border:none;font-size:20px;cursor:pointer;color:#6e7681;">✕</button>
+    <h3 style="margin-top:0;margin-bottom:16px;color:#e6edf3;">🛒 구매하기</h3>
     <div style="margin-bottom:12px;">
-      <div style="font-size:16px;font-weight:bold;" id="buyModalItemName"></div>
-      <div style="font-size:13px;color:#888;margin-top:4px;">
-        현재 시세: <strong style="color:#e74c3c;">$<span id="buyModalPrice"></span></strong>
+      <div style="font-size:16px;font-weight:bold;color:#e6edf3;" id="buyModalItemName"></div>
+      <div style="font-size:13px;color:#6e7681;margin-top:4px;">
+        현재 시세: <strong style="color:#f85149;">$<span id="buyModalPrice"></span></strong>
         &nbsp;·&nbsp; 재고: <span id="buyModalStock"></span>개
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
-      <label style="font-size:14px;font-weight:bold;">수량</label>
+      <label style="font-size:14px;font-weight:bold;color:#e6edf3;">수량</label>
       <input type="number" id="buyQtyInput" value="1" min="1"
         oninput="updateBuyTotal()"
-        style="width:70px;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:16px;text-align:center;">
-      <span style="font-size:13px;color:#888;">개</span>
+        style="width:70px;padding:8px;border:1px solid #30363d;border-radius:6px;font-size:16px;text-align:center;background:#21262d;color:#e6edf3;">
+      <span style="font-size:13px;color:#6e7681;">개</span>
     </div>
-    <div id="buyModalLimit" style="display:none;background:#fff3cd;border-radius:6px;padding:8px 12px;margin-bottom:12px;font-size:12px;color:#856404;"></div>
-    <div style="background:#fff8f0;border-radius:8px;padding:12px;margin-bottom:16px;text-align:center;">
-      <span style="font-size:13px;color:#888;">총 결제 금액</span><br>
-      <strong style="font-size:20px;color:#e74c3c;">$<span id="buyModalTotal"></span></strong>
+    <div id="buyModalLimit" style="display:none;background:#2e2416;border-radius:6px;padding:8px 12px;margin-bottom:12px;font-size:12px;color:#f5a623;"></div>
+    <div style="background:#21262d;border-radius:8px;padding:12px;margin-bottom:16px;text-align:center;border:1px solid #30363d;">
+      <span style="font-size:13px;color:#6e7681;">총 결제 금액</span><br>
+      <strong style="font-size:20px;color:#f85149;">$<span id="buyModalTotal"></span></strong>
     </div>
     <button id="buyConfirmBtn" onclick="confirmBuyItem()"
-      style="width:100%;padding:12px;background:#e74c3c;color:white;border:none;border-radius:8px;font-size:15px;font-weight:bold;cursor:pointer;">
+      style="width:100%;padding:12px;background:#f85149;color:white;border:none;border-radius:8px;font-size:15px;font-weight:bold;cursor:pointer;">
       구매하기
     </button>
   </div>
@@ -5343,33 +6705,33 @@ function requestCancelDeposit(depId, amount) {
 
 
 <!-- ── 사용 수량 선택 모달 ──────────────────────────────────── -->
-<div id="useModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:10000;">
-  <div style="background:white;margin:140px auto;max-width:300px;border-radius:12px;padding:24px;position:relative;">
-    <button onclick="closeUseModal()" style="position:absolute;top:12px;right:12px;background:none;border:none;font-size:20px;cursor:pointer;">✕</button>
-    <h3 style="margin-top:0;margin-bottom:16px;">✅ 사용하기</h3>
+<div id="useModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.75);z-index:10000;">
+  <div style="background:#1c2333;margin:140px auto;max-width:300px;border-radius:12px;padding:24px;position:relative;box-shadow:0 10px 40px rgba(0,0,0,0.5);">
+    <button onclick="closeUseModal()" style="position:absolute;top:12px;right:12px;background:none;border:none;font-size:20px;cursor:pointer;color:#6e7681;">✕</button>
+    <h3 style="margin-top:0;margin-bottom:16px;color:#e6edf3;">✅ 사용하기</h3>
     <div style="margin-bottom:12px;">
-      <div style="font-size:15px;font-weight:bold;" id="useModalItemName"></div>
-      <div style="font-size:13px;color:#888;margin-top:4px;">보유 수량: <strong id="useModalOwned"></strong>개</div>
+      <div style="font-size:15px;font-weight:bold;color:#e6edf3;" id="useModalItemName"></div>
+      <div style="font-size:13px;color:#6e7681;margin-top:4px;">보유 수량: <strong id="useModalOwned"></strong>개</div>
     </div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
-      <label style="font-size:14px;font-weight:bold;">사용 수량</label>
+      <label style="font-size:14px;font-weight:bold;color:#e6edf3;">사용 수량</label>
       <input type="number" id="useQtyInput" value="1" min="1"
-        style="width:70px;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:16px;text-align:center;">
-      <span style="font-size:13px;color:#888;">개</span>
+        style="width:70px;padding:8px;border:1px solid #30363d;border-radius:6px;font-size:16px;text-align:center;background:#21262d;color:#e6edf3;">
+      <span style="font-size:13px;color:#6e7681;">개</span>
     </div>
     <button id="useConfirmBtn" onclick="confirmUseItem()"
-      style="width:100%;padding:12px;background:#e74c3c;color:white;border:none;border-radius:8px;font-size:15px;font-weight:bold;cursor:pointer;">
+      style="width:100%;padding:12px;background:#f85149;color:white;border:none;border-radius:8px;font-size:15px;font-weight:bold;cursor:pointer;">
       사용하기
     </button>
   </div>
 </div>
 
 <!-- ── 인벤토리 모달 ───────────────────────────────────────── -->
-<div id="inventoryModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;overflow-y:auto;">
-  <div style="background:white;margin:40px auto;max-width:480px;border-radius:12px;padding:24px;position:relative;">
-    <button onclick="closeInventoryModal()" style="position:absolute;top:12px;right:12px;background:none;border:none;font-size:20px;cursor:pointer;">✕</button>
-    <h3 style="margin-top:0;margin-bottom:16px;">🎒 내 인벤토리</h3>
-    <div id="inventoryList">로딩 중...</div>
+<div id="inventoryModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.75);z-index:9999;overflow-y:auto;">
+  <div style="background:#1c2333;margin:40px auto;max-width:480px;border-radius:12px;padding:24px;position:relative;box-shadow:0 10px 40px rgba(0,0,0,0.5);">
+    <button onclick="closeInventoryModal()" style="position:absolute;top:12px;right:12px;background:none;border:none;font-size:20px;cursor:pointer;color:#6e7681;">✕</button>
+    <h3 style="margin-top:0;margin-bottom:16px;color:#e6edf3;">🎒 내 인벤토리</h3>
+    <div id="inventoryList" style="color:#e6edf3;">로딩 중...</div>
   </div>
 </div>
 
@@ -5433,11 +6795,11 @@ function confirmBuyItem() {
   // 버튼 비활성화 (중복 클릭 방지)
   var btn = document.getElementById('buyConfirmBtn');
   btn.disabled = true;
-  btn.textContent = '처리 중...';
+  btn.textContent = '⏳ 처리 중...';
 
-  // ── UI 선반영: 모달 닫고 잔액 즉시 차감 표시 ──
+  // ── UI 선반영: 잔액 즉시 차감 표시 (모달은 GAS 응답 후 닫음) ──
   var newBal = curBalance - totalCost;
-  closeBuyModal();
+  // closeBuyModal() 제거 → 핸들러 안에서 처리 완료 후 닫음
   document.getElementById('myBalance').innerText = '$ ' + newBal.toLocaleString();
   if (window._lastDashboardData) window._lastDashboardData.personal.balance = newBal;
 
@@ -5445,6 +6807,7 @@ function confirmBuyItem() {
     .withSuccessHandler(function(res) {
       btn.disabled = false;
       btn.textContent = '구매하기';
+      closeBuyModal(); // ← 성공 시 모달 닫기
       if (res.success) {
         // 서버 확정 잔액으로 최종 반영 (혹시 차이 있을 경우 보정)
         if (res.newBalance !== undefined) {
@@ -5461,6 +6824,7 @@ function confirmBuyItem() {
     .withFailureHandler(function(err) {
       btn.disabled = false;
       btn.textContent = '구매하기';
+      closeBuyModal(); // ← 실패 시에도 모달 닫기
       // 실패 시 잔액 롤백
       document.getElementById('myBalance').innerText = '$ ' + curBalance.toLocaleString();
       if (window._lastDashboardData) window._lastDashboardData.personal.balance = curBalance;
@@ -5702,11 +7066,23 @@ function renderGuildCard(data) {
     membersList.innerHTML = '<span style="font-size:12px;color:#aaa;">멤버 정보 없음</span>';
   } else {
     membersList.innerHTML = data.members.map(function(m) {
-      var pc = PORT_COLORS[m.port] || { bg: '#f0f0f0', color: '#666' };
-      return '<div style="display:flex;align-items:center;gap:4px;padding:4px 10px;' +
-        'background:' + pc.bg + ';border-radius:14px;font-size:12px;">' +
-        '<span style="font-weight:bold;color:#2c3e50;">' + m.name + '</span>' +
-        '<span style="color:' + pc.color + ';font-size:11px;">·' + (m.port || '?') + '</span>' +
+      var pc = PORT_COLORS[m.port] || { bg: 'rgba(255,255,255,0.08)', color: '#8b949e' };
+      // 캐릭터 표시: URL이면 이미지, 이모지면 텍스트, 없으면 기본 이모지
+      var charHtml = '';
+      var charVal  = m.charVal || '';
+      if (charVal && (charVal.startsWith('http://') || charVal.startsWith('https://'))) {
+        charHtml = '<img src="' + charVal + '" style="width:26px;height:26px;object-fit:contain;' +
+          'border-radius:50%;mix-blend-mode:screen;flex-shrink:0;" alt="캐릭터">';
+      } else {
+        charHtml = '<span style="font-size:20px;line-height:1;flex-shrink:0;">' +
+          (charVal || '😊') + '</span>';
+      }
+      return '<div style="display:flex;align-items:center;gap:5px;padding:5px 10px;' +
+        'background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);' +
+        'border-radius:16px;font-size:12px;">' +
+        charHtml +
+        '<span style="font-weight:700;color:#e6edf3;">' + m.name + '</span>' +
+        '<span style="color:' + pc.color + ';font-size:11px;opacity:0.85;">·' + (m.port || '?') + '</span>' +
         '</div>';
     }).join('');
   }
@@ -5714,10 +7090,10 @@ function renderGuildCard(data) {
   // ── 미션 클리어 현황 ──
   var missionList = document.getElementById('guildMissionList');
   var statusStyle = {
-    '클리어': { bg: '#eafaf1', color: '#1e8449', icon: '✅' },
-    '실패':   { bg: '#fdedec', color: '#c0392b', icon: '❌' },
-    '진행중': { bg: '#eaf4ff', color: '#2471a3', icon: '🔄' },
-    '대기':   { bg: '#f5f5f5', color: '#999',    icon: '⏳' }
+    '클리어': { bg: 'rgba(30,132,73,0.22)',   color: '#3fb950', icon: '✅' },
+    '실패':   { bg: 'rgba(192,57,43,0.22)',   color: '#f85149', icon: '❌' },
+    '진행중': { bg: 'rgba(36,113,163,0.22)',  color: '#4da8f5', icon: '🔄' },
+    '대기':   { bg: 'rgba(255,255,255,0.06)', color: '#8b949e', icon: '⏳' }
   };
   var results = data.missionResults || {};
 
@@ -5744,20 +7120,20 @@ function renderGuildCard(data) {
     peerList.innerHTML = GUILD_MISSION_META_STUDENT.map(function(m) {
       return '<div id="peerEvalItem_' + m.id + '" ' +
         'onclick="openPeerEvalModal(\'' + m.id + '\',\'' + m.name + '\')" ' +
-        'style="background:#f5f5f5;border-radius:6px;padding:6px 8px;cursor:pointer;' +
-        'display:flex;align-items:center;gap:6px;border:1px solid #eee;">' +
+        'style="background:rgba(255,255,255,0.06);border-radius:6px;padding:6px 8px;cursor:pointer;' +
+        'display:flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,0.1);">' +
         '<div style="flex:1;min-width:0;">' +
-          '<div style="font-size:11px;font-weight:bold;color:#888;">' + m.id + '</div>' +
-          '<div style="font-size:10px;color:#aaa;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + m.name + '</div>' +
+          '<div style="font-size:11px;font-weight:bold;color:#8b949e;">' + m.id + '</div>' +
+          '<div style="font-size:10px;color:#6e7681;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + m.name + '</div>' +
         '</div>' +
-        '<span style="font-size:11px;color:#bbb;">⏳</span>' +
+        '<span style="font-size:11px;color:#6e7681;">⏳</span>' +
       '</div>';
     }).join('') +
     // PROJECT 항목
     '<div id="peerEvalItem_PROJECT" ' +
     'onclick="openPeerEvalModal(\'PROJECT\',\'최종 프로젝트\')" ' +
-    'style="background:#f5f5f5;border-radius:6px;padding:6px 8px;cursor:pointer;' +
-    'display:flex;align-items:center;gap:6px;border:1px solid #eee;grid-column:span 2;">' +
+    'style="background:rgba(255,255,255,0.06);border-radius:6px;padding:6px 8px;cursor:pointer;' +
+    'display:flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,0.1);grid-column:span 2;">' +
     '<div style="flex:1;min-width:0;">' +
       '<div style="font-size:11px;font-weight:bold;color:#888;">PROJECT</div>' +
       '<div style="font-size:10px;color:#aaa;">최종 프로젝트</div>' +

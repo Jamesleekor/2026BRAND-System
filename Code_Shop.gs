@@ -3,10 +3,10 @@
 // 상점_아이템 시트 컬럼:
 //   A=아이템ID, B=카테고리(스킨/폰트/캐릭터), C=아이템명,
 //   D=가격(자산), E=구매조건설명, F=조건타입, G=조건값,
-//   H=리소스URL(CSS값 또는 이미지URL), I=활성여부
+//   H=리소스URL(이미지URL 또는 폰트명), I=활성여부
 // 조건타입: 'none' | 'ach_count' | 'ach_unique' | 'ach_grade:{등급명}'
 // 상점_구매로그 컬럼:
-//   A=구매ID, B=학생명, C=아이템ID, D=아이템명, E=가격, F=구매일시
+//   A=구매ID, B=학생명, C=아이템ID, D=아이템명, E=가격, F=구매일시, G=장착여부
 // ════════════════════════════════════════════════════════════════
 
 // 상점 초기화 (최초 1회 실행)
@@ -46,7 +46,7 @@ function initShopSheet() {
   let logSheet = ss.getSheetByName(SHEET_SHOP_LOG);
   if (!logSheet) {
     logSheet = ss.insertSheet(SHEET_SHOP_LOG);
-    logSheet.appendRow(['구매ID','학생명','아이템ID','아이템명','가격','구매일시']);
+    logSheet.appendRow(['구매ID','학생명','아이템ID','아이템명','가격','구매일시','장착여부']);
   }
 
   // 우편함_로그 시트 생성
@@ -79,29 +79,10 @@ function getShopItems(studentName) {
       balance        = Number(mainData[i][COL_ASSET-1]) || 0;
       studentTaxPaid = Number(mainData[i][COL_TAX-1])   || 0;  // H열: 누적 납세
       // 브랜드가치로 티어명 계산
+      // ※ 티어 기준값은 Code.gs의 _calcTier() 함수 하나에서만 관리합니다.
+      //   기준값 변경이 필요할 경우 여기가 아닌 _calcTier()만 수정하세요.
       const honor = Number(mainData[i][COL_VALUE-1]) || 0;
-      if      (honor >= 100000) studentTierName = '그랜드마스터';
-      else if (honor >= 85000)  studentTierName = '천상의 마스터';
-      else if (honor >= 75000)  studentTierName = '마스터';
-      else if (honor >= 65000)  studentTierName = '영원의 결정';
-      else if (honor >= 60000)  studentTierName = '무결 다이아';
-      else if (honor >= 55000)  studentTierName = '세공된 다이아';
-      else if (honor >= 50000)  studentTierName = '다이아 원석';
-      else if (honor >= 45000)  studentTierName = '홍염의 정점';
-      else if (honor >= 40000)  studentTierName = '각성한 루비';
-      else if (honor >= 35000)  studentTierName = '연마된 루비';
-      else if (honor >= 30000)  studentTierName = '루비 원석';
-      else if (honor >= 25000)  studentTierName = '태양의 황금';
-      else if (honor >= 21000)  studentTierName = '정련된 골드';
-      else if (honor >= 17000)  studentTierName = '제련된 골드';
-      else if (honor >= 13000)  studentTierName = '금 광석';
-      else if (honor >= 10000)  studentTierName = '은빛 극점';
-      else if (honor >= 7500)   studentTierName = '진화한 실버';
-      else if (honor >= 5500)   studentTierName = '성장한 실버';
-      else if (honor >= 3500)   studentTierName = '거친 실버';
-      else if (honor >= 2000)   studentTierName = '빛나는 브론즈';
-      else if (honor >= 800)    studentTierName = '브론즈';
-      else                      studentTierName = '새싹';
+      studentTierName = _calcTier(honor).name;
       break;
     }
   }
@@ -314,36 +295,9 @@ function purchaseShopItem(studentName, itemId) {
   return { success: true, msg: `[${itemName}] 구매 완료! $${price} 차감되었습니다.`, itemId, resourceVal: String(itemRow[7]).trim(), category: String(itemRow[1]).trim() };
 }
 
-// 학생의 구매 아이템 목록 반환 (로그인 시 호출 → 스킨 복원용)
-function getOwnedItems(studentName) {
-  const ss       = SpreadsheetApp.getActiveSpreadsheet();
-  const logSheet = ss.getSheetByName(SHEET_SHOP_LOG);
-  const itemSheet = ss.getSheetByName(SHEET_SHOP_ITEMS);
-  if (!logSheet || !itemSheet) return [];
-
-  // 아이템 리소스값 맵
-  const resourceMap = {};
-  const iData = itemSheet.getDataRange().getValues();
-  for (let i = 1; i < iData.length; i++) {
-    if (iData[i][0]) {
-      resourceMap[String(iData[i][0]).trim()] = {
-        category: String(iData[i][1]).trim(),
-        itemName: String(iData[i][2]).trim(),
-        resourceVal: String(iData[i][7]).trim()
-      };
-    }
-  }
-
-  const lData = logSheet.getDataRange().getValues();
-  const owned = [];
-  for (let i = 1; i < lData.length; i++) {
-    if (String(lData[i][1]).trim() !== studentName) continue;
-    const itemId = String(lData[i][2]).trim();
-    const info   = resourceMap[itemId] || {};
-    owned.push({ itemId, itemName: String(lData[i][3]), category: info.category || '', resourceVal: info.resourceVal || '' });
-  }
-  return owned;
-}
+// ※ getOwnedItems() 제거됨 (2026-05-17)
+// 로그인 시 스킨 복원은 getEquippedItems()가 담당.
+// getOwnedItems()는 장착 여부를 구분하지 않아 실제로 사용되지 않던 데드 코드였음.
 
 // 장착된 아이템만 반환 (로그인 시 복원용) - G열 장착여부 TRUE인 것만
 function getEquippedItems(studentName) {

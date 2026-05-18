@@ -1,5 +1,17 @@
 // ════════════════════════════════════════════════════════════════
 // ██ 정기 예금 시스템
+// ════════════════════════════════════════════════════════════════
+// ※ [트리거 함수 위치 안내]
+//   예금 관련 트리거 설정 함수들은 이 파일 맨 아래에 있습니다:
+//
+//     • setupDepositTrigger()   — 매일 12:30 만기 처리 트리거 등록 (한 번만 실행)
+//     • runDailyDepositCheck()  — 트리거가 매일 자동 호출하는 실제 만기 처리 함수
+//
+//   예금 관련 코드를 수정·추가할 때는 이 파일만 보면 됩니다.
+// ════════════════════════════════════════════════════════════════
+
+// ════════════════════════════════════════════════════════════════
+// ██ 정기 예금 시스템
 // 시트: 예금상품 (A=상품ID, B=상품명, C=1주이자율, D=2주이자율,
 //                E=3주이자율, F=4주이자율, G=최소금액, H=최대금액,
 //                I=패널티율, J=상태, K=론칭일)
@@ -485,4 +497,43 @@ function _payOneDeposit(ss, logSheet, rowIdx, row) {
   );
 
   CacheService.getScriptCache().remove('student_' + studentName);
+}
+
+
+// ════════════════════════════════════════════════════════════════
+// ██ 예금 트리거 설정 / 자동 실행 함수
+//
+// ※ [이동 이력]
+//   원래 Code_Emergency.gs에 있던 함수들을 예금 코드 일관성을 위해
+//   이 파일(Code_Deposit.gs) 하단으로 옮겼습니다.
+//
+// ※ [GAS 트리거 안전성]
+//   GAS 트리거는 '파일명'이 아닌 '함수명'으로 등록됩니다.
+//   함수 이름(runDailyDepositCheck)이 그대로이므로 기존 트리거는
+//   파일 이동 후에도 정상 작동합니다.
+//
+// ※ [트리거 재등록 필요 여부]
+//   이미 트리거가 설정되어 있다면 재등록 불필요합니다.
+//   트리거가 없는 경우에만 GAS 편집기 메뉴에서
+//   setupDepositTrigger() 를 한 번 실행하세요.
+// ════════════════════════════════════════════════════════════════
+
+// ── 예금 만기 자동 처리 트리거 설정 (한 번만 실행하면 됩니다) ──────
+function setupDepositTrigger() {
+  // 기존 동일 트리거가 있으면 먼저 삭제 (중복 방지)
+  const triggers = ScriptApp.getProjectTriggers();
+  for (let i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === 'runDailyDepositCheck') {
+      ScriptApp.deleteTrigger(triggers[i]);
+    }
+  }
+  // 매일 12:30에 runDailyDepositCheck() 자동 실행되도록 등록
+  ScriptApp.newTrigger('runDailyDepositCheck')
+    .timeBased().everyDays(1).atHour(12).nearMinute(30).create();
+  SpreadsheetApp.getUi().alert('✅ 매일 12:30 예금 만기 자동 처리 트리거가 설정되었습니다.');
+}
+
+// ── 트리거가 매일 자동 호출하는 실제 만기 처리 실행 함수 ────────────
+function runDailyDepositCheck() {
+  checkAndPayDeposits(null); // null = 전체 학생 처리
 }

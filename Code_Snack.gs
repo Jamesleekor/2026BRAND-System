@@ -51,9 +51,7 @@ function getSnackInitData() {
       });
     }
   }
-  return { students, snacks:        getSnackData(),
-    achievements:  getStudentAchievements(studentName)
-  };
+  return { students, snacks: getSnackData() };
 }
 
 // 간식 구매 실행 (잔액 차감 + 재고 감소 + 시트 기록)

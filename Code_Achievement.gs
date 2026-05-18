@@ -267,29 +267,10 @@ function checkAndGrantAchievements(studentName, balance, totalTax, honor) {
   // 전역 알림 대상 티어 (최초 진입 시 전체 공지)
   const TIER_ALERT_TARGETS = ['금 광석', '루비 원석', '다이아 원석', '마스터', '천상의 마스터', '그랜드마스터'];
   // 현재 학생 티어명 계산 (honor 기반)
+  // ※ 티어 기준값은 Code.gs의 _calcTier() 함수 하나에서만 관리합니다.
+  //   기준값 변경이 필요할 경우 여기가 아닌 _calcTier()만 수정하세요.
   const h = Number(honor) || 0;
-  let currentTierName = '새싹';
-  if      (h >= 100000) currentTierName = '그랜드마스터';
-  else if (h >= 85000)  currentTierName = '천상의 마스터';
-  else if (h >= 75000)  currentTierName = '마스터';
-  else if (h >= 65000)  currentTierName = '영원의 결정';
-  else if (h >= 60000)  currentTierName = '무결 다이아';
-  else if (h >= 55000)  currentTierName = '세공된 다이아';
-  else if (h >= 50000)  currentTierName = '다이아 원석';
-  else if (h >= 45000)  currentTierName = '홍염의 정점';
-  else if (h >= 40000)  currentTierName = '각성한 루비';
-  else if (h >= 35000)  currentTierName = '연마된 루비';
-  else if (h >= 30000)  currentTierName = '루비 원석';
-  else if (h >= 27500)  currentTierName = '태양의 황금';
-  else if (h >= 25000)  currentTierName = '정련된 골드';
-  else if (h >= 22500)  currentTierName = '제련된 골드';
-  else if (h >= 20000)  currentTierName = '금 광석';
-  else if (h >= 17500)  currentTierName = '은빛 극점';
-  else if (h >= 15000)  currentTierName = '진화한 실버';
-  else if (h >= 12500)  currentTierName = '성장한 실버';
-  else if (h >= 10000)  currentTierName = '거친 실버';
-  else if (h >= 7500)   currentTierName = '빛나는 브론즈';
-  else if (h >= 5000)   currentTierName = '브론즈';
+  const currentTierName = _calcTier(h).name;
 
   Object.keys(rankBreakers).forEach(function(rankId) {
     if (existing.has(rankId)) return;

@@ -1607,11 +1607,12 @@
     /* ── SVG 연결선 ── */
     .const-line { fill: none; stroke-linecap: round; transition: stroke 0.3s, opacity 0.3s; }
     .const-line.state-LOCKED {
-      stroke: rgba(255,255,255,0.1); stroke-width: 1.5; stroke-dasharray: 4 6;
+      stroke: rgba(200,220,255,0.30); stroke-width: 1.8; stroke-dasharray: 4 6;
+      filter: drop-shadow(0 0 2px rgba(180,210,255,0.4));
     }
     .const-line.state-ACHIEVED {
-      stroke: #48dbfb; stroke-width: 2; opacity: 0.9;
-      filter: drop-shadow(0 0 4px rgba(72,219,251,0.8));
+      stroke: #48dbfb; stroke-width: 2.5; opacity: 1;
+      filter: drop-shadow(0 0 4px rgba(72,219,251,1)) drop-shadow(0 0 10px rgba(72,219,251,0.55));
       stroke-dasharray: 14 5;
       animation: flowLine 3s linear infinite;
     }
@@ -1638,6 +1639,17 @@
       position: relative;
       transition: transform 0.2s, box-shadow 0.2s;
     }
+    /* 스파이크·코로나·행성링: .node-star의 filter가 overflow를 클리핑하므로
+       filter 없는 .const-node에 ::before/::after를 배치 */
+    .const-node::before, .const-node::after {
+      content: '';
+      position: absolute;
+      top: 17px; /* node-star(34px) 수직 중심 */
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 10;
+    }
     .const-node:hover .node-star { transform: scale(1.22); }
     .node-label {
       font-size: 9px; color: var(--text-secondary);
@@ -1650,20 +1662,36 @@
     .const-node.state-FIRST    .node-label { color: var(--text-primary); font-weight: 600; }
 
     /* ── 노드 상태별 스타일 ── */
+    /* LOCKED: 미발견 암흑 성운 조각 */
     .const-node.state-LOCKED .node-star {
-      background: #161b22; border: 1.5px solid #30363d;
+      background: radial-gradient(circle at 42% 38%, #252b38, #161b22 58%, #0d1117);
+      border: 1px solid rgba(100,110,140,0.18);
+      box-shadow: inset 0 1px 4px rgba(0,0,0,0.9);
     }
+    /* READY: 탄생 직전 원시별 — 백색 코로나 */
     .const-node.state-READY .node-star {
-      background: #21262d; border: 1.5px solid rgba(255,255,255,0.22);
+      background: radial-gradient(circle at 40% 36%, #dde8f8 0%, #7d9cc8 38%, #1e2a40 72%, #0d1117);
+      border: none;
+      box-shadow: 0 0 8px rgba(160,190,240,0.55), 0 0 20px rgba(120,160,220,0.22);
       animation: nodePulse 2.2s ease-in-out infinite;
     }
+    /* READY 코로나 링 */
+    .const-node.state-READY::before {
+      width: 54px; height: 54px; border-radius: 50%;
+      background: radial-gradient(circle, transparent 28%, rgba(160,200,255,0.14) 58%, transparent 100%);
+      animation: coronaPulse 2.2s ease-in-out infinite;
+    }
     @keyframes nodePulse {
-      0%, 100% { box-shadow: 0 0 0 0   rgba(255,255,255,0.0); }
-      50%       { box-shadow: 0 0 0 6px rgba(255,255,255,0.06); }
+      0%, 100% { box-shadow: 0 0 8px rgba(160,190,240,0.55), 0 0 20px rgba(120,160,220,0.22); }
+      50%       { box-shadow: 0 0 14px rgba(160,190,240,0.9), 0 0 34px rgba(120,160,220,0.48); }
+    }
+    @keyframes coronaPulse {
+      0%, 100% { transform: translate(-50%, -50%) scale(0.88); opacity: 0.35; }
+      50%       { transform: translate(-50%, -50%) scale(1.28); opacity: 0.78; }
     }
     .node-lock { font-size: 12px; opacity: 0.45; user-select: none; }
 
-    /* ── 달성 노드 공통: 부드러운 글로우 펄스 ── */
+    /* ── 달성 노드 공통: 글로우 펄스 ── */
     .const-node.state-ACHIEVED .node-star,
     .const-node.state-FIRST    .node-star {
       animation: starGlow 2.8s ease-in-out infinite;
@@ -1674,54 +1702,153 @@
     }
     @keyframes starGlow {
       0%, 100% { filter: brightness(1)   saturate(1);   }
-      50%       { filter: brightness(1.5) saturate(1.25); }
+      50%       { filter: brightness(1.6) saturate(1.3); }
     }
     @keyframes starPulse {
       0%, 100% { transform: scale(1);    }
       50%       { transform: scale(1.14); }
     }
 
-    /* ── 티어별 달성 노드 (ACHIEVED / FIRST 공통) ── */
-    .const-node.state-ACHIEVED.tier-희귀 .node-star,
-    .const-node.state-FIRST.tier-희귀   .node-star {
-      background: radial-gradient(circle at 35% 35%, #48dbfb, #00b4cc);
-      box-shadow: 0 0 10px rgba(72,219,251,0.6), 0 0 28px rgba(72,219,251,0.28);
+    /* ── 별 회절 스파이크 (희귀/유니크/에픽/초월) ── */
+    /* 수직 스파이크: .const-node에 배치 → filter 클리핑 없음 */
+    .const-node.state-ACHIEVED:not(.tier-유일):not(.tier-히든)::before,
+    .const-node.state-FIRST:not(.tier-유일):not(.tier-히든)::before {
+      width: 1.5px; height: 58px; border-radius: 1px;
+      background: linear-gradient(to bottom,
+        transparent 0%, rgba(255,255,255,0.7) 30%,
+        rgba(255,255,255,1) 50%,
+        rgba(255,255,255,0.7) 70%, transparent 100%);
     }
-    .const-node.state-ACHIEVED.tier-유니크 .node-star,
-    .const-node.state-FIRST.tier-유니크   .node-star {
-      background: radial-gradient(circle at 35% 35%, #74b9ff, #4da8f5);
-      box-shadow: 0 0 10px rgba(77,168,245,0.6), 0 0 28px rgba(77,168,245,0.28);
-    }
-    .const-node.state-ACHIEVED.tier-에픽 .node-star,
-    .const-node.state-FIRST.tier-에픽   .node-star {
-      background: radial-gradient(circle at 35% 35%, #a29bfe, #7b2fff);
-      box-shadow: 0 0 12px rgba(123,47,255,0.7), 0 0 30px rgba(123,47,255,0.30);
-    }
-    .const-node.state-ACHIEVED.tier-유일 .node-star,
-    .const-node.state-FIRST.tier-유일   .node-star {
-      background: radial-gradient(circle at 35% 35%, #fdcb6e, #f39c12);
-      box-shadow: 0 0 12px rgba(243,156,18,0.75), 0 0 32px rgba(243,156,18,0.35);
-    }
-    .const-node.state-ACHIEVED.tier-초월 .node-star,
-    .const-node.state-FIRST.tier-초월   .node-star {
-      background: radial-gradient(circle at 35% 35%, #ffeaa7, #f9ca24);
-      box-shadow: 0 0 14px rgba(249,202,36,0.85), 0 0 36px rgba(249,202,36,0.40),
-                  0 0 60px rgba(249,202,36,0.14);
+    /* 수평 스파이크 */
+    .const-node.state-ACHIEVED:not(.tier-유일):not(.tier-히든)::after,
+    .const-node.state-FIRST:not(.tier-유일):not(.tier-히든)::after {
+      width: 58px; height: 1.5px; border-radius: 1px;
+      background: linear-gradient(to right,
+        transparent 0%, rgba(255,255,255,0.7) 30%,
+        rgba(255,255,255,1) 50%,
+        rgba(255,255,255,0.7) 70%, transparent 100%);
     }
 
-    /* 히든(블랙홀) 노드 — 상태 무관 */
-    .const-node.tier-히든 .node-star {
-      background: radial-gradient(circle at center, #3d0080 0%, #0d001a 45%, transparent 100%);
-      box-shadow:
-        0 0 0 2px rgba(120,0,255,0.3),
-        0 0 20px rgba(80,0,200,0.25),
-        inset 0 0 8px rgba(0,0,0,0.9);
-      animation: blackholeSpin 8s linear infinite;
+    /* 초월: 황금 회절 스파이크 — 기본 흰색보다 굵고 따뜻한 빛 */
+    .const-node.state-ACHIEVED.tier-초월::before,
+    .const-node.state-FIRST.tier-초월::before {
+      width: 2px; height: 74px; border-radius: 1px;
+      background: linear-gradient(to bottom,
+        transparent 0%, rgba(255,230,100,0.85) 26%,
+        rgba(255,255,210,1) 50%,
+        rgba(255,230,100,0.85) 74%, transparent 100%);
     }
-    @keyframes blackholeSpin {
-      0%   { box-shadow: 0 0 0 2px rgba(120,0,255,0.3), 0 0 20px rgba(80,0,200,0.25), 0 0 0 4px rgba(60,0,180,0.15), inset 0 0 8px #000; }
-      50%  { box-shadow: 0 0 0 2px rgba(180,0,255,0.5), 0 0 28px rgba(120,0,255,0.4), 0 0 0 4px rgba(100,0,220,0.25), inset 0 0 8px #000; }
-      100% { box-shadow: 0 0 0 2px rgba(120,0,255,0.3), 0 0 20px rgba(80,0,200,0.25), 0 0 0 4px rgba(60,0,180,0.15), inset 0 0 8px #000; }
+    .const-node.state-ACHIEVED.tier-초월::after,
+    .const-node.state-FIRST.tier-초월::after {
+      width: 74px; height: 2px; border-radius: 1px;
+      background: linear-gradient(to right,
+        transparent 0%, rgba(255,230,100,0.85) 26%,
+        rgba(255,255,210,1) 50%,
+        rgba(255,230,100,0.85) 74%, transparent 100%);
+    }
+
+    /* ── 티어별 달성 노드 ── */
+    /* 희귀: 청백색 주계열성 */
+    .const-node.state-ACHIEVED.tier-희귀 .node-star,
+    .const-node.state-FIRST.tier-희귀   .node-star {
+      background: radial-gradient(circle at 38% 32%,
+        #ffffff 0%, #c8f5ff 16%, #48dbfb 44%, #006688 80%, #001a22 100%);
+      box-shadow: 0 0 10px rgba(72,219,251,0.95), 0 0 26px rgba(72,219,251,0.5), 0 0 48px rgba(72,219,251,0.2);
+    }
+    /* 유니크: 청색 거성 */
+    .const-node.state-ACHIEVED.tier-유니크 .node-star,
+    .const-node.state-FIRST.tier-유니크   .node-star {
+      background: radial-gradient(circle at 38% 32%,
+        #ffffff 0%, #d0e8ff 18%, #74b9ff 42%, #1a4a88 80%, #000d1a 100%);
+      box-shadow: 0 0 10px rgba(77,168,245,0.9), 0 0 26px rgba(77,168,245,0.45), 0 0 48px rgba(77,168,245,0.2);
+    }
+    /* 에픽: 변형 성운 — 유기적으로 모핑하는 가스 구름 */
+    .const-node.state-ACHIEVED.tier-에픽 .node-star {
+      border-radius: 40% 60% 55% 45% / 45% 55% 40% 60%;
+      background: radial-gradient(ellipse at 38% 32%,
+        #ede0ff 0%, #c490ff 20%, #8b5cf6 46%, #3b0080 78%, #080012 100%);
+      box-shadow: 0 0 12px rgba(162,155,254,0.9), 0 0 28px rgba(123,47,255,0.55), 0 0 52px rgba(100,0,200,0.22);
+      animation: starGlow 2.8s ease-in-out infinite, nebulaMorph 7s ease-in-out infinite;
+    }
+    .const-node.state-FIRST.tier-에픽 .node-star {
+      border-radius: 40% 60% 55% 45% / 45% 55% 40% 60%;
+      background: radial-gradient(ellipse at 38% 32%,
+        #ede0ff 0%, #c490ff 20%, #8b5cf6 46%, #3b0080 78%, #080012 100%);
+      box-shadow: 0 0 12px rgba(162,155,254,0.9), 0 0 28px rgba(123,47,255,0.55), 0 0 52px rgba(100,0,200,0.22);
+      animation: starGlow 2.8s ease-in-out infinite, starPulse 1.8s ease-in-out infinite, nebulaMorph 7s ease-in-out infinite;
+    }
+    @keyframes nebulaMorph {
+      0%   { border-radius: 40% 60% 55% 45% / 45% 55% 40% 60%; }
+      25%  { border-radius: 58% 42% 38% 62% / 60% 38% 62% 40%; }
+      50%  { border-radius: 62% 38% 48% 52% / 38% 62% 42% 58%; }
+      75%  { border-radius: 44% 56% 62% 38% / 52% 48% 56% 44%; }
+      100% { border-radius: 40% 60% 55% 45% / 45% 55% 40% 60%; }
+    }
+    /* 유일: 황금 가스 행성 + 토성형 고리 */
+    .const-node.state-ACHIEVED.tier-유일 .node-star,
+    .const-node.state-FIRST.tier-유일   .node-star {
+      background: radial-gradient(circle at 36% 30%,
+        #fff8d0 0%, #fdcb6e 28%, #c87a10 65%, #3d1800 88%, #180900 100%);
+      box-shadow: 0 0 12px rgba(243,156,18,0.9), 0 0 28px rgba(243,156,18,0.45), 0 0 52px rgba(200,100,0,0.2);
+    }
+    /* 유일: 행성 고리 (.const-node::before) */
+    .const-node.state-ACHIEVED.tier-유일::before,
+    .const-node.state-FIRST.tier-유일::before {
+      width: 54px; height: 16px; border-radius: 50%;
+      border: 2.5px solid rgba(253,203,110,0.55);
+      background: transparent;
+      transform: translate(-50%, -50%) rotate(-22deg);
+      box-shadow: 0 0 8px rgba(243,156,18,0.35);
+    }
+    .const-node.state-ACHIEVED.tier-유일::after,
+    .const-node.state-FIRST.tier-유일::after { display: none; }
+    /* 초월: 초거성 — 눈부신 핵 */
+    .const-node.state-ACHIEVED.tier-초월 .node-star,
+    .const-node.state-FIRST.tier-초월   .node-star {
+      background: radial-gradient(circle at 38% 30%,
+        #ffffff 0%, #fffde8 12%, #ffeaa7 35%, #f9ca24 60%, #6a4800 85%, #1a1200 100%);
+      box-shadow: 0 0 14px rgba(255,255,200,1), 0 0 32px rgba(249,202,36,0.8),
+                  0 0 56px rgba(249,202,36,0.4), 0 0 85px rgba(249,202,36,0.15);
+    }
+
+    /* 히든(블랙홀) 노드 — 사건의 지평선 + 강착 원반 */
+    .const-node.tier-히든 .node-star {
+      background: radial-gradient(circle at center, #04000a 0%, #0d001a 50%, transparent 100%);
+      box-shadow:
+        0 0 0 2px rgba(140,0,255,0.55),
+        0 0 0 4px rgba(90,0,200,0.2),
+        0 0 16px rgba(110,0,230,0.55),
+        0 0 34px rgba(70,0,180,0.28),
+        inset 0 0 10px rgba(0,0,0,1);
+      animation: blackholePulse 5s ease-in-out infinite;
+    }
+    @keyframes blackholePulse {
+      0%, 100% {
+        box-shadow: 0 0 0 2px rgba(140,0,255,0.55), 0 0 0 4px rgba(90,0,200,0.2),
+                    0 0 16px rgba(110,0,230,0.55), 0 0 34px rgba(70,0,180,0.28),
+                    inset 0 0 10px rgba(0,0,0,1);
+      }
+      50% {
+        box-shadow: 0 0 0 2px rgba(200,0,255,0.85), 0 0 0 6px rgba(140,0,255,0.3),
+                    0 0 24px rgba(170,0,255,0.8), 0 0 52px rgba(110,0,220,0.45),
+                    inset 0 0 10px rgba(0,0,0,1);
+      }
+    }
+    /* 히든: 회전 강착 원반 링 */
+    .const-node.tier-히든::before {
+      width: 52px; height: 13px; border-radius: 50%;
+      background: transparent;
+      border-top: 2px solid rgba(200,80,255,0.75);
+      border-bottom: 2px solid rgba(200,80,255,0.75);
+      border-left: 2px solid transparent;
+      border-right: 2px solid transparent;
+      transform: translate(-50%, -50%) rotate(0deg);
+      box-shadow: 0 0 10px rgba(160,0,255,0.5), 0 0 20px rgba(120,0,220,0.25);
+      animation: accretionSpin 3.5s linear infinite;
+    }
+    @keyframes accretionSpin {
+      from { transform: translate(-50%, -50%) rotate(0deg); }
+      to   { transform: translate(-50%, -50%) rotate(360deg); }
     }
 
     /* FIRST 전용: 위성 궤도 */
@@ -5008,7 +5135,8 @@ function requestCancelDeposit(depId, amount) {
     if (data.job2) {
       // ── 버그 수정 1: job2MyStatus(부모 div)를 block으로 전환해야 이름/설명이 보임 ──
       document.getElementById('job2MyStatus').style.display  = 'block';
-      document.getElementById('job2MyName').innerText        = data.job2.jobName  || '';
+      var _badge = data.job2.badge ? data.job2.badge + ' ' : '';
+      document.getElementById('job2MyName').innerText        = _badge + (data.job2.jobName || '');
       // ── 버그 수정 2: jobDesc 필드를 job2MyDesc에 채워야 설명이 표시됨 ──
       document.getElementById('job2MyDesc').innerText        = data.job2.jobDesc  || '';
       document.getElementById('job2ApplyForm').style.display = 'none';
@@ -5053,7 +5181,7 @@ function requestCancelDeposit(depId, amount) {
       tbody.innerHTML = data.jobMarket.map(function(j) {
         return '<tr style="border-bottom:1px solid #f5f5f5;">' +
           '<td style="padding:8px;font-weight:bold;font-size:13px;width:40px;white-space:nowrap;">' + j.studentName + '</td>' +
-          '<td style="padding:8px;color:#8e44ad;font-size:13px;width:90px;white-space:nowrap;">' + j.jobName + '</td>' +
+          '<td style="padding:8px;color:#8e44ad;font-size:13px;width:90px;white-space:nowrap;">' + (j.badge ? j.badge + ' ' : '') + j.jobName + '</td>' +
           '<td style="padding:8px;font-size:12px;color:#555;">' + j.jobDesc + '</td>' +
         '</tr>';
       }).join('');
@@ -5071,7 +5199,7 @@ function requestCancelDeposit(depId, amount) {
         _grid.innerHTML = _jm.map(function(j) {
           return '<div class="job-market-card">' +
             '<div class="job-market-name">' + (j.studentName || '') + '</div>' +
-            '<div class="job-market-job">' + (j.jobName || '') + '</div>' +
+            '<div class="job-market-job">' + (j.badge ? j.badge + ' ' : '') + (j.jobName || '') + '</div>' +
             '<div class="job-market-desc">' + (j.jobDesc || '') + '</div>' +
           '</div>';
         }).join('');

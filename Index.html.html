@@ -300,6 +300,113 @@
       background: #21262d; color: #8b949e; border: 1px solid #30363d;
     }
     .ach-empty { text-align: center; padding: 30px; color: #6e7681; font-size: 15px; }
+
+    /* ── 통합 업적 모달 ── */
+    #achCombinedModal {
+      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.65); z-index: 1000;
+      justify-content: center; align-items: flex-start;
+      padding-top: 36px; box-sizing: border-box;
+    }
+    #achCombinedModal.open { display: flex; }
+    .ach-combined-box {
+      background: #1c2333; border-radius: 15px; padding: 20px;
+      width: 92%; max-width: 560px; max-height: 84vh;
+      display: flex; flex-direction: column; gap: 0;
+      box-shadow: 0 12px 48px rgba(0,0,0,0.6);
+      overflow: hidden;
+    }
+    /* 상태 필터 칩 */
+    .ach-status-row { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 8px; }
+    .ach-status-btn {
+      padding: 5px 12px; border-radius: 20px;
+      border: 1px solid #30363d; font-size: 12px; font-weight: 600;
+      cursor: pointer; background: #21262d; color: #8b949e;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+      white-space: nowrap;
+    }
+    .ach-status-btn.active { background: #1f3a5f; color: #79c0ff; border-color: #4da8f5; }
+    /* 등급 필터 칩 */
+    .ach-grade-row { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 8px; }
+    .ach-grade-btn {
+      padding: 4px 9px; border-radius: 12px;
+      border: 1px solid transparent; font-size: 11px; font-weight: 700;
+      cursor: pointer; opacity: 0.55; transition: opacity 0.15s, outline 0.15s;
+    }
+    .ach-grade-btn.active { opacity: 1; outline: 2px solid rgba(255,255,255,0.45); }
+    /* 검색창 */
+    .ach-combined-search {
+      width: 100%; padding: 7px 10px; border-radius: 8px;
+      border: 1px solid #30363d; background: #161b22; color: #e6edf3;
+      font-size: 13px; outline: none; box-sizing: border-box; margin-bottom: 6px;
+    }
+    .ach-combined-search:focus { border-color: #4da8f5; }
+    .ach-combined-count { font-size: 11px; color: #484f58; margin-bottom: 6px; }
+    /* 리스트 스크롤 영역 */
+    .ach-combined-list {
+      flex: 1; overflow-y: auto; background: #161b22; border-radius: 10px;
+      min-height: 0;
+    }
+    /* 업적 카드 */
+    .ach-card { padding: 10px 14px; border-bottom: 1px solid #21262d; }
+    .ach-card:last-child { border-bottom: none; }
+    .ach-card-header { display: flex; align-items: flex-start; gap: 8px; }
+    .ach-card-info { flex: 1; min-width: 0; }
+    .ach-card-name {
+      font-size: 13px; font-weight: 700; line-height: 1.3;
+    }
+    .ach-card-cond { font-size: 11px; color: #6e7681; margin-top: 3px; line-height: 1.35; }
+    .ach-card-date { font-size: 10px; color: #484f58; margin-top: 2px; }
+    /* 신청 버튼 */
+    .ach-apply-btn {
+      padding: 5px 10px; border-radius: 16px; font-size: 11px; font-weight: bold;
+      cursor: pointer; white-space: nowrap; flex-shrink: 0; margin-top: 1px;
+      background: #1a3a60; color: #79c0ff; border: 1px solid #2d5a9e;
+      transition: background 0.15s;
+    }
+    .ach-apply-btn:hover { background: #264d80; }
+    .ach-apply-btn.pending {
+      background: #2d1800; color: #e67e22; border-color: #7a4500; cursor: default;
+    }
+    .ach-apply-btn.open-state { background: #3d1a00; color: #f39c12; border-color: #a05800; }
+    /* 인라인 신청 패널 (accordion) */
+    .ach-inline-panel {
+      display: none; margin-top: 9px; padding: 10px 12px;
+      background: #0d1821; border-radius: 8px; border: 1px solid #2d5a9e;
+    }
+    .ach-inline-panel.open { display: block; }
+    .ach-inline-proof {
+      width: 100%; height: 54px; padding: 7px; border-radius: 6px;
+      border: 1px solid #30363d; background: #161b22; color: #e6edf3;
+      font-size: 12px; box-sizing: border-box; resize: none; outline: none;
+      margin-bottom: 7px; font-family: inherit;
+    }
+    .ach-inline-proof:focus { border-color: #4da8f5; }
+    .ach-inline-submit {
+      width: 100%; padding: 8px 0; background: linear-gradient(135deg,#1e5799,#3498db);
+      color: white; border: none; border-radius: 6px;
+      font-size: 13px; font-weight: bold; cursor: pointer;
+    }
+    .ach-inline-submit:disabled { opacity: 0.45; cursor: default; }
+    /* 특별 보고서 섹션 (모달 하단 고정) */
+    .ach-special-section {
+      margin-top: 10px; padding: 12px; background: #1a0e00;
+      border-radius: 10px; border: 1px solid #7a4500; flex-shrink: 0;
+    }
+    .ach-special-section textarea {
+      width: 100%; height: 56px; padding: 7px; border-radius: 6px;
+      border: 1px solid #7a4500; background: #0d0800; color: #e6edf3;
+      font-size: 12px; box-sizing: border-box; resize: none; outline: none;
+      margin: 6px 0; font-family: inherit;
+    }
+    .ach-special-section textarea:focus { border-color: #e67e22; }
+    .ach-special-submit {
+      width: 100%; padding: 8px 0;
+      background: linear-gradient(135deg,#b35400,#e74c3c);
+      color: white; border: none; border-radius: 6px;
+      font-size: 13px; font-weight: bold; cursor: pointer;
+    }
+    .ach-special-submit:disabled { opacity: 0.45; cursor: default; }
     
     /* ── 명예의 전당 테이블 ── */
     .honor-board-container {
@@ -1607,11 +1714,12 @@
     /* ── SVG 연결선 ── */
     .const-line { fill: none; stroke-linecap: round; transition: stroke 0.3s, opacity 0.3s; }
     .const-line.state-LOCKED {
-      stroke: rgba(255,255,255,0.1); stroke-width: 1.5; stroke-dasharray: 4 6;
+      stroke: rgba(200,220,255,0.30); stroke-width: 1.8; stroke-dasharray: 4 6;
+      filter: drop-shadow(0 0 2px rgba(180,210,255,0.4));
     }
     .const-line.state-ACHIEVED {
-      stroke: #48dbfb; stroke-width: 2; opacity: 0.9;
-      filter: drop-shadow(0 0 4px rgba(72,219,251,0.8));
+      stroke: #48dbfb; stroke-width: 2.5; opacity: 1;
+      filter: drop-shadow(0 0 4px rgba(72,219,251,1)) drop-shadow(0 0 10px rgba(72,219,251,0.55));
       stroke-dasharray: 14 5;
       animation: flowLine 3s linear infinite;
     }
@@ -2361,14 +2469,13 @@
           <div id="achStatGrades" style="display:flex;flex-wrap:wrap;gap:6px;font-size:12px;"></div>
         </div>
 
-        <div class="card" style="display:flex;gap:10px;margin-bottom:16px;">
-          <button onclick="openAchModal()"
-            style="flex:1;padding:14px 0;background:linear-gradient(135deg,#f39c12,#e74c3c);color:white;border:none;border-radius:10px;font-size:14px;font-weight:bold;cursor:pointer;">
-            🏅 나의 업적
-          </button>
-          <button onclick="openAchDexModal()"
-            style="flex:1;padding:14px 0;background:#2c3e50;color:white;border:none;border-radius:10px;font-size:14px;font-weight:bold;cursor:pointer;">
-            📖 업적 도감
+        <div class="card" style="margin-bottom:16px;">
+          <button onclick="openAchCombined()"
+            style="width:100%;padding:14px 0;
+                   background:linear-gradient(135deg,#1f3a5f,#2c3e50);
+                   color:white;border:1px solid #3d5a80;border-radius:10px;
+                   font-size:14px;font-weight:bold;cursor:pointer;letter-spacing:0.4px;">
+            📋 업적 목록 &amp; 신청
           </button>
         </div>
     <!-- ★ Step 4: 성좌 맵 컨테이너 (기존 wof-card 교체) -->
@@ -2436,21 +2543,27 @@
         <span style="display:flex;align-items:center;gap:8px;">
           <span id="guildRankBadge" style="font-size:13px;color:#1a6b3c;font-weight:bold;">-</span>
           <span id="guildMyGS" style="font-size:11px;color:#aaa;"></span>
-          <span id="guildCardArrow" style="font-size:12px;color:#aaa;transition:transform 0.3s;">▼</span>
+          <span id="guildCardArrow" style="font-size:12px;color:#aaa;transition:transform 0.3s;transform:rotate(180deg);">▼</span>
         </span>
       </div>
-      <div id="guildCardBody" class="card-toggle-body collapsed" style="margin-top:10px;">
+      <div id="guildCardBody" class="card-toggle-body" style="margin-top:10px;">
 
       <!-- 길드명 + 슬로건 -->
-      <div style="text-align:center;padding:14px 10px 10px;background:rgba(26,107,60,0.12);border:1px solid rgba(26,107,60,0.25);border-radius:8px;margin-bottom:12px;">
-        <div id="guildName" style="font-size:20px;font-weight:bold;color:#1a6b3c;margin-bottom:4px;">길드명 로딩 중...</div>
-        <div id="guildSlogan" style="font-size:12px;color:#7f8c8d;font-style:italic;"></div>
+      <div style="display:flex;align-items:center;gap:14px;padding:14px 12px;background:rgba(26,107,60,0.12);border:1px solid rgba(26,107,60,0.25);border-radius:8px;margin-bottom:12px;">
+        <div id="guildLogoWrap" style="flex-shrink:0;">
+          <img id="guildLogoImg" src="" alt="길드 로고" style="width:56px;height:56px;object-fit:contain;border-radius:8px;display:none;">
+          <div id="guildLogoPlaceholder" style="width:56px;height:56px;border-radius:8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:26px;">🏰</div>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div id="guildName" style="font-size:18px;font-weight:bold;color:#4ade80;margin-bottom:4px;">길드명 로딩 중...</div>
+          <div id="guildSlogan" style="font-size:11px;color:#9ca3af;font-style:italic;"></div>
+        </div>
       </div>
 
       <!-- 길드 멤버 -->
       <div style="margin-bottom:14px;">
         <div style="font-size:12px;color:#888;margin-bottom:6px;font-weight:bold;">👥 길드원</div>
-        <div id="guildMembersList" style="display:flex;flex-wrap:wrap;gap:6px;">
+        <div id="guildMembersList" style="display:flex;flex-wrap:wrap;gap:8px;">
           <span style="font-size:12px;color:#aaa;">로딩 중...</span>
         </div>
       </div>
@@ -2458,7 +2571,7 @@
       <!-- 미션 클리어 현황 -->
       <div style="margin-bottom:14px;">
         <div style="font-size:12px;color:#888;margin-bottom:6px;font-weight:bold;">
-          🎯 미션 현황 <span id="guildMissionSummary" style="color:#1a6b3c;margin-left:4px;"></span>
+          🎯 미션 현황 <span id="guildMissionSummary" style="color:#4ade80;margin-left:4px;"></span>
         </div>
         <div id="guildMissionList" style="display:grid;grid-template-columns:repeat(2,1fr);gap:5px;">
           <span style="font-size:12px;color:#aaa;">로딩 중...</span>
@@ -2661,6 +2774,57 @@
       <span id="achDexCount">0</span>개 표시 중
     </div>
     <div id="achDexList" style="background:#1a1a2e;border-radius:10px;max-height:55vh;overflow-y:auto;"></div>
+  </div>
+</div>
+
+<!-- ── 통합 업적 모달 ── -->
+<div id="achCombinedModal">
+  <div class="ach-combined-box">
+
+    <!-- 타이틀 -->
+    <div class="ach-modal-title" style="margin-bottom:12px;">
+      <span>📋 업적 목록 &amp; 신청</span>
+      <button class="ach-close-btn" onclick="closeAchCombined()">✕</button>
+    </div>
+
+    <!-- 상태 필터 -->
+    <div class="ach-status-row">
+      <button class="ach-status-btn active" data-status="전체"  onclick="setAchCombStatus(this,'전체')">전체</button>
+      <button class="ach-status-btn"        data-status="달성"  onclick="setAchCombStatus(this,'달성')">✅ 달성</button>
+      <button class="ach-status-btn"        data-status="미달성" onclick="setAchCombStatus(this,'미달성')">⬜ 미달성</button>
+      <button class="ach-status-btn"        data-status="대기"  onclick="setAchCombStatus(this,'대기')">⏳ 대기 중</button>
+    </div>
+
+    <!-- 등급 필터 -->
+    <div class="ach-grade-row">
+      <button class="ach-grade-btn active" data-grade="전체"  onclick="setAchCombGrade(this,'전체')"  style="background:#2d333b;color:#e6edf3;border-color:#444;">전체</button>
+      <button class="ach-grade-btn"        data-grade="희귀"  onclick="setAchCombGrade(this,'희귀')"  style="background:#3498db;color:#fff;">희귀</button>
+      <button class="ach-grade-btn"        data-grade="유니크" onclick="setAchCombGrade(this,'유니크')" style="background:linear-gradient(135deg,#e74c3c,#9b59b6);color:#fff;">유니크</button>
+      <button class="ach-grade-btn"        data-grade="에픽"  onclick="setAchCombGrade(this,'에픽')"  style="background:linear-gradient(135deg,#3d0f6e,#7b2fff);color:#e0c4ff;">에픽</button>
+      <button class="ach-grade-btn"        data-grade="유일"  onclick="setAchCombGrade(this,'유일')"  style="background:linear-gradient(135deg,#8e44ad,#f39c12);color:#fff;">유일</button>
+      <button class="ach-grade-btn"        data-grade="초월"  onclick="setAchCombGrade(this,'초월')"  style="background:linear-gradient(135deg,#1a1a1a,#b8860b);color:#ffd700;">초월</button>
+      <button class="ach-grade-btn"        data-grade="히든"  onclick="setAchCombGrade(this,'히든')"  style="background:#f1c40f;color:#1c2333;">히든</button>
+    </div>
+
+    <!-- 검색창 -->
+    <input id="achCombinedSearch" class="ach-combined-search"
+      type="text" placeholder="🔍 업적 이름 또는 달성 조건 검색..."
+      oninput="filterAchCombined()">
+    <div class="ach-combined-count"><span id="achCombinedCount">0</span>개 표시 중</div>
+
+    <!-- 업적 리스트 -->
+    <div id="achCombinedList" class="ach-combined-list">
+      <div class="ach-empty">로딩 중...</div>
+    </div>
+
+    <!-- 히든 업적 특별 보고서 (하단 고정) -->
+    <div class="ach-special-section">
+      <div style="font-size:12px;font-weight:bold;color:#e67e22;">🌟 히든 업적 특별 보고서</div>
+      <div style="font-size:10px;color:#8b6a3a;margin-top:2px;">히든 업적 달성 시 자유롭게 작성해 제출하세요</div>
+      <textarea id="achSpecialProofNew" placeholder="달성 내용을 자유롭게 서술해주세요."></textarea>
+      <button class="ach-special-submit" id="achSpecialSubmitBtn" onclick="submitSpecialReportNew()">🚀 특별 보고서 제출</button>
+    </div>
+
   </div>
 </div>
 
@@ -4217,6 +4381,275 @@
       .submitAchievement(window._currentStudentName, '특별보고', proof);
   }
 
+  // ══════════════════════════════════════════════════════════════
+  // ██ 통합 업적 모달 (A+C 혼합: 필터칩 + 인라인 신청 accordion)
+  // ══════════════════════════════════════════════════════════════
+  var _acCombStatus = '전체';  // 상태 필터
+  var _acCombGrade  = '전체';  // 등급 필터
+  var _acCombOpenId = null;    // 현재 열린 인라인 신청 패널의 achId
+
+  function openAchCombined() {
+    _acCombStatus = '전체';
+    _acCombGrade  = '전체';
+    _acCombOpenId = null;
+    document.querySelectorAll('.ach-status-btn').forEach(function(b) {
+      b.classList.toggle('active', b.dataset.status === '전체');
+    });
+    document.querySelectorAll('.ach-grade-btn').forEach(function(b) {
+      b.classList.toggle('active', b.dataset.grade === '전체');
+    });
+    var searchEl = document.getElementById('achCombinedSearch');
+    if (searchEl) searchEl.value = '';
+    document.getElementById('achCombinedModal').classList.add('open');
+
+    if (window._achData && (window._achData.allAchievements || []).length > 0) {
+      renderAchCombined(window._achData);
+      updateAchStats(window._achData.allAchievements||[], window._achData.myAchievements||[]);
+    } else {
+      document.getElementById('achCombinedList').innerHTML =
+        '<div class="ach-empty">불러오는 중...</div>';
+      google.script.run
+        .withSuccessHandler(function(data) {
+          if (!data) return;
+          window._achData = data;
+          renderAchCombined(data);
+          updateAchStats(data.allAchievements||[], data.myAchievements||[]);
+        })
+        .withFailureHandler(function(err) {
+          document.getElementById('achCombinedList').innerHTML =
+            '<div class="ach-empty" style="color:#e74c3c;">로드 실패: ' + err.message + '</div>';
+        })
+        .getAchievementData(window._currentStudentName);
+    }
+  }
+
+  function closeAchCombined() {
+    document.getElementById('achCombinedModal').classList.remove('open');
+  }
+
+  // 기존 openAchModal / openAchDexModal → 통합 모달로 리디렉션
+  function openAchModal()    { openAchCombined(); }
+  function openAchDexModal() { openAchCombined(); }
+
+  function setAchCombStatus(btn, status) {
+    _acCombStatus = status;
+    document.querySelectorAll('.ach-status-btn').forEach(function(b) {
+      b.classList.toggle('active', b.dataset.status === status);
+    });
+    renderAchCombined(window._achData);
+  }
+
+  function setAchCombGrade(btn, grade) {
+    _acCombGrade = grade;
+    document.querySelectorAll('.ach-grade-btn').forEach(function(b) {
+      b.classList.toggle('active', b.dataset.grade === grade);
+    });
+    renderAchCombined(window._achData);
+  }
+
+  function filterAchCombined() {
+    if (window._achData) renderAchCombined(window._achData);
+  }
+
+  function renderAchCombined(data) {
+    if (!data) return;
+    var allList    = data.allAchievements || [];
+    var pendingSet = new Set(data.pendingIds || []);
+    var myAchMap   = {};
+    (data.myAchievements || []).forEach(function(a) { myAchMap[a.achId] = a; });
+    var keyword = ((document.getElementById('achCombinedSearch') || {}).value || '')
+                    .trim().toLowerCase();
+
+    // ── 필터링 ──
+    var filtered = allList.filter(function(ach) {
+      var grade   = ach.grade || '희귀';
+      var earned  = ach.earned || !!myAchMap[ach.achId];
+      var pending = pendingSet.has(ach.achId);
+      var hidden  = ach.isHidden && !earned;
+
+      // 상태 필터
+      if (_acCombStatus === '달성'  && !earned)           return false;
+      if (_acCombStatus === '미달성' && (earned || pending)) return false;
+      if (_acCombStatus === '대기'  && !pending)           return false;
+
+      // 등급 필터 (히든 미공개는 등급='히든'으로만 보임)
+      var effectiveGrade = hidden ? '히든' : grade;
+      if (_acCombGrade !== '전체' && effectiveGrade !== _acCombGrade) return false;
+
+      // 검색 (히든 미공개는 이름 비공개이므로 keyword 있으면 제외)
+      if (keyword) {
+        if (hidden) return false;
+        var nm = (ach.achName || '').toLowerCase();
+        var cd = (ach.condition || '').toLowerCase();
+        if (nm.indexOf(keyword) === -1 && cd.indexOf(keyword) === -1) return false;
+      }
+      return true;
+    });
+
+    document.getElementById('achCombinedCount').textContent = filtered.length;
+
+    if (filtered.length === 0) {
+      document.getElementById('achCombinedList').innerHTML =
+        '<div class="ach-empty">조건에 맞는 업적이 없습니다.</div>';
+      return;
+    }
+
+    // ── 렌더링 ──
+    var html = filtered.map(function(ach) {
+      var grade   = ach.grade || '희귀';
+      var earned  = ach.earned || !!myAchMap[ach.achId];
+      var pending = pendingSet.has(ach.achId);
+      var myAch   = myAchMap[ach.achId];
+      var hidden  = ach.isHidden && !earned;
+      var gradeBadge = '<span class="wof-grade ' + (hidden ? '히든' : grade) + '" style="margin-left:5px;">'
+                     + (hidden ? '히든' : grade) + '</span>';
+
+      // 히든 미공개
+      if (hidden) {
+        return '<div class="ach-card">' +
+          '<div class="ach-card-header">' +
+            '<div class="ach-card-info">' +
+              '<div class="ach-card-name" style="color:#484f58;">🔒 ???' + gradeBadge + '</div>' +
+              '<div class="ach-card-cond" style="color:#444;" title="' + (ach.hint||'') + '">' +
+                '힌트: ' + (ach.hint ? ach.hint : '알 수 없음') + '</div>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+      }
+
+      // ✅ 달성
+      if (earned) {
+        var equipped = myAch && myAch.equipped;
+        var sheetRow = myAch ? myAch.sheetRow : null;
+        return '<div class="ach-card">' +
+          '<div class="ach-card-header">' +
+            '<div class="ach-card-info">' +
+              '<div class="ach-card-name" style="color:#2ecc71;">✅ ' + ach.achName + gradeBadge + '</div>' +
+              '<div class="ach-card-cond">' + (ach.condition || '') + '</div>' +
+              (myAch && myAch.date ? '<div class="ach-card-date">달성일: ' + myAch.date + '</div>' : '') +
+            '</div>' +
+            (sheetRow !== null
+              ? '<button class="ach-equip-btn ' + (equipped ? 'equipped' : 'unequipped') + '" ' +
+                'onclick="toggleEquip(' + sheetRow + ',' + equipped + ')">' +
+                (equipped ? '✓ 장착 중' : '장착하기') + '</button>'
+              : '') +
+          '</div>' +
+        '</div>';
+      }
+
+      // ⏳ 신청 대기
+      if (pending) {
+        return '<div class="ach-card">' +
+          '<div class="ach-card-header">' +
+            '<div class="ach-card-info">' +
+              '<div class="ach-card-name" style="color:#e67e22;">⏳ ' + ach.achName + gradeBadge + '</div>' +
+              '<div class="ach-card-cond">' + (ach.condition || '') + '</div>' +
+            '</div>' +
+            '<button class="ach-apply-btn pending" disabled>⏳ 대기 중</button>' +
+          '</div>' +
+        '</div>';
+      }
+
+      // ⬜ 미달성 (신청 가능)
+      if (ach.autoGranted) {
+        return '<div class="ach-card">' +
+          '<div class="ach-card-header">' +
+            '<div class="ach-card-info">' +
+              '<div class="ach-card-name" style="color:#6e7681;">⬜ ' + ach.achName + gradeBadge + '</div>' +
+              '<div class="ach-card-cond">' + (ach.condition || '') + '</div>' +
+            '</div>' +
+            '<span style="font-size:10px;color:#484f58;flex-shrink:0;">자동지급</span>' +
+          '</div>' +
+        '</div>';
+      }
+
+      var isOpen = (_acCombOpenId === ach.achId);
+      return '<div class="ach-card" id="achCard_' + ach.achId + '">' +
+        '<div class="ach-card-header">' +
+          '<div class="ach-card-info">' +
+            '<div class="ach-card-name" style="color:#e6edf3;">⬜ ' + ach.achName + gradeBadge + '</div>' +
+            '<div class="ach-card-cond">' + (ach.condition || '') + '</div>' +
+          '</div>' +
+          '<button class="ach-apply-btn' + (isOpen ? ' open-state' : '') + '" ' +
+            'onclick="toggleAchApplyPanel(\'' + ach.achId + '\')">' +
+            (isOpen ? '✕ 닫기' : '📬 신청') +
+          '</button>' +
+        '</div>' +
+        '<div class="ach-inline-panel' + (isOpen ? ' open' : '') + '" id="inlinePanel_' + ach.achId + '">' +
+          '<textarea class="ach-inline-proof" id="proof_' + ach.achId + '" ' +
+            'placeholder="달성 증빙을 입력하세요 (예: 3월 15일 자산이 5,000 초과됨)"></textarea>' +
+          '<button class="ach-inline-submit" id="submitBtn_' + ach.achId + '" ' +
+            'onclick="submitAchApplyInline(\'' + ach.achId + '\')">✅ 신청하기</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    document.getElementById('achCombinedList').innerHTML = html;
+  }
+
+  function toggleAchApplyPanel(achId) {
+    _acCombOpenId = (_acCombOpenId === achId) ? null : achId;
+    renderAchCombined(window._achData);
+    if (_acCombOpenId) {
+      setTimeout(function() {
+        var card = document.getElementById('achCard_' + _acCombOpenId);
+        if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 50);
+    }
+  }
+
+  function submitAchApplyInline(achId) {
+    var proofEl = document.getElementById('proof_' + achId);
+    var proof   = proofEl ? proofEl.value.trim() : '';
+    if (!proof) { alert('증빙 내용을 입력해주세요.'); return; }
+
+    var btn = document.getElementById('submitBtn_' + achId);
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ 신청 중...'; }
+
+    google.script.run
+      .withSuccessHandler(function(res) {
+        alert(res.msg);
+        if (res.success) {
+          _acCombOpenId = null;
+          // 데이터 새로고침 후 재렌더
+          google.script.run
+            .withSuccessHandler(function(data) {
+              if (!data) return;
+              window._achData = data;
+              renderAchCombined(data);
+              updateAchStats(data.allAchievements||[], data.myAchievements||[]);
+            })
+            .getAchievementData(window._currentStudentName);
+        } else {
+          if (btn) { btn.disabled = false; btn.textContent = '✅ 신청하기'; }
+        }
+      })
+      .withFailureHandler(function(err) {
+        if (btn) { btn.disabled = false; btn.textContent = '✅ 신청하기'; }
+        alert('오류: ' + err.message);
+      })
+      .submitAchievement(window._currentStudentName, achId, proof);
+  }
+
+  function submitSpecialReportNew() {
+    var proof = (document.getElementById('achSpecialProofNew') || {}).value || '';
+    proof = proof.trim();
+    if (!proof) { alert('보고서 내용을 입력해주세요.'); return; }
+    var btn = document.getElementById('achSpecialSubmitBtn');
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ 제출 중...'; }
+    google.script.run
+      .withSuccessHandler(function(res) {
+        if (btn) { btn.disabled = false; btn.textContent = '🚀 특별 보고서 제출'; }
+        alert(res.msg);
+        if (res.success) document.getElementById('achSpecialProofNew').value = '';
+      })
+      .withFailureHandler(function(err) {
+        if (btn) { btn.disabled = false; btn.textContent = '🚀 특별 보고서 제출'; }
+        alert('오류: ' + err.message);
+      })
+      .submitAchievement(window._currentStudentName, '특별보고', proof);
+  }
+
   // ── 칭호 장착/해제 ──────────────────────────────────────────
   function toggleEquip(sheetRow, isCurrentlyEquipped) {
     var name = window._currentStudentName;
@@ -4230,7 +4663,11 @@
           if (window._achData && window._achData.myAchievements) {
             window._achData.myAchievements.forEach(function(a){ a.equipped = false; });
           }
-          if (window._achData) renderAchievementModal(window._achData);
+          if (window._achData) {
+            renderAchievementModal(window._achData);
+            if (document.getElementById('achCombinedModal').classList.contains('open'))
+              renderAchCombined(window._achData);
+          }
           updateTitleBadge(null);
         }
       }).unequipAchievement(name);
@@ -4242,7 +4679,11 @@
           if (window._achData && window._achData.myAchievements) {
             window._achData.myAchievements.forEach(function(a){ a.equipped = (a.sheetRow === sheetRow); });
           }
-          if (window._achData) renderAchievementModal(window._achData);
+          if (window._achData) {
+            renderAchievementModal(window._achData);
+            if (document.getElementById('achCombinedModal').classList.contains('open'))
+              renderAchCombined(window._achData);
+          }
           var equipped = (window._achData && window._achData.myAchievements)
             ? window._achData.myAchievements.find(function(a){ return a.sheetRow === sheetRow; })
             : window._achievements.find(function(a){ return a.sheetRow === sheetRow; });
@@ -4995,6 +5436,7 @@ function requestCancelDeposit(depId, amount) {
 // ── 대시보드 새로고침 ─────────────────────────────────────────
   function loadDashboard() {
     if (!window._currentStudentName) return;
+    var name = window._currentStudentName;
     var btn = document.getElementById('refreshDashboardBtn');
     if (btn) {
       btn.disabled = true;
@@ -5008,6 +5450,8 @@ function requestCancelDeposit(depId, amount) {
         }
         if (data && data.success) {
           showDashboard(data);
+          // ── 새로고침 시에도 부가 데이터(jobMarket 포함) 재로드 ──
+          _loadSubData(name);
         } else if (data) {
           alert('갱신 실패: ' + data.msg);
         }
@@ -5090,8 +5534,9 @@ function requestCancelDeposit(depId, amount) {
     var tbody = document.getElementById('jobMarketBody');
     if (data.jobMarket && data.jobMarket.length > 0) {
       tbody.innerHTML = data.jobMarket.map(function(j) {
+        var badgeTd = j.badge ? ' <span title="인증됨">' + j.badge + '</span>' : '';
         return '<tr style="border-bottom:1px solid #f5f5f5;">' +
-          '<td style="padding:8px;font-weight:bold;font-size:13px;width:40px;white-space:nowrap;">' + j.studentName + '</td>' +
+          '<td style="padding:8px;font-weight:bold;font-size:13px;width:40px;white-space:nowrap;">' + j.studentName + badgeTd + '</td>' +
           '<td style="padding:8px;color:#8e44ad;font-size:13px;width:90px;white-space:nowrap;">' + j.jobName + '</td>' +
           '<td style="padding:8px;font-size:12px;color:#555;">' + j.jobDesc + '</td>' +
         '</tr>';
@@ -5108,8 +5553,11 @@ function requestCancelDeposit(depId, amount) {
         _grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--text-muted);font-size:13px;">아직 2차 직업을 가진 학생이 없습니다.</div>';
       } else {
         _grid.innerHTML = _jm.map(function(j) {
+          var badgeHtml = j.badge
+            ? '<span style="font-size:13px;margin-left:4px;" title="인증됨">' + j.badge + '</span>'
+            : '';
           return '<div class="job-market-card">' +
-            '<div class="job-market-name">' + (j.studentName || '') + '</div>' +
+            '<div class="job-market-name">' + (j.studentName || '') + badgeHtml + '</div>' +
             '<div class="job-market-job">' + (j.jobName || '') + '</div>' +
             '<div class="job-market-desc">' + (j.jobDesc || '') + '</div>' +
           '</div>';
@@ -6743,6 +7191,20 @@ function requestCancelDeposit(depId, amount) {
 </div>
 
 
+<!-- ── 구매 완료 토스트 ──────────────────────────────────────── -->
+<div id="buySuccessToast" style="
+  display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
+  background:linear-gradient(135deg,#1a3a2a,#1e5c38);
+  color:#56d364;border:1px solid #2ea043;border-radius:12px;
+  padding:14px 22px;z-index:99999;text-align:center;
+  box-shadow:0 4px 20px rgba(0,0,0,0.5);min-width:220px;max-width:320px;
+  transition:opacity 0.4s;">
+  <div style="font-size:22px;margin-bottom:4px;">🎉</div>
+  <div id="buySuccessToastTitle" style="font-size:15px;font-weight:bold;margin-bottom:2px;"></div>
+  <div id="buySuccessToastSub" style="font-size:12px;color:#8dda8f;margin-bottom:6px;"></div>
+  <div id="buySuccessToastBal" style="font-size:13px;color:#ccc;"></div>
+</div>
+
 <!-- ── 사용 수량 선택 모달 ──────────────────────────────────── -->
 <div id="useModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.75);z-index:10000;">
   <div style="background:#1c2333;margin:140px auto;max-width:300px;border-radius:12px;padding:24px;position:relative;box-shadow:0 10px 40px rgba(0,0,0,0.5);">
@@ -6817,6 +7279,26 @@ function closeBuyModal() {
   document.getElementById('buyModal').style.display = 'none';
 }
 
+// ── 구매 완료 토스트 ─────────────────────────────────────────
+function showBuySuccessToast(itemName, qty, totalCost, newBalance) {
+  var toast = document.getElementById('buySuccessToast');
+  if (!toast) return;
+  document.getElementById('buySuccessToastTitle').textContent =
+    '구매 완료!';
+  document.getElementById('buySuccessToastSub').textContent =
+    itemName + ' ' + qty + '개 · $' + Number(totalCost).toLocaleString() + ' 결제';
+  document.getElementById('buySuccessToastBal').textContent =
+    '잔액: $' + Number(newBalance).toLocaleString();
+  toast.style.display = 'block';
+  toast.style.opacity = '1';
+  // 2.5초 후 페이드아웃
+  clearTimeout(window._buyToastTimer);
+  window._buyToastTimer = setTimeout(function() {
+    toast.style.opacity = '0';
+    setTimeout(function() { toast.style.display = 'none'; }, 400);
+  }, 2500);
+}
+
 function confirmBuyItem() {
   var qty = parseInt(document.getElementById('buyQtyInput').value) || 1;
   if (qty < 1) { alert('수량은 1개 이상이어야 합니다.'); return; }
@@ -6853,6 +7335,13 @@ function confirmBuyItem() {
           document.getElementById('myBalance').innerText = '$ ' + Number(res.newBalance).toLocaleString();
           if (window._lastDashboardData) window._lastDashboardData.personal.balance = res.newBalance;
         }
+        // ── 구매 완료 토스트 표시 ─────────────────────────────
+        showBuySuccessToast(
+          window._buyModalItem,
+          res.quantity || qty,
+          (res.price || window._buyModalPrice) * (res.quantity || qty),
+          res.newBalance
+        );
       } else {
         // 실패 시 잔액 롤백
         document.getElementById('myBalance').innerText = '$ ' + curBalance.toLocaleString();
@@ -6914,14 +7403,14 @@ function renderInventory(res) {
   var totalUnusedQty = unused.reduce(function(s, i) { return s + i.totalQty; }, 0);
 
   if (unused.length > 0) {
-    html += '<p style="font-weight:bold;color:#333;margin-bottom:8px;">📦 미사용 (' + totalUnusedQty + '개)</p>';
+    html += '<p style="font-weight:bold;color:#e6edf3;margin-bottom:8px;">📦 미사용 (' + totalUnusedQty + '개)</p>';
     unused.forEach(function(item) {
       html +=
         '<div style="display:flex;justify-content:space-between;align-items:center;' +
         'padding:10px;margin-bottom:8px;background:#fff8f0;border-radius:8px;border:1px solid #ffe0c0;">' +
           '<div>' +
-            '<div style="font-weight:bold;font-size:14px;">' + item.itemName + '</div>' +
-            '<div style="font-size:12px;color:#888;">$' + item.price.toLocaleString() + ' · 보유 ' + item.totalQty + '개</div>' +
+            '<div style="font-weight:bold;font-size:14px;color:#1a1a1a;">' + item.itemName + '</div>' +
+            '<div style="font-size:12px;color:#666;">$' + item.price.toLocaleString() + ' · 보유 ' + item.totalQty + '개</div>' +
           '</div>' +
           '<button onclick="openUseModal(\'' + item.itemName.replace(/'/g, "\\'") + '\',' + item.totalQty + ')"' +
           ' style="padding:6px 14px;background:#e74c3c;color:white;border:none;border-radius:6px;font-size:13px;font-weight:bold;cursor:pointer;">사용</button>' +
@@ -7015,6 +7504,24 @@ var PORT_COLORS = {
   "불":   { bg: "#fdedec", color: "#c0392b" }
 };
 
+// 포트별 다크모드 뱃지 색상 (길드 멤버 카드용)
+var MEMBER_PORT_STYLE = {
+  "땅":   { color: "#f59e0b", bg: "rgba(245,158,11,0.18)" },
+  "물":   { color: "#60a5fa", bg: "rgba(96,165,250,0.18)" },
+  "빛":   { color: "#fbbf24", bg: "rgba(251,191,36,0.18)" },
+  "바람": { color: "#34d399", bg: "rgba(52,211,153,0.18)" },
+  "불":   { color: "#f87171", bg: "rgba(248,113,113,0.18)" }
+};
+
+// 길드 로고 이미지 URL
+var GUILD_LOGOS = {
+  'GUILD_01': 'https://raw.githubusercontent.com/Jamesleekor/brand-assets/refs/heads/main/guild/MILKYWAY.jpeg',
+  'GUILD_02': 'https://raw.githubusercontent.com/Jamesleekor/brand-assets/refs/heads/main/guild/RISING.png',
+  'GUILD_03': 'https://raw.githubusercontent.com/Jamesleekor/brand-assets/refs/heads/main/guild/RUBY.jpeg',
+  'GUILD_04': 'https://raw.githubusercontent.com/Jamesleekor/brand-assets/refs/heads/main/guild/DARKROSE.jpeg',
+  'GUILD_05': 'https://raw.githubusercontent.com/Jamesleekor/brand-assets/refs/heads/main/guild/EMERALD.png'
+};
+
 /**
  * 학생 이름을 받아 길드 카드 데이터를 로드하고 렌더링합니다.
  * showDashboard에서 호출됩니다.
@@ -7084,6 +7591,19 @@ function renderGuildCard(data) {
   document.getElementById('guildName').innerText = data.guildName || '우리 길드';
   document.getElementById('guildSlogan').innerText = data.slogan || '';
 
+  // ── 길드 로고 ──
+  var logoImg  = document.getElementById('guildLogoImg');
+  var logoPlac = document.getElementById('guildLogoPlaceholder');
+  var logoUrl  = data.guildId ? (GUILD_LOGOS[data.guildId] || '') : '';
+  if (logoUrl && logoImg && logoPlac) {
+    logoImg.src = logoUrl;
+    logoImg.style.display = 'block';
+    logoPlac.style.display = 'none';
+  } else if (logoImg && logoPlac) {
+    logoImg.style.display = 'none';
+    logoPlac.style.display = 'flex';
+  }
+
   var rankBadge = document.getElementById('guildRankBadge');
   var myGSEl    = document.getElementById('guildMyGS');
   if (data.myRank) {
@@ -7105,24 +7625,31 @@ function renderGuildCard(data) {
     membersList.innerHTML = '<span style="font-size:12px;color:#aaa;">멤버 정보 없음</span>';
   } else {
     membersList.innerHTML = data.members.map(function(m) {
-      var pc = PORT_COLORS[m.port] || { bg: 'rgba(255,255,255,0.08)', color: '#8b949e' };
-      // 캐릭터 표시: URL이면 이미지, 이모지면 텍스트, 없으면 기본 이모지
-      var charHtml = '';
-      var charVal  = m.charVal || '';
-      if (charVal && (charVal.startsWith('http://') || charVal.startsWith('https://'))) {
-        charHtml = '<img src="' + charVal + '" style="width:26px;height:26px;object-fit:contain;' +
-          'border-radius:50%;mix-blend-mode:screen;flex-shrink:0;" alt="캐릭터">';
+      var ps = MEMBER_PORT_STYLE[m.port] || { color: '#8b949e', bg: 'rgba(255,255,255,0.08)' };
+      var charVal = m.charVal || '';
+      var charAreaHtml = '';
+      if (!charVal) {
+        charAreaHtml = '<div style="width:100%;height:62px;display:flex;align-items:center;' +
+          'justify-content:center;font-size:9px;color:#6e7681;text-align:center;line-height:1.4;">' +
+          '캐릭터가<br>없습니다</div>';
+      } else if (charVal.startsWith('http://') || charVal.startsWith('https://')) {
+        charAreaHtml = '<img src="' + charVal + '" style="width:62px;height:62px;' +
+          'object-fit:contain;mix-blend-mode:screen;display:block;" alt="캐릭터">';
       } else {
-        charHtml = '<span style="font-size:20px;line-height:1;flex-shrink:0;">' +
-          (charVal || '😊') + '</span>';
+        charAreaHtml = '<div style="font-size:42px;line-height:1;height:62px;' +
+          'display:flex;align-items:center;justify-content:center;">' + charVal + '</div>';
       }
-      return '<div style="display:flex;align-items:center;gap:5px;padding:5px 10px;' +
-        'background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);' +
-        'border-radius:16px;font-size:12px;">' +
-        charHtml +
-        '<span style="font-weight:700;color:#e6edf3;">' + m.name + '</span>' +
-        '<span style="color:' + pc.color + ';font-size:11px;opacity:0.85;">·' + (m.port || '?') + '</span>' +
-        '</div>';
+      return '<div style="display:flex;flex-direction:column;align-items:center;' +
+        'background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);' +
+        'border-radius:10px;padding:8px 6px 7px;width:78px;gap:5px;overflow:hidden;">' +
+        charAreaHtml +
+        '<span style="font-size:11px;font-weight:700;color:#e6edf3;text-align:center;' +
+          'line-height:1.2;word-break:keep-all;">' + m.name + '</span>' +
+        (m.port
+          ? '<span style="font-size:9px;color:' + ps.color + ';background:' + ps.bg + ';' +
+              'padding:1px 6px;border-radius:4px;">' + m.port + '</span>'
+          : '') +
+      '</div>';
     }).join('');
   }
 
@@ -7144,7 +7671,7 @@ function renderGuildCard(data) {
       '<span style="font-size:13px;">' + s.icon + '</span>' +
       '<div style="flex:1;min-width:0;">' +
         '<div style="font-size:11px;font-weight:bold;color:' + s.color + ';">' + m.id + '</div>' +
-        '<div style="font-size:10px;color:#666;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + m.name + '</div>' +
+        '<div style="font-size:10px;color:#9ca3af;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + m.name + '</div>' +
       '</div>' +
       '<span style="color:#d4ac0d;font-size:9px;">' + stars + '</span>' +
     '</div>';
@@ -7189,14 +7716,18 @@ function renderGuildCard(data) {
     rankList.innerHTML = data.allRanks.map(function(r) {
       var isMine = r.guildName === data.guildName;
       var rankEmoji = ['', '🥇', '🥈', '🥉', '4️⃣', '5️⃣'];
-      var bg = isMine ? '#e8f5e9' : 'transparent';
-      var weight = isMine ? 'bold' : 'normal';
-      return '<div style="display:flex;justify-content:space-between;padding:5px 8px;border-radius:5px;background:' + bg + ';">' +
-        '<span style="font-size:13px;color:#2c3e50;font-weight:' + weight + ';">' +
-          (rankEmoji[r.rank] || (r.rank + '위 ')) + ' ' + r.guildName +
-          (isMine ? ' <span style="font-size:10px;color:#1a6b3c;">(우리 길드)</span>' : '') +
+      var bg     = isMine ? 'rgba(26,107,60,0.35)' : 'rgba(255,255,255,0.04)';
+      var border = isMine ? '1px solid rgba(74,222,128,0.35)' : '1px solid rgba(255,255,255,0.06)';
+      var nameColor  = isMine ? '#4ade80' : '#e6edf3';
+      var rankColor  = isMine ? '#86efac' : '#9ca3af';
+      var weight     = isMine ? 'bold' : 'normal';
+      return '<div style="display:flex;justify-content:space-between;align-items:center;' +
+        'padding:6px 10px;border-radius:6px;background:' + bg + ';border:' + border + ';margin-bottom:3px;">' +
+        '<span style="font-size:13px;color:' + nameColor + ';font-weight:' + weight + ';">' +
+          (rankEmoji[r.rank] || (r.rank + '. ')) + ' ' + r.guildName +
+          (isMine ? ' <span style="font-size:10px;color:#86efac;opacity:0.8;">(우리)</span>' : '') +
         '</span>' +
-        '<span style="font-size:12px;color:#888;">' + r.rank + '위</span>' +
+        '<span style="font-size:12px;color:' + rankColor + ';font-weight:' + weight + ';">' + r.rank + '위</span>' +
       '</div>';
     }).join('');
   }

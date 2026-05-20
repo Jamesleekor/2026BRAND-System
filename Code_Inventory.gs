@@ -57,11 +57,15 @@ function buyItem(studentName, itemName, quantity) {
 
     // ── 학생 찾기
     let studentRowNum = -1;
-    let brand = '';
+    let brand    = '';
+    let curAsset = 0;
+    let curValue = 0;
     for (let i = 1; i < mainData.length; i++) {
       if (String(mainData[i][COL_NAME - 1]).trim() === String(studentName).trim()) {
         studentRowNum = i + 1;
-        brand = mainData[i][COL_BRAND - 1];
+        brand    = mainData[i][COL_BRAND  - 1];
+        curAsset = Number(mainData[i][COL_ASSET - 1]) || 0;  // getValue() 호출 제거
+        curValue = Number(mainData[i][COL_VALUE - 1]) || 0;  // getValue() 호출 제거
         break;
       }
     }
@@ -74,6 +78,8 @@ function buyItem(studentName, itemName, quantity) {
     let snackRowNum = -1;
     let currentStock = 0;
     let currentPrice = 0;
+    // ── 비상사태 1회만 조회 (가격 계산 + 자산 동결 체크에 공통 사용)
+    const _emg = _getActiveEmergency();
     for (let n = 1; n < snackData.length; n++) {
       if (String(snackData[n][0]).trim() === String(itemName).trim()) {
         snackRowNum  = n + 1;
@@ -84,9 +90,8 @@ function buyItem(studentName, itemName, quantity) {
         // 재고 100%→1배, 20% 이하→2.5배 상한 (getSnackData와 동일 공식)
         const ratio      = (currentStock > 0) ? Math.min(1, currentStock / baseStock) : 0;
         const multiplier = Math.max(1, Math.min(2.5, 1 + 1.5 * (1 - ratio) / 0.8));
-        // ── 하이퍼인플레이션: getSnackData()와 동일하게 ×2 적용
-        const _emgItem = _getActiveEmergency();
-        const _infOn   = _emgItem && _emgItem.type === '하이퍼인플레이션';
+        // ── 하이퍼인플레이션: 위에서 조회한 _emg 재사용 (중복 시트 읽기 제거)
+        const _infOn     = _emg && _emg.type === '하이퍼인플레이션';
         currentPrice = Math.round(basePrice * multiplier * (_infOn ? 2 : 1));
         break;
       }
@@ -105,14 +110,11 @@ function buyItem(studentName, itemName, quantity) {
       }
     }
 
-    // ── 잔액 확인
-    const curAsset  = Number(mainSheet.getRange(studentRowNum, COL_ASSET).getValue()) || 0;
+    // ── 잔액 확인 + 자산 동결 체크 (mainData에서 이미 읽은 curAsset 재사용, _emg 재사용)
     const totalCost = currentPrice * quantity;
-    // ── 자산 동결 체크
-    const _emgB = _getActiveEmergency();
-    if (_emgB && _emgB.type === '자산 동결') {
-      const _usable = Math.floor(curAsset * (_emgB.freezeRate / 100));
-      if (totalCost > _usable) return { success: false, msg: `🔒 자산 동결 중! 사용 가능 금액: $${_usable.toLocaleString()} (보유액의 ${_emgB.freezeRate}%)` };
+    if (_emg && _emg.type === '자산 동결') {
+      const _usable = Math.floor(curAsset * (_emg.freezeRate / 100));
+      if (totalCost > _usable) return { success: false, msg: `🔒 자산 동결 중! 사용 가능 금액: $${_usable.toLocaleString()} (보유액의 ${_emg.freezeRate}%)` };
     }
     if (curAsset < totalCost) return { success: false, msg: `잔액이 부족합니다! (필요: $${totalCost.toLocaleString()}, 현재: $${curAsset.toLocaleString()})` };
 
@@ -128,23 +130,25 @@ function buyItem(studentName, itemName, quantity) {
     const timestamp = new Date();
     invSheet.appendRow([timestamp, studentName, itemName, currentPrice, quantity, 0, false, '', false]);
 
-    // ── 자산사용 시트 기록
-    const curValue = Number(mainSheet.getRange(studentRowNum, COL_VALUE).getValue()) || 0;
-    ss.getSheetByName(SHEET_SPEND).appendRow([
-      dateStr, studentName, brand,
-      `[물품구매] ${itemName}`, totalCost, newAsset, `수량 ${quantity}개`
-    ]);
+    // ── 자산사용 시트 기록 (curValue는 mainData에서 이미 읽은 값 재사용)
+    const spendSheet = ss.getSheetByName(SHEET_SPEND);
+    if (spendSheet) {
+      spendSheet.appendRow([dateStr, studentName, brand, `[물품구매] ${itemName}`, totalCost, newAsset, `수량 ${quantity}개`]);
+    }
 
     // ── 히스토리 시트 기록
-    ss.getSheetByName(SHEET_HISTORY).appendRow([
-      dateStr, studentName, brand,
-      0, -totalCost, curValue, newAsset, `[물품구매] ${itemName} x${quantity}`
-    ]);
+    const histSheet = ss.getSheetByName(SHEET_HISTORY);
+    if (histSheet) {
+      histSheet.appendRow([dateStr, studentName, brand, 0, -totalCost, curValue, newAsset, `[물품구매] ${itemName} x${quantity}`]);
+    }
 
     // ── 캐시 무효화
     CacheService.getScriptCache().remove('student_' + studentName);
 
-    updateRankings();
+    // ── Firebase 동기화: updateRankings() 대신 해당 학생만 동기화
+    //    updateRankings()는 전체 학생 Firebase 동기화(~25회 HTTP 요청)로 매우 느림
+    try { syncOneStudentToFirebase(studentName); } catch(e) {}
+
     return { success: true, newBalance: newAsset, price: currentPrice, quantity: quantity };
 
   } catch(e) {
@@ -243,31 +247,26 @@ function useItem(studentName, itemName, useQty) {
     if (useQty > totalLeft) return { success: false, msg: `보유 수량(${totalLeft}개)보다 많이 사용할 수 없습니다.` };
 
     // 앞 행부터 순서대로 사용수량 누적
+    // ── F~H열 3칸을 setValues([[...]])로 한 번에 쓰기 (API 호출 최대 3→1회로 단축)
     let remaining = useQty;
     for (let r = 0; r < targetRows.length && remaining > 0; r++) {
-      const row        = targetRows[r];
-      const consume    = Math.min(row.leftQty, remaining);
-      remaining       -= consume;
-      const newUsedQty = row.usedQty + consume;
-
-      invSheet.getRange(row.rowNum, 6).setValue(newUsedQty); // F열: 사용수량 누적
-
-      // 전량 소진 시 사용여부 TRUE + 사용시기 기록
-      if (newUsedQty >= row.buyQty) {
-        invSheet.getRange(row.rowNum, 7).setValue(true); // G열: 사용여부
-        invSheet.getRange(row.rowNum, 8).setValue(now);  // H열: 사용시기
-      }
+      const row         = targetRows[r];
+      const consume     = Math.min(row.leftQty, remaining);
+      remaining        -= consume;
+      const newUsedQty  = row.usedQty + consume;
+      const isFullyUsed = newUsedQty >= row.buyQty;
+      invSheet.getRange(row.rowNum, 6, 1, 3).setValues([[
+        newUsedQty,              // F열: 사용수량 누적
+        isFullyUsed,             // G열: 사용여부
+        isFullyUsed ? now : ''   // H열: 사용시기
+      ]]);
     }
 
     // ── 아이템 사용 로그 시트에 기록 ─────────────────────────────
+    // appendRow 1회로 처리 (기존 setValue 5회 → 1회로 단축)
     const useLogSheet = ss.getSheetByName('아이템사용로그');
     if (useLogSheet) {
-      const logRow = useLogSheet.getLastRow() + 1;
-      useLogSheet.getRange(logRow, 1).setValue(now);
-      useLogSheet.getRange(logRow, 2).setValue(studentName);
-      useLogSheet.getRange(logRow, 3).setValue(itemName);
-      useLogSheet.getRange(logRow, 4).setValue(useQty);
-      useLogSheet.getRange(logRow, 5).setValue(false);
+      useLogSheet.appendRow([now, studentName, itemName, useQty, false]);
     }
     // ─────────────────────────────────────────────────────────────
 

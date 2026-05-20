@@ -32,15 +32,24 @@ function getJobData() {
   const ss   = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName(SHEET_JOB2_CURR);
   if (!sheet) return [];
-  const data = sheet.getDataRange().getValues();
+
+  // getDataRange()는 실제 데이터 경계만 반환하므로,
+  // E열에 데이터가 없으면 범위가 A:D만 포함될 수 있음.
+  // → 최소 5열(A~E)을 강제로 읽어 E열 뱃지를 항상 포함하도록 처리.
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return [];
+  const numCols = Math.max(sheet.getDataRange().getNumColumns(), 5);
+  const data = sheet.getRange(1, 1, lastRow, numCols).getValues();
+
   const result = [];
   for (let i = 1; i < data.length; i++) {
     if (!data[i][0]) continue;
     result.push({
-      studentName: String(data[i][0]),
-      jobName:     String(data[i][1]),
-      jobDesc:     String(data[i][2]),
-      approvedDate: String(data[i][3])
+      studentName:  String(data[i][0]),
+      jobName:      String(data[i][1]),
+      jobDesc:      String(data[i][2]),
+      approvedDate: String(data[i][3]),
+      badge:        String(data[i][4] || '').trim()  // E열: 인증 뱃지 이모지 (예: ✍️)
     });
   }
   return result;
@@ -146,7 +155,10 @@ function getSecondaryJobForStudent(studentName) {
   const ss    = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName(SHEET_JOB2_CURR);
   if (!sheet) return null;
-  const data = sheet.getDataRange().getValues();
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return null;
+  const numCols = Math.max(sheet.getDataRange().getNumColumns(), 5);
+  const data = sheet.getRange(1, 1, lastRow, numCols).getValues();
   for (let i = 1; i < data.length; i++) {
     if (String(data[i][0]).trim() !== String(studentName).trim()) continue;
 
@@ -176,7 +188,8 @@ function getSecondaryJobForStudent(studentName) {
       jobName:     String(data[i][1]),
       jobDesc:     String(data[i][2]),
       ratingAvg:   ratingAvg,
-      ratingCount: ratingCount
+      ratingCount: ratingCount,
+      badge:       String(data[i][4] || '').trim()  // E열: 인증 뱃지 이모지 (예: ✍️)
     };
   }
   return null;

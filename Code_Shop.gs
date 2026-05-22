@@ -290,7 +290,10 @@ function purchaseShopItem(studentName, itemId) {
 
   // 캐시 무효화
   CacheService.getScriptCache().remove('student_' + studentName);
-  updateRankings();
+  // updateRankings() 대신 _updateRankingsOnly() + 구매자 1명만 Firebase 동기화
+  // → Firebase HTTP 요청 22번 → 1번으로 단축
+  _updateRankingsOnly();
+  try { syncOneStudentToFirebase(studentName); } catch(e) { Logger.log('[Firebase Shop] ' + e.message); }
 
   return { success: true, msg: `[${itemName}] 구매 완료! $${price} 차감되었습니다.`, itemId, resourceVal: String(itemRow[7]).trim(), category: String(itemRow[1]).trim() };
 }

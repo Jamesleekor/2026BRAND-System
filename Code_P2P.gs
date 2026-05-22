@@ -117,7 +117,12 @@ function p2pTransfer(senderName, receiverName, amount, tag, description, quantit
     const todaySameRows = [];
 
     for (let i = 1; i < p2pData.length; i++) {
-      const rowDate   = String(p2pData[i][1]).substring(0, 10);
+      // 날짜 버그 수정: Sheets가 문자열 날짜를 Date 객체로 자동 변환하므로
+      // instanceof Date 체크 후 formatDate로 안전하게 변환
+      const rawDate = p2pData[i][1];
+      const rowDate = (rawDate instanceof Date)
+        ? Utilities.formatDate(rawDate, Session.getScriptTimeZone(), 'yyyy-MM-dd')
+        : String(rawDate).substring(0, 10);
       const rowSender = String(p2pData[i][2]).trim();
       const rowRecv   = String(p2pData[i][3]).trim();
       if (rowDate === todayStr &&
@@ -227,10 +232,14 @@ function p2pTransfer(senderName, receiverName, amount, tag, description, quantit
   );
 
   // ── 랭킹 갱신 + 캐시 무효화 ─────────────────────────────────
-  updateRankings();
+  // updateRankings() 대신 _updateRankingsOnly() + 당사자 2명만 Firebase 동기화
+  // → Firebase HTTP 요청 22번 → 2번으로 단축
+  _updateRankingsOnly();
   const cache = CacheService.getScriptCache();
   cache.remove('student_' + senderName);
   cache.remove('student_' + receiverName);
+  try { syncOneStudentToFirebase(senderName);   } catch(e) { Logger.log('[Firebase P2P sender] '   + e.message); }
+  try { syncOneStudentToFirebase(receiverName); } catch(e) { Logger.log('[Firebase P2P receiver] ' + e.message); }
 
   return {
     success:        true,

@@ -433,7 +433,10 @@ function grantMvp(date, rowIdx, name, brand, amount, note) {
   return '🏆 MVP 포인트 지급 완료!';
 }
 
-function updateRankings() {
+// ── 랭킹 E/F열 계산만 수행 (Firebase 동기화 없음) ────────────────
+// p2pTransfer, purchaseShopItem 등 당사자만 동기화하면 되는 경우에 사용.
+// 전체 동기화가 필요한 경우엔 updateRankings() 사용.
+function _updateRankingsOnly() {
   const ss      = SpreadsheetApp.getActiveSpreadsheet();
   const main    = ss.getSheetByName(SHEET_MAIN);
   const lastRow = main.getLastRow();
@@ -446,11 +449,11 @@ function updateRankings() {
   if (depositSheet) {
     const depData = depositSheet.getDataRange().getValues();
     for (let i = 1; i < depData.length; i++) {
-      const dName     = String(depData[i][1]).trim(); // B열
-      const principal = Number(depData[i][2]) || 0;  // C열
-      const dStatus   = String(depData[i][7]).trim(); // H열: 상태
+      const dName     = String(depData[i][1]).trim();
+      const principal = Number(depData[i][2]) || 0;
+      const dStatus   = String(depData[i][7]).trim();
       if (!dName) continue;
-      if (dStatus !== '진행중') continue;             // 중도해지/만기 제외
+      if (dStatus !== '진행중') continue;
       depositMap[dName] = (depositMap[dName] || 0) + principal;
     }
   }
@@ -461,8 +464,8 @@ function updateRankings() {
   if (loanSheet) {
     const loanData = loanSheet.getDataRange().getValues();
     for (let i = 1; i < loanData.length; i++) {
-      const lName   = String(loanData[i][1]).trim();  // B열
-      const balance = Number(loanData[i][10]) || 0;  // K열
+      const lName   = String(loanData[i][1]).trim();
+      const balance = Number(loanData[i][10]) || 0;
       if (!lName) continue;
       loanMap[lName] = (loanMap[lName] || 0) + balance;
     }
@@ -480,8 +483,12 @@ function updateRankings() {
   const rA = _calcRank(aArr);
   main.getRange(2, COL_RANK_A, rA.length, 1).setValues(rA.map(r => [r]));
   main.getRange(2, COL_RANK_V, rV.length, 1).setValues(rV.map(r => [r]));
+  // Firebase 동기화 없음 → 호출부에서 당사자만 syncOneStudentToFirebase() 호출
+}
 
-  // 랭킹 갱신 후 Firebase 스냅샷 자동 동기화
+function updateRankings() {
+  // 랭킹 계산 후 전체 학생 Firebase 동기화 (포인트 지급·MVP 등 전체 변동 시 사용)
+  _updateRankingsOnly();
   try { syncAllStudentsToFirebase(); } catch(e) {
     Logger.log('[Firebase 동기화 실패] ' + e.message);
   }

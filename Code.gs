@@ -28,6 +28,9 @@ const SHEET_LOAN_LOG      = '대출신청로그';
 const SHEET_CREDIT_HISTORY = '신용점수이력';
 const SHEET_INVENTORY     = '인벤토리';
 const SHEET_EMERGENCY     = '비상사태현황';
+const SHEET_ASSIGN_LIST   = '과제목록';
+const SHEET_ASSIGN_SUBMIT = '과제제출';
+const ASSIGN_DRIVE_FOLDER = '2026BRAND_과제제출';   // Google Drive 자동 생성 폴더명
 const BACKUP_FOLDER_NAME  = 'B.R.A.N.D 자동백업';
 const WEEKLY_BUY_LIMIT    = 5;
 

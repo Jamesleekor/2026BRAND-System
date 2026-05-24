@@ -1996,6 +1996,9 @@
       <button class="dash-tab" onclick="switchDashTab('guild',this)">
         <span class="dash-tab-icon">🛡️</span><span class="dash-tab-label">길드</span>
       </button>
+      <button class="dash-tab" onclick="switchDashTab('assign',this)">
+        <span class="dash-tab-icon">📚</span><span class="dash-tab-label">과제</span>
+      </button>
     </div><!-- /dashTabBar -->
 
     <div id="dashTabContent">
@@ -2666,7 +2669,137 @@
     </div>
       </div><!-- /panel-guild -->
 
+      <!-- ════ 과제 탭 ════ -->
+      <div class="dash-panel" id="panel-assign">
+
+        <!-- 과제 목록 카드 -->
+        <div class="card" style="margin-bottom:12px;">
+          <div class="card-title"><i class="fas fa-book-open"></i> 과제 제출함</div>
+          <div id="assignListContainer">
+            <div style="text-align:center;padding:28px 0;color:#8b949e;font-size:13px;">
+              <div style="font-size:28px;margin-bottom:8px;">📭</div>로딩 중...
+            </div>
+          </div>
+        </div>
+
+        <!-- 안내 카드 -->
+        <div class="card" style="background:rgba(77,168,245,0.06);border:1px solid rgba(77,168,245,0.2);">
+          <div style="font-size:12px;color:#8b949e;line-height:1.8;">
+            <div style="font-weight:bold;color:#4da8f5;margin-bottom:6px;">📌 제출 안내</div>
+            <div>• <b>Canva</b>: 공유 → 링크 복사 후 제출</div>
+            <div>• <b>Google 슬라이드</b>: 공유 → 링크 복사 후 제출</div>
+            <div>• <b>PPTX 파일</b>: 5MB 이하만 직접 업로드 가능.<br>&nbsp;&nbsp;큰 파일은 Google 슬라이드로 가져온 후 링크 제출 권장</div>
+            <div>• <b>PDF / 이미지</b>: 5MB 이하 직접 업로드 가능</div>
+          </div>
+        </div>
+
+      </div><!-- /panel-assign -->
+
     </div><!-- /dashTabContent -->
+
+    <!-- ══════════════════════════════════════════════════════ -->
+    <!-- 과제 제출 모달                                         -->
+    <!-- ══════════════════════════════════════════════════════ -->
+    <div id="assignSubmitModal" style="display:none;position:fixed;inset:0;z-index:3000;
+         background:rgba(0,0,0,0.7);align-items:center;justify-content:center;padding:16px;">
+      <div style="background:#1c2333;border:1px solid rgba(255,255,255,0.12);border-radius:14px;
+                  width:100%;max-width:420px;max-height:90vh;overflow-y:auto;">
+
+        <!-- 모달 헤더 -->
+        <div style="padding:16px 18px 12px;border-bottom:1px solid rgba(255,255,255,0.08);
+                    display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-size:13px;color:#8b949e;margin-bottom:2px;">📤 과제 제출</div>
+            <div id="assignModalTitle" style="font-size:15px;font-weight:bold;color:#e6edf3;">과제명</div>
+          </div>
+          <button onclick="closeAssignSubmitModal()"
+                  style="background:none;border:none;color:#8b949e;font-size:20px;cursor:pointer;line-height:1;">✕</button>
+        </div>
+
+        <!-- 모달 바디 -->
+        <div style="padding:16px 18px;">
+
+          <!-- 제출 방식 선택 -->
+          <div id="assignTypeSelector" style="display:flex;gap:8px;margin-bottom:16px;">
+            <button id="assignTypeBtnLink" onclick="switchAssignType('link')"
+                    style="flex:1;padding:10px;border-radius:8px;font-size:13px;font-weight:bold;cursor:pointer;
+                           border:2px solid #4da8f5;background:rgba(77,168,245,0.15);color:#4da8f5;">
+                    🔗 링크 제출</button>
+            <button id="assignTypeBtnFile" onclick="switchAssignType('file')"
+                    style="flex:1;padding:10px;border-radius:8px;font-size:13px;font-weight:bold;cursor:pointer;
+                           border:2px solid rgba(255,255,255,0.12);background:transparent;color:#8b949e;">
+                    📎 파일 업로드</button>
+          </div>
+
+          <!-- 링크 입력 영역 -->
+          <div id="assignLinkArea">
+            <div style="font-size:12px;color:#8b949e;margin-bottom:6px;">제출 링크</div>
+            <input id="assignLinkInput" type="url" placeholder="https://www.canva.com/..."
+                   style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.06);
+                          border:1px solid rgba(255,255,255,0.15);border-radius:8px;
+                          color:#e6edf3;font-size:13px;box-sizing:border-box;outline:none;">
+            <div style="font-size:11px;color:#8b949e;margin-top:5px;">
+              Canva 공유링크 · Google 슬라이드 링크 · OneDrive 링크 등
+            </div>
+          </div>
+
+          <!-- 파일 업로드 영역 -->
+          <div id="assignFileArea" style="display:none;">
+            <div style="font-size:12px;color:#8b949e;margin-bottom:6px;">파일 선택 <span style="color:#f0883e;">(최대 5MB)</span></div>
+            <label id="assignFileLabel"
+                   style="display:flex;flex-direction:column;align-items:center;justify-content:center;
+                          padding:20px;border:2px dashed rgba(255,255,255,0.2);border-radius:8px;
+                          cursor:pointer;background:rgba(255,255,255,0.04);color:#8b949e;font-size:13px;gap:6px;">
+              <span style="font-size:28px;">📎</span>
+              <span id="assignFileNameDisplay">파일을 선택하거나 여기에 드래그하세요</span>
+              <input id="assignFileInput" type="file" style="display:none;"
+                     accept=".pdf,.png,.jpg,.jpeg,.gif,.pptx,.ppt,.docx,.doc,.xlsx,.xls,.zip"
+                     onchange="onAssignFileSelected(this)">
+            </label>
+            <div style="font-size:11px;color:#f0883e;margin-top:5px;">
+              ⚠️ PPTX 5MB 초과 시 Google 슬라이드로 변환 후 링크 제출을 권장합니다
+            </div>
+            <div id="assignFileError" style="font-size:12px;color:#f85149;margin-top:6px;display:none;"></div>
+          </div>
+
+          <!-- 메모 -->
+          <div style="margin-top:14px;">
+            <div style="font-size:12px;color:#8b949e;margin-bottom:6px;">메모 (선택)</div>
+            <textarea id="assignMemoInput" rows="2" placeholder="선생님께 전달할 내용을 적어주세요..."
+                      style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.06);
+                             border:1px solid rgba(255,255,255,0.15);border-radius:8px;
+                             color:#e6edf3;font-size:13px;box-sizing:border-box;
+                             outline:none;resize:none;font-family:inherit;"></textarea>
+          </div>
+
+          <!-- 업로드 프로그레스 -->
+          <div id="assignUploadProgress" style="display:none;margin-top:12px;text-align:center;">
+            <div style="font-size:13px;color:#4da8f5;">⏳ 업로드 중...</div>
+            <div style="margin-top:8px;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden;">
+              <div id="assignProgressBar" style="height:100%;width:0%;background:#4da8f5;
+                   border-radius:2px;transition:width 0.3s;"></div>
+            </div>
+          </div>
+
+          <!-- 오류 메시지 -->
+          <div id="assignModalError" style="display:none;margin-top:10px;padding:10px 12px;
+               background:rgba(248,81,73,0.12);border:1px solid rgba(248,81,73,0.3);
+               border-radius:8px;font-size:13px;color:#f85149;"></div>
+        </div>
+
+        <!-- 모달 푸터 -->
+        <div style="padding:12px 18px 16px;border-top:1px solid rgba(255,255,255,0.08);
+                    display:flex;gap:8px;justify-content:flex-end;">
+          <button onclick="closeAssignSubmitModal()"
+                  style="padding:9px 18px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);
+                         background:transparent;color:#8b949e;font-size:13px;cursor:pointer;">취소</button>
+          <button id="assignSubmitBtn" onclick="executeAssignSubmit()"
+                  style="padding:9px 20px;border-radius:8px;border:none;
+                         background:#4da8f5;color:#fff;font-size:13px;font-weight:bold;cursor:pointer;">
+                  제출하기</button>
+        </div>
+      </div>
+    </div>
     
 
   </div></div>
@@ -3817,6 +3950,297 @@
   })(); // end ConstMap IIFE
 
   // ══════════════════════════════════════════════════════
+  // ██ 과제 제출 시스템
+  // ══════════════════════════════════════════════════════
+
+  // 현재 모달에 열린 과제 정보
+  var _assignModal = { id: '', name: '', allowType: '둘다', mode: 'link' };
+
+  // ── 과제 목록 로드 ──────────────────────────────────────────────
+  function loadAssignments() {
+    var container = document.getElementById('assignListContainer');
+    container.innerHTML = '<div style="text-align:center;padding:28px 0;color:#8b949e;font-size:13px;">' +
+      '<div style="font-size:28px;margin-bottom:8px;">⏳</div>불러오는 중...</div>';
+    google.script.run
+      .withSuccessHandler(function(res) {
+        if (res && res.success) renderAssignments(res.assignments);
+        else container.innerHTML = '<div style="color:#f85149;padding:16px;font-size:13px;">' +
+          (res ? res.msg : '불러오기 실패') + '</div>';
+      })
+      .withFailureHandler(function() {
+        container.innerHTML = '<div style="color:#f85149;padding:16px;font-size:13px;">과제 목록을 불러오지 못했습니다.</div>';
+      })
+      .getAssignmentList(window._currentStudentName);
+  }
+
+  // ── 과제 목록 렌더링 ────────────────────────────────────────────
+  function renderAssignments(assignments) {
+    var container = document.getElementById('assignListContainer');
+    if (!assignments || assignments.length === 0) {
+      container.innerHTML = '<div style="text-align:center;padding:36px 0;color:#8b949e;font-size:13px;">' +
+        '<div style="font-size:32px;margin-bottom:8px;">📭</div>등록된 과제가 없습니다.</div>';
+      return;
+    }
+
+    container.innerHTML = assignments.map(function(a) {
+      var isSubmitted = !!a.submitted;
+      var isClosed    = a.status === '마감' || (a.dDay !== null && a.dDay < 0 && !isSubmitted);
+      var canSubmit   = !isClosed || isSubmitted; // 재제출은 마감 후에도 허용
+
+      // D-day 뱃지
+      var dDayHtml = '';
+      if (a.dDay !== null) {
+        if (a.dDay < 0)     dDayHtml = '<span style="color:#f85149;font-size:11px;">마감됨</span>';
+        else if (a.dDay === 0) dDayHtml = '<span style="color:#f0883e;font-size:11px;font-weight:bold;">📌 D-Day!</span>';
+        else if (a.dDay <= 3)  dDayHtml = '<span style="color:#f0883e;font-size:11px;font-weight:bold;">D-' + a.dDay + '</span>';
+        else                   dDayHtml = '<span style="color:#8b949e;font-size:11px;">D-' + a.dDay + '</span>';
+      }
+
+      // 상태 뱃지
+      var statusHtml = isSubmitted
+        ? '<span style="font-size:11px;color:#3fb950;background:rgba(30,132,73,0.2);padding:3px 9px;border-radius:10px;white-space:nowrap;">✅ 제출완료</span>'
+        : (isClosed
+            ? '<span style="font-size:11px;color:#f85149;background:rgba(248,81,73,0.15);padding:3px 9px;border-radius:10px;white-space:nowrap;">⛔ 마감</span>'
+            : '<span style="font-size:11px;color:#f0883e;background:rgba(240,136,62,0.15);padding:3px 9px;border-radius:10px;white-space:nowrap;">📤 미제출</span>');
+
+      // 제출 버튼
+      var btnHtml = '';
+      if (canSubmit) {
+        var btnLabel = isSubmitted ? '재제출' : '제출하기';
+        var btnStyle = isSubmitted
+          ? 'border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.07);color:#8b949e;'
+          : 'border:none;background:#4da8f5;color:#fff;font-weight:bold;';
+        btnHtml = '<button onclick="openAssignSubmitModal(\'' +
+          a.id.replace(/'/g,"\\'") + '\',\'' +
+          a.name.replace(/'/g,"\\'") + '\',\'' + a.allowType + '\')" ' +
+          'style="padding:7px 14px;border-radius:7px;font-size:12px;cursor:pointer;' + btnStyle + '">' +
+          btnLabel + '</button>';
+      }
+
+      // 제출 완료 정보 박스
+      var submittedHtml = '';
+      if (isSubmitted) {
+        var s = a.submitted;
+        var iconType = s.type === '링크' ? '🔗' : '📎';
+        submittedHtml = '<div style="margin-top:10px;padding:10px 12px;' +
+          'background:rgba(30,132,73,0.1);border-radius:8px;border-left:3px solid #3fb950;">' +
+          '<div style="font-size:11px;color:#8b949e;">제출일시: ' + s.submittedAt + '  ' + iconType + ' ' + s.type + ' 제출</div>' +
+          (s.type === '링크'
+            ? '<div style="font-size:11px;margin-top:4px;word-break:break-all;">' +
+              '<a href="' + s.content + '" target="_blank" style="color:#4da8f5;">' + s.content + '</a></div>'
+            : '<div style="font-size:11px;margin-top:4px;color:#8b949e;">' + (s.fileName || '파일') + '</div>') +
+          (s.memo ? '<div style="font-size:11px;color:#8b949e;margin-top:3px;">메모: ' + s.memo + '</div>' : '') +
+          (s.checked ? '<div style="font-size:11px;color:#3fb950;margin-top:5px;">✅ 교사 확인 완료</div>' : '') +
+          (s.feedback ? '<div style="font-size:11px;color:#4da8f5;margin-top:5px;padding:6px 8px;background:rgba(77,168,245,0.1);border-radius:5px;">💬 ' + s.feedback + '</div>' : '') +
+          '</div>';
+      }
+
+      return '<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);' +
+        'border-radius:10px;padding:14px;margin-bottom:10px;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">' +
+          '<div style="font-size:14px;font-weight:bold;color:#e6edf3;flex:1;padding-right:8px;line-height:1.3;">' + a.name + '</div>' +
+          statusHtml +
+        '</div>' +
+        (a.description ? '<div style="font-size:12px;color:#8b949e;margin-bottom:8px;">' + a.description + '</div>' : '') +
+        '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+          '<div style="font-size:11px;color:#8b949e;">⏰ ' + (a.deadline || '마감일 미정') +
+            (dDayHtml ? '&nbsp;&nbsp;' + dDayHtml : '') + '</div>' +
+          btnHtml +
+        '</div>' +
+        submittedHtml +
+        '</div>';
+    }).join('');
+  }
+
+  // ── 모달 열기 ───────────────────────────────────────────────────
+  function openAssignSubmitModal(assignId, assignName, allowType) {
+    _assignModal.id        = assignId;
+    _assignModal.name      = assignName;
+    _assignModal.allowType = allowType || '둘다';
+    _assignModal.mode      = 'link';
+
+    document.getElementById('assignModalTitle').innerText = assignName;
+    document.getElementById('assignLinkInput').value      = '';
+    document.getElementById('assignMemoInput').value      = '';
+    document.getElementById('assignFileInput').value      = '';
+    document.getElementById('assignFileNameDisplay').innerText = '파일을 선택하거나 여기에 드래그하세요';
+    document.getElementById('assignFileError').style.display = 'none';
+    document.getElementById('assignModalError').style.display = 'none';
+    document.getElementById('assignUploadProgress').style.display = 'none';
+
+    // allowType에 따라 버튼 표시 제어
+    var linkBtn = document.getElementById('assignTypeBtnLink');
+    var fileBtn = document.getElementById('assignTypeBtnFile');
+    if (allowType === '링크') {
+      fileBtn.style.display = 'none';
+      switchAssignType('link');
+    } else if (allowType === '파일') {
+      linkBtn.style.display = 'none';
+      switchAssignType('file');
+    } else {
+      linkBtn.style.display = '';
+      fileBtn.style.display = '';
+      switchAssignType('link');
+    }
+
+    var modal = document.getElementById('assignSubmitModal');
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+  }
+
+  // ── 모달 닫기 ───────────────────────────────────────────────────
+  function closeAssignSubmitModal() {
+    document.getElementById('assignSubmitModal').style.display = 'none';
+    document.body.style.overflow = '';
+  }
+
+  // ── 제출 방식 전환 (링크 ↔ 파일) ──────────────────────────────
+  function switchAssignType(mode) {
+    _assignModal.mode = mode;
+    var linkArea = document.getElementById('assignLinkArea');
+    var fileArea = document.getElementById('assignFileArea');
+    var linkBtn  = document.getElementById('assignTypeBtnLink');
+    var fileBtn  = document.getElementById('assignTypeBtnFile');
+    document.getElementById('assignModalError').style.display = 'none';
+
+    if (mode === 'link') {
+      linkArea.style.display = '';
+      fileArea.style.display = 'none';
+      linkBtn.style.border  = '2px solid #4da8f5';
+      linkBtn.style.background = 'rgba(77,168,245,0.15)';
+      linkBtn.style.color   = '#4da8f5';
+      fileBtn.style.border  = '2px solid rgba(255,255,255,0.12)';
+      fileBtn.style.background = 'transparent';
+      fileBtn.style.color   = '#8b949e';
+    } else {
+      linkArea.style.display = 'none';
+      fileArea.style.display = '';
+      fileBtn.style.border  = '2px solid #4da8f5';
+      fileBtn.style.background = 'rgba(77,168,245,0.15)';
+      fileBtn.style.color   = '#4da8f5';
+      linkBtn.style.border  = '2px solid rgba(255,255,255,0.12)';
+      linkBtn.style.background = 'transparent';
+      linkBtn.style.color   = '#8b949e';
+    }
+  }
+
+  // ── 파일 선택 핸들러 ────────────────────────────────────────────
+  function onAssignFileSelected(input) {
+    var errEl = document.getElementById('assignFileError');
+    var dispEl = document.getElementById('assignFileNameDisplay');
+    errEl.style.display = 'none';
+    if (!input.files || !input.files[0]) { dispEl.innerText = '파일을 선택하거나 여기에 드래그하세요'; return; }
+    var file = input.files[0];
+    var maxBytes = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxBytes) {
+      errEl.innerText = '⚠️ 파일 크기가 ' + (file.size / 1024 / 1024).toFixed(1) + 'MB입니다. 5MB 이하만 업로드 가능합니다. PPTX는 링크 제출을 이용해주세요.';
+      errEl.style.display = 'block';
+      input.value = '';
+      dispEl.innerText = '파일을 선택하거나 여기에 드래그하세요';
+      return;
+    }
+    dispEl.innerText = '✅ ' + file.name + '  (' + (file.size / 1024).toFixed(0) + 'KB)';
+  }
+
+  // ── 제출 실행 ───────────────────────────────────────────────────
+  function executeAssignSubmit() {
+    var errEl  = document.getElementById('assignModalError');
+    var btn    = document.getElementById('assignSubmitBtn');
+    var progEl = document.getElementById('assignUploadProgress');
+    errEl.style.display = 'none';
+
+    var memo = document.getElementById('assignMemoInput').value.trim();
+
+    if (_assignModal.mode === 'link') {
+      // ── 링크 제출 ──
+      var link = document.getElementById('assignLinkInput').value.trim();
+      if (!link) { errEl.innerText = '링크를 입력해주세요.'; errEl.style.display = 'block'; return; }
+      if (!link.startsWith('http')) { errEl.innerText = '올바른 링크를 입력해주세요. (http:// 로 시작)'; errEl.style.display = 'block'; return; }
+
+      btn.disabled = true; btn.innerText = '제출 중...';
+      google.script.run
+        .withSuccessHandler(function(res) {
+          btn.disabled = false; btn.innerText = '제출하기';
+          if (res && res.success) {
+            closeAssignSubmitModal();
+            loadAssignments();
+            _showAssignToast('✅ ' + res.msg);
+          } else {
+            errEl.innerText = res ? res.msg : '제출에 실패했습니다.';
+            errEl.style.display = 'block';
+          }
+        })
+        .withFailureHandler(function(err) {
+          btn.disabled = false; btn.innerText = '제출하기';
+          errEl.innerText = '오류가 발생했습니다. 다시 시도해주세요.';
+          errEl.style.display = 'block';
+        })
+        .submitAssignmentLink(window._currentStudentName, _assignModal.id, _assignModal.name, link, memo);
+
+    } else {
+      // ── 파일 제출 ──
+      var fileInput = document.getElementById('assignFileInput');
+      if (!fileInput.files || !fileInput.files[0]) {
+        errEl.innerText = '파일을 선택해주세요.'; errEl.style.display = 'block'; return;
+      }
+      var file = fileInput.files[0];
+      if (file.size > 5 * 1024 * 1024) {
+        errEl.innerText = '파일이 5MB를 초과합니다. 링크 제출을 이용해주세요.';
+        errEl.style.display = 'block'; return;
+      }
+
+      btn.disabled = true; btn.innerText = '업로드 중...';
+      progEl.style.display = 'block';
+      // 프로그레스 바 애니메이션 (가상)
+      var pct = 0;
+      var pBar = document.getElementById('assignProgressBar');
+      var pTimer = setInterval(function() { pct = Math.min(pct + 8, 85); pBar.style.width = pct + '%'; }, 300);
+
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        var base64 = e.target.result.split(',')[1];
+        google.script.run
+          .withSuccessHandler(function(res) {
+            clearInterval(pTimer); pBar.style.width = '100%';
+            setTimeout(function() { progEl.style.display = 'none'; }, 400);
+            btn.disabled = false; btn.innerText = '제출하기';
+            if (res && res.success) {
+              closeAssignSubmitModal();
+              loadAssignments();
+              _showAssignToast('✅ ' + res.msg);
+            } else {
+              errEl.innerText = res ? res.msg : '제출에 실패했습니다.';
+              errEl.style.display = 'block';
+            }
+          })
+          .withFailureHandler(function() {
+            clearInterval(pTimer);
+            progEl.style.display = 'none';
+            btn.disabled = false; btn.innerText = '제출하기';
+            errEl.innerText = '업로드 중 오류가 발생했습니다. 다시 시도해주세요.';
+            errEl.style.display = 'block';
+          })
+          .submitAssignmentFile(window._currentStudentName, _assignModal.id, _assignModal.name,
+                                base64, file.name, file.type, memo);
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  // ── 제출 완료 토스트 ────────────────────────────────────────────
+  function _showAssignToast(msg) {
+    var toast = document.createElement('div');
+    toast.innerText = msg;
+    toast.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);' +
+      'background:#1e8449;color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;' +
+      'font-weight:bold;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,0.4);' +
+      'white-space:nowrap;max-width:90vw;text-align:center;';
+    document.body.appendChild(toast);
+    setTimeout(function() { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.4s'; }, 2200);
+    setTimeout(function() { document.body.removeChild(toast); }, 2700);
+  }
+
+  // ══════════════════════════════════════════════════════
   // ██ 탭 전환
   // ══════════════════════════════════════════════════════
   function switchDashTab(tabId, el) {
@@ -3835,6 +4259,10 @@
       if (sb && (!sb.children.length || sb.querySelector('td[colspan]') )) {
         _loadSubData(window._currentStudentName);
       }
+    }
+    // 과제 탭: 목록 로드
+    if (tabId === 'assign' && window._currentStudentName) {
+      loadAssignments();
     }
     // 업적 탭: 통계 카드 업데이트 + 성좌 맵 초기화
     // ★ _achData는 두 가지 구조로 존재할 수 있다:
@@ -7515,10 +7943,10 @@ var MEMBER_PORT_STYLE = {
 
 // 길드 로고 이미지 URL
 var GUILD_LOGOS = {
-  'GUILD_01': 'https://raw.githubusercontent.com/Jamesleekor/brand-assets/refs/heads/main/guild/MILKYWAY.jpeg',
+  'GUILD_01': 'https://raw.githubusercontent.com/Jamesleekor/brand-assets/refs/heads/main/guild/Milkyway.png',
   'GUILD_02': 'https://raw.githubusercontent.com/Jamesleekor/brand-assets/refs/heads/main/guild/RISING.png',
-  'GUILD_03': 'https://raw.githubusercontent.com/Jamesleekor/brand-assets/refs/heads/main/guild/RUBY.jpeg',
-  'GUILD_04': 'https://raw.githubusercontent.com/Jamesleekor/brand-assets/refs/heads/main/guild/DARKROSE.jpeg',
+  'GUILD_03': 'https://raw.githubusercontent.com/Jamesleekor/brand-assets/refs/heads/main/guild/Ruby.png',
+  'GUILD_04': 'https://raw.githubusercontent.com/Jamesleekor/brand-assets/refs/heads/main/guild/Darkrose.png',
   'GUILD_05': 'https://raw.githubusercontent.com/Jamesleekor/brand-assets/refs/heads/main/guild/EMERALD.png'
 };
 

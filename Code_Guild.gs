@@ -862,6 +862,9 @@ if (trackSheet) {
     yearMonth + " 월간 GS 산출 완료.",
     "GS 산출", 5
   );
+
+  // 길드 GS 산출 직후 개인 기여점수도 함께 계산
+  calcMonthlyIndividualGS();
 }
 
 
@@ -1986,6 +1989,280 @@ function _buildStudentGuildMap(mbSheet) {
   }
   return map;
 }
+
+// ============================================================
+// 섹션 14 — 개인 GS 기여점수 산출
+// ============================================================
+//
+// 목적: 월별로 각 학생이 길드 GS에 얼마나 기여했는지 수치화하여
+//       길드 내 1~N위를 가릴 수 있도록 '길드_개인기여도' 시트에 기록.
+//
+// 공식 (정규화 기준: 길드 소속 전체 학생 중 1등):
+//   α_개인  = (내 브랜드가치 증가량  / 전체 최대 증가량)  × 0.50
+//   참여점수 = (내 미션참여 횟수     / 전체 최다 참여횟수) × 0.15
+//   출석점수 = (내 세션출석 횟수     / 전체 최다 출석횟수) × 0.10
+//   합계     = α_개인 + 참여점수 + 출석점수  (최대 0.75)
+//
+// 길드내순위: 같은 길드원 사이에서 합계 기준 내림차순 (1위가 최고)
+//
+// 자동 실행: calcMonthlyGS() 내부에서 월간 GS 산출 직후 호출됨
+// 수동 실행: runIndividualGSManually() 함수 직접 실행
+// ============================================================
+
+/**
+ * 개인 GS 기여점수를 계산하여 '길드_개인기여도' 시트에 기록합니다.
+ * calcMonthlyGS() 끝에서 자동 호출됩니다.
+ */
+function calcMonthlyIndividualGS() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  var mainSheet  = ss.getSheetByName(SHEET_NAMES.MAIN);
+  var trackSheet = ss.getSheetByName('브랜드가치추적');
+  var actSheet   = ss.getSheetByName('길드활동로그');
+  var sesSheet   = ss.getSheetByName('길드_세션출석');
+  var mbSheet    = ss.getSheetByName(SHEET_NAMES.GUILD_MEMBERS);
+
+  if (!mainSheet || !mbSheet) {
+    Logger.log('[calcMonthlyIndividualGS] 필수 시트(메인/길드_구성) 없음. 종료.');
+    return;
+  }
+
+  var now       = new Date();
+  var yearMonth = Utilities.formatDate(now, 'Asia/Seoul', 'yyyy-MM');
+
+  // ── 시트 준비: 없으면 자동 생성 ──────────────────────────────────
+  var indSheet = ss.getSheetByName('길드_개인기여도');
+  if (!indSheet) {
+    indSheet = ss.insertSheet('길드_개인기여도');
+    indSheet.appendRow([
+      '월', '길드ID', '학생명',
+      '브랜드가치증가량', '미션참여횟수', '세션출석횟수',
+      'α점수', '참여점수', '출석점수',
+      '기여점수합계', '길드내순위'
+    ]);
+    indSheet.getRange(1, 1, 1, 11).setFontWeight('bold');
+    Logger.log('[calcMonthlyIndividualGS] 길드_개인기여도 시트 자동 생성.');
+  }
+
+  // ── 이번 달 중복 방지 ─────────────────────────────────────────────
+  var existingData = indSheet.getDataRange().getValues();
+  for (var ex = 1; ex < existingData.length; ex++) {
+    var cellVal = existingData[ex][0];
+    var cellYM  = cellVal instanceof Date
+      ? Utilities.formatDate(cellVal, 'Asia/Seoul', 'yyyy-MM')
+      : String(cellVal).trim().substring(0, 7);
+    if (cellYM === yearMonth) {
+      Logger.log('[calcMonthlyIndividualGS] 이번 달 이미 계산됨: ' + yearMonth);
+      return;
+    }
+  }
+
+  // ── 1. 전체 활성 길드원 목록 수집 ────────────────────────────────
+  // { 학생명: 길드ID }
+  var studentGuildMap = _buildStudentGuildMap(mbSheet);
+  var allStudents     = Object.keys(studentGuildMap);
+
+  if (allStudents.length === 0) {
+    Logger.log('[calcMonthlyIndividualGS] 활성 길드원 없음. 종료.');
+    return;
+  }
+
+  // ── 2. 학생별 브랜드가치 증가량 계산 ─────────────────────────────
+  // 현재값: 메인 시트 C열(브랜드가치)
+  var mainData  = mainSheet.getDataRange().getValues();
+  var curValMap = {}; // { 학생명: 현재 브랜드가치 }
+  for (var m = 1; m < mainData.length; m++) {
+    var mName = String(mainData[m][COL_NAME  - 1]).trim();
+    var mVal  = parseFloat(mainData[m][COL_VALUE - 1]) || 0;
+    if (mName) curValMap[mName] = mVal;
+  }
+
+  // 월초값: 브랜드가치추적 시트에서 해당 월 첫 번째 날짜 컬럼
+  var startValMap = {}; // { 학생명: 월초 브랜드가치 }
+  if (trackSheet) {
+    var trackData    = trackSheet.getDataRange().getValues();
+    var trackHeaders = trackData[0];
+    var monthStart   = new Date(now.getFullYear(), now.getMonth(), 1);
+    var monthEnd     = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    var startColIdx  = -1;
+    var closestDate  = null;
+
+    for (var h = 1; h < trackHeaders.length; h++) {
+      var hDate = new Date(trackHeaders[h]);
+      if (isNaN(hDate.getTime())) continue;
+      hDate.setHours(0, 0, 0, 0);
+      if (hDate >= monthStart && hDate <= monthEnd) {
+        if (closestDate === null || hDate < closestDate) {
+          closestDate = hDate;
+          startColIdx = h;
+        }
+      }
+    }
+
+    if (startColIdx !== -1) {
+      for (var t = 1; t < trackData.length; t++) {
+        var tName = String(trackData[t][0]).trim();
+        var tVal  = parseFloat(trackData[t][startColIdx]) || 0;
+        if (tName) startValMap[tName] = tVal;
+      }
+    }
+  }
+
+  // 증가량 맵: 음수(자산 감소)는 0으로 처리
+  var growthMap = {};
+  allStudents.forEach(function(name) {
+    var cur   = curValMap[name]   || 0;
+    var start = startValMap[name] !== undefined ? startValMap[name] : cur;
+    growthMap[name] = Math.max(0, cur - start);
+  });
+
+  // ── 3. 학생별 미션 참여 횟수 집계 (이번 달만) ─────────────────────
+  // 길드활동로그: A=날짜, B=유형('미션'), C=미션ID, D=학생명, E=참여여부('O'/'X')
+  var missionCntMap = {};
+  allStudents.forEach(function(name) { missionCntMap[name] = 0; });
+
+  if (actSheet) {
+    var actData     = actSheet.getDataRange().getValues();
+    var actMStart   = new Date(now.getFullYear(), now.getMonth(), 1);
+    var actMEnd     = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    actMEnd.setHours(23, 59, 59, 999);
+
+    for (var a = 1; a < actData.length; a++) {
+      var aDate   = new Date(actData[a][0]);
+      var aType   = String(actData[a][1]).trim();
+      var aName   = String(actData[a][3]).trim();
+      var aResult = String(actData[a][4]).trim();
+
+      if (isNaN(aDate.getTime()) || aDate < actMStart || aDate > actMEnd) continue;
+      if (aType !== '미션') continue;
+      if (aResult !== 'O') continue;
+      if (!missionCntMap.hasOwnProperty(aName)) continue;
+      missionCntMap[aName]++;
+    }
+  }
+
+  // ── 4. 학생별 세션 출석 횟수 집계 (이번 달만) ─────────────────────
+  // 길드_세션출석: A=날짜, B=길드ID, C=학생명, D=출석여부('O'/'X')
+  var sessionCntMap = {};
+  allStudents.forEach(function(name) { sessionCntMap[name] = 0; });
+
+  if (sesSheet) {
+    var sesData   = sesSheet.getDataRange().getValues();
+    var sesMStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    var sesMEnd   = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    sesMEnd.setHours(23, 59, 59, 999);
+
+    for (var s = 1; s < sesData.length; s++) {
+      var sDate   = new Date(sesData[s][0]);
+      var sName   = String(sesData[s][2]).trim();
+      var sResult = String(sesData[s][3]).trim();
+
+      if (isNaN(sDate.getTime()) || sDate < sesMStart || sDate > sesMEnd) continue;
+      if (sResult !== 'O') continue;
+      if (!sessionCntMap.hasOwnProperty(sName)) continue;
+      sessionCntMap[sName]++;
+    }
+  }
+
+  // ── 5. 전체 학생 기준 최대값 (정규화 분모) ───────────────────────
+  var maxGrowth  = Math.max.apply(null, allStudents.map(function(n) { return growthMap[n]     || 0; }));
+  var maxMission = Math.max.apply(null, allStudents.map(function(n) { return missionCntMap[n] || 0; }));
+  var maxSession = Math.max.apply(null, allStudents.map(function(n) { return sessionCntMap[n] || 0; }));
+
+  Logger.log('[calcMonthlyIndividualGS] 정규화 기준 — 최대증가량: ' + maxGrowth +
+             ', 최다미션참여: ' + maxMission + ', 최다세션출석: ' + maxSession);
+
+  // ── 6. 학생별 점수 계산 ───────────────────────────────────────────
+  var studentScores = [];
+
+  allStudents.forEach(function(name) {
+    var growth  = growthMap[name]     || 0;
+    var mCnt    = missionCntMap[name] || 0;
+    var sCnt    = sessionCntMap[name] || 0;
+    var guildId = studentGuildMap[name];
+
+    // 각 항목 정규화 후 가중치 적용. 최대값=0이면 해당 항목 0점 처리.
+    var alphaScore  = maxGrowth  > 0 ? (growth / maxGrowth)  * GS_ALPHA                : 0;
+    var partScore   = maxMission > 0 ? (mCnt   / maxMission) * GS_MISSION_PARTICIPATION : 0;
+    var attendScore = maxSession > 0 ? (sCnt   / maxSession) * GS_SESSION_ATTENDANCE   : 0;
+    var totalScore  = alphaScore + partScore + attendScore;
+
+    studentScores.push({
+      guildId     : guildId,
+      name        : name,
+      growth      : Math.round(growth),
+      mCnt        : mCnt,
+      sCnt        : sCnt,
+      alphaScore  : Math.round(alphaScore  * 1000) / 1000,
+      partScore   : Math.round(partScore   * 1000) / 1000,
+      attendScore : Math.round(attendScore * 1000) / 1000,
+      totalScore  : Math.round(totalScore  * 1000) / 1000,
+      guildRank   : 0  // 다음 단계에서 계산
+    });
+  });
+
+  // ── 7. 길드 내 순위 계산 ─────────────────────────────────────────
+  // 동점자는 같은 순위 부여 (공동 n위)
+  GUILD_IDS.forEach(function(guildId) {
+    var guildMembers = studentScores.filter(function(s) { return s.guildId === guildId; });
+    guildMembers.sort(function(a, b) { return b.totalScore - a.totalScore; });
+
+    var prevScore = null;
+    var prevRank  = 0;
+    guildMembers.forEach(function(s, idx) {
+      if (s.totalScore !== prevScore) {
+        prevRank  = idx + 1;
+        prevScore = s.totalScore;
+      }
+      s.guildRank = prevRank;
+    });
+  });
+
+  // ── 8. 시트에 기록 (길드ID → 길드내순위 순 정렬) ──────────────────
+  studentScores.sort(function(a, b) {
+    if (a.guildId < b.guildId) return -1;
+    if (a.guildId > b.guildId) return  1;
+    return a.guildRank - b.guildRank;
+  });
+
+  studentScores.forEach(function(s) {
+    indSheet.appendRow([
+      yearMonth,    // A: 월
+      s.guildId,    // B: 길드ID
+      s.name,       // C: 학생명
+      s.growth,     // D: 브랜드가치증가량
+      s.mCnt,       // E: 미션참여횟수
+      s.sCnt,       // F: 세션출석횟수
+      s.alphaScore, // G: α점수 (최대 0.50)
+      s.partScore,  // H: 참여점수 (최대 0.15)
+      s.attendScore,// I: 출석점수 (최대 0.10)
+      s.totalScore, // J: 기여점수합계 (최대 0.75)
+      s.guildRank   // K: 길드내순위
+    ]);
+  });
+
+  Logger.log('[calcMonthlyIndividualGS] ' + yearMonth +
+             ' 개인 기여점수 산출 완료. ' + studentScores.length + '명 처리.');
+  SpreadsheetApp.getActiveSpreadsheet().toast(
+    yearMonth + ' 개인 기여점수 산출 완료 (' + studentScores.length + '명)',
+    '개인 GS 기여점수', 4
+  );
+}
+
+
+/**
+ * 수동으로 즉시 실행할 때 사용합니다.
+ * (Apps Script 편집기에서 직접 실행)
+ *
+ * 사용법:
+ *   1. Apps Script 편집기 열기
+ *   2. 함수 선택 드롭다운에서 runIndividualGSManually 선택
+ *   3. ▶ 실행
+ */
+function runIndividualGSManually() {
+  calcMonthlyIndividualGS();
+}
+
 
 function debugGSSheet() {
   var ss    = SpreadsheetApp.getActiveSpreadsheet();

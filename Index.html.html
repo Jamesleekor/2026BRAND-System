@@ -806,11 +806,69 @@
     }
     .shop-tab {
       flex: 1; padding: 10px 0; text-align: center;
-      font-size: 13px; font-weight: bold; cursor: pointer;
+      font-size: 12px; font-weight: bold; cursor: pointer;
       color: #6e7681; border: none; background: none;
       transition: all 0.2s;
     }
     .shop-tab.active { color: #4da8f5; border-bottom: 3px solid #4da8f5; background: #1c2333; }
+
+    /* ── 캐릭터 그리드 뷰 ── */
+    .char-filter-bar {
+      display: flex; gap: 6px; flex-wrap: wrap; padding: 10px 14px 0;
+    }
+    .char-filter-chip {
+      padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold;
+      cursor: pointer; border: 1px solid #30363d; background: transparent; color: #6e7681;
+      transition: all 0.15s;
+    }
+    .char-filter-chip.active { background: #4da8f5; color: #fff; border-color: #4da8f5; }
+    .char-search-input {
+      width: 100%; padding: 7px 12px; margin: 8px 14px 0;
+      box-sizing: border-box; width: calc(100% - 28px);
+      background: rgba(255,255,255,0.06); border: 1px solid #30363d;
+      border-radius: 8px; color: #e6edf3; font-size: 12px; outline: none;
+    }
+    .char-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 8px; padding: 10px 14px 14px;
+    }
+    .char-grid-card {
+      border: 1px solid #30363d; border-radius: 10px; padding: 8px 6px;
+      display: flex; flex-direction: column; align-items: center; gap: 5px;
+      cursor: pointer; transition: border-color 0.15s, background 0.15s;
+      position: relative; min-height: 100px;
+    }
+    .char-grid-card:hover { border-color: #4da8f5; background: rgba(77,168,245,0.06); }
+    .char-grid-card.owned  { border-color: #3fb950; background: rgba(13,46,26,0.5); }
+    .char-grid-card.equipped-now { border-color: #f0883e; background: rgba(240,136,62,0.08); }
+    .char-grid-card.locked { opacity: 0.5; cursor: default; }
+    .char-grid-img { width: 54px; height: 54px; object-fit: contain; border-radius: 6px; }
+    .char-grid-emoji { font-size: 38px; line-height: 1; }
+    .char-grid-name {
+      font-size: 10px; color: #e6edf3; text-align: center;
+      line-height: 1.2; max-height: 2.4em; overflow: hidden;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    }
+    .char-grid-badge {
+      position: absolute; top: 4px; right: 4px;
+      font-size: 9px; padding: 1px 5px; border-radius: 8px;
+      font-weight: bold;
+    }
+    .char-grid-badge.equipped-badge { background: #f0883e; color: #fff; }
+    .char-grid-badge.owned-badge    { background: #3fb950; color: #fff; }
+    .char-grid-badge.locked-badge   { background: #444; color: #aaa; }
+
+    /* 클릭 시 상세 팝업 */
+    .char-detail-overlay {
+      position: fixed; inset: 0; z-index: 4000;
+      background: rgba(0,0,0,0.65); display: flex;
+      align-items: flex-end; justify-content: center;
+    }
+    .char-detail-sheet {
+      background: #1c2333; border-radius: 18px 18px 0 0;
+      width: 100%; max-width: 480px; padding: 20px 20px 32px;
+      border-top: 1px solid rgba(255,255,255,0.12);
+    }
     .shop-items { padding: 14px; overflow-y: auto; flex: 1; }
     .shop-item-card {
       border: 1px solid #30363d; border-radius: 12px; padding: 14px;
@@ -2800,7 +2858,7 @@
         </div>
       </div>
     </div>
-    
+
 
   </div></div>
       
@@ -2985,7 +3043,8 @@
     <div class="shop-tabs">
       <button class="shop-tab active" onclick="switchShopTab('스킨',this)">🎨 스킨</button>
       <button class="shop-tab" onclick="switchShopTab('폰트',this)">✏️ 폰트</button>
-      <button class="shop-tab" onclick="switchShopTab('캐릭터',this)">🐱 캐릭터</button>
+      <button class="shop-tab" onclick="switchShopTab('캐릭터(남)',this)">👦 남</button>
+      <button class="shop-tab" onclick="switchShopTab('캐릭터(여)',this)">👧 여</button>
     </div>
     <div class="shop-items" id="shopItemList">
       <div style="text-align:center;padding:30px;color:#bbb;">로딩 중...</div>
@@ -3950,10 +4009,13 @@
   })(); // end ConstMap IIFE
 
   // ══════════════════════════════════════════════════════
+  // ██ 탭 전환
+  // ══════════════════════════════════════════════════════
+  // ══════════════════════════════════════════════════════
   // ██ 과제 제출 시스템
   // ══════════════════════════════════════════════════════
 
-  // 현재 모달에 열린 과제 정보
+  // 현재 열린 과제 모달 상태
   var _assignModal = { id: '', name: '', allowType: '둘다', mode: 'link' };
 
   // ── 과제 목록 로드 ──────────────────────────────────────────────
@@ -3990,7 +4052,7 @@
       // D-day 뱃지
       var dDayHtml = '';
       if (a.dDay !== null) {
-        if (a.dDay < 0)     dDayHtml = '<span style="color:#f85149;font-size:11px;">마감됨</span>';
+        if (a.dDay < 0)        dDayHtml = '<span style="color:#f85149;font-size:11px;">마감됨</span>';
         else if (a.dDay === 0) dDayHtml = '<span style="color:#f0883e;font-size:11px;font-weight:bold;">📌 D-Day!</span>';
         else if (a.dDay <= 3)  dDayHtml = '<span style="color:#f0883e;font-size:11px;font-weight:bold;">D-' + a.dDay + '</span>';
         else                   dDayHtml = '<span style="color:#8b949e;font-size:11px;">D-' + a.dDay + '</span>';
@@ -4059,13 +4121,13 @@
     _assignModal.allowType = allowType || '둘다';
     _assignModal.mode      = 'link';
 
-    document.getElementById('assignModalTitle').innerText = assignName;
-    document.getElementById('assignLinkInput').value      = '';
-    document.getElementById('assignMemoInput').value      = '';
-    document.getElementById('assignFileInput').value      = '';
-    document.getElementById('assignFileNameDisplay').innerText = '파일을 선택하거나 여기에 드래그하세요';
-    document.getElementById('assignFileError').style.display = 'none';
-    document.getElementById('assignModalError').style.display = 'none';
+    document.getElementById('assignModalTitle').innerText        = assignName;
+    document.getElementById('assignLinkInput').value             = '';
+    document.getElementById('assignMemoInput').value             = '';
+    document.getElementById('assignFileInput').value             = '';
+    document.getElementById('assignFileNameDisplay').innerText   = '파일을 선택하거나 여기에 드래그하세요';
+    document.getElementById('assignFileError').style.display     = 'none';
+    document.getElementById('assignModalError').style.display    = 'none';
     document.getElementById('assignUploadProgress').style.display = 'none';
 
     // allowType에 따라 버튼 표시 제어
@@ -4104,38 +4166,41 @@
     document.getElementById('assignModalError').style.display = 'none';
 
     if (mode === 'link') {
-      linkArea.style.display = '';
-      fileArea.style.display = 'none';
-      linkBtn.style.border  = '2px solid #4da8f5';
+      linkArea.style.display   = '';
+      fileArea.style.display   = 'none';
+      linkBtn.style.border     = '2px solid #4da8f5';
       linkBtn.style.background = 'rgba(77,168,245,0.15)';
-      linkBtn.style.color   = '#4da8f5';
-      fileBtn.style.border  = '2px solid rgba(255,255,255,0.12)';
+      linkBtn.style.color      = '#4da8f5';
+      fileBtn.style.border     = '2px solid rgba(255,255,255,0.12)';
       fileBtn.style.background = 'transparent';
-      fileBtn.style.color   = '#8b949e';
+      fileBtn.style.color      = '#8b949e';
     } else {
-      linkArea.style.display = 'none';
-      fileArea.style.display = '';
-      fileBtn.style.border  = '2px solid #4da8f5';
+      linkArea.style.display   = 'none';
+      fileArea.style.display   = '';
+      fileBtn.style.border     = '2px solid #4da8f5';
       fileBtn.style.background = 'rgba(77,168,245,0.15)';
-      fileBtn.style.color   = '#4da8f5';
-      linkBtn.style.border  = '2px solid rgba(255,255,255,0.12)';
+      fileBtn.style.color      = '#4da8f5';
+      linkBtn.style.border     = '2px solid rgba(255,255,255,0.12)';
       linkBtn.style.background = 'transparent';
-      linkBtn.style.color   = '#8b949e';
+      linkBtn.style.color      = '#8b949e';
     }
   }
 
   // ── 파일 선택 핸들러 ────────────────────────────────────────────
   function onAssignFileSelected(input) {
-    var errEl = document.getElementById('assignFileError');
+    var errEl  = document.getElementById('assignFileError');
     var dispEl = document.getElementById('assignFileNameDisplay');
     errEl.style.display = 'none';
-    if (!input.files || !input.files[0]) { dispEl.innerText = '파일을 선택하거나 여기에 드래그하세요'; return; }
-    var file = input.files[0];
+    if (!input.files || !input.files[0]) {
+      dispEl.innerText = '파일을 선택하거나 여기에 드래그하세요'; return;
+    }
+    var file     = input.files[0];
     var maxBytes = 5 * 1024 * 1024; // 5MB
     if (file.size > maxBytes) {
-      errEl.innerText = '⚠️ 파일 크기가 ' + (file.size / 1024 / 1024).toFixed(1) + 'MB입니다. 5MB 이하만 업로드 가능합니다. PPTX는 링크 제출을 이용해주세요.';
+      errEl.innerText = '⚠️ 파일 크기가 ' + (file.size / 1024 / 1024).toFixed(1) +
+        'MB입니다. 5MB 이하만 업로드 가능합니다. PPTX는 링크 제출을 이용해주세요.';
       errEl.style.display = 'block';
-      input.value = '';
+      input.value  = '';
       dispEl.innerText = '파일을 선택하거나 여기에 드래그하세요';
       return;
     }
@@ -4154,8 +4219,12 @@
     if (_assignModal.mode === 'link') {
       // ── 링크 제출 ──
       var link = document.getElementById('assignLinkInput').value.trim();
-      if (!link) { errEl.innerText = '링크를 입력해주세요.'; errEl.style.display = 'block'; return; }
-      if (!link.startsWith('http')) { errEl.innerText = '올바른 링크를 입력해주세요. (http:// 로 시작)'; errEl.style.display = 'block'; return; }
+      if (!link) {
+        errEl.innerText = '링크를 입력해주세요.'; errEl.style.display = 'block'; return;
+      }
+      if (!link.startsWith('http')) {
+        errEl.innerText = '올바른 링크를 입력해주세요. (http:// 로 시작)'; errEl.style.display = 'block'; return;
+      }
 
       btn.disabled = true; btn.innerText = '제출 중...';
       google.script.run
@@ -4170,7 +4239,7 @@
             errEl.style.display = 'block';
           }
         })
-        .withFailureHandler(function(err) {
+        .withFailureHandler(function() {
           btn.disabled = false; btn.innerText = '제출하기';
           errEl.innerText = '오류가 발생했습니다. 다시 시도해주세요.';
           errEl.style.display = 'block';
@@ -4192,8 +4261,8 @@
       btn.disabled = true; btn.innerText = '업로드 중...';
       progEl.style.display = 'block';
       // 프로그레스 바 애니메이션 (가상)
-      var pct = 0;
-      var pBar = document.getElementById('assignProgressBar');
+      var pct   = 0;
+      var pBar  = document.getElementById('assignProgressBar');
       var pTimer = setInterval(function() { pct = Math.min(pct + 8, 85); pBar.style.width = pct + '%'; }, 300);
 
       var reader = new FileReader();
@@ -6423,9 +6492,9 @@ function requestCancelDeposit(depId, amount) {
     // 장착 중인 스킨/폰트/캐릭터 적용 (마지막으로 구매한 것)
     var skin = null, font = null, char = null;
     ownedItems.forEach(function(item) {
-      if (item.category === '스킨')     skin = item.resourceVal;
-      if (item.category === '폰트')     font = item.resourceVal;
-      if (item.category === '캐릭터')   char = item.resourceVal;
+      if (item.category === '스킨')                  skin = item.resourceVal;
+      if (item.category === '폰트')                  font = item.resourceVal;
+      if (item.category.startsWith('캐릭터'))        char = item.resourceVal; // 캐릭터(남)/(여) 통합
     });
     if (skin) applySkin(skin);
     if (font) applyFont(font);
@@ -6459,24 +6528,97 @@ function requestCancelDeposit(depId, amount) {
     window._currentSkin = skinVal;
   }
 
-  var _previewTimer = null;
-  function previewSkin(skinKey, btnEl) {
-    var prevSkin = window._currentSkin || 'default';
-    applySkin(skinKey);
-    if (_previewTimer) clearTimeout(_previewTimer);
+  // ── 스킨 미리보기 ───────────────────────────────────────────────
+  // _previewTimer   : 현재 실행 중인 setInterval ID (null = 미리보기 없음)
+  // _previewOrigSkin: 미리보기 시작 전 진짜 원본 스킨 (연속 클릭해도 덮어쓰지 않음)
+  // _previewPrevBtn : 이전에 누른 버튼 참조 (연속 클릭 시 버튼 텍스트 리셋용)
+  var _previewTimer    = null;
+  var _previewOrigSkin = null;
+  var _previewPrevBtn  = null;
 
-    // 버튼에 카운트다운 표시
+  function previewSkin(skinKey, btnEl) {
+    // 최초 미리보기 시작 시에만 원본 저장
+    // (연속 클릭 시 이미 저장된 원본을 덮어쓰지 않음)
+    if (_previewTimer === null) {
+      _previewOrigSkin = window._currentSkin || 'default';
+    }
+
+    // 이전 ticker 취소
+    if (_previewTimer !== null) {
+      clearInterval(_previewTimer);
+      _previewTimer = null;
+    }
+
+    // 이전 버튼 텍스트 초기화
+    if (_previewPrevBtn && _previewPrevBtn !== btnEl) {
+      _previewPrevBtn.disabled    = false;
+      _previewPrevBtn.textContent = '👁️ 미리보기';
+    }
+    _previewPrevBtn = btnEl;
+
+    applySkin(skinKey);
+
     var count = 5;
-    btnEl.disabled = true;
+    btnEl.disabled    = true;
     btnEl.textContent = '⏱️ ' + count + '초 후 복원';
-    var ticker = setInterval(function() {
+
+    _previewTimer = setInterval(function() {
       count--;
       if (count > 0) {
         btnEl.textContent = '⏱️ ' + count + '초 후 복원';
       } else {
-        clearInterval(ticker);
-        applySkin(prevSkin);
-        btnEl.disabled = false;
+        clearInterval(_previewTimer);
+        _previewTimer   = null;
+        _previewPrevBtn = null;
+        applySkin(_previewOrigSkin);   // 진짜 원본으로 복원
+        _previewOrigSkin = null;
+        btnEl.disabled    = false;
+        btnEl.textContent = '👁️ 미리보기';
+      }
+    }, 1000);
+  }
+
+  // ── 폰트 미리보기 ───────────────────────────────────────────────
+  var _previewFontTimer    = null;
+  var _previewOrigFont     = null;
+  var _previewFontPrevBtn  = null;
+
+  function previewFont(fontName, btnEl) {
+    // 최초 미리보기 시작 시에만 원본 저장
+    if (_previewFontTimer === null) {
+      _previewOrigFont = window._currentFont || null;
+    }
+
+    // 이전 ticker 취소
+    if (_previewFontTimer !== null) {
+      clearInterval(_previewFontTimer);
+      _previewFontTimer = null;
+    }
+
+    // 이전 버튼 텍스트 초기화
+    if (_previewFontPrevBtn && _previewFontPrevBtn !== btnEl) {
+      _previewFontPrevBtn.disabled    = false;
+      _previewFontPrevBtn.textContent = '👁️ 미리보기';
+    }
+    _previewFontPrevBtn = btnEl;
+
+    applyFont(fontName);
+
+    var count = 5;
+    btnEl.disabled    = true;
+    btnEl.textContent = '⏱️ ' + count + '초 후 복원';
+
+    _previewFontTimer = setInterval(function() {
+      count--;
+      if (count > 0) {
+        btnEl.textContent = '⏱️ ' + count + '초 후 복원';
+      } else {
+        clearInterval(_previewFontTimer);
+        _previewFontTimer   = null;
+        _previewFontPrevBtn = null;
+        applyFont(_previewOrigFont);   // 진짜 원본으로 복원
+        _previewOrigFont = null;
+        btnEl.disabled    = false;
         btnEl.textContent = '👁️ 미리보기';
       }
     }, 1000);
@@ -6547,25 +6689,49 @@ function requestCancelDeposit(depId, amount) {
 
   function switchShopTab(category, btn) {
     _currentShopTab = category;
+    // 캐릭터 탭 전환 시 필터/검색 초기화
+    if (category.startsWith('캐릭터')) { _charFilter = '전체'; _charSearch = ''; }
     document.querySelectorAll('.shop-tab').forEach(function(t){ t.classList.remove('active'); });
     btn.classList.add('active');
     renderShopItems(category);
   }
 
+  // 캐릭터 탭 필터/검색 상태
+  var _charFilter = '전체';
+  var _charSearch = '';
+
   function renderShopItems(category) {
     var container = document.getElementById('shopItemList');
     if (!_shopData) return;
 
-    // 기본 아이템 행 (장착 해제 → 기본값으로)
-    var defaultItem = { itemId: 'DEFAULT_' + category, category: category,
-      itemName: category === '스킨' ? '🏠 기본 스킨' : category === '폰트' ? '✏️ 기본 폰트' : '😊 캐릭터 없음',
-      price: 0, condDesc: '기본 제공', resourceVal: 'default', isOwned: true,
-      isEquipped: !(_shopData.equippedSet || []).some(function(id) {
-        return (_shopData.items || []).some(function(it){ return it.itemId === id && it.category === category && it.isEquipped; });
-      }),
-      condMet: true, canBuy: false };
+    var isCharTab = category.startsWith('캐릭터');
 
-    var items = [defaultItem].concat((_shopData.items || []).filter(function(i){ return i.category === category; }));
+    // ── 캐릭터 계열: 현재 캐릭터가 장착되어 있는지 (남/여 통합 확인) ──
+    var anyCharEquipped = (_shopData.items || []).some(function(it) {
+      return it.category.startsWith('캐릭터') && it.isEquipped;
+    });
+
+    // 기본 아이템 (장착 해제용)
+    var defaultItem = {
+      itemId: 'DEFAULT_' + category, category: category,
+      itemName: isCharTab ? '😊 캐릭터 없음' : (category === '스킨' ? '🏠 기본 스킨' : '✏️ 기본 폰트'),
+      price: 0, condDesc: '기본 제공', resourceVal: 'default', isOwned: true,
+      // 캐릭터 탭: 어떤 캐릭터도 장착 안 된 경우만 "장착 중"
+      isEquipped: isCharTab ? !anyCharEquipped
+        : !(_shopData.items || []).some(function(it){ return it.category === category && it.isEquipped; }),
+      condMet: true, canBuy: false
+    };
+
+    var categoryItems = (_shopData.items || []).filter(function(i){ return i.category === category; });
+
+    // ── 캐릭터 탭: 그리드+필터 렌더링 ──────────────────────────────
+    if (isCharTab) {
+      _renderCharGrid(category, defaultItem, categoryItems, container);
+      return;
+    }
+
+    // ── 스킨/폰트: 기존 리스트 렌더링 ──────────────────────────────
+    var items = [defaultItem].concat(categoryItems);
 
     if (items.length <= 1) {
       container.innerHTML = '<div style="text-align:center;padding:30px;color:#bbb;font-size:13px;">아직 준비된 아이템이 없습니다.</div>';
@@ -6592,29 +6758,17 @@ function requestCancelDeposit(depId, amount) {
           btnHtml = '<button class="shop-buy-btn can-buy" onclick="buyShopItem(\'' + item.itemId + '\')">구매 & 장착</button>';
         }
       } else {
-        // 보유 중이지만 미장착
         btnHtml = '<button class="shop-buy-btn can-buy" onclick="equipShopItem(\'' + item.itemId + '\')">장착하기</button>';
       }
 
-      var iconHtml;
-      if (item.category === '캐릭터') {
-        var rv = item.resourceVal;
-        if (!rv || rv === 'default') {
-          iconHtml = '<span class="shop-item-icon">😊</span>';
-        } else if (rv.startsWith('http://') || rv.startsWith('https://')) {
-          iconHtml = '<span class="shop-item-icon" style="padding:4px;"><img src="' + rv + '" alt="캐릭터" style="width:44px;height:44px;object-fit:contain;border-radius:8px;"></span>';
-        } else {
-          iconHtml = '<span class="shop-item-icon">' + rv + '</span>';
-        }
-      } else {
-        iconHtml = '<span class="shop-item-icon">' + item.itemName.substring(0,2) + '</span>';
-      }
-
+      var iconHtml = '<span class="shop-item-icon">' + item.itemName.substring(0,2) + '</span>';
       var equippedBadge = item.isEquipped ? '<span style="font-size:10px;background:#2ecc71;color:white;padding:1px 6px;border-radius:8px;margin-left:4px;">장착 중</span>' : '';
 
       var previewBtn = '';
       if (item.category === '스킨' && item.resourceVal && item.resourceVal !== 'default' && !isDefault) {
         previewBtn = '<button class=\"shop-preview-btn\" onclick=\"previewSkin(\'' + item.resourceVal + '\', this)\">👁️ 미리보기</button>';
+      } else if (item.category === '폰트' && item.resourceVal && item.resourceVal !== 'default' && !isDefault) {
+        previewBtn = '<button class=\"shop-preview-btn\" onclick=\"previewFont(\'' + item.resourceVal.replace(/'/g, "\\'") + '\', this)\">👁️ 미리보기</button>';
       }
 
       return '<div class=\"shop-item-card ' + cardClass + '\">' +
@@ -6625,11 +6779,181 @@ function requestCancelDeposit(depId, amount) {
           (item.price > 0 ? '<div class=\"shop-item-price\">💰 $ ' + Number(item.price).toLocaleString() + '</div>' : '') +
         '</div>' +
         '<div style=\"display:flex;flex-direction:column;gap:4px;align-items:flex-end;\">' +
-          previewBtn +
-          btnHtml +
+          previewBtn + btnHtml +
         '</div>' +
       '</div>';
     }).join('');
+  }
+
+  // ── 캐릭터 그리드 렌더링 ─────────────────────────────────────────
+  function _renderCharGrid(category, defaultItem, categoryItems, container) {
+    // 필터 칩 + 검색바 HTML
+    var filterBar =
+      '<div class="char-filter-bar">' +
+        ['전체','✅ 보유','🛒 구매가능','🔒 잠금'].map(function(f) {
+          var key = f.replace(/[✅🛒🔒]\s*/g,'');
+          var isActive = _charFilter === key;
+          return '<button class="char-filter-chip' + (isActive ? ' active' : '') + '" ' +
+            'onclick="_setCharFilter(\'' + key + '\',\'' + category + '\')">' + f + '</button>';
+        }).join('') +
+      '</div>' +
+      '<input class="char-search-input" type="text" placeholder="🔍 캐릭터 이름 검색..." ' +
+        'value="' + _charSearch.replace(/"/g,'&quot;') + '" ' +
+        'oninput="_setCharSearch(this.value,\'' + category + '\')">';
+
+    // 필터링
+    var allItems = [defaultItem].concat(categoryItems);
+    var filtered = allItems.filter(function(item) {
+      var isDefault = item.itemId.startsWith('DEFAULT_');
+      // 검색 필터
+      if (_charSearch && !item.itemName.toLowerCase().includes(_charSearch.toLowerCase())) return false;
+      // 상태 필터
+      if (_charFilter === '보유')     return item.isOwned || isDefault;
+      if (_charFilter === '구매가능') return !item.isOwned && item.condMet && !item.isExpired && !isDefault;
+      if (_charFilter === '잠금')     return !item.isOwned && (!item.condMet || item.isExpired) && !isDefault;
+      return true; // 전체
+    });
+
+    // 그리드 카드 HTML
+    var gridHtml = '<div class="char-grid">' + filtered.map(function(item) {
+      var isDefault = item.itemId.startsWith('DEFAULT_');
+      var rv = item.resourceVal;
+
+      // 이미지/이모지
+      var mediaHtml;
+      if (!rv || rv === 'default') {
+        mediaHtml = '<span class="char-grid-emoji">😊</span>';
+      } else if (rv.startsWith('http://') || rv.startsWith('https://')) {
+        mediaHtml = '<img class="char-grid-img" src="' + rv + '" alt="캐릭터">';
+      } else {
+        mediaHtml = '<span class="char-grid-emoji">' + rv + '</span>';
+      }
+
+      // 뱃지
+      var badgeHtml = '';
+      if (item.isEquipped) {
+        badgeHtml = '<span class="char-grid-badge equipped-badge">장착중</span>';
+      } else if (item.isOwned || isDefault) {
+        if (!isDefault) badgeHtml = '<span class="char-grid-badge owned-badge">보유</span>';
+      } else if (!item.condMet || item.isExpired) {
+        badgeHtml = '<span class="char-grid-badge locked-badge">🔒</span>';
+      }
+
+      // 카드 클래스
+      var cardClass = 'char-grid-card';
+      if (item.isEquipped)                          cardClass += ' equipped-now';
+      else if (item.isOwned || isDefault)           cardClass += ' owned';
+      else if (!item.condMet || item.isExpired)     cardClass += ' locked';
+
+      // 가격 표시
+      var priceHtml = item.price > 0
+        ? '<span style="font-size:9px;color:#f85149;">💰$' + Number(item.price).toLocaleString() + '</span>'
+        : '<span style="font-size:9px;color:#3fb950;">무료</span>';
+
+      // 클릭 핸들러 (잠금 상태는 클릭 시 조건 안내, 나머지는 상세 시트)
+      var clickAttr = (!item.isOwned && (!item.condMet || item.isExpired) && !isDefault)
+        ? 'onclick="_showCharLockInfo(\'' + item.itemId.replace(/'/g,"\\'") + '\')"'
+        : 'onclick="_openCharDetail(\'' + item.itemId.replace(/'/g,"\\'") + '\')"';
+
+      return '<div class="' + cardClass + '" ' + clickAttr + '>' +
+        badgeHtml + mediaHtml +
+        '<div class="char-grid-name">' + item.itemName + '</div>' +
+        priceHtml +
+      '</div>';
+    }).join('') + '</div>';
+
+    container.innerHTML = filterBar + gridHtml;
+    if (filtered.length === 0) {
+      container.innerHTML += '<div style="text-align:center;padding:20px;color:#8b949e;font-size:13px;">조건에 맞는 캐릭터가 없습니다.</div>';
+    }
+  }
+
+  // 필터 변경
+  function _setCharFilter(filter, category) {
+    _charFilter = filter;
+    renderShopItems(category);
+  }
+  function _setCharSearch(val, category) {
+    _charSearch = val;
+    renderShopItems(category);
+  }
+
+  // 캐릭터 상세 바텀시트
+  function _openCharDetail(itemId) {
+    var item = (_shopData.items || []).find(function(i){ return i.itemId === itemId; });
+    var isDefaultId = itemId.startsWith('DEFAULT_');
+    if (!item && !isDefaultId) return;
+
+    // 기본 캐릭터(없음) 클릭 시 바로 해제
+    if (isDefaultId) {
+      var cat = itemId.replace('DEFAULT_', '');
+      unequipShopItem(cat);
+      return;
+    }
+
+    var rv = item.resourceVal;
+    var mediaHtml;
+    if (!rv || rv === 'default') {
+      mediaHtml = '<span style="font-size:60px;">😊</span>';
+    } else if (rv.startsWith('http://') || rv.startsWith('https://')) {
+      mediaHtml = '<img src="' + rv + '" style="width:80px;height:80px;object-fit:contain;border-radius:10px;">';
+    } else {
+      mediaHtml = '<span style="font-size:60px;">' + rv + '</span>';
+    }
+
+    // 버튼 결정
+    var btnHtml;
+    if (item.isEquipped) {
+      btnHtml = '<button style="flex:1;padding:12px;border-radius:10px;border:none;background:#555;color:#aaa;font-size:14px;font-weight:bold;" disabled>✓ 현재 장착 중</button>';
+    } else if (!item.isOwned) {
+      if (item.isExpired) {
+        btnHtml = '<button style="flex:1;padding:12px;border-radius:10px;border:none;background:#555;color:#aaa;font-size:14px;font-weight:bold;" disabled>⏰ 판매 종료</button>';
+      } else if (!item.condMet) {
+        btnHtml = '<button style="flex:1;padding:12px;border-radius:10px;border:none;background:#555;color:#aaa;font-size:14px;font-weight:bold;" disabled>🔒 조건 미달</button>';
+      } else if (_shopData.balance < item.price) {
+        btnHtml = '<button style="flex:1;padding:12px;border-radius:10px;border:none;background:#555;color:#aaa;font-size:14px;font-weight:bold;" disabled>잔액 부족</button>';
+      } else {
+        btnHtml = '<button style="flex:1;padding:12px;border-radius:10px;border:none;background:#4da8f5;color:#fff;font-size:14px;font-weight:bold;cursor:pointer;" ' +
+          'onclick="buyShopItem(\'' + item.itemId + '\');_closeCharDetail()">구매 & 장착</button>';
+      }
+    } else {
+      btnHtml = '<button style="flex:1;padding:12px;border-radius:10px;border:none;background:#4da8f5;color:#fff;font-size:14px;font-weight:bold;cursor:pointer;" ' +
+        'onclick="equipShopItem(\'' + item.itemId + '\');_closeCharDetail()">장착하기</button>';
+    }
+
+    var overlay = document.createElement('div');
+    overlay.className = 'char-detail-overlay';
+    overlay.id = 'charDetailOverlay';
+    overlay.innerHTML =
+      '<div class="char-detail-sheet">' +
+        '<div style="display:flex;gap:16px;align-items:center;margin-bottom:14px;">' +
+          '<div style="flex-shrink:0;">' + mediaHtml + '</div>' +
+          '<div style="flex:1;">' +
+            '<div style="font-size:16px;font-weight:bold;color:#e6edf3;margin-bottom:6px;">' + item.itemName + '</div>' +
+            '<div style="font-size:12px;color:#8b949e;margin-bottom:4px;">' + _buildCondBadges(item) + '</div>' +
+            (item.price > 0 ? '<div style="font-size:14px;font-weight:bold;color:#f85149;">💰 $' + Number(item.price).toLocaleString() + '</div>' : '<div style="font-size:13px;color:#3fb950;">무료</div>') +
+          '</div>' +
+        '</div>' +
+        '<div style="display:flex;gap:8px;">' +
+          '<button style="padding:12px 18px;border-radius:10px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:#8b949e;font-size:14px;cursor:pointer;" ' +
+            'onclick="_closeCharDetail()">닫기</button>' +
+          btnHtml +
+        '</div>' +
+      '</div>';
+    overlay.addEventListener('click', function(e){ if(e.target===overlay) _closeCharDetail(); });
+    document.body.appendChild(overlay);
+  }
+
+  function _closeCharDetail() {
+    var el = document.getElementById('charDetailOverlay');
+    if (el) document.body.removeChild(el);
+  }
+
+  // 잠금 조건 안내 (잠금된 캐릭터 클릭 시)
+  function _showCharLockInfo(itemId) {
+    var item = (_shopData.items || []).find(function(i){ return i.itemId === itemId; });
+    if (!item) return;
+    _openCharDetail(itemId); // 상세 시트를 통해 조건 표시
   }
 
   // 조건 배지 생성 헬퍼
@@ -6694,9 +7018,9 @@ function requestCancelDeposit(depId, amount) {
       .withSuccessHandler(function(res) {
         if (btn) { btn.disabled = false; btn.innerText = '장착'; }
         if (!res.success) { alert('오류: ' + res.msg); return; }
-        if (res.category === '스킨')   applySkin(res.resourceVal);
-        if (res.category === '폰트')   applyFont(res.resourceVal);
-        if (res.category === '캐릭터') applyCharacter(res.resourceVal);
+        if (res.category === '스킨')                  applySkin(res.resourceVal);
+        if (res.category === '폰트')                  applyFont(res.resourceVal);
+        if (res.category.startsWith('캐릭터'))        applyCharacter(res.resourceVal);
         openShopModal(); // 상태 새로고침
       })
       .withFailureHandler(function(err) {
@@ -6710,9 +7034,9 @@ function requestCancelDeposit(depId, amount) {
     google.script.run
       .withSuccessHandler(function(res) {
         if (!res.success) { alert('오류: ' + res.msg); return; }
-        if (category === '스킨')   applySkin('default');
-        if (category === '폰트')   applyFont(null);
-        if (category === '캐릭터') applyCharacter(null);
+        if (category === '스킨')               applySkin('default');
+        if (category === '폰트')               applyFont(null);
+        if (category.startsWith('캐릭터'))     applyCharacter(null); // 캐릭터(남)/(여) 통합
         openShopModal();
       })
       .withFailureHandler(function(err) { alert('오류: ' + err.message); })
@@ -6725,9 +7049,9 @@ function requestCancelDeposit(depId, amount) {
       if (!res.success) { alert('오류: ' + res.msg); return; }
       alert(res.msg);
       // 즉시 스킨/폰트/캐릭터 적용
-      if (res.category === '스킨')     applySkin(res.resourceVal);
-      if (res.category === '폰트')     applyFont(res.resourceVal);
-      if (res.category === '캐릭터')   applyCharacter(res.resourceVal);
+      if (res.category === '스킨')                applySkin(res.resourceVal);
+      if (res.category === '폰트')                applyFont(res.resourceVal);
+      if (res.category.startsWith('캐릭터'))      applyCharacter(res.resourceVal); // 캐릭터(남)/(여) 통합
       // 상점 새로고침
       openShopModal();
     }).purchaseShopItem(window._currentStudentName, itemId);
@@ -7943,10 +8267,10 @@ var MEMBER_PORT_STYLE = {
 
 // 길드 로고 이미지 URL
 var GUILD_LOGOS = {
-  'GUILD_01': 'https://raw.githubusercontent.com/Jamesleekor/brand-assets/refs/heads/main/guild/Milkyway.png',
+  'GUILD_01': 'https://raw.githubusercontent.com/Jamesleekor/brand-assets/refs/heads/main/guild/MILKYWAY.jpeg',
   'GUILD_02': 'https://raw.githubusercontent.com/Jamesleekor/brand-assets/refs/heads/main/guild/RISING.png',
-  'GUILD_03': 'https://raw.githubusercontent.com/Jamesleekor/brand-assets/refs/heads/main/guild/Ruby.png',
-  'GUILD_04': 'https://raw.githubusercontent.com/Jamesleekor/brand-assets/refs/heads/main/guild/Darkrose.png',
+  'GUILD_03': 'https://raw.githubusercontent.com/Jamesleekor/brand-assets/refs/heads/main/guild/RUBY.jpeg',
+  'GUILD_04': 'https://raw.githubusercontent.com/Jamesleekor/brand-assets/refs/heads/main/guild/DARKROSE.jpeg',
   'GUILD_05': 'https://raw.githubusercontent.com/Jamesleekor/brand-assets/refs/heads/main/guild/EMERALD.png'
 };
 

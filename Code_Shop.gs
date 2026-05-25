@@ -365,15 +365,22 @@ function equipShopItem(studentName, itemId) {
   if (!category) return { success: false, msg: '아이템을 찾을 수 없습니다.' };
 
   // 같은 카테고리의 기존 장착 아이템 전체 해제 후 해당 아이템 장착
+  // ※ 캐릭터(남) / 캐릭터(여)는 같은 "캐릭터" 계열로 묶어 처리
+  //   → 남자 캐릭터 장착 시 여자 캐릭터도 자동 해제 (동시 장착 불가)
+  const isCharCategory = category.startsWith('캐릭터');
   const lData = logSheet.getDataRange().getValues();
   let targetRow = -1;
   for (let i = 1; i < lData.length; i++) {
     if (String(lData[i][1]).trim() !== studentName) continue;
     const rowItemId = String(lData[i][2]).trim();
-    // 같은 카테고리 여부 확인
+    // 같은 카테고리 여부 확인 (캐릭터 계열은 남/여 구분 없이 전체 해제)
     for (let j = 1; j < iData.length; j++) {
-      if (String(iData[j][0]).trim() === rowItemId &&
-          String(iData[j][1]).trim() === category) {
+      if (String(iData[j][0]).trim() !== rowItemId) continue;
+      const rowCat = String(iData[j][1]).trim();
+      const sameCategory = isCharCategory
+        ? rowCat.startsWith('캐릭터')  // 캐릭터 계열 전체 해제
+        : rowCat === category;          // 스킨/폰트는 정확히 일치하는 것만 해제
+      if (sameCategory) {
         logSheet.getRange(i + 1, 7).setValue(false);
         break;
       }
@@ -388,12 +395,14 @@ function equipShopItem(studentName, itemId) {
 }
 
 // 아이템 장착 해제 (카테고리 기준 전체 해제)
+// ※ 캐릭터(남) / 캐릭터(여) 중 어느 쪽으로 호출해도 캐릭터 계열 전체 해제
 function unequipShopItem(studentName, category) {
   const ss        = SpreadsheetApp.getActiveSpreadsheet();
   const logSheet  = ss.getSheetByName(SHEET_SHOP_LOG);
   const itemSheet = ss.getSheetByName(SHEET_SHOP_ITEMS);
   if (!logSheet || !itemSheet) return { success: false, msg: '시트 오류' };
 
+  const isCharCategory = category.startsWith('캐릭터');
   const iData = itemSheet.getDataRange().getValues();
   const lData = logSheet.getDataRange().getValues();
 
@@ -401,8 +410,12 @@ function unequipShopItem(studentName, category) {
     if (String(lData[i][1]).trim() !== studentName) continue;
     const rowItemId = String(lData[i][2]).trim();
     for (let j = 1; j < iData.length; j++) {
-      if (String(iData[j][0]).trim() === rowItemId &&
-          String(iData[j][1]).trim() === category) {
+      if (String(iData[j][0]).trim() !== rowItemId) continue;
+      const rowCat = String(iData[j][1]).trim();
+      const sameCategory = isCharCategory
+        ? rowCat.startsWith('캐릭터')
+        : rowCat === category;
+      if (sameCategory) {
         logSheet.getRange(i + 1, 7).setValue(false);
         break;
       }

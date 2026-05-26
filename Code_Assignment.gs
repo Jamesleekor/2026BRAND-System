@@ -46,11 +46,21 @@ function getAssignmentList(studentName) {
     const now        = new Date();
 
     // 이 학생의 제출 기록 맵 (assignId → 최신 제출 정보)
+    // ── [FIX 2026-05] 잘못된 날짜 값(빈문자열·Invalid Date) 방어 처리 ──
     const submitMap = {};
     for (let i = 1; i < submitData.length; i++) {
       if (String(submitData[i][1]).trim() !== String(studentName).trim()) continue;
       const aId = String(submitData[i][3]).trim();
-      const ts  = submitData[i][0] ? new Date(submitData[i][0]) : new Date(0);
+      let ts;
+      try {
+        ts = submitData[i][0] ? new Date(submitData[i][0]) : new Date(0);
+        if (isNaN(ts.getTime())) ts = new Date(0);
+      } catch(e) { ts = new Date(0); }
+      let submittedAtStr = '';
+      try {
+        if (ts.getTime() > 0) submittedAtStr = Utilities.formatDate(ts, tz, 'MM/dd HH:mm');
+      } catch(e) { submittedAtStr = ''; }
+
       if (!submitMap[aId] || ts > submitMap[aId]._ts) {
         submitMap[aId] = {
           _ts:        ts,
@@ -60,7 +70,7 @@ function getAssignmentList(studentName) {
           memo:       submitData[i][8],
           checked:    submitData[i][9] === true || submitData[i][9] === 'TRUE',
           feedback:   submitData[i][10],
-          submittedAt: Utilities.formatDate(ts, tz, 'MM/dd HH:mm')
+          submittedAt: submittedAtStr
         };
       }
     }
@@ -72,13 +82,18 @@ function getAssignmentList(studentName) {
       const status = String(listData[i][5] || '').trim();
       if (status === '숨김') continue;
 
+      // ── 마감일 변환 (방어 처리) ──
       const deadlineRaw = listData[i][3];
       let deadline = '';
       let dDay     = null;
       if (deadlineRaw) {
-        const d = new Date(deadlineRaw);
-        deadline = Utilities.formatDate(d, tz, 'MM/dd HH:mm');
-        dDay     = Math.ceil((d - now) / (1000 * 60 * 60 * 24));
+        try {
+          const d = new Date(deadlineRaw);
+          if (!isNaN(d.getTime())) {
+            deadline = Utilities.formatDate(d, tz, 'MM/dd HH:mm');
+            dDay     = Math.ceil((d - now) / (1000 * 60 * 60 * 24));
+          }
+        } catch(e) { /* 잘못된 날짜는 마감일 미정으로 표시 */ }
       }
 
       assignments.push({

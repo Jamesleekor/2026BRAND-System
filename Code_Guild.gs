@@ -1489,11 +1489,16 @@ function getGuildCardDataForStudent(studentName) {
     var shopLogSheet  = ss.getSheetByName(SHEET_SHOP_LOG);
     if (shopItemSheet && shopLogSheet) {
       // 캐릭터 아이템 ID → resourceVal(이모지 또는 이미지 URL) 매핑
+      // ── [FIX 2026-05] '캐릭터(남)'/'캐릭터(여)' 등 변형 카테고리도 포함 (startsWith로 통일) ──
       var charResourceMap = {};
       var iData = shopItemSheet.getDataRange().getValues();
       for (var ci = 1; ci < iData.length; ci++) {
-        if (String(iData[ci][1]).trim() === '캐릭터') {
-          charResourceMap[String(iData[ci][0]).trim()] = String(iData[ci][7]).trim();
+        var cCat = String(iData[ci][1]).trim();
+        if (cCat.startsWith('캐릭터')) {
+          var cRes = String(iData[ci][7]).trim();
+          if (cRes && cRes !== 'default') {
+            charResourceMap[String(iData[ci][0]).trim()] = cRes;
+          }
         }
       }
       // 구매로그에서 현재 장착(TRUE) 상태인 캐릭터 찾기 (나중 행이 최신)

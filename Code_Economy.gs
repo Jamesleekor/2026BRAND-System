@@ -46,7 +46,10 @@ function getAllStudentsHonorBoard() {
         const itemId  = String(logData[i][2]).trim(); // C열: 아이템ID
         const equipped = logData[i][6] === true || String(logData[i][6]).toUpperCase() === 'TRUE'; // G열
         const info    = itemMap[itemId];
-        if (equipped && info && info.category === '캐릭터' && info.resVal && info.resVal !== 'default') {
+        // ── [FIX 2026-05] '캐릭터(남)'/'캐릭터(여)' 등 변형 카테고리도 포함 ──
+        // applyOwnedItems(Index.html)·equipShopItem(Code_Shop.gs)와 동일한 startsWith 규칙으로 통일
+        if (equipped && info && info.category && info.category.startsWith('캐릭터')
+            && info.resVal && info.resVal !== 'default') {
           charMap[sName] = info.resVal; // 가장 마지막으로 장착된 캐릭터가 덮어씀
         }
       }

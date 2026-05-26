@@ -284,6 +284,30 @@ function purchaseShopItem(studentName, itemId) {
   }
 
   // 구매 로그 기록 (A=구매ID, B=학생명, C=아이템ID, D=아이템명, E=가격, F=구매일시, G=장착여부)
+  // ── [FIX 2026-05] 동일 카테고리의 기존 장착 아이템을 먼저 해제 ──
+  // 캐릭터 계열(캐릭터/캐릭터(남)/캐릭터(여))은 startsWith로 묶어서 해제,
+  // 스킨/폰트는 정확히 일치하는 카테고리만 해제.
+  // 이 처리가 없으면 캐릭터 A 보유 상태에서 B 구매 시 A·B 둘 다 G=TRUE가 되어
+  // 대시보드/길드/상점이 서로 다른 캐릭터를 표시하는 데이터 불일치가 발생함.
+  const purchaseCategory = String(itemRow[1]).trim();
+  const isCharCategory   = purchaseCategory.startsWith('캐릭터');
+  for (let li = 1; li < lData.length; li++) {
+    if (String(lData[li][1]).trim() !== studentName) continue;
+    const rowItemId = String(lData[li][2]).trim();
+    for (let ii = 1; ii < iData.length; ii++) {
+      if (String(iData[ii][0]).trim() !== rowItemId) continue;
+      const rowCat = String(iData[ii][1]).trim();
+      const sameCategory = isCharCategory
+        ? rowCat.startsWith('캐릭터')
+        : rowCat === purchaseCategory;
+      if (sameCategory) {
+        const wasEq = (lData[li][6] === true) || (String(lData[li][6]).toUpperCase() === 'TRUE');
+        if (wasEq) logSheet.getRange(li + 1, 7).setValue(false);
+      }
+      break;
+    }
+  }
+  // ── 신규 구매 행 추가 (장착 상태 TRUE) ──
   const purchaseId = 'PUR_' + new Date().getTime();
   const ts = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
   logSheet.appendRow([purchaseId, studentName, itemId, itemName, price, ts, true]);

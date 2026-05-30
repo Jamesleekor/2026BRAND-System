@@ -1108,13 +1108,23 @@
     .login-box {
       background: var(--card-bg);
       border: 1px solid var(--border-color);
-      padding: 36px 28px;
-      border-radius: 16px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      padding: 22px 20px;
+      border-radius: 14px;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.5);
       text-align: center;
     }
-    .login-box h2 { color: var(--text-primary); margin-bottom: 6px; font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px; }
-    .login-box p  { color: var(--text-secondary); font-size: 13px; margin-bottom: 20px; }
+    .login-box h2 { color: var(--text-primary); margin-bottom: 4px; font-size: 1.15rem; font-weight: 800; letter-spacing: -0.3px; }
+    .login-box p  { color: var(--text-secondary); font-size: 12px; margin-bottom: 12px; }
+    .login-box input[type="text"],
+    .login-box input[type="password"] {
+      padding: 9px 14px;
+      font-size: 13px;
+      margin-bottom: 10px;
+    }
+    .login-box button.login-btn {
+      padding: 9px 28px;
+      font-size: 13px;
+    }
     .login-box .field-label {
       display: block; text-align: left; font-size: 12px;
       color: var(--text-secondary); font-weight: 600;
@@ -1931,16 +1941,244 @@
     .ctt-hint  { font-size: 11px; color: var(--text-secondary); margin-bottom: 6px; line-height: 1.4; }
     .ctt-count { font-size: 11px; color: var(--text-muted); }
 
+    /* ═══════════════════════════════════════════════════════
+       ★ 월간 MVP 사이드 날개 — 수직 퍼레이드 ★
+       좌(홀수월): 위로 무한 루프  /  우(짝수월): 아래로 무한 루프
+       초상화는 JS MVP_LEFT / MVP_RIGHT 배열로 동적 생성됨
+       ═══════════════════════════════════════════════════════ */
+    .mvp-wing {
+      position: absolute;
+      top: 20px;
+      width: 280px;
+      height: 95vh;
+      overflow: hidden;
+      background: #0a0a14;
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 14px;
+      z-index: 5;
+    }
+    .mvp-wing.left  { left: 20px; }
+    .mvp-wing.right { right: 20px; }
+
+    .mvp-track {
+      display: flex;
+      flex-direction: column;
+      will-change: transform;
+    }
+
+    @keyframes mvpGlowPulse {
+      0%, 100% { opacity: 0.75; }
+      50%       { opacity: 1; }
+    }
+    @keyframes mvpKenBurns {
+      from { transform: scale(1); }
+      to   { transform: scale(1.06); }
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       모바일/태블릿 대응 (1149px 이하)
+       ─ MVP 날개: 세로 사이드 → 가로 띠로 변환
+       ─ JS의 translateY 애니메이션도 translateX로 자동 전환됨
+       (buildParadeTrack 함수에서 viewport 감지)
+       ═══════════════════════════════════════════════════════ */
+    @media (max-width: 1149px) {
+      .mvp-wing {
+        position: relative !important;
+        top: auto !important;
+        left: auto !important;
+        right: auto !important;
+        width: calc(100% - 8px) !important;
+        max-width: 480px !important;
+        height: 105px !important;
+        margin: 0 auto 6px !important;
+        border-radius: 10px !important;
+      }
+      .mvp-wing.left  { margin-top: 4px !important; }
+      .mvp-wing.right { margin-bottom: 10px !important; }
+
+      .mvp-track {
+        flex-direction: row !important;
+        height: 100% !important;
+        width: auto !important;
+      }
+      /* JS가 인라인으로 height:498px 지정 → 가로 타일로 강제 변환 */
+      .mvp-track > div {
+        width: 70px !important;
+        height: 100% !important;
+        flex-shrink: 0 !important;
+      }
+      /* 배지(3번째 child): "3월" 등 */
+      .mvp-track > div > div:nth-child(3) {
+        top: 5px !important;
+        font-size: 9px !important;
+        padding: 2px 7px !important;
+        letter-spacing: 0 !important;
+      }
+      /* 이름바(4번째 child) */
+      .mvp-track > div > div:nth-child(4) {
+        padding: 16px 3px 6px !important;
+      }
+      .mvp-track > div > div:nth-child(4) > div {
+        font-size: 10px !important;
+        letter-spacing: 0 !important;
+      }
+    }
+
+    /* ═══════════════════════════════════════════════════════
+       모바일 전용 (600px 이하): 명예의 전당 컴팩트 모드
+       ─ 3위 잘림 해결: 그리드를 minmax(0,1fr)로 축소 허용
+       ─ 인라인 아바타 크기(95/100px) 강제 다운사이즈
+       ─ 4위~ 리스트: 칭호 2줄 → 1줄 강제
+       ═══════════════════════════════════════════════════════ */
+    @media (max-width: 600px) {
+      /* body 좌우 패딩 축소: 가로 공간 확보 */
+      body { padding: 12px 8px !important; }
+
+      .honor-board-container { padding: 16px 10px !important; }
+
+      /* ── 상위 3인 카드 영역 ── */
+      .honor-top3 {
+        gap: 6px !important;
+        grid-template-columns: minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) !important;
+      }
+      .honor-top3-card { padding: 14px 4px 10px !important; }
+
+      /* JS가 인라인으로 박은 아바타 크기를 CSS로 오버라이드 */
+      .honor-top3-card > div:nth-child(2) {
+        min-height: 72px !important;
+        margin-bottom: 6px !important;
+      }
+      /* 1위는 약간 더 크게 (시각적 위계 유지) */
+      .honor-top3-card.rank-1 > div:nth-child(2) > div {
+        width: 70px !important;
+        height: 70px !important;
+        font-size: 42px !important; /* 이모지 폴백용 */
+      }
+      .honor-top3-card.rank-2 > div:nth-child(2) > div,
+      .honor-top3-card.rank-3 > div:nth-child(2) > div {
+        width: 62px !important;
+        height: 62px !important;
+        font-size: 38px !important;
+      }
+      .honor-top3-card.rank-1 > div:nth-child(2) img { width: 70px !important; height: 70px !important; }
+      .honor-top3-card.rank-2 > div:nth-child(2) img,
+      .honor-top3-card.rank-3 > div:nth-child(2) img { width: 62px !important; height: 62px !important; }
+
+      .honor-top3-name  { font-size: 13px !important; margin-bottom: 4px !important; }
+      .honor-top3-title { font-size: 9px !important; margin-bottom: 4px !important; }
+      .honor-top3-count { font-size: 15px !important; }
+      .honor-top3-count span { font-size: 10px !important; }
+      .honor-rank-badge { width: 20px !important; height: 20px !important; font-size: 12px !important; top: -6px !important; right: -4px !important; }
+
+      /* 상위 3인 카드 내부 칭호 배지: 1줄 강제 */
+      .honor-top3-card .honor-top3-title > span[class^="title-badge"] {
+        font-size: 9px !important;
+        padding: 2px 6px !important;
+        white-space: nowrap !important;
+        max-width: 100% !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        display: inline-block !important;
+        vertical-align: middle !important;
+      }
+
+      /* ── 4위~ 리스트: 칭호 2줄 방지 ── */
+      .honor-list-item {
+        gap: 6px !important;
+        padding: 8px 10px !important;
+      }
+      .honor-list-rank { width: 18px !important; font-size: 11px !important; }
+      .honor-list-name {
+        flex: 0 0 auto !important;
+        width: 50px !important;
+        font-size: 13px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+      }
+      .honor-list-title {
+        flex: 1 1 0 !important;
+        min-width: 0 !important;
+        overflow: hidden !important;
+      }
+      /* 칭호 배지: 한 줄 강제 + 살짝 작게 */
+      .honor-list-title > span[class^="title-badge"] {
+        font-size: 10.5px !important;
+        padding: 2px 8px !important;
+        white-space: nowrap !important;
+        max-width: 100% !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        display: inline-block !important;
+        vertical-align: middle !important;
+      }
+      .honor-list-count {
+        font-size: 12px !important;
+        flex-shrink: 0 !important;
+      }
+
+      /* ── 고정 헤더: 이름/브랜드 잘림 방지 ──────────────────
+         문제: 버튼 3개(min-width:62px씩) + 캐릭터(90px) = 308px
+               hdr-plate에 남는 공간이 38px밖에 안 됨
+         해결: 버튼 레이블 숨기고 버튼 사이즈 축소 → 버튼 3개 ≈ 126px
+               캐릭터 62px, 플레이트가 ~130px+ 확보됨
+         ─────────────────────────────────────────────────── */
+      /* 버튼 텍스트 레이블 숨김 (아이콘만) */
+      .hdr-btn-label { display: none !important; }
+
+      /* 버튼 자체 축소 */
+      .hdr-btn {
+        min-width: 38px !important;
+        padding: 9px 8px !important;
+        border-radius: 12px !important;
+        gap: 0 !important;
+      }
+
+      /* 버튼 그룹 갭 축소 */
+      #dashHeader > div > div:last-of-type { gap: 4px !important; }
+
+      /* 캐릭터 이미지 62px로 축소 */
+      #charImg, #charEmoji {
+        width: 62px !important;
+        height: 62px !important;
+        line-height: 62px !important;
+      }
+      #charImgMirror { width: 62px !important; height: 62px !important; }
+      /* 거울 반사 위치 조정 */
+      #charImgArea > div[style*="top:90px"],
+      #charImgArea > div:last-child { top: 62px !important; width: 62px !important; }
+
+      /* 이름 max-width 해제 (플레이트 전체 너비 활용) */
+      #welcomeMsg { max-width: 100% !important; font-size: 14px !important; }
+    }
+
 </style>
 </head>
 <body>
 
+<!-- ═══════════════════════════════════════════════════════
+     ★ 월간 MVP 사이드 액자 (로그인 화면 전용) ★
+     좌측: 1학기 (3,4,5,6,7월) / 우측: 2학기 (9,10,11,12월 + B.R.A.N.D 로고)
+     로그인 시 자동으로 숨김 처리됨 (showDashboard에서)
+     ═══════════════════════════════════════════════════════ -->
+
+<!-- 좌측 날개: 홀수월 MVP — 위로 무한 루프 (JS에서 MVP_LEFT 배열로 초상화 생성) -->
+<div class="mvp-wing left" id="mvpWingLeft">
+  <div class="mvp-track" id="mvpTrackLeft"></div>
+</div>
+
+<!-- 우측 날개: 짝수월 MVP — 아래로 무한 루프 (JS에서 MVP_RIGHT 배열로 초상화 생성) -->
+<div class="mvp-wing right" id="mvpWingRight">
+  <div class="mvp-track" id="mvpTrackRight"></div>
+</div>
+<!-- ═══════════════════════════════════════════════════════ -->
+
 <div class="container">
 
   <div id="loginSection" class="login-box">
-    <i class="fas fa-university" style="font-size:40px;color:var(--primary-color);margin-bottom:15px;"></i>
+    <i class="fas fa-university" style="font-size:30px;color:var(--primary-color);margin-bottom:10px;"></i>
     <h2>2026 동화초 5-4 자산관리 시스템</h2>
-    <p style="font-size:14px;color:var(--text-secondary);">이름을 입력하세요</p>
+    <p style="font-size:12px;color:var(--text-secondary);">이름을 입력하세요</p>
     <input type="text" id="studentName" placeholder="예: 이순신">
     <input type="password" id="studentPassword" placeholder="비밀번호를 입력하세요">
     <button class="login-btn" onclick="login()">데이터 불러오기</button>
@@ -2497,13 +2735,13 @@
     <div class="card" style="margin-bottom:20px;">
       <h3 style="margin-top:0;margin-bottom:10px;"><i class="fa-solid fa-cookie-bite"></i> 실시간 물품 거래소</h3>
       <div style="max-height:600px;overflow-y:auto;">
-      <table style="width:100%;text-align:left;border-collapse:collapse;">
+      <table id="snackMarketTable" style="width:100%;text-align:left;border-collapse:collapse;table-layout:fixed;">
         <thead>
           <tr style="border-bottom:2px solid #eee;">
             <th style="padding:8px 0;">품목</th>
-            <th style="padding:8px 0;text-align:right;">현재 시세</th>
-            <th style="padding:8px 0;text-align:right;">남은 수량</th>
-            <th style="padding:8px 0;text-align:right;"></th>
+            <th style="padding:8px 0;text-align:right;width:72px;white-space:nowrap;">현재 시세</th>
+            <th style="padding:8px 0;text-align:right;width:54px;white-space:nowrap;">남은 수량</th>
+            <th style="padding:8px 0;text-align:right;width:44px;"></th>
           </tr>
         </thead>
         <tbody id="snackMarketBody"></tbody>
@@ -4662,6 +4900,12 @@
     document.getElementById('honorBoardSection').style.display = 'block';
     document.getElementById('studentName').value = '';
     document.getElementById('studentPassword').value = '';
+
+    // ★ MVP 사이드 날개 다시 표시
+    var _mvpL2 = document.getElementById('mvpWingLeft');
+    var _mvpR2 = document.getElementById('mvpWingRight');
+    if (_mvpL2) _mvpL2.style.display = '';
+    if (_mvpR2) _mvpR2.style.display = '';
   }
 
   // ── 티어 테두리 클래스 적용 ─────────────────────────────────
@@ -5340,13 +5584,13 @@
     snackBody.innerHTML = snacks.map(function(s) {
       var soldOut = s.stock <= 0;
       return '<tr style="border-bottom:1px solid #f5f5f5;">' +
-        '<td style="padding:8px 0;font-weight:bold;">' + s.name + '</td>' +
+        '<td style="padding:8px 0;font-weight:bold;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + s.name + '</td>' +
         '<td style="padding:8px 0;text-align:right;color:#e74c3c;font-weight:bold;">$ ' + s.price.toLocaleString() + '</td>' +
         '<td style="padding:8px 0;text-align:right;color:' + (s.stock <= 5 ? 'red' : '#888') + ';">' + s.stock + '개</td>' +
         '<td style="padding:8px 0;text-align:right;">' +
           '<button onclick="doBuyItem(\'' + s.name.replace(/'/g, "\\'") + '\',' + s.price + ',' + s.stock + ',' + (s.weeklyLimit !== null ? s.weeklyLimit : 'null') + ')"' +
-          ' style="padding:4px 10px;font-size:12px;border:none;border-radius:5px;cursor:' + (soldOut ? 'not-allowed' : 'pointer') + ';' +
-          'background:' + (soldOut ? '#ccc' : '#e74c3c') + ';color:white;font-weight:bold;"' +
+          ' style="padding:4px 8px;font-size:12px;border:none;border-radius:5px;cursor:' + (soldOut ? 'not-allowed' : 'pointer') + ';' +
+          'background:' + (soldOut ? '#ccc' : '#e74c3c') + ';color:white;font-weight:bold;white-space:nowrap;"' +
           (soldOut ? ' disabled' : '') + '>' +
           (soldOut ? '품절' : '구매') +
         '</button></td>' +
@@ -5364,6 +5608,12 @@
     document.getElementById('loginSection').style.display = 'none';
     document.getElementById('honorBoardSection').style.display = 'none'; // 명예의 전당 숨기기
     document.getElementById('dashboard').style.display = 'block';
+
+    // ★ MVP 사이드 날개 숨김
+    var _mvpL = document.getElementById('mvpWingLeft');
+    var _mvpR = document.getElementById('mvpWingRight');
+    if (_mvpL) _mvpL.style.display = 'none';
+    if (_mvpR) _mvpR.style.display = 'none';
 
     // 기본 정보
     document.getElementById('welcomeMsg').innerText   = data.personal.name;
@@ -5652,6 +5902,11 @@
         if (el30) el30.textContent = '+$0';
       })
       .getStudentHistory(data.personal.name);
+
+    // ── 길드 축전 팝업 체크 (로그인 직후 자동 표시) ──
+    setTimeout(function() {
+      if (typeof checkGuildCelebration === 'function') checkGuildCelebration();
+    }, 200);
 
   }    // ← showDashboard 함수 닫기
 
@@ -6322,6 +6577,139 @@ function requestCancelDeposit(depId, amount) {
     };
     return hintMap[achId] || '숨겨진 비밀이 있습니다';
   }
+
+  // ── MVP 수직 퍼레이드 ──────────────────────────────────────
+  // ★ 새 MVP 선정 시 해당 배열에 항목 1개 추가만 하면 자동 반영됩니다
+  // color 키: 'crimson'|'amber'|'green'|'blue'|'purple'|'rose'|'teal'
+  var MVP_LEFT = [   // 홀수월 — 위로 스크롤
+    { month: '3월', name: '김서영',   color: 'crimson',
+      imageUrl: 'https://raw.githubusercontent.com/Jamesleekor/brand-assets/refs/heads/main/mvp/March_MVP.png' },
+    { month: '5월', name: '한서현',   color: 'green',
+      imageUrl: 'https://raw.githubusercontent.com/Jamesleekor/brand-assets/refs/heads/main/mvp/May_MVP.png' }
+    // 7월 MVP 선정 시: { month: '7월', name: '학생이름', color: 'purple', imageUrl: '...July_MVP.png' }
+  ];
+  var MVP_RIGHT = [  // 짝수월 — 아래로 스크롤
+    { month: '4월', name: '류은우',   color: 'amber',
+      imageUrl: 'https://raw.githubusercontent.com/Jamesleekor/brand-assets/refs/heads/main/mvp/April_MVP.png' },
+    { month: '6월', name: '6월의 MVP', color: 'blue',
+      imageUrl: 'https://raw.githubusercontent.com/Jamesleekor/brand-assets/refs/heads/main/mvp/June_MVP_random.png' }
+    // 8월 MVP 선정 시: { month: '8월', name: '학생이름', color: 'teal', imageUrl: '...August_MVP.png' }
+  ];
+  var MVP_COLOR_MAP = {
+    crimson: { glowBg: 'linear-gradient(135deg,#8B0000,#C5A028,#8B0000)', glowShadow: 'rgba(180,60,30,0.65)',  badgeBg: 'rgba(139,0,0,0.65)',  badgeText: '#e8b87a', badgeBorder: 'rgba(197,160,40,0.5)', nameColor: '#f0d090' },
+    amber:   { glowBg: 'linear-gradient(135deg,#b8720a,#f0a030,#b8720a)', glowShadow: 'rgba(200,130,30,0.7)',  badgeBg: 'rgba(90,55,0,0.7)',   badgeText: '#f5c060', badgeBorder: 'rgba(240,160,48,0.5)', nameColor: '#ffd085' },
+    green:   { glowBg: 'linear-gradient(135deg,#0a5a2a,#2dd47e,#0a5a2a)', glowShadow: 'rgba(40,180,90,0.65)', badgeBg: 'rgba(10,70,30,0.75)', badgeText: '#7ee0a8', badgeBorder: 'rgba(60,210,120,0.5)', nameColor: '#a0e6c0' },
+    blue:    { glowBg: 'linear-gradient(135deg,#0a2a5a,#2d7ee0,#0a2a5a)', glowShadow: 'rgba(40,90,200,0.65)', badgeBg: 'rgba(10,30,90,0.75)', badgeText: '#88b8ff', badgeBorder: 'rgba(60,120,220,0.5)', nameColor: '#a0c8ff' },
+    purple:  { glowBg: 'linear-gradient(135deg,#2a0a5a,#7e2dd4,#2a0a5a)', glowShadow: 'rgba(120,40,200,0.65)',badgeBg: 'rgba(40,10,80,0.75)', badgeText: '#c8a0ff', badgeBorder: 'rgba(140,80,220,0.5)', nameColor: '#d8b8ff' },
+    rose:    { glowBg: 'linear-gradient(135deg,#5a0a2a,#d42d7e,#5a0a2a)', glowShadow: 'rgba(200,40,120,0.65)',badgeBg: 'rgba(80,10,40,0.75)', badgeText: '#ff88b8', badgeBorder: 'rgba(220,60,140,0.5)', nameColor: '#ffa8c8' },
+    teal:    { glowBg: 'linear-gradient(135deg,#0a3a3a,#2dd4c8,#0a3a3a)', glowShadow: 'rgba(40,180,180,0.65)',badgeBg: 'rgba(10,60,60,0.75)', badgeText: '#7ee8e0', badgeBorder: 'rgba(60,210,200,0.5)', nameColor: '#a0e8e0' }
+  };
+
+  (function initMvpParade() {
+    var WING_W    = 280;
+    var PORTRAIT_H = Math.round(WING_W * 16 / 9); // ≈ 498px
+    var SPEED     = 44; // px/s — 초당 이동 픽셀 (조절 가능)
+
+    function createPortrait(mvp, idx) {
+      var c = MVP_COLOR_MAP[mvp.color] || MVP_COLOR_MAP['blue'];
+      var wrap = document.createElement('div');
+      wrap.style.cssText = 'position:relative;width:100%;height:' + PORTRAIT_H + 'px;flex-shrink:0;overflow:hidden;';
+
+      var glow = document.createElement('div');
+      glow.style.cssText = 'position:absolute;inset:-2px;z-index:0;background:' + c.glowBg + ';box-shadow:0 0 18px 4px ' + c.glowShadow + ';animation:mvpGlowPulse 2.5s ease-in-out infinite;animation-delay:' + (idx * 0.8) + 's;';
+      wrap.appendChild(glow);
+
+      var img = document.createElement('img');
+      img.src = mvp.imageUrl;
+      img.alt = mvp.month + ' MVP ' + mvp.name;
+      img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;z-index:1;animation:mvpKenBurns ' + (12 + idx * 2) + 's ease-in-out infinite alternate;animation-delay:' + (idx * -3) + 's;';
+      wrap.appendChild(img);
+
+      var badge = document.createElement('div');
+      badge.style.cssText = 'position:absolute;top:12px;left:50%;transform:translateX(-50%);font-size:11px;font-weight:700;padding:4px 14px;border-radius:20px;z-index:3;white-space:nowrap;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);background:' + c.badgeBg + ';color:' + c.badgeText + ';border:1px solid ' + c.badgeBorder + ';letter-spacing:0.1em;';
+      badge.textContent = mvp.month;
+      wrap.appendChild(badge);
+
+      var nameBar = document.createElement('div');
+      nameBar.style.cssText = 'position:absolute;bottom:0;left:0;right:0;padding:24px 8px 14px;text-align:center;z-index:2;background:linear-gradient(to top,rgba(0,0,0,0.92) 0%,rgba(0,0,0,0.5) 55%,transparent 100%);';
+      var nameEl = document.createElement('div');
+      nameEl.style.cssText = 'font-size:15px;font-weight:800;letter-spacing:0.03em;color:' + c.nameColor + ';';
+      nameEl.textContent = mvp.name;
+      nameBar.appendChild(nameEl);
+      wrap.appendChild(nameBar);
+
+      return wrap;
+    }
+
+    function buildParadeTrack(trackEl, mvpList, dir) {
+      if (!trackEl || !mvpList || mvpList.length === 0) return;
+      var kfName = 'parade_' + trackEl.id;
+
+      // ★ 모바일/태블릿 감지: 가로 스크롤로 전환 ──────────────
+      // 1149px 이하에서 CSS가 .mvp-wing을 가로 띠로 변환하므로,
+      // 애니메이션도 translateY → translateX로 맞춰줘야 함.
+      var isHorizontal = window.matchMedia('(max-width: 1149px)').matches;
+
+      var distance, kfStr, dur, setsNeeded;
+
+      if (isHorizontal) {
+        var PORTRAIT_W_MOBILE = 70; // CSS의 .mvp-track > div { width: 70px } 와 일치
+
+        // ── seamless 루프 공식 ────────────────────────────────
+        // 컨테이너 너비: trackEl.parentElement.offsetWidth로 읽되,
+        //   아직 0이면(레이아웃 전) window.innerWidth로 보정.
+        var containerW = (trackEl.parentElement && trackEl.parentElement.offsetWidth > 0)
+                         ? trackEl.parentElement.offsetWidth
+                         : window.innerWidth;
+        var setW = mvpList.length * PORTRAIT_W_MOBILE; // 한 세트 너비 (예: 2개×70 = 140px)
+
+        // 화면을 꽉 채우려면: ceil(containerW / setW) 세트 필요.
+        // 거기에 +2 더 추가해야 seamless 루프 보장:
+        //   ① 애니메이션 시작점(translateX=0)에서 화면이 꽉 찰 것
+        //   ② 한 세트 이동 후(translateX=-setW) 시작점으로 루프할 때 빈칸 없을 것
+        setsNeeded = Math.ceil(containerW / setW) + 2;
+
+        // 애니메이션은 정확히 setW(한 세트)만큼만 이동 → 무한 루프
+        distance = setW;
+        dur = Math.max(4, Math.round(distance / SPEED));
+        kfStr = dir === 'up'
+          ? '@keyframes ' + kfName + '{from{transform:translateX(0)}to{transform:translateX(-' + distance + 'px)}}'
+          : '@keyframes ' + kfName + '{from{transform:translateX(-' + distance + 'px)}to{transform:translateX(0)}}';
+
+      } else {
+        // ── 데스크톱: 기존 세로 스크롤 (변경 없음) ───────────
+        setsNeeded = 2; // 세로 방향은 2세트로 화면 넘치므로 충분
+        distance = mvpList.length * PORTRAIT_H;
+        dur = Math.max(8, Math.round(distance / SPEED));
+        kfStr = dir === 'up'
+          ? '@keyframes ' + kfName + '{from{transform:translateY(0)}to{transform:translateY(-' + distance + 'px)}}'
+          : '@keyframes ' + kfName + '{from{transform:translateY(-' + distance + 'px)}to{transform:translateY(0)}}';
+      }
+
+      // 키프레임 등록
+      var styleEl = document.createElement('style');
+      styleEl.textContent = kfStr;
+      document.head.appendChild(styleEl);
+
+      // 타일 배치: setsNeeded만큼 반복 추가
+      for (var s = 0; s < setsNeeded; s++) {
+        mvpList.forEach(function(mvp, i) { trackEl.appendChild(createPortrait(mvp, i)); });
+      }
+
+      trackEl.style.animation = kfName + ' ' + dur + 's linear infinite';
+    }
+
+    function run() {
+      buildParadeTrack(document.getElementById('mvpTrackLeft'),  MVP_LEFT,  'up');
+      buildParadeTrack(document.getElementById('mvpTrackRight'), MVP_RIGHT, 'down');
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', run);
+    } else {
+      run();
+    }
+  })();
 
   // ── 페이지 로드 시 명예의 전당 표시 ─────────────────────────
   // 로그인 화면이 보일 때 명예의 전당도 함께 로드
@@ -7867,6 +8255,113 @@ function requestCancelDeposit(depId, amount) {
     '</svg>';
   }
 
+/* ════ 길드 축전 팝업 CONFIG + 함수 (메인 스크립트 내 통합)
+   매월 GUILD_CELEBRATION_CONFIG 값만 수정하면 재사용 가능
+   ══════════════════════════════════ */
+
+/* ── 매월 수정 구역 START ── */
+var GUILD_CELEBRATION_CONFIG = {
+  enabled: true,
+  storageKey: 'brand_guild_celebration_2026_05',
+  month: '2026년 5월',
+  winnerGuild: 'Ruby',
+  winnerGuildEmoji: '♦️',
+  winnerScore: '9,750',
+  rivalGuild: '암흑장미',
+  rivalScore: '9,734',
+  diffPct: '1.7%',
+  monthlyMVP: '한서현',
+  mvpContribScore: '728',
+  mvpCandidates: ['김서영', '한서현'],
+  missions: ['M01', 'M03', 'M04'],
+  allSessionAttended: true,
+  rewards: [
+    { icon: '💎', value: 'BV +500',     desc: '브랜드가치 포상' },
+    { icon: '💰', value: '자산 +1,000', desc: '경제 자산 포상' },
+    { icon: '🥇', value: '이달의 으뜸', desc: '업적 신청 자격 확정' }
+  ],
+  rankings: [
+    { rank:1, emoji:'♦️', name:'Ruby',           score:'9,750', contrib:'한서현', contribScore:'728' },
+    { rank:2, emoji:'🖤', name:'암흑장미',        score:'9,734', contrib:'부희주',   contribScore:'660' },
+    { rank:3, emoji:'🌠', name:'빛나는 은하수', score:'9,473', contrib:'민사랑',   contribScore:'698' },
+    { rank:4, emoji:'🟢', name:'에메랄드',        score:'8,958', contrib:'정민준',   contribScore:'750' },
+    { rank:5, emoji:'⚡',     name:'라이징볼트태클즈', score:'4,583', contrib:'이한성',   contribScore:'662' }
+  ],
+  closingMsg: '6월에도 모든 길드원들의 건투를 빕니다! 💪'
+};
+/* ── 매월 수정 구역 END ── */
+
+function renderGuildCelebModal() {
+  var c = GUILD_CELEBRATION_CONFIG;
+  document.getElementById('gcl-badge-month').textContent = '🏆 B.R.A.N.D 운영국 공식 공문 · ' + c.month;
+  document.getElementById('gcl-title').innerHTML = c.winnerGuildEmoji + ' ' + c.winnerGuild + ' 길드에 드리는 축전';
+  document.getElementById('gcl-subtitle').textContent = c.month + ' · B.R.A.N.D 길드 대전 최종 결과';
+  var candStr = c.mvpCandidates.join('<\/b>와 <b>');
+  document.getElementById('gcl-prose').innerHTML =
+    '<p>' + c.winnerGuild + ' 길드의 모든 용사들에게,<\/p>' +
+    '<p>B.R.A.N.D 운영국은 <span class="gcl-highlight">이달의 최강 길드<\/span>로 우뚝 선 ' +
+    '<span class="gcl-highlight">' + c.winnerGuildEmoji + ' ' + c.winnerGuild + ' 길드<\/span> 전원에게 진심 어린 축하를 전합니다.<\/p>' +
+    '<p>최종 <span class="gcl-highlight">' + c.winnerScore + '점<\/span>을 획득하며 ' +
+    c.rivalGuild + ' 길드(' + c.rivalScore + '점)를 단 <span class="gcl-highlight">' + c.diffPct + '<\/span> 차이로 따돌리고 정상을 차지했습니다! 🔥<\/p>' +
+    '<p>또한 5월의 MVP 후보를 <b>' + candStr + '<\/b>, 두 명이나 배출했고 그 중 <span class="gcl-highlight">' +
+    c.monthlyMVP + '<\/span>학생은 이달의 주인공으로 최종 선정되는 영예까지 안았습니다. ✨<\/p>';
+  var pillsHtml = '';
+  c.missions.forEach(function(m){ pillsHtml += '<span class="gcl-pill">✅ ' + m + ' 전원 달성<\/span>'; });
+  if (c.allSessionAttended) pillsHtml += '<span class="gcl-pill">📅 전 세션 참석 완료<\/span>';
+  document.getElementById('gcl-pills').innerHTML = pillsHtml;
+  var rwHtml = '';
+  c.rewards.forEach(function(r){
+    rwHtml += '<div class="gcl-reward-card"><div class="gcl-reward-icon">' + r.icon + '<\/div>' +
+      '<div class="gcl-reward-val">' + r.value + '<\/div><div class="gcl-reward-desc">' + r.desc + '<\/div><\/div>';
+  });
+  document.getElementById('gcl-rewards').innerHTML = rwHtml;
+  var mvpHtml =
+    '<div class="gcl-mvp-card star"><div class="gcl-mvp-badge gold">🌟 이달의 주인공<\/div>' +
+    '<div class="gcl-mvp-name">' + c.monthlyMVP + '<\/div>' +
+    '<div class="gcl-mvp-sub">' + c.winnerGuild + ' 길드 · 기여도 1위 (' + c.mvpContribScore + '점)<\/div>' +
+    '<div class="gcl-mvp-ach">🛡️ 길드의 수호신 업적 신청 가능<\/div><\/div>';
+  var others = c.mvpCandidates.filter(function(n){ return n !== c.monthlyMVP; });
+  others.forEach(function(name){
+    mvpHtml += '<div class="gcl-mvp-card"><div class="gcl-mvp-badge silver">🏅 MVP 후보<\/div>' +
+      '<div class="gcl-mvp-name">' + name + '<\/div>' +
+      '<div class="gcl-mvp-sub">' + c.winnerGuild + ' 길드 · MVP 후보 선정<\/div>' +
+      '<div class="gcl-mvp-ach" style="color:#8b949e;">이달의 으뜸 업적 신청 가능<\/div><\/div>';
+  });
+  document.getElementById('gcl-mvp').innerHTML = mvpHtml;
+  var maxScore = parseInt((c.rankings[0].score||'').replace(/,/g,''),10)||1;
+  var barColors = ['#f85149','#8b949e','#e67e22','#4da8f5','#3fb950'];
+  var tbodyHtml = '';
+  c.rankings.forEach(function(r,i){
+    var sc = parseInt((r.score||'').replace(/,/g,''),10)||0;
+    var pct = Math.round((sc/maxScore)*88);
+    var cc = i<3?['gcl-rank-1','gcl-rank-2','gcl-rank-3'][i]:'';
+    tbodyHtml += '<tr><td><span class="gcl-rank-num ' + cc + '">' + r.rank + '위<\/span><\/td>' +
+      '<td><b>' + r.emoji + ' ' + r.name + '<\/b><\/td>' +
+      '<td><div class="gcl-score-wrap"><div class="gcl-bar" style="width:' + pct + 'px;background:' + barColors[i] + ';"><\/div>' +
+      '<span style="font-size:11px;color:#8b949e;white-space:nowrap;">' + r.score + '<\/span><\/div><\/td>' +
+      '<td style="font-size:11px;"><span style="color:#c9d1d9;">' + r.contrib + '<\/span><br>' +
+      '<span style="color:#8b949e;">' + r.contribScore + '점 🛡️<\/span><\/td><\/tr>';
+  });
+  document.getElementById('gcl-rank-tbody').innerHTML = tbodyHtml;
+  document.getElementById('gcl-closing').textContent = c.closingMsg;
+}
+
+function checkGuildCelebration() {
+  if (!GUILD_CELEBRATION_CONFIG || !GUILD_CELEBRATION_CONFIG.enabled) return;
+  if (localStorage.getItem(GUILD_CELEBRATION_CONFIG.storageKey) === 'hidden') return;
+  renderGuildCelebModal();
+  document.getElementById('guildCelebModal').classList.add('open');
+}
+
+function closeGuildCelebModal() {
+  document.getElementById('guildCelebModal').classList.remove('open');
+}
+
+function dismissGuildCelebForever() {
+  localStorage.setItem(GUILD_CELEBRATION_CONFIG.storageKey, 'hidden');
+  closeGuildCelebModal();
+}
+
 </script>
 
 
@@ -8738,5 +9233,134 @@ function closePeerEvalModal() {
 }
 </script>
 
+<!-- 길드 축전 팝업 CSS + HTML -->
+<style>
+#guildCelebModal{display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.75);align-items:center;justify-content:center;padding:16px;}
+#guildCelebModal.open{display:flex;}
+#guildCelebBox{background:#161b22;border:1px solid #30363d;border-radius:16px;max-width:480px;width:100%;max-height:88vh;overflow-y:auto;position:relative;animation:celebIn .35s cubic-bezier(.22,.68,0,1.2);}
+@keyframes celebIn{from{opacity:0;transform:translateY(24px) scale(.97)}to{opacity:1;transform:none}}
+#guildCelebBox::-webkit-scrollbar{width:4px;}#guildCelebBox::-webkit-scrollbar-thumb{background:#30363d;border-radius:4px;}
+.gcl-header{background:linear-gradient(135deg,#1a0a0a,#2a0e0e,#1a0a0a);border-bottom:1px solid #4a1515;padding:24px 20px 18px;text-align:center;border-radius:16px 16px 0 0;position:relative;}
+.gcl-close-btn{position:absolute;top:12px;right:14px;background:rgba(255,255,255,.08);border:none;color:#8b949e;font-size:18px;cursor:pointer;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
+.gcl-close-btn:hover{background:rgba(255,255,255,.15);color:#e6edf3;}
+.gcl-badge{display:inline-block;font-size:10px;font-weight:bold;padding:3px 10px;border-radius:99px;background:rgba(248,130,30,.15);color:#f5a623;border:1px solid rgba(245,166,35,.3);letter-spacing:.8px;margin-bottom:10px;}
+.gcl-title{font-size:20px;font-weight:bold;color:#e6edf3;line-height:1.4;margin-bottom:4px;}
+.gcl-subtitle{font-size:12px;color:#8b949e;}
+.gcl-highlight{color:#f85149;font-weight:bold;}
+.gcl-body{padding:18px 20px;}
+.gcl-section{margin-bottom:18px;}
+.gcl-section-label{font-size:10px;font-weight:bold;letter-spacing:1px;color:#8b949e;margin-bottom:10px;}
+.gcl-prose{font-size:13px;color:#c9d1d9;line-height:1.75;}
+.gcl-prose p{margin-bottom:8px;}.gcl-prose p:last-child{margin-bottom:0;}
+.gcl-pills{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
+.gcl-pill{font-size:11px;padding:3px 10px;border-radius:99px;background:rgba(248,81,73,.1);color:#f85149;border:1px solid rgba(248,81,73,.25);}
+.gcl-reward-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.gcl-reward-card{background:#0d1117;border:1px solid #30363d;border-radius:10px;padding:10px 8px;text-align:center;}
+.gcl-reward-icon{font-size:18px;margin-bottom:4px;}.gcl-reward-val{font-size:13px;font-weight:bold;color:#e6edf3;}.gcl-reward-desc{font-size:10px;color:#8b949e;margin-top:2px;}
+.gcl-mvp-row{display:flex;gap:8px;}
+.gcl-mvp-card{flex:1;background:#0d1117;border:1px solid #30363d;border-radius:10px;padding:10px 12px;}
+.gcl-mvp-card.star{border-color:#f5a623;}
+.gcl-mvp-badge{display:inline-block;font-size:10px;padding:2px 8px;border-radius:99px;margin-bottom:5px;}
+.gcl-mvp-badge.gold{background:rgba(245,166,35,.15);color:#f5a623;border:1px solid rgba(245,166,35,.3);}
+.gcl-mvp-badge.silver{background:rgba(139,148,158,.15);color:#8b949e;border:1px solid rgba(139,148,158,.3);}
+.gcl-mvp-name{font-size:15px;font-weight:bold;color:#e6edf3;}.gcl-mvp-sub{font-size:11px;color:#8b949e;margin-top:3px;}.gcl-mvp-ach{font-size:11px;color:#f5a623;margin-top:5px;}
+.gcl-divider{border:none;border-top:1px solid #21262d;margin:16px 0;}
+.gcl-rank-table{width:100%;border-collapse:collapse;font-size:12px;}
+.gcl-rank-table th{text-align:left;font-size:10px;font-weight:bold;color:#8b949e;padding:0 0 8px;border-bottom:1px solid #21262d;}
+.gcl-rank-table td{padding:8px 0;border-bottom:1px solid #21262d;color:#c9d1d9;vertical-align:middle;}
+.gcl-rank-table td:nth-child(2){white-space:nowrap;}
+.gcl-rank-table tr:last-child td{border-bottom:none;}
+.gcl-rank-num{font-weight:bold;font-size:13px;}
+.gcl-rank-1{color:#f5a623;}.gcl-rank-2{color:#8b949e;}.gcl-rank-3{color:#e67e22;}
+.gcl-score-wrap{display:flex;align-items:center;gap:6px;}.gcl-bar{height:5px;border-radius:3px;}
+.gcl-footer{background:#0d1117;border-top:1px solid #21262d;padding:14px 20px;border-radius:0 0 16px 16px;text-align:center;}
+.gcl-footer-msg{font-size:13px;font-weight:bold;color:#e6edf3;margin-bottom:12px;}
+.gcl-footer-actions{display:flex;gap:8px;}
+.gcl-btn-dismiss{flex:1;padding:10px;border-radius:8px;font-size:12px;font-weight:bold;cursor:pointer;border:1px solid #30363d;background:transparent;color:#8b949e;}
+.gcl-btn-dismiss:hover{background:#21262d;color:#e6edf3;}
+.gcl-btn-close{flex:1;padding:10px;border-radius:8px;font-size:12px;font-weight:bold;cursor:pointer;background:#f85149;color:white;border:none;}
+.gcl-btn-close:hover{background:#da3633;}
+
+/* ═══════════════════════════════════════════════════════════
+   gcl 길드 랭킹 테이블 — 모바일 전용 flex 재설계 (600px 이하)
+   문제: table-layout:auto가 4열을 글자 단위로 쪼개는 현상
+   해결: tr을 display:flex로 전환 → 브라우저 테이블 알고리즘 우회
+   열 배분: 순위(26px) | 길드명(flex:1) | 점수(62px) | 기여도(72px)
+   점수 바(최대88px)는 공간 낭비가 심해 모바일에서 숨김
+   ═══════════════════════════════════════════════════════════ */
+@media (max-width:600px){
+  /* 테이블 컨테이너를 block으로, 행을 flex로 전환 */
+  .gcl-rank-table,.gcl-rank-table thead,.gcl-rank-table tbody{display:block!important;}
+  .gcl-rank-table thead tr,.gcl-rank-table tbody tr{display:flex!important;align-items:center!important;gap:4px!important;}
+
+  /* 헤더 행 */
+  .gcl-rank-table thead tr{padding-bottom:8px!important;border-bottom:1px solid #21262d!important;}
+  .gcl-rank-table thead th{padding:0!important;border-bottom:none!important;font-size:10px!important;white-space:nowrap!important;overflow:hidden!important;}
+
+  /* 데이터 행 — tr-level 구분선으로 교체 */
+  .gcl-rank-table tbody tr{padding:8px 0!important;border-bottom:1px solid #21262d!important;}
+  .gcl-rank-table tbody tr:last-child{border-bottom:none!important;}
+  .gcl-rank-table tbody td{padding:0!important;border-bottom:none!important;font-size:11px!important;}
+
+  /* ── 열 1: 순위 (26px 고정) ── */
+  .gcl-rank-table th:nth-child(1),.gcl-rank-table td:nth-child(1){flex:0 0 26px!important;}
+  .gcl-rank-num{font-size:12px!important;white-space:nowrap!important;}
+
+  /* ── 열 2: 길드명 (나머지 공간 전부, 길면 … 처리) ── */
+  .gcl-rank-table th:nth-child(2),.gcl-rank-table td:nth-child(2){flex:1 1 0!important;min-width:0!important;overflow:hidden!important;white-space:nowrap!important;}
+  .gcl-rank-table td:nth-child(2) b{display:block!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;font-size:12px!important;}
+
+  /* ── 열 3: 점수 숫자 (62px, 바 숨김) ── */
+  .gcl-rank-table th:nth-child(3),.gcl-rank-table td:nth-child(3){flex:0 0 62px!important;white-space:nowrap!important;overflow:hidden!important;}
+  .gcl-bar{display:none!important;}
+  .gcl-score-wrap{gap:0!important;}
+
+  /* ── 열 4: 기여도 1위 (72px, 우측 정렬, 2줄 유지) ── */
+  .gcl-rank-table th:nth-child(4),.gcl-rank-table td:nth-child(4){flex:0 0 72px!important;text-align:right!important;font-size:10px!important;}
+  /* 각 줄(이름/점수)은 한 줄 고정 + 넘치면 … */
+  .gcl-rank-table td:nth-child(4) span{display:block!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;}
+}
+</style>
+<div id="guildCelebModal" onclick="if(event.target===this)closeGuildCelebModal()">
+  <div id="guildCelebBox">
+    <div class="gcl-header">
+      <button class="gcl-close-btn" onclick="closeGuildCelebModal()">✕</button>
+      <div class="gcl-badge" id="gcl-badge-month"></div>
+      <div class="gcl-title" id="gcl-title"></div>
+      <div class="gcl-subtitle" id="gcl-subtitle"></div>
+    </div>
+    <div class="gcl-body">
+      <div class="gcl-section">
+        <div class="gcl-section-label">📜 운영국 서한</div>
+        <div class="gcl-prose" id="gcl-prose"></div>
+        <div class="gcl-pills" id="gcl-pills"></div>
+      </div>
+      <div class="gcl-section">
+        <div class="gcl-section-label">🎁 길드원 전원 포상</div>
+        <div class="gcl-reward-grid" id="gcl-rewards"></div>
+      </div>
+      <div class="gcl-section">
+        <div class="gcl-section-label">⭐ 이달의 주인공 &amp; MVP후보</div>
+        <div class="gcl-mvp-row" id="gcl-mvp"></div>
+      </div>
+      <hr class="gcl-divider">
+      <div class="gcl-section" style="margin-bottom:0">
+        <div class="gcl-section-label">🏅 최종 길드 랜킹</div>
+        <table class="gcl-rank-table">
+          <thead><tr><th style="width:30px">순위</th><th>길드</th><th>점수</th><th>기여도 1위</th></tr></thead>
+          <tbody id="gcl-rank-tbody"></tbody>
+        </table>
+        <div style="margin-top:6px;font-size:10px;color:#8b949e">🛡️ 표시 학생은 '길드의 수호신' 업적 신청 자격 획득</div>
+      </div>
+    </div>
+    <div class="gcl-footer">
+      <div class="gcl-footer-msg" id="gcl-closing"></div>
+      <div class="gcl-footer-actions">
+        <button class="gcl-btn-dismiss" onclick="dismissGuildCelebForever()">앞으로 보지 않기</button>
+        <button class="gcl-btn-close" onclick="closeGuildCelebModal()">닫기</button>
+      </div>
+    </div>
+  </div>
+</div>
 </body>
 </html>

@@ -216,73 +216,78 @@ function verifyMissionM02(guildId, startDate, endDate) {
 
   var achieveSheet = SpreadsheetApp.getActiveSpreadsheet()
                        .getSheetByName(SHEET_NAMES.ACHIEVEMENT);
-  var masterSheet  = SpreadsheetApp.getActiveSpreadsheet()
-                       .getSheetByName(SHEET_NAMES.ACHIEVEMENT_MASTER);
-  if (!achieveSheet || !masterSheet) {
+  if (!achieveSheet) {
     return { cleared: false, resultText: "업적 시트 없음", detail: {} };
   }
 
   // 미션 시작일 고정: 5월 8일 이후 달성분만 인정
-  var missionStart = new Date("2026-05-08T00:00:00");
+  var missionStart   = new Date("2026-05-08T00:00:00");
   var effectiveStart = (start > missionStart) ? start : missionStart;
 
-  // 기간 내 각 멤버의 신규 업적 달성 목록 조회 (업적ID 기준)
-  // 학생업적달성 컬럼 구조: A=학생명, B=업적ID, C=달성일시, ...
-  var achieveData      = achieveSheet.getDataRange().getValues();
-  var memberAchieveMap = {}; // { 학생명: [업적ID, ...] }
-  members.forEach(function(name) { memberAchieveMap[name] = []; });
+  // ── 기간 내 이 길드원의 업적 전체를 날짜순으로 수집 ────────────────
+  // 학생업적달성 컬럼: A=학생명, B=업적ID, E열(index4)=달성일시
+  var achieveData = achieveSheet.getDataRange().getValues();
+  var memberSet   = {};
+  members.forEach(function(name) { memberSet[name] = true; });
 
+  var allAchList = []; // { name, achId, date } 배열
   for (var j = 1; j < achieveData.length; j++) {
-    var studentName = String(achieveData[j][0]).trim();
-    var achId       = String(achieveData[j][1]).trim();
-    var achDate     = new Date(achieveData[j][4]);
+    var sName   = String(achieveData[j][0]).trim();
+    var achId   = String(achieveData[j][1]).trim();
+    var achDate = new Date(achieveData[j][4]);
 
-    if (!memberAchieveMap.hasOwnProperty(studentName)) continue;
-    if (achDate < effectiveStart || achDate > end) continue; // 5/8 이후만 인정
+    if (!memberSet[sName])           continue; // 이 길드원 아님
+    if (!achId)                      continue; // 업적ID 없음
+    if (isNaN(achDate.getTime()))    continue; // 날짜 파싱 실패
+    if (achDate < effectiveStart)    continue; // 5/8 이전
+    if (achDate > end)               continue; // 마감일 이후
 
-    memberAchieveMap[studentName].push(achId); // 카테고리 아닌 업적ID 저장
+    allAchList.push({ name: sName, achId: achId, date: achDate });
   }
 
-  // 검증 1: 전원 최소 1개 달성 여부
-  var notAchieved = members.filter(function(name) {
-    return memberAchieveMap[name].length === 0;
+  // ── 날짜 오름차순 정렬 (선착순 배정의 핵심) ────────────────────────
+  allAchList.sort(function(a, b) { return a.date - b.date; });
+
+  // ── 선착순 고유 업적 배정 ──────────────────────────────────────────
+  // 규칙:
+  //   같은 업적ID → 가장 먼저 달성한 멤버에게만 배정
+  //   한 멤버는 1개만 배정받으면 OK
+  //   멤버의 10개 업적 중 1개라도 고유하면 그 멤버는 클리어 조건 충족
+  var assignedMember = {}; // { name: achId }  — 배정 완료된 멤버
+  var claimedAchId   = {}; // { achId: name }  — 이미 배정된 업적ID
+
+  allAchList.forEach(function(item) {
+    if (assignedMember[item.name]) return; // 이미 배정받은 멤버는 skip
+    if (claimedAchId[item.achId])  return; // 이미 다른 멤버가 가져간 업적 skip
+    // 배정!
+    assignedMember[item.name] = item.achId;
+    claimedAchId[item.achId]  = item.name;
   });
 
-  if (notAchieved.length > 0) {
+  // ── 미배정 멤버 확인 ───────────────────────────────────────────────
+  // 기간 내 업적이 아예 없거나, 모든 업적이 이미 다른 멤버에게 선점된 경우
+  var notAssigned = members.filter(function(name) {
+    return !assignedMember[name];
+  });
+
+  if (notAssigned.length > 0) {
     return {
       cleared: false,
-      resultText: "미달성: " + notAchieved.join(", "),
-      detail: memberAchieveMap
+      resultText: "고유 업적 없음: " + notAssigned.join(", "),
+      detail: { assigned: assignedMember, notAssigned: notAssigned }
     };
   }
 
-  // 검증 2: 업적ID 중복 여부 (선착순 — 첫 번째 달성 업적ID 기준)
-  var usedAchIds    = [];
-  var duplicateFound = false;
-  var duplicateInfo  = "";
-
-  members.forEach(function(name) {
-    var firstId = memberAchieveMap[name][0];
-    if (usedAchIds.indexOf(firstId) !== -1) {
-      duplicateFound = true;
-      duplicateInfo  = "업적 중복: " + firstId + " (" + name + ")";
-    } else {
-      usedAchIds.push(firstId);
-    }
-  });
-
-  if (duplicateFound) {
-    return {
-      cleared: false,
-      resultText: duplicateInfo,
-      detail: memberAchieveMap
-    };
-  }
+  // 배정 현황 요약 (Logger용)
+  var summary = members.map(function(name) {
+    return name + "→" + assignedMember[name];
+  }).join(" | ");
+  Logger.log("[verifyMissionM02] " + guildId + " 배정: " + summary);
 
   return {
     cleared: true,
-    resultText: "클리어 — 전원 달성, 카테고리 모두 상이",
-    detail: memberAchieveMap
+    resultText: "클리어 — 전원 고유 업적 배정 완료",
+    detail: { assigned: assignedMember }
   };
 }
 
@@ -587,20 +592,35 @@ function calcGuildMissionFinalScore(missionId, guildId) {
 /**
  * 모든 미션, 모든 길드의 최종점수를 일괄 계산합니다.
  * 월간 GS 산출 직전에 호출됩니다.
+ *
+ * [FIX 2026-05] 행별 try-catch 추가 — 한 행에서 에러가 나도 나머지 행 계속 처리
  */
 function calcAllGuildMissionFinalScores() {
   var ss       = SpreadsheetApp.getActiveSpreadsheet();
   var logSheet = ss.getSheetByName(SHEET_NAMES.MISSION_LOG);
   if (!logSheet) return;
 
-  var data = logSheet.getDataRange().getValues();
+  var data    = logSheet.getDataRange().getValues();
+  var errCount = 0;
+
   for (var i = 1; i < data.length; i++) {
     var missionId = String(data[i][0]).trim();
     var guildId   = String(data[i][1]).trim();
     if (!missionId || !guildId) continue;
-    calcGuildMissionFinalScore(missionId, guildId);
+    try {
+      calcGuildMissionFinalScore(missionId, guildId);
+    } catch (e) {
+      errCount++;
+      Logger.log("[calcAllGuildMissionFinalScores] ❌ 에러 - " +
+                 missionId + "/" + guildId + ": " + e.message);
+    }
   }
-  Logger.log("[calcAllGuildMissionFinalScores] 전체 최종점수 계산 완료.");
+
+  if (errCount > 0) {
+    Logger.log("[calcAllGuildMissionFinalScores] 완료. 에러 " + errCount + "건 발생 (위 로그 확인).");
+  } else {
+    Logger.log("[calcAllGuildMissionFinalScores] 전체 최종점수 계산 완료. 에러 없음.");
+  }
 }
 
 
@@ -1980,6 +2000,119 @@ function getPeerEvalStatusUI(studentName, missionId) {
  * 길드_구성 시트를 읽어 { 학생명: 길드ID } 객체를 반환합니다.
  * 탈퇴일이 있는 행은 제외.
  */
+/**
+ * ════════════════════════════════════════════════════════════════
+ * M02 검증 디버그 — 특정 길드의 검증 과정 전체를 Logger에 출력
+ * ════════════════════════════════════════════════════════════════
+ * 사용법 (Apps Script 편집기):
+ *   debugM02('GUILD_01')
+ *
+ * 출력 내용:
+ *   1) 길드원 목록 (길드_구성 시트 기준)
+ *   2) 미션 시작일/마감일/effectiveStart 시각
+ *   3) 길드원별 달성 업적 전체 목록 (날짜 타입 포함)
+ *   4) 각 업적이 cutoff에 의해 잘렸는지 여부
+ *   5) 학생업적달성 시트의 학생명 vs 길드_구성 학생명 정확 비교 (charCode 단위)
+ */
+function debugM02(guildId) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var logSheet = ss.getSheetByName(SHEET_NAMES.MISSION_LOG);
+  var achSheet = ss.getSheetByName(SHEET_NAMES.ACHIEVEMENT);
+  var mbSheet  = ss.getSheetByName(SHEET_NAMES.GUILD_MEMBERS);
+
+  Logger.log('═══════════════════════════════════════════════════════');
+  Logger.log('  M02 디버그 - ' + guildId);
+  Logger.log('═══════════════════════════════════════════════════════');
+
+  // 1) 길드원
+  var members = _getGuildMembers(guildId);
+  Logger.log('\n[1] 길드원: ' + JSON.stringify(members));
+  members.forEach(function(name) {
+    var codes = [];
+    for (var i = 0; i < name.length; i++) codes.push(name.charCodeAt(i));
+    Logger.log('   "' + name + '" 길이=' + name.length + ' charCodes=' + JSON.stringify(codes));
+  });
+
+  // 2) M02 미션 기간 정보
+  var rows = _getMissionLogRows(logSheet, 'M02');
+  var targetRow = null;
+  rows.forEach(function(r) { if (r.guildId === guildId) targetRow = r; });
+  if (!targetRow) { Logger.log('\n❌ M02 미션 행을 찾을 수 없습니다.'); return; }
+
+  Logger.log('\n[2] 미션 기간');
+  Logger.log('   raw startDate: ' + targetRow.startDate + ' (type=' + typeof targetRow.startDate +
+             ', isDate=' + (targetRow.startDate instanceof Date) + ')');
+  Logger.log('   raw endDate  : ' + targetRow.endDate   + ' (type=' + typeof targetRow.endDate +
+             ', isDate=' + (targetRow.endDate   instanceof Date) + ')');
+
+  var start = _toMidnight(targetRow.startDate);
+  var end   = _toEndOfDay(targetRow.endDate);
+  var missionStart   = new Date('2026-05-08T00:00:00');
+  var effectiveStart = (start > missionStart) ? start : missionStart;
+
+  Logger.log('   start          → ' + start.toString());
+  Logger.log('   end            → ' + end.toString());
+  Logger.log('   missionStart   → ' + missionStart.toString() + ' (하드코딩 5/8)');
+  Logger.log('   effectiveStart → ' + effectiveStart.toString());
+
+  // 3) 길드원별 업적 전체 스캔
+  Logger.log('\n[3] 길드원별 달성 업적 (모든 데이터)');
+  var achData = achSheet.getDataRange().getValues();
+  var memberRaw = {};
+  members.forEach(function(n) { memberRaw[n] = []; });
+
+  for (var j = 1; j < achData.length; j++) {
+    var rawName = String(achData[j][0]).trim();
+    if (!memberRaw.hasOwnProperty(rawName)) continue;
+    var rawDate = achData[j][4];
+    var achDate = new Date(rawDate);
+    var inRange = !(achDate < effectiveStart || achDate > end);
+    memberRaw[rawName].push({
+      achId    : String(achData[j][1]).trim(),
+      rawDate  : rawDate,
+      rawType  : typeof rawDate,
+      isDate   : rawDate instanceof Date,
+      parsed   : achDate.toString(),
+      inRange  : inRange,
+      reason   : !inRange ? (achDate < effectiveStart ? '❌ effectiveStart 이전' : '❌ end 이후') : '✅ 인정'
+    });
+  }
+
+  members.forEach(function(name) {
+    Logger.log('\n   ─── ' + name + ' (총 ' + memberRaw[name].length + '개) ───');
+    memberRaw[name].forEach(function(a) {
+      Logger.log('     · ' + a.achId + ' | rawDate=' + a.rawDate + ' (' + a.rawType +
+                 (a.isDate ? '/Date' : '') + ') | parsed=' + a.parsed + ' | ' + a.reason);
+    });
+    var inRangeCount = memberRaw[name].filter(function(a){return a.inRange;}).length;
+    if (inRangeCount === 0) Logger.log('     ⚠️ 미달성 표기 원인: 기간 내 업적 0개');
+  });
+
+  // 4) 학생업적달성에는 있지만 길드_구성에 없는 학생 (이름 불일치 가능성)
+  Logger.log('\n[4] 학생업적달성 시트에만 있는 학생명 (길드_구성과 불일치 가능성)');
+  var achStudents = {};
+  for (var k = 1; k < achData.length; k++) {
+    var n = String(achData[k][0]).trim();
+    if (n) achStudents[n] = true;
+  }
+  var guildStudents = {};
+  members.forEach(function(n) { guildStudents[n] = true; });
+  Object.keys(achStudents).forEach(function(n) {
+    if (!guildStudents[n]) {
+      // 길드원 중 비슷한 이름 찾기
+      members.forEach(function(m) {
+        if (m !== n && m.replace(/\s/g,'') === n.replace(/\s/g,'')) {
+          Logger.log('   ⚠️ "' + n + '" (업적시트) ≈ "' + m + '" (길드시트) — 공백 차이?');
+        }
+      });
+    }
+  });
+
+  Logger.log('\n═══════════════════════════════════════════════════════');
+  Logger.log('  디버그 완료. 위 로그를 검토하세요.');
+  Logger.log('═══════════════════════════════════════════════════════');
+}
+
 function _buildStudentGuildMap(mbSheet) {
   var map = {};
   if (!mbSheet) return map;
@@ -2278,3 +2411,266 @@ function debugGSSheet() {
   Logger.log("N2값: " + JSON.stringify(data[1][13]));
   Logger.log("yearMonth비교: " + Utilities.formatDate(new Date(), "Asia/Seoul", "yyyy-MM"));
 }
+
+
+// ============================================================
+// 섹션 15 — 디버그 & 강제 재실행 유틸
+// ============================================================
+
+/**
+ * 길드_미션로그 현황을 Logger에 출력합니다.
+ *
+ * 확인 내용:
+ *   - 총 행 수
+ *   - 각 행의 미션ID/길드ID/상태/F열(자동검증)/G열(정성)/I열(최종점수)
+ *   - I열이 비어 있는 행 수
+ *
+ * 사용법: Apps Script 편집기에서 debugMissionLog() 선택 후 ▶ 실행
+ */
+function debugMissionLog() {
+  var ss       = SpreadsheetApp.getActiveSpreadsheet();
+  var logSheet = ss.getSheetByName(SHEET_NAMES.MISSION_LOG);
+
+  Logger.log('══════════════════════════════════════════════');
+  Logger.log('  길드_미션로그 현황 디버그');
+  Logger.log('══════════════════════════════════════════════');
+
+  if (!logSheet) {
+    Logger.log('❌ 길드_미션로그 시트가 존재하지 않습니다.');
+    Logger.log('→ announceGuildMission() 을 먼저 실행해야 행이 생성됩니다.');
+    return;
+  }
+
+  var data     = logSheet.getDataRange().getValues();
+  var dataRows = data.length - 1; // 헤더 제외
+  Logger.log('총 데이터 행 수: ' + dataRows + '개 (헤더 1행 제외)');
+
+  if (dataRows === 0) {
+    Logger.log('❌ 데이터 행이 없습니다.');
+    Logger.log('→ announceGuildMission("M02","2026-05-01","2026-05-31") 처럼 먼저 미션을 발표해야 합니다.');
+    return;
+  }
+
+  var emptyICount = 0;
+  var emptyFCount = 0;
+
+  Logger.log('\n[행별 상세]');
+  for (var i = 1; i < data.length; i++) {
+    var mId    = String(data[i][0] || '').trim();
+    var gId    = String(data[i][1] || '').trim();
+    var status = String(data[i][4] || '').trim(); // E열
+    var fVal   = String(data[i][5] || '').trim(); // F열: 자동검증결과
+    var gVal   = data[i][6];                       // G열: 정성평가점수
+    var iVal   = data[i][8];                       // I열: 최종점수
+
+    var fTag = fVal   ? '✅' : '⬜(비어있음)';
+    var iTag = (iVal !== '' && iVal !== null && iVal !== undefined) ? String(iVal) : '⬜(비어있음)';
+
+    if (!fVal) emptyFCount++;
+    if (iVal === '' || iVal === null || iVal === undefined) emptyICount++;
+
+    Logger.log('  행' + i + ': ' + mId + ' / ' + gId +
+               ' | 상태=' + (status || '없음') +
+               ' | F(자동검증)=' + fTag +
+               (fVal ? ' "' + fVal.substring(0, 20) + '"' : '') +
+               ' | G(정성)=' + (gVal !== '' && gVal !== null ? gVal : '비어있음') +
+               ' | I(최종점수)=' + iTag);
+  }
+
+  Logger.log('\n[요약]');
+  Logger.log('  F열(자동검증결과) 비어있는 행: ' + emptyFCount + '개');
+  Logger.log('  I열(최종점수) 비어있는 행:     ' + emptyICount + '개');
+
+  // 길드_GS_월간 중복 여부도 함께 확인
+  var gsSheet   = ss.getSheetByName(SHEET_NAMES.GS_MONTHLY);
+  var yearMonth = Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM');
+  Logger.log('\n[길드_GS_월간 상태]');
+  if (!gsSheet) {
+    Logger.log('  ⬜ 길드_GS_월간 시트 없음 → GS 계산 자체가 한 번도 실행 안 된 상태');
+  } else {
+    var gsData    = gsSheet.getDataRange().getValues();
+    var thisMonth = gsData.filter(function(r, idx) {
+      if (idx === 0) return false;
+      var cellVal = r[0];
+      var ym = cellVal instanceof Date
+        ? Utilities.formatDate(cellVal, 'Asia/Seoul', 'yyyy-MM')
+        : String(cellVal).trim().substring(0, 7);
+      return ym === yearMonth;
+    });
+    if (thisMonth.length > 0) {
+      Logger.log('  ⚠️ 이번 달(' + yearMonth + ') 데이터가 이미 ' + thisMonth.length + '개 행 존재');
+      Logger.log('  → runMonthlyGSManually 재실행 시 중복 방지로 길드_GS_월간에 새 행이 추가되지 않음');
+      Logger.log('  → 그래도 I열(최종점수)은 업데이트됨. I열이 비어있다면 다른 원인임.');
+      Logger.log('  → 길드_GS_월간을 새로 계산하고 싶다면: runGSForce() 사용');
+    } else {
+      Logger.log('  ✅ 이번 달(' + yearMonth + ') 데이터 없음 → runMonthlyGSManually 실행 가능');
+    }
+  }
+
+  Logger.log('\n══════════════════════════════════════════════');
+  Logger.log('  디버그 완료');
+  Logger.log('══════════════════════════════════════════════');
+}
+
+
+/**
+ * 강제 GS 재산출 함수.
+ *
+ * runMonthlyGSManually와 달리 이번 달 중복 방지를 우회합니다.
+ * 길드_GS_월간의 이번 달 기존 행을 삭제하고 새로 계산합니다.
+ *
+ * 사용 시점:
+ *   - runMonthlyGSManually 실행 후에도 길드_GS_월간에 새 행이 안 생길 때
+ *   - 미션 점수나 자산 데이터가 바뀌어서 GS를 다시 계산해야 할 때
+ *
+ * 사용법: Apps Script 편집기에서 runGSForce() 선택 후 ▶ 실행
+ */
+function runGSForce() {
+  var ss        = SpreadsheetApp.getActiveSpreadsheet();
+  var gsSheet   = ss.getSheetByName(SHEET_NAMES.GS_MONTHLY);
+  var yearMonth = Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM');
+
+  // ── 1단계: 길드_GS_월간에서 이번 달 기존 행 삭제 ─────────────────
+  if (gsSheet) {
+    var gsData = gsSheet.getDataRange().getValues();
+    // 역순으로 삭제 (인덱스 밀림 방지)
+    for (var i = gsData.length - 1; i >= 1; i--) {
+      var cellVal = gsData[i][0];
+      var ym = cellVal instanceof Date
+        ? Utilities.formatDate(cellVal, 'Asia/Seoul', 'yyyy-MM')
+        : String(cellVal).trim().substring(0, 7);
+      if (ym === yearMonth) {
+        gsSheet.deleteRow(i + 1); // data는 0-based, 시트는 1-based
+        Logger.log('[runGSForce] 기존 행 삭제: 행' + (i + 1) + ' (' + yearMonth + ')');
+      }
+    }
+  }
+
+  Logger.log('[runGSForce] 기존 이번 달 데이터 정리 완료. calcMonthlyGS() 실행...');
+
+  // ── 2단계: calcMonthlyGS() 정상 실행 (중복 체크 통과됨) ─────────
+  calcMonthlyGS();
+
+  Logger.log('[runGSForce] 완료.');
+  SpreadsheetApp.getActiveSpreadsheet().toast(
+    yearMonth + ' GS 강제 재산출 완료.',
+    'GS 강제 재실행', 5
+  );
+}
+
+
+/**
+ * 강제로 모든 미션의 최종점수(I열)만 다시 계산합니다.
+ * 길드_GS_월간은 건드리지 않습니다.
+ *
+ * F열(자동검증결과)이 비어있으면 먼저 forceVerifyNow("M02") 등을 실행하세요.
+ *
+ * 사용법: Apps Script 편집기에서 runFinalScoreOnly() 선택 후 ▶ 실행
+ */
+function runFinalScoreOnly() {
+  calcAllGuildMissionFinalScores();
+  Logger.log('[runFinalScoreOnly] 길드_미션로그 I열(최종점수) 전체 재계산 완료.');
+  SpreadsheetApp.getActiveSpreadsheet().toast(
+    '길드_미션로그 I열(최종점수) 재계산 완료.',
+    '최종점수 계산', 4
+  );
+}
+
+
+/**
+ * E열(상태) 체크 없이 특정 미션을 강제 검증합니다.
+ *
+ * 사용 이유:
+ *   runDailyGuildVerification()은 E열이 "진행중"인 행만 처리합니다.
+ *   E열이 비어있으면 자동으로 skip되어 F열이 채워지지 않습니다.
+ *   이 함수는 E열 상태와 무관하게 강제로 검증을 실행합니다.
+ *
+ * 실행 결과:
+ *   - F열(자동검증결과) 업데이트
+ *   - E열이 비어있으면 "진행중" 또는 상태 자동 확정
+ *
+ * 사용법:
+ *   forceVerifyNow("M02")   ← M02 강제 검증
+ *   forceVerifyNow("M04")   ← M04 강제 검증
+ *
+ * @param {string} missionId - 미션 코드 (예: "M02")
+ */
+function forceVerifyNow(missionId) {
+  if (!missionId) throw new Error("forceVerifyNow: missionId가 필요합니다.");
+
+  var ss    = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(SHEET_NAMES.MISSION_LOG);
+  if (!sheet) throw new Error("길드_미션로그 시트를 찾을 수 없습니다.");
+
+  var rows = _getMissionLogRows(sheet, missionId);
+  if (rows.length === 0) {
+    throw new Error(missionId + " 행을 길드_미션로그에서 찾을 수 없습니다. " +
+                    "announceGuildMission()을 먼저 실행하세요.");
+  }
+
+  var today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  Logger.log("[forceVerifyNow] " + missionId + " 강제 검증 시작 (" + rows.length + "개 길드)");
+
+  rows.forEach(function(rowInfo) {
+    try {
+      // ── 날짜가 비어있을 경우 방어 처리 ────────────────────────────
+      var startDate = rowInfo.startDate;
+      var endDate   = rowInfo.endDate;
+
+      if (!startDate || String(startDate).trim() === "") {
+        Logger.log("  ⚠️ " + rowInfo.guildId + " — startDate 비어있음. 오늘로 대체.");
+        startDate = today;
+      }
+      if (!endDate || String(endDate).trim() === "") {
+        Logger.log("  ⚠️ " + rowInfo.guildId + " — endDate 비어있음. 오늘로 대체.");
+        endDate = today;
+      }
+
+      // ── 검증 실행 ───────────────────────────────────────────────
+      var result = _runVerifyForMission(missionId, rowInfo.guildId, startDate, endDate);
+
+      // ── F열(자동검증결과) 업데이트 ───────────────────────────────
+      sheet.getRange(rowInfo.rowIndex, 6).setValue(result.resultText);
+
+      // ── E열(상태) 처리 ───────────────────────────────────────────
+      var endDateObj = new Date(endDate);
+      endDateObj.setHours(0, 0, 0, 0);
+
+      var newStatus;
+      if (today > endDateObj) {
+        // 마감일 지남 → 클리어/실패 확정
+        newStatus = result.cleared ? MISSION_STATUS.CLEARED : MISSION_STATUS.FAILED;
+      } else {
+        // 아직 진행 중
+        newStatus = MISSION_STATUS.ACTIVE; // "진행중"
+      }
+      sheet.getRange(rowInfo.rowIndex, 5).setValue(newStatus);
+
+      Logger.log("  " + rowInfo.guildId + " → E열=" + newStatus +
+                 " | F열=" + result.resultText.substring(0, 40));
+
+    } catch (e) {
+      Logger.log("  ❌ " + rowInfo.guildId + " 처리 중 에러: " + e.message);
+    }
+  });
+
+  Logger.log("[forceVerifyNow] " + missionId + " 강제 검증 완료.");
+  SpreadsheetApp.getActiveSpreadsheet().toast(
+    missionId + " 강제 검증 완료. F열과 E열이 업데이트됐습니다.",
+    "미션 강제 검증", 5
+  );
+}
+
+/** M02 강제 검증 단축 함수 (편집기에서 쉽게 선택하기 위해) */
+function forceVerifyM02() { forceVerifyNow("M02"); }
+
+/** M04 강제 검증 단축 함수 */
+function forceVerifyM04() { forceVerifyNow("M04"); }
+
+/** M07 강제 검증 단축 함수 */
+function forceVerifyM07() { forceVerifyNow("M07"); }
+
+/** M12 강제 검증 단축 함수 */
+function forceVerifyM12() { forceVerifyNow("M12"); }

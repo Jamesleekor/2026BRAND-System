@@ -90,6 +90,18 @@
       background: var(--accent); border-color: var(--accent);
       color: #0d1117; font-weight: bold;
     }
+    /* 기간 직접 지정 */
+    .date-range-box {
+      display: inline-flex; align-items: center; gap: 5px;
+      margin: 0 4px; padding-left: 8px; border-left: 1px solid var(--border);
+    }
+    .date-input {
+      background: var(--surface); color: var(--text);
+      border: 1px solid var(--border); border-radius: 6px;
+      padding: 4px 6px; font-size: 12px; font-family: 'Noto Sans KR', sans-serif;
+    }
+    .date-input:focus { outline: none; border-color: var(--accent); }
+    .date-input::-webkit-calendar-picker-indicator { filter: invert(0.7); cursor: pointer; }
     .logout-btn {
       padding: 5px 12px; border-radius: 6px; border: 1px solid var(--border);
       background: transparent; color: var(--muted); cursor: pointer;
@@ -220,18 +232,34 @@
     .top-name { flex: 1; padding: 0 8px; }
     .top-count { color: var(--accent); font-weight: bold; font-size: 12px; }
 
-    /* 네트워크 */
-    #networkCanvas {
-      width: 100%; border-radius: 10px;
-      background: var(--surface); border: 1px solid var(--border);
-      display: block; cursor: grab;
-    }
-    #networkCanvas:active { cursor: grabbing; }
+    /* 네트워크 / 거래 클라우드 */
     .network-legend {
       display: flex; gap: 16px; flex-wrap: wrap; margin-top: 10px; font-size: 12px; color: var(--muted);
     }
     .legend-item { display: flex; align-items: center; gap: 5px; }
     .legend-dot  { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+    /* 거래 클라우드 (탭 2) */
+    .trade-cloud {
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+      gap: 14px; padding: 24px 16px; min-height: 360px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    }
+    .cloud-bubble {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      border-radius: 50%; color: #0d1117; font-weight: bold; text-align: center;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+      cursor: default; padding: 4px; line-height: 1.15; overflow: hidden;
+    }
+    .cloud-bubble:hover {
+      transform: scale(1.08);
+      box-shadow: 0 8px 22px rgba(0,0,0,0.5);
+      z-index: 5;
+    }
+    .cloud-bubble .cb-name { font-size: 0.95em; }
+    .cloud-bubble .cb-stat { font-size: 0.72em; font-weight: 600; opacity: 0.85; margin-top: 2px; white-space: nowrap; }
+    .cloud-bubble.flagged { box-shadow: 0 0 0 3px var(--red), 0 4px 14px rgba(0,0,0,0.35); }
 
     /* 알림 센터 */
     .alert-card {
@@ -346,6 +374,12 @@
       <button class="period-btn active" id="btnWeek"  onclick="setPeriod('week')">이번 주</button>
       <button class="period-btn"        id="btnMonth" onclick="setPeriod('month')">이번 달</button>
       <button class="period-btn"        id="btnAll"   onclick="setPeriod('all')">전체</button>
+      <span class="date-range-box">
+        <input type="date" id="customStart" class="date-input" title="시작일">
+        <span style="color:var(--muted);font-size:12px;">~</span>
+        <input type="date" id="customEnd" class="date-input" title="종료일">
+        <button class="period-btn" id="btnCustom" onclick="applyCustomRange()">📅 기간 조회</button>
+      </span>
       <button class="logout-btn" onclick="doLogout()">로그아웃</button>
     </div>
   </div>
@@ -384,6 +418,7 @@
       <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
         <button class="summary-copy-btn" onclick="copySummary()">📋 간략 요약 복사</button>
         <button class="summary-copy-btn" style="background:rgba(63,185,80,0.15);border-color:var(--green);color:var(--green);" onclick="copyBriefing()">📢 브리핑 리포트 복사</button>
+        <button class="summary-copy-btn" style="background:rgba(188,140,255,0.15);border-color:var(--purple);color:var(--purple);" onclick="generateAIBriefing()">🤖 AI 심층 브리핑 생성</button>
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
@@ -412,16 +447,22 @@
     <div class="top-grid" id="topGrid"></div>
   </div>
 
-  <!-- ── 탭 2: 거래 네트워크 ── -->
+  <!-- ── 탭 2: 거래 클라우드 ── -->
   <div class="tab-content" id="content2">
-    <div style="margin-bottom:12px;font-size:13px;color:var(--muted);">
-      원의 크기 = 거래 참여 횟수 · 선의 굵기 = 거래 빈도 · 빨간 선 = 이상거래 포함 관계
+    <div style="margin-bottom:14px;font-size:13px;color:var(--muted);line-height:1.7;">
+      💡 <b style="color:var(--text);">거품이 클수록</b> 거래에 활발히 참여한 학생이에요.
+      거품 <b style="color:var(--text);">색</b>은 그 학생이
+      <b style="color:var(--green);">판매 위주</b>인지
+      <b style="color:var(--accent);">구매 위주</b>인지
+      <b style="color:var(--purple);">균형</b>인지를 나타내고,
+      거품 아래 <b style="color:var(--text);">🔼판매 / 🔽구매</b> 횟수가 함께 표시됩니다.
     </div>
-    <canvas id="networkCanvas" height="480"></canvas>
-    <div class="network-legend">
-      <div class="legend-item"><div class="legend-dot" style="background:var(--accent);"></div> 일반 학생</div>
-      <div class="legend-item"><div class="legend-dot" style="background:var(--yellow);"></div> 거래 활발 (5건↑)</div>
-      <div class="legend-item"><div class="legend-dot" style="background:var(--red);"></div> 이상거래 포함</div>
+    <div id="tradeCloud" class="trade-cloud"><div class="loading">데이터 로딩 중...</div></div>
+    <div class="network-legend" style="margin-top:16px;">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--green);"></div> 판매가 더 많은 학생</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--accent);"></div> 구매가 더 많은 학생</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--purple);"></div> 판매·구매가 비슷</div>
+      <div class="legend-item"><div class="legend-dot" style="background:transparent;border:2px solid var(--red);width:8px;height:8px;"></div> 최종 적발 이력 있음</div>
     </div>
   </div>
 
@@ -495,11 +536,30 @@
       </div>
     </div>
 
+<!-- ══════════════════════════════════════════════════════════ -->
+<!-- AI 심층 브리핑 모달 (#6) -->
+<!-- ══════════════════════════════════════════════════════════ -->
+<div id="aiModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:1000;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;max-width:680px;width:100%;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,0.55);">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);">
+      <div style="font-weight:bold;font-size:15px;color:var(--purple);">🤖 AI 심층 경제 브리핑</div>
+      <button onclick="closeAIModal()" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1;">✕</button>
+    </div>
+    <div id="aiModalBody" style="padding:20px;overflow-y:auto;white-space:pre-wrap;font-size:13.5px;line-height:1.75;color:var(--text);"></div>
+    <div style="padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;">
+      <button class="summary-copy-btn" id="aiCopyBtn" onclick="copyAIBriefing()" style="display:none;background:rgba(188,140,255,0.15);border-color:var(--purple);color:var(--purple);">📋 복사</button>
+      <button class="summary-copy-btn" onclick="closeAIModal()">닫기</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ══════════════════════════════════════════════════════════
 // 전역 상태
 // ══════════════════════════════════════════════════════════
 var _currentPeriod   = 'week';
+var _customStart     = null;   // 사용자 지정 시작일 (yyyy-MM-dd)
+var _customEnd       = null;   // 사용자 지정 종료일 (yyyy-MM-dd)
 var _dashData        = null;   // getGuardDashboardData 결과
 var _alertData       = [];     // getP2PAlertsForGuard 결과
 var _anomalyOnly     = false;
@@ -554,7 +614,7 @@ function loadData() {
     .withFailureHandler(function(e) {
       console.log('대시보드 데이터 로드 실패: ' + e.message);
     })
-    .getGuardDashboardData(_currentPeriod);
+    .getGuardDashboardData(_currentPeriod, _customStart, _customEnd);
 
   google.script.run
     .withSuccessHandler(function(alerts) {
@@ -580,10 +640,30 @@ function renderAll() {
 // ══════════════════════════════════════════════════════════
 function setPeriod(p) {
   _currentPeriod = p;
+  _customStart = null;
+  _customEnd   = null;
   ['week','month','all'].forEach(function(k) {
     var id = k === 'week' ? 'btnWeek' : k === 'month' ? 'btnMonth' : 'btnAll';
     document.getElementById(id).classList.toggle('active', k === p);
   });
+  var bc = document.getElementById('btnCustom');
+  if (bc) bc.classList.remove('active');
+  loadData();
+}
+
+// 사용자 지정 기간 조회
+function applyCustomRange() {
+  var s = document.getElementById('customStart').value;
+  var e = document.getElementById('customEnd').value;
+  if (!s || !e) { alert('시작일과 종료일을 모두 선택해주세요.'); return; }
+  if (s > e)    { alert('시작일이 종료일보다 늦을 수 없습니다.'); return; }
+  _currentPeriod = 'custom';
+  _customStart   = s;
+  _customEnd     = e;
+  ['btnWeek','btnMonth','btnAll'].forEach(function(id) {
+    document.getElementById(id).classList.remove('active');
+  });
+  document.getElementById('btnCustom').classList.add('active');
   loadData();
 }
 
@@ -960,280 +1040,118 @@ function copyBriefing() {
   }
 }
 
-// ══════════════════════════════════════════════════════════
-// 탭 2: 거래 네트워크 (Canvas 기반 - 외부 라이브러리 없음)
-// ══════════════════════════════════════════════════════════
-var _netNodes   = [];   // { name, x, y, r, color, sellCount, totalActivity }
-var _netEdges   = [];   // { from, to, count, total, hasAnomaly, x1,y1,x2,y2 }
-var _dragging   = null; // 드래그 중인 노드 인덱스
-var _dragOffX   = 0;
-var _dragOffY   = 0;
-var _hoverNode  = -1;
+// ── AI 심층 브리핑 (#6) ───────────────────────────────────────
+var _aiBriefingText = '';
 
+function generateAIBriefing() {
+  document.getElementById('aiModal').style.display    = 'flex';
+  document.getElementById('aiCopyBtn').style.display  = 'none';
+  document.getElementById('aiModalBody').innerHTML    =
+    '<div style="text-align:center;color:var(--muted);padding:30px 0;">' +
+    '🤖 AI가 거래 내역을 읽고 분석하는 중입니다...<br>' +
+    '<span style="font-size:12px;">(보통 10~20초 정도 걸립니다)</span></div>';
+  _aiBriefingText = '';
+
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (res && res.success) {
+        _aiBriefingText = res.report;
+        document.getElementById('aiModalBody').textContent = res.report; // pre-wrap 유지
+        document.getElementById('aiCopyBtn').style.display = 'inline-block';
+      } else {
+        document.getElementById('aiModalBody').innerHTML =
+          '<div style="color:var(--red);white-space:pre-wrap;">⚠️ ' +
+          esc((res && res.msg) || '알 수 없는 오류가 발생했습니다.') + '</div>';
+      }
+    })
+    .withFailureHandler(function(e) {
+      document.getElementById('aiModalBody').innerHTML =
+        '<div style="color:var(--red);">⚠️ 호출 실패: ' + esc(e.message) + '</div>';
+    })
+    .getGuardBriefingAI(_currentPeriod, _customStart, _customEnd);
+}
+
+function closeAIModal() {
+  document.getElementById('aiModal').style.display = 'none';
+}
+
+function copyAIBriefing() {
+  if (!_aiBriefingText) return;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(_aiBriefingText).then(function() { alert('🤖 AI 브리핑이 복사되었습니다!'); });
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = _aiBriefingText; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+    alert('복사되었습니다!');
+  }
+}
+// 거품 크기 = 총 거래 참여 횟수 / 색 = 판매·구매 비중 / 빨간 테두리 = 최종 적발 이력
+// ══════════════════════════════════════════════════════════
 function renderNetwork() {
   if (!_dashData || !_dashData.network) return;
-  var net = _dashData.network;
+  var container = document.getElementById('tradeCloud');
+  if (!container) return;
 
-  var canvas  = document.getElementById('networkCanvas');
-  var W       = canvas.parentElement.clientWidth || 600;
-  canvas.width  = W;
-  canvas.height = 480;
-
-  var nodes  = net.nodes  || [];
-  var edges  = net.edges  || [];
-
+  var nodes = (_dashData.network.nodes || []).slice();
   if (nodes.length === 0) {
-    var ctx0 = canvas.getContext('2d');
-    ctx0.fillStyle = '#8b949e';
-    ctx0.font      = '14px Noto Sans KR, sans-serif';
-    ctx0.textAlign = 'center';
-    ctx0.fillText('거래 데이터가 없습니다.', W / 2, 240);
+    container.innerHTML = '<div class="empty" style="margin:auto;">거래 데이터가 없습니다.</div>';
     return;
   }
 
-  // ── 이상거래 포함 노드 집합 ────────────────────────────────
-  var anomalyNodes = new Set();
+  // 최종 적발 이력이 있는 학생 집합
+  var flagged = {};
   (_dashData.transactions || []).forEach(function(tx) {
-  if (tx.status === '최종적발') {
-    anomalyNodes.add(tx.sender);
-    anomalyNodes.add(tx.receiver);
-  }
-});
-
-  // ── 원형 배치 초기 좌표 계산 ─────────────────────────────
-  var cx = W / 2, cy = 230;
-  var R  = Math.min(W * 0.35, 170);
-  var n  = nodes.length;
-
-  _netNodes = nodes.map(function(node, i) {
-    var angle = (2 * Math.PI * i / n) - Math.PI / 2;
-    var x     = cx + R * Math.cos(angle);
-    var y     = cy + R * Math.sin(angle);
-    // 노드 반지름: 거래 활동량에 비례 (최소 14, 최대 30)
-    var r = Math.min(30, Math.max(14, 14 + node.totalActivity * 1.5));
-    // 색상
-    var color = anomalyNodes.has(node.name)  ? '#f85149'
-              : node.totalActivity >= 5      ? '#d29922'
-              : '#58a6ff';
-    return { name: node.name, x: x, y: y, r: r, color: color,
-             sellCount: node.sellCount, buyCount: node.buyCount, totalActivity: node.totalActivity };
+    if (tx.status === '최종적발') { flagged[tx.sender] = true; flagged[tx.receiver] = true; }
   });
 
-  // ── 엣지 데이터 준비 ─────────────────────────────────────
-  // 이상거래 포함 엣지 여부 판단
-  var anomalyEdgeKeys = new Set();
-  (_dashData.transactions || []).forEach(function(tx) {
-  if (tx.status === '최종적발') {
-    anomalyEdgeKeys.add(tx.sender + '→' + tx.receiver);
-  }
-});
+  // 활동량이 많은 순으로 정렬
+  nodes.sort(function(a, b) { return b.totalActivity - a.totalActivity; });
+  var maxAct = nodes[0].totalActivity || 1;
 
-  _netEdges = edges.map(function(e) {
-    var fromNode = _netNodes.find(function(n) { return n.name === e.from; });
-    var toNode   = _netNodes.find(function(n) { return n.name === e.to; });
-    if (!fromNode || !toNode) return null;
-    return {
-      from: e.from, to: e.to,
-      count: e.count, total: e.total,
-      hasAnomaly: anomalyEdgeKeys.has(e.from + '→' + e.to)
-    };
-  }).filter(function(e) { return e !== null; });
-
-  drawNetwork(canvas);
-  setupNetworkInteraction(canvas);
-}
-
-function drawNetwork(canvas) {
-  var ctx = canvas.getContext('2d');
-  var W   = canvas.width;
-  var H   = canvas.height;
-  ctx.clearRect(0, 0, W, H);
-
-  // 배경
-  ctx.fillStyle = '#161b22';
-  ctx.fillRect(0, 0, W, H);
-
-  if (_netEdges.length === 0 && _netNodes.length === 0) return;
-
-  // ── 엣지 그리기 ───────────────────────────────────────────
-  _netEdges.forEach(function(e) {
-    var fromNode = _netNodes.find(function(n) { return n.name === e.from; });
-    var toNode   = _netNodes.find(function(n) { return n.name === e.to; });
-    if (!fromNode || !toNode) return;
-
-    // 선 굵기: 거래 건수 비례 (최소 1, 최대 6)
-    var lw = Math.min(6, Math.max(1, e.count));
-    ctx.beginPath();
-    ctx.moveTo(fromNode.x, fromNode.y);
-    ctx.lineTo(toNode.x,   toNode.y);
-    ctx.lineWidth   = lw;
-    ctx.strokeStyle = e.hasAnomaly
-      ? 'rgba(248,81,73,0.7)'
-      : 'rgba(88,166,255,0.35)';
-    ctx.stroke();
-
-    // 화살표 (방향 표시)
-    var angle = Math.atan2(toNode.y - fromNode.y, toNode.x - fromNode.x);
-    var arrowX = toNode.x - Math.cos(angle) * (toNode.r + 4);
-    var arrowY = toNode.y - Math.sin(angle) * (toNode.r + 4);
-    ctx.beginPath();
-    ctx.moveTo(arrowX, arrowY);
-    ctx.lineTo(arrowX - 10 * Math.cos(angle - 0.4), arrowY - 10 * Math.sin(angle - 0.4));
-    ctx.lineTo(arrowX - 10 * Math.cos(angle + 0.4), arrowY - 10 * Math.sin(angle + 0.4));
-    ctx.closePath();
-    ctx.fillStyle = e.hasAnomaly ? 'rgba(248,81,73,0.8)' : 'rgba(88,166,255,0.5)';
-    ctx.fill();
-  });
-
-  // ── 노드 그리기 ───────────────────────────────────────────
-  _netNodes.forEach(function(node, i) {
-    var isHover = i === _hoverNode;
-
-    // 외곽 글로우
-    ctx.beginPath();
-    ctx.arc(node.x, node.y, node.r + (isHover ? 6 : 3), 0, 2 * Math.PI);
-    ctx.fillStyle = node.color.replace(')', ',0.2)').replace('rgb', 'rgba');
-    // 16진수 색상 → rgba 변환 헬퍼
-    ctx.fillStyle = hexToRgba(node.color, isHover ? 0.3 : 0.15);
-    ctx.fill();
-
-    // 노드 원
-    ctx.beginPath();
-    ctx.arc(node.x, node.y, node.r, 0, 2 * Math.PI);
-    ctx.fillStyle   = hexToRgba(node.color, 0.9);
-    ctx.fill();
-    ctx.strokeStyle = node.color;
-    ctx.lineWidth   = isHover ? 3 : 1.5;
-    ctx.stroke();
-
-    // 이름 텍스트
-    ctx.fillStyle = '#e6edf3';
-    ctx.font      = 'bold ' + Math.max(10, node.r * 0.55) + 'px Noto Sans KR, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    // 이름이 길면 성만 표시
-    var label = node.name.length <= 3 ? node.name : node.name.substring(0, 2);
-    ctx.fillText(label, node.x, node.y);
-
-    // 호버 시 툴팁
-    if (isHover) {
-      drawTooltip(ctx, node);
-    }
-  });
-}
-
-function drawTooltip(ctx, node) {
-  var lines   = [node.name, '판매: ' + node.sellCount + '건', '구매: ' + node.buyCount + '건', '총 활동: ' + node.totalActivity + '건'];
-  var padding = 8;
-  var lineH   = 18;
-  var boxW    = 110;
-  var boxH    = lines.length * lineH + padding * 2;
-
-  var tx = node.x + node.r + 8;
-  var ty = node.y - boxH / 2;
-  // 화면 밖으로 나가면 반대쪽
-  var canvasW = document.getElementById('networkCanvas').width;
-  if (tx + boxW > canvasW - 10) tx = node.x - node.r - boxW - 8;
-
-  ctx.fillStyle   = 'rgba(22,27,34,0.95)';
-  ctx.strokeStyle = '#58a6ff';
-  ctx.lineWidth   = 1;
-  roundRect(ctx, tx, ty, boxW, boxH, 6);
-  ctx.fill(); ctx.stroke();
-
-  ctx.fillStyle    = '#e6edf3';
-  ctx.font         = '12px Noto Sans KR, sans-serif';
-  ctx.textAlign    = 'left';
-  ctx.textBaseline = 'top';
-  lines.forEach(function(line, i) {
-    ctx.fillText(line, tx + padding, ty + padding + i * lineH);
-  });
-}
-
-function roundRect(ctx, x, y, w, h, r) {
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.lineTo(x + w - r, y);
-  ctx.quadraticCurveTo(x + w, y,     x + w, y + r);
-  ctx.lineTo(x + w, y + h - r);
-  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-  ctx.lineTo(x + r, y + h);
-  ctx.quadraticCurveTo(x, y + h,     x, y + h - r);
-  ctx.lineTo(x, y + r);
-  ctx.quadraticCurveTo(x, y,         x + r, y);
-  ctx.closePath();
-}
-
-function hexToRgba(hex, alpha) {
-  // '#f85149' → rgba(248,81,73,alpha)
-  var r = parseInt(hex.slice(1,3),16);
-  var g = parseInt(hex.slice(3,5),16);
-  var b = parseInt(hex.slice(5,7),16);
-  return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
-}
-
-function setupNetworkInteraction(canvas) {
-  // 기존 리스너 제거 후 재등록 (중복 방지)
-  canvas.onmousedown  = null;
-  canvas.onmousemove  = null;
-  canvas.onmouseup    = null;
-  canvas.onmouseleave = null;
-  canvas.ontouchstart = null;
-  canvas.ontouchmove  = null;
-  canvas.ontouchend   = null;
-
-  function getPos(e) {
-    var rect = canvas.getBoundingClientRect();
-    var scaleX = canvas.width  / rect.width;
-    var scaleY = canvas.height / rect.height;
-    var clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    var clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+  // 거품 지름: 최소 60px ~ 최대 150px (활동량의 제곱근에 비례 → 면적감이 자연스러움)
+  function bubbleSize(act) {
+    var t = Math.sqrt(act) / Math.sqrt(maxAct); // 0~1
+    return Math.round(60 + t * 90);
   }
 
-  function hitNode(pos) {
-    for (var i = 0; i < _netNodes.length; i++) {
-      var n  = _netNodes[i];
-      var dx = pos.x - n.x, dy = pos.y - n.y;
-      if (dx*dx + dy*dy <= (n.r + 6) * (n.r + 6)) return i;
-    }
-    return -1;
-  }
+  // 가장 큰 거품이 가운데로 모이도록 [가운데→좌→우→좌→우...] 순으로 재배열
+  var ordered = [];
+  nodes.forEach(function(node, i) {
+    if (i % 2 === 0) ordered.push(node);
+    else             ordered.unshift(node);
+  });
 
-  canvas.onmousedown = canvas.ontouchstart = function(e) {
-    e.preventDefault();
-    var pos = getPos(e);
-    var idx = hitNode(pos);
-    if (idx !== -1) {
-      _dragging = idx;
-      _dragOffX = pos.x - _netNodes[idx].x;
-      _dragOffY = pos.y - _netNodes[idx].y;
-    }
-  };
+  container.innerHTML = ordered.map(function(node) {
+    var size = bubbleSize(node.totalActivity);
+    var sell = node.sellCount || 0;
+    var buy  = node.buyCount  || 0;
 
-  canvas.onmousemove = canvas.ontouchmove = function(e) {
-    e.preventDefault();
-    var pos   = getPos(e);
-    var hover = hitNode(pos);
-    if (_dragging !== null) {
-      _netNodes[_dragging].x = pos.x - _dragOffX;
-      _netNodes[_dragging].y = pos.y - _dragOffY;
-      drawNetwork(canvas);
-    } else if (hover !== _hoverNode) {
-      _hoverNode = hover;
-      drawNetwork(canvas);
-    }
-  };
+    // 색상: 판매/구매 비중에 따라
+    var color;
+    if      (sell > buy * 1.3) color = '#3fb950'; // 판매 위주 → 초록
+    else if (buy > sell * 1.3) color = '#58a6ff'; // 구매 위주 → 파랑
+    else                       color = '#bc8cff'; // 균형      → 보라
 
-  canvas.onmouseup = canvas.ontouchend = function(e) {
-    _dragging = null;
-  };
+    var nameFont = Math.max(11, Math.round(size * 0.20));
+    var statFont = Math.max(9,  Math.round(size * 0.13));
 
-  canvas.onmouseleave = function() {
-    _dragging  = null;
-    _hoverNode = -1;
-    drawNetwork(canvas);
-  };
+    return '<div class="cloud-bubble' + (flagged[node.name] ? ' flagged' : '') + '" ' +
+             'style="width:' + size + 'px;height:' + size + 'px;' +
+             'background:radial-gradient(circle at 35% 30%, ' + lighten(color) + ', ' + color + ');" ' +
+             'title="' + esc(node.name) + ' — 판매 ' + sell + '건 · 구매 ' + buy + '건 · 총 활동 ' + node.totalActivity + '건">' +
+             '<span class="cb-name" style="font-size:' + nameFont + 'px;">' + esc(node.name) + '</span>' +
+             '<span class="cb-stat" style="font-size:' + statFont + 'px;">🔼' + sell + ' 🔽' + buy + '</span>' +
+           '</div>';
+  }).join('');
+}
+
+// 거품 하이라이트용: 색을 살짝 밝게
+function lighten(hex) {
+  var r = Math.min(255, parseInt(hex.slice(1, 3), 16) + 60);
+  var g = Math.min(255, parseInt(hex.slice(3, 5), 16) + 60);
+  var b = Math.min(255, parseInt(hex.slice(5, 7), 16) + 60);
+  return 'rgb(' + r + ',' + g + ',' + b + ')';
 }
 
 // ══════════════════════════════════════════════════════════
@@ -1603,19 +1521,23 @@ function renderGiniHistory(history) {
 function renderStudentRank(ranked) {
   var container = document.getElementById('studentRankList');
   if (!ranked || ranked.length === 0) { container.innerHTML = '데이터 없음'; return; }
-  var maxAsset = ranked[0].asset || 1;
+  // 실질 자산 = 메인 자산보유량 + 예금(진행중) 원금 − 대출 잔액
+  // (백엔드 getInequalityData가 realAsset로 계산·정렬해 보내줌. 구버전 호환용 fallback 포함)
+  function ra(s) { return (s.realAsset != null ? s.realAsset : s.asset) || 0; }
+  var maxAsset = ra(ranked[0]) || 1;
   var html = '';
   ranked.forEach(function(s, idx) {
-    var pct    = Math.round((s.asset / maxAsset) * 100);
+    var val    = ra(s);
+    var pct    = Math.max(0, Math.round((val / maxAsset) * 100));
     var medal  = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : (idx + 1) + '.';
     html +=
       '<div style="display:flex;align-items:center;gap:10px;margin-bottom:7px;">' +
         '<span style="width:28px;text-align:center;font-size:13px;">' + medal + '</span>' +
-        '<span style="width:60px;font-size:13px;font-weight:bold;">' + s.name + '</span>' +
+        '<span style="width:60px;font-size:13px;font-weight:bold;">' + esc(s.name) + '</span>' +
         '<div style="flex:1;height:14px;background:var(--surface);border-radius:4px;overflow:hidden;border:1px solid var(--border);">' +
           '<div style="width:' + pct + '%;height:100%;background:var(--accent);border-radius:4px;"></div>' +
         '</div>' +
-        '<span style="width:70px;text-align:right;font-size:12px;color:var(--accent);">$' + s.asset.toLocaleString() + '</span>' +
+        '<span style="width:78px;text-align:right;font-size:12px;color:var(--accent);">$' + val.toLocaleString() + '</span>' +
       '</div>';
   });
   container.innerHTML = html;

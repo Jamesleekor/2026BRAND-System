@@ -53,7 +53,7 @@ function buyItem(studentName, itemName, quantity) {
     const snackSheet = ss.getSheetByName(SHEET_SNACK);
     const invSheet   = _ensureInventorySheet(ss);
     const mainData   = mainSheet.getDataRange().getValues();
-    const dateStr    = _todayStr();
+    const dateStr    = _nowStr();
 
     // ── 학생 찾기
     let studentRowNum = -1;

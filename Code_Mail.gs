@@ -33,7 +33,7 @@ function getUnreadMailCount(studentName) {
   return count;
 }
 
-// 학생의 전체 메시지 목록 반환 + 읽음 처리
+// 학생의 전체 메시지 목록 반환 (읽음 처리는 하지 않음 — 개별 열람 시 markMailAsRead로 처리)
 function getMailboxMessages(studentName) {
   const ss    = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName(SHEET_MAILBOX);
@@ -52,10 +52,26 @@ function getMailboxMessages(studentName) {
       sentAt:  String(data[i][6]),
       rowNum:  i + 1
     });
-    // 읽음 처리
-    if (!isRead) sheet.getRange(i + 1, 6).setValue(true);
   }
   return msgs.reverse(); // 최신순
+}
+
+// 특정 메시지 1건을 읽음 처리하고, 남은 읽지 않은 메시지 수 반환
+function markMailAsRead(studentName, msgId) {
+  const ss    = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_MAILBOX);
+  if (!sheet) return 0;
+  const data = sheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]) === String(msgId) &&
+        String(data[i][1]).trim() === String(studentName).trim()) {
+      if (String(data[i][5]).toUpperCase() !== 'TRUE') {
+        sheet.getRange(i + 1, 6).setValue(true);
+      }
+      break;
+    }
+  }
+  return getUnreadMailCount(studentName);
 }
 
 // ════════════════════════════════════════════════════════════════

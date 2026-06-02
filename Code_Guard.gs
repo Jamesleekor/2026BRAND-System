@@ -8,6 +8,11 @@
 //   두 함수 모두 동시에 반영됩니다. 기준 변경 시 여기만 수정하세요.
 const GUARD_HIGH_AMOUNT = 1000; // $1,000 이상 거래 = 고액 거래로 분류
 
+// ── AI 심층 브리핑에 사용할 Claude 모델 ──────────────────────────
+// 비용/품질 균형이 좋은 Sonnet을 기본값으로 사용합니다.
+// 더 깊은 분석이 필요하면 'claude-opus-4-8' 로 바꿀 수 있습니다.
+const GUARD_AI_MODEL = 'claude-sonnet-4-6';
+
 // ── 수호대 비밀번호 설정 (AuctionAdmin에서 호출) ─────────────────
 function setGuardPassword(pw) {
   if (!pw || !String(pw).trim()) return { success: false, msg: '비밀번호를 입력해주세요.' };
@@ -24,8 +29,9 @@ function verifyGuardPassword(pw) {
 }
 
 // ── 수호대 대시보드 통합 데이터 반환 ────────────────────────────
-// period: 'week'(이번 주) | 'month'(이번 달) | 'all'(전체)
-function getGuardDashboardData(period) {
+// period: 'week'(이번 주) | 'month'(이번 달) | 'all'(전체) | 'custom'(사용자 지정)
+// startDate, endDate: period가 'custom'일 때만 사용 ('yyyy-MM-dd' 문자열)
+function getGuardDashboardData(period, startDate, endDate) {
   const ss       = SpreadsheetApp.getActiveSpreadsheet();
   const p2pSheet = ss.getSheetByName(SHEET_P2P);
   if (!p2pSheet) return { transactions: [], stats: {}, network: [] };
@@ -35,7 +41,12 @@ function getGuardDashboardData(period) {
   // ── 기간 필터 기준일 계산 ────────────────────────────────────
   const now   = new Date();
   let cutoff  = null;
-  if (period === 'week') {
+  // 사용자 지정 기간(custom): startDate ~ endDate (둘 다 'yyyy-MM-dd' 문자열)
+  let customStart = null, customEnd = null;
+  if (period === 'custom') {
+    customStart = startDate ? String(startDate).substring(0, 10) : null;
+    customEnd   = endDate   ? String(endDate).substring(0, 10)   : null;
+  } else if (period === 'week') {
     const day  = now.getDay(); // 0=일, 1=월
     const diff = (day === 0 ? -6 : 1 - day);
     cutoff = new Date(now);
@@ -50,8 +61,8 @@ function getGuardDashboardData(period) {
   const tagCount     = {};  // 태그별 건수
   const tagAmount    = {};  // 태그별 금액
   const tagQuantity  = {};  // 태그별 총 수량 (K열 기반, K열 없으면 1로 간주)
-  const sellerMap    = {};  // 학생별 판매 건수 및 금액 (sender)
-  const buyerMap     = {};  // 학생별 구매 건수 (receiver)
+  const sellerMap    = {};  // 학생별 판매 건수 및 금액 (판매자 = 돈을 '받는' receiver)
+  const buyerMap     = {};  // 학생별 구매 건수 및 금액 (구매자 = 돈을 '보내는' sender)
   const dateCountMap = {};  // 날짜별 거래 건수 (라인 차트용)
   // 네트워크: { "A→B": { from, to, count, total } }
   const edgeMap      = {};
@@ -64,9 +75,11 @@ function getGuardDashboardData(period) {
     const dateStr = (row[1] instanceof Date)
       ? Utilities.formatDate(row[1], Session.getScriptTimeZone(), 'yyyy-MM-dd')
       : String(row[1]).substring(0, 10);
-    // 기간 필터 적용
     // 기간 필터 적용 (문자열 비교 — timezone 문제 없음)
-    if (cutoff) {
+    if (period === 'custom') {
+      if (customStart && dateStr < customStart) continue;
+      if (customEnd   && dateStr > customEnd)   continue;
+    } else if (cutoff) {
       const cutoffStr = Utilities.formatDate(cutoff, Session.getScriptTimeZone(), 'yyyy-MM-dd');
       if (dateStr < cutoffStr) continue;
     }
@@ -110,15 +123,15 @@ function getGuardDashboardData(period) {
     // 날짜별 거래 건수
     dateCountMap[dateStr] = (dateCountMap[dateStr] || 0) + 1;
 
-    // 판매자(sender) 통계
-    if (!sellerMap[sender]) sellerMap[sender] = { count: 0, total: 0 };
-    sellerMap[sender].count++;
-    sellerMap[sender].total += amount;
+    // 판매자 통계: 서비스를 제공하고 자산을 '받는' 쪽(receiver)이 판매자
+    if (!sellerMap[recv]) sellerMap[recv] = { count: 0, total: 0 };
+    sellerMap[recv].count++;
+    sellerMap[recv].total += amount;
 
-    // 구매자(receiver) 통계
-    if (!buyerMap[recv]) buyerMap[recv] = { count: 0, total: 0 };
-    buyerMap[recv].count++;
-    buyerMap[recv].total += amount;
+    // 구매자 통계: 서비스를 구매하고 자산을 '보내는' 쪽(sender)이 구매자
+    if (!buyerMap[sender]) buyerMap[sender] = { count: 0, total: 0 };
+    buyerMap[sender].count++;
+    buyerMap[sender].total += amount;
 
     // 네트워크 엣지
     const edgeKey = sender + '→' + recv;
@@ -243,8 +256,9 @@ function getGuardDashboardData(period) {
 
   // 기간 문자열
   let periodLabel = '이번 주';
-  if (period === 'month') periodLabel = '이번 달';
-  if (period === 'all')   periodLabel = '전체 기간';
+  if (period === 'month')  periodLabel = '이번 달';
+  if (period === 'all')    periodLabel = '전체 기간';
+  if (period === 'custom') periodLabel = (customStart || '처음') + ' ~ ' + (customEnd || '오늘');
 
   const today = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy.MM.dd');
 
@@ -305,6 +319,162 @@ function getGuardDashboardData(period) {
     },
     network: { nodes, edges }
   };
+}
+
+// ════════════════════════════════════════════════════════════════
+// ██ AI 심층 경제 브리핑 (#6)
+// P2P거래로그 G열(거래 설명)을 AI가 직접 읽고 정성적으로 분석합니다.
+//
+// [사전 준비 — 선생님만 1회 설정]
+//   Apps Script 편집기 → 좌측 톱니바퀴(프로젝트 설정)
+//   → '스크립트 속성' → 속성 추가
+//   → 속성 이름: ANTHROPIC_API_KEY / 값: 발급받은 API 키
+//   (https://console.anthropic.com 에서 발급)
+// ════════════════════════════════════════════════════════════════
+function getGuardBriefingAI(period, startDate, endDate) {
+  const apiKey = PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY');
+  if (!apiKey) {
+    return {
+      success: false,
+      msg: 'AI 브리핑을 사용하려면 먼저 선생님이 API 키를 등록해야 합니다.\n' +
+           '(Apps Script → 프로젝트 설정 → 스크립트 속성 → ANTHROPIC_API_KEY)'
+    };
+  }
+
+  const ss       = SpreadsheetApp.getActiveSpreadsheet();
+  const p2pSheet = ss.getSheetByName(SHEET_P2P);
+  if (!p2pSheet) return { success: false, msg: 'P2P거래로그 시트를 찾을 수 없습니다.' };
+  const allData = p2pSheet.getDataRange().getValues();
+
+  // ── 기간 필터 기준 계산 (getGuardDashboardData와 동일 규칙) ──
+  const now = new Date();
+  let cutoffStr = null, customStart = null, customEnd = null;
+  if (period === 'custom') {
+    customStart = startDate ? String(startDate).substring(0, 10) : null;
+    customEnd   = endDate   ? String(endDate).substring(0, 10)   : null;
+  } else if (period === 'week') {
+    const day  = now.getDay();
+    const diff = (day === 0 ? -6 : 1 - day);
+    const c    = new Date(now); c.setDate(now.getDate() + diff);
+    cutoffStr  = Utilities.formatDate(c, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  } else if (period === 'month') {
+    const c   = new Date(now.getFullYear(), now.getMonth(), 1);
+    cutoffStr = Utilities.formatDate(c, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  }
+
+  // ── 거래 수집 (G열 설명·J열 평점·K열 수량 포함) ──────────────
+  const txns = [];
+  for (let i = 1; i < allData.length; i++) {
+    const row = allData[i];
+    if (!row[0]) continue;
+    const dateStr = (row[1] instanceof Date)
+      ? Utilities.formatDate(row[1], Session.getScriptTimeZone(), 'yyyy-MM-dd')
+      : String(row[1]).substring(0, 10);
+
+    if (period === 'custom') {
+      if (customStart && dateStr < customStart) continue;
+      if (customEnd   && dateStr > customEnd)   continue;
+    } else if (cutoffStr) {
+      if (dateStr < cutoffStr) continue;
+    }
+
+    txns.push({
+      date:   dateStr,
+      buyer:  String(row[2]).trim(),   // C열: 보내는 학생 = 구매자
+      seller: String(row[3]).trim(),   // D열: 받는 학생  = 판매자
+      amount: Number(row[4]) || 0,     // E열: 금액
+      tag:    String(row[5]).trim(),   // F열: 태그
+      desc:   String(row[6]).trim(),   // G열: 거래 설명 ★
+      status: String(row[7]).trim(),   // H열: 상태
+      rating: (row[9] !== '' && row[9] != null) ? Number(row[9]) : null, // J열: 평점
+      qty:    (row[10] && Number(row[10]) > 0) ? Number(row[10]) : 1      // K열: 수량
+    });
+  }
+
+  if (txns.length === 0) {
+    return { success: false, msg: '선택한 기간에 분석할 거래 데이터가 없습니다.' };
+  }
+
+  // ── 기간 라벨 ──────────────────────────────────────────────
+  let periodLabel = '이번 주';
+  if (period === 'month')  periodLabel = '이번 달';
+  if (period === 'all')    periodLabel = '전체 기간';
+  if (period === 'custom') periodLabel = (customStart || '처음') + ' ~ ' + (customEnd || '오늘');
+
+  // ── AI에게 전달할 거래 텍스트 구성 (토큰 절약: 최근 150건 제한) ──
+  const MAX_TX = 150;
+  const used   = txns.slice(-MAX_TX);
+  const txLines = used.map(function(t) {
+    return `[${t.date}] 구매자:${t.buyer} → 판매자:${t.seller} | ${t.tag} | $${t.amount} | 수량:${t.qty}` +
+           (t.rating != null ? ` | 평점:${t.rating}/10` : '') +
+           (t.status && t.status !== '정상' && t.status !== '정상 확인됨' ? ` | 상태:${t.status}` : '') +
+           ` | 설명: ${t.desc || '(설명 없음)'}`;
+  }).join('\n');
+
+  const promptText =
+    `당신은 초등학교 학급 모의경제 시스템 'B.R.A.N.D'의 경제 분석 보조 AI입니다.\n` +
+    `아래는 학생들 사이에서 일어난 P2P(학생 간) 서비스 거래 기록입니다. ` +
+    `각 거래는 한 학생(구매자)이 다른 학생(판매자)에게 자산(달러)을 보내고 서비스를 받은 내역이며, ` +
+    `'설명'란에 실제로 어떤 서비스를 주고받았는지가 적혀 있습니다.\n\n` +
+    `[분석 기간] ${periodLabel}\n` +
+    `[총 거래 ${used.length}건]\n` +
+    txLines +
+    `\n\n위 자료를 바탕으로, 경제 수호대 학생들이 학급 친구들 앞에서 발표할 '경제 동향 브리핑'을 작성해 주세요.\n` +
+    `다음 조건을 반드시 지켜주세요:\n` +
+    `1. 단순히 숫자만 나열하지 말고, 각 거래의 '설명'을 실제로 읽고 어떤 종류의 서비스가 인기 있었는지, ` +
+    `어떤 거래 흐름이나 패턴(예: 특정 학생이 어떤 분야를 전문적으로 판매, 서비스 가격 변화 등)이 보이는지 분석할 것.\n` +
+    `2. 특정 학생을 비난하거나 망신 주지 말 것. 긍정적이고 교육적인 어조를 유지할 것.\n` +
+    `3. 초등학생이 이해할 수 있는 쉬운 말로, 따뜻하면서도 분석적으로 쓸 것.\n` +
+    `4. 아래 네 가지 소제목으로 구성할 것:\n` +
+    `   ① 이번 기간 한눈에 보기\n   ② 인기 있었던 서비스와 거래 흐름\n   ③ 흥미로운 발견\n   ④ 우리 반에 주는 제안\n` +
+    `5. 전체 길이는 600~900자 내외. 굵게/제목 같은 마크다운 기호(#, *, ** 등)는 쓰지 말고 일반 텍스트로 작성할 것.`;
+
+  // ── Claude API 호출 ────────────────────────────────────────
+  try {
+    const payload = {
+      model: GUARD_AI_MODEL,
+      max_tokens: 1500,
+      messages: [{ role: 'user', content: promptText }]
+    };
+    const res = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
+      method: 'post',
+      contentType: 'application/json',
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01'
+      },
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true
+    });
+
+    const code = res.getResponseCode();
+    const body = res.getContentText();
+    if (code !== 200) {
+      return { success: false, msg: 'AI 호출 실패 (HTTP ' + code + ')\n' + body.substring(0, 300) };
+    }
+
+    const json = JSON.parse(body);
+    const aiText = (json.content || [])
+      .filter(function(b) { return b.type === 'text'; })
+      .map(function(b) { return b.text; })
+      .join('\n').trim();
+
+    if (!aiText) {
+      return { success: false, msg: 'AI 응답이 비어 있습니다. 잠시 후 다시 시도해주세요.' };
+    }
+
+    const today  = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy.MM.dd');
+    const report =
+      `🤖 B.R.A.N.D AI 심층 경제 브리핑 — ${periodLabel} (${today} 작성)\n` +
+      `※ 본 분석은 AI가 학생 간 거래 설명을 직접 읽고 작성한 참고용 리포트입니다.\n` +
+      `────────────────────────────────────\n\n` +
+      aiText;
+
+    return { success: true, report: report };
+
+  } catch (e) {
+    return { success: false, msg: 'AI 호출 중 오류가 발생했습니다: ' + e.message };
+  }
 }
 
 // ── 수호대: 이상 거래 목록 반환 (메모 포함) ─────────────────────
@@ -499,3 +669,4 @@ function getGuardPenaltyLog() {
   }
   return result.reverse(); // 최신순
 }
+  

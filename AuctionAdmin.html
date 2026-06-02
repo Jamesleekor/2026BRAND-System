@@ -141,9 +141,15 @@
     <button onclick="openLaunchDepositModal()"
       style="background:#2471a3;color:white;border:none;padding:8px 16px;border-radius:6px;font-weight:bold;cursor:pointer;">
      🏦 신규 예금 상품 론칭</button>
-    <button onclick="doSetPenaltyRate()"
+    <button onclick="openDepositManageModal()"
       style="background:#7f8c8d;color:white;border:none;padding:8px 16px;border-radius:6px;font-weight:bold;cursor:pointer;">
-      ✏️ 패널티율 수정</button>
+      📋 활성 예금 상품 관리</button>
+    <button onclick="openLaunchSavingModal()"
+      style="background:#e67e22;color:white;border:none;padding:8px 16px;border-radius:6px;font-weight:bold;cursor:pointer;">
+     🐷 신규 적금 상품 출시</button>
+    <button onclick="openSavingManageModal()"
+      style="background:#a04000;color:white;border:none;padding:8px 16px;border-radius:6px;font-weight:bold;cursor:pointer;">
+      📋 활성 적금 상품 관리</button>
     <button onclick="setGuardPw()"
      style="background:#0d1117;color:#58a6ff;border:1px solid #58a6ff;padding:8px 16px;border-radius:6px;font-weight:bold;cursor:pointer;">🛡️ 수호대 비밀번호 설정</button>
     <button onclick="loadPendingLoans()"
@@ -516,7 +522,8 @@ setTimeout(function() { loadEmergencyStatus(); }, 500);
 
       <div style="background:#fef9e7;border:1px solid #f39c12;border-radius:8px;
                   padding:10px 12px;font-size:12px;color:#856404;margin-bottom:16px;">
-        ⚠️ 론칭 즉시 기존 상품이 종료되고 전체 학생에게 우편이 발송됩니다.
+        ⚠️ 론칭 시 기존 활성 상품과 <b>함께 동시 운영</b>되며, 전체 학생에게 우편이 발송됩니다.<br>
+        기존 상품을 닫으려면 [활성 예금 상품 관리]에서 개별 종료하세요.
       </div>
 
       <!-- 상품명 -->
@@ -580,6 +587,111 @@ setTimeout(function() { loadEmergencyStatus(); }, 500);
     </div>
   </div>
 </div>
+
+  <!-- 활성 예금 상품 관리 모달 -->
+  <div id="depositManageModal"
+    style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+          background:rgba(0,0,0,0.5);z-index:9999;justify-content:center;align-items:center;">
+    <div style="background:white;border-radius:12px;padding:24px;width:92%;max-width:520px;
+                box-shadow:0 10px 40px rgba(0,0,0,0.3);max-height:90vh;overflow-y:auto;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+        <div style="font-size:17px;font-weight:bold;color:#2471a3;">📋 활성 예금 상품 관리</div>
+        <button onclick="closeDepositManageModal()"
+          style="background:none;border:none;font-size:22px;cursor:pointer;color:#95a5a6;">✕</button>
+      </div>
+      <div style="background:#eef7fb;border:1px solid #aed6f1;border-radius:8px;
+                  padding:10px 12px;font-size:12px;color:#34495e;margin-bottom:16px;">
+        💡 상품을 <b>종료</b>하면 신규 가입만 차단되며, 이미 가입된 예금은 만기까지 정상 유지됩니다.
+      </div>
+      <div id="depositManageList">
+        <div style="color:#aaa;font-size:13px;text-align:center;padding:20px;">불러오는 중...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 적금 출시 모달 -->
+  <div id="savingLaunchModal"
+    style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+          background:rgba(0,0,0,0.5);z-index:9999;justify-content:center;align-items:center;">
+    <div style="background:white;border-radius:12px;padding:24px;width:92%;max-width:440px;
+                box-shadow:0 10px 40px rgba(0,0,0,0.3);max-height:90vh;overflow-y:auto;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+        <div style="font-size:17px;font-weight:bold;color:#e67e22;">🐷 신규 적금 상품 출시</div>
+        <button onclick="closeSavingLaunchModal()"
+          style="background:none;border:none;font-size:22px;cursor:pointer;color:#95a5a6;">✕</button>
+      </div>
+
+      <div style="background:#fdf2e9;border:1px solid #e67e22;border-radius:8px;
+                  padding:10px 12px;font-size:12px;color:#7e3b00;margin-bottom:16px;">
+        ⚠️ 출시 시 기존 활성 상품과 <b>함께 동시 운영</b>되며, 전체 학생에게 우편이 발송됩니다.<br>
+        💡 이자 방식: 회차별 이자(B). 만기 세전이자 ≈ 회차당금액 × 주당이자율% × N(N+1)/2.
+      </div>
+
+      <div style="margin-bottom:10px;">
+        <label style="font-size:12px;color:#555;display:block;margin-bottom:4px;font-weight:bold;">상품명</label>
+        <input type="text" id="svName" placeholder="예: 매주 꾸준 적금"
+          style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:14px;box-sizing:border-box;">
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+        <div>
+          <label style="font-size:12px;color:#555;display:block;margin-bottom:4px;font-weight:bold;">주당 이자율 (%)</label>
+          <input type="number" id="svRate" min="0.1" max="100" step="0.1" value="2"
+            style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:13px;box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="font-size:12px;color:#555;display:block;margin-bottom:4px;font-weight:bold;">최대 회차</label>
+          <input type="number" id="svMaxRounds" min="2" max="52" step="1" value="8"
+            style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:13px;box-sizing:border-box;">
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;">
+        <div>
+          <label style="font-size:12px;color:#555;display:block;margin-bottom:4px;font-weight:bold;">패널티율 (%)</label>
+          <input type="number" id="svPenalty" min="0" max="100" step="1" value="5"
+            style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:13px;box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="font-size:12px;color:#555;display:block;margin-bottom:4px;font-weight:bold;">회차당 최소 ($)</label>
+          <input type="number" id="svMin" min="100" step="100" value="100"
+            style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:13px;box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="font-size:12px;color:#555;display:block;margin-bottom:4px;font-weight:bold;">회차당 최대 ($)</label>
+          <input type="number" id="svMax" min="100" step="100" value="2000"
+            style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:13px;box-sizing:border-box;">
+        </div>
+      </div>
+
+      <button onclick="doLaunchSaving()" id="svLaunchBtn"
+        style="width:100%;padding:11px;background:#e67e22;color:white;border:none;
+              border-radius:8px;font-weight:bold;font-size:15px;cursor:pointer;">
+        🚀 출시하기
+      </button>
+    </div>
+  </div>
+
+  <!-- 활성 적금 상품 관리 모달 -->
+  <div id="savingManageModal"
+    style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+          background:rgba(0,0,0,0.5);z-index:9999;justify-content:center;align-items:center;">
+    <div style="background:white;border-radius:12px;padding:24px;width:92%;max-width:520px;
+                box-shadow:0 10px 40px rgba(0,0,0,0.3);max-height:90vh;overflow-y:auto;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+        <div style="font-size:17px;font-weight:bold;color:#e67e22;">📋 활성 적금 상품 관리</div>
+        <button onclick="closeSavingManageModal()"
+          style="background:none;border:none;font-size:22px;cursor:pointer;color:#95a5a6;">✕</button>
+      </div>
+      <div style="background:#fdf2e9;border:1px solid #f5cba7;border-radius:8px;
+                  padding:10px 12px;font-size:12px;color:#7e3b00;margin-bottom:16px;">
+        💡 상품을 <b>종료</b>하면 신규 가입만 차단되며, 이미 가입된 적금은 만기까지 정상 유지됩니다.
+      </div>
+      <div id="savingManageList">
+        <div style="color:#aaa;font-size:13px;text-align:center;padding:20px;">불러오는 중...</div>
+      </div>
+    </div>
+  </div>
 
 <script>
   // ── 업적 대기함 ────────────────────────────────────────────
@@ -2025,7 +2137,7 @@ function doSaveMissionParticipation() {
           var itemSel = document.getElementById('itemSelect');
           itemSel.appendChild(itemSel.options[itemSel.selectedIndex]);
 
-          alert('낙찰 및 기록 완료!');
+          alert('낙찰 및 기록 완료!' + (res.__timing ? '\n\n' + res.__timing : ''));
         } else {
           alert('오류: ' + res.msg);
         }
@@ -2209,7 +2321,7 @@ function doLaunchDeposit() {
     '[' + name + '] 상품을 론칭하시겠습니까?\n\n' +
     '• 이자율: ' + r1 + '% / ' + r2 + '% / ' + r3 + '% / ' + r4 + '%\n' +
     '• 패널티: ' + penalty + '% / 한도: $' + minAmt + '~$' + maxAmt + '\n\n' +
-    '기존 상품이 즉시 종료되고 전체 학생에게 우편이 발송됩니다.'
+    '기존 활성 상품과 함께 동시 운영되며, 전체 학생에게 우편이 발송됩니다.'
   )) return;
 
   var btn = document.getElementById('dpLaunchBtn');
@@ -2290,17 +2402,219 @@ function doRejectLoan(rowNum) {
   doApproveLoan(rowNum, false, reason.trim());
 }
 
-function doSetPenaltyRate() {
-  var rate = prompt('현재 활성 상품의 중도해지 패널티율을 입력하세요 (숫자만, 예: 5)');
+// ── 활성 예금 상품 관리 모달 ───────────────────────────────────
+function openDepositManageModal() {
+  document.getElementById('depositManageModal').style.display = 'flex';
+  loadActiveDepositProducts();
+}
+function closeDepositManageModal() {
+  document.getElementById('depositManageModal').style.display = 'none';
+}
+
+function _escapeHtmlAdmin(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function loadActiveDepositProducts() {
+  var list = document.getElementById('depositManageList');
+  list.innerHTML = '<div style="color:#aaa;font-size:13px;text-align:center;padding:20px;">불러오는 중...</div>';
+  google.script.run
+    .withSuccessHandler(function(prods) {
+      if (!prods || prods.length === 0) {
+        list.innerHTML = '<div style="color:#aaa;font-size:13px;text-align:center;padding:20px;">현재 활성 예금 상품이 없습니다.</div>';
+        return;
+      }
+      list.innerHTML = prods.map(function(p) {
+        var pid = _escapeHtmlAdmin(p.prodId);
+        return '<div style="border:1px solid #ddd;border-radius:8px;padding:12px;margin-bottom:10px;">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">' +
+            '<b style="font-size:14px;color:#2471a3;">' + _escapeHtmlAdmin(p.prodName) + '</b>' +
+            '<span style="font-size:11px;color:#888;">' + _escapeHtmlAdmin(p.launchDate) + ' 론칭</span>' +
+          '</div>' +
+          '<div style="font-size:12px;color:#555;margin-bottom:4px;">' +
+            '이자율: 1주 ' + p.rate1 + '% / 2주 ' + p.rate2 + '% / 3주 ' + p.rate3 + '% / 4주 ' + p.rate4 + '%' +
+          '</div>' +
+          '<div style="font-size:12px;color:#555;margin-bottom:4px;">' +
+            '한도: $' + p.minAmount.toLocaleString() + ' ~ $' + p.maxAmount.toLocaleString() +
+            ' · 패널티: ' + p.penalty + '%' +
+          '</div>' +
+          '<div style="font-size:12px;color:#16a085;margin-bottom:8px;">' +
+            '진행중 예금: ' + p.activeCount + '건 (원금 $' + Number(p.activeTotal).toLocaleString() + ')' +
+          '</div>' +
+          '<div style="display:flex;gap:8px;">' +
+            '<button onclick="doSetPenaltyRate(\'' + pid + '\',' + p.penalty + ')" ' +
+              'style="flex:1;padding:6px;background:#7f8c8d;color:white;border:none;border-radius:6px;font-weight:bold;cursor:pointer;font-size:13px;">' +
+              '✏️ 패널티율 수정</button>' +
+            '<button onclick="doEndDepositProduct(\'' + pid + '\',\'' + _escapeHtmlAdmin(p.prodName).replace(/'/g, "\\'") + '\')" ' +
+              'style="flex:1;padding:6px;background:#e74c3c;color:white;border:none;border-radius:6px;font-weight:bold;cursor:pointer;font-size:13px;">' +
+              '⏹️ 상품 종료</button>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    })
+    .withFailureHandler(function(e) {
+      list.innerHTML = '<div style="color:#e74c3c;font-size:13px;">오류: ' + e.message + '</div>';
+    })
+    .getAdminDepositProducts();
+}
+
+function doEndDepositProduct(prodId, prodName) {
+  if (!confirm('[' + prodName + '] 상품을 종료하시겠습니까?\n\n' +
+    '신규 가입만 차단되며, 이미 가입된 예금은 만기까지 정상 유지됩니다.')) return;
+  google.script.run
+    .withSuccessHandler(function(res) {
+      alert(res.msg);
+      loadActiveDepositProducts(); // 목록 새로고침
+    })
+    .withFailureHandler(function(err) { alert('오류: ' + err.message); })
+    .endDepositProduct(prodId);
+}
+
+function doSetPenaltyRate(prodId, curRate) {
+  var rate = prompt('중도해지 패널티율을 입력하세요 (숫자만, 예: 5)', curRate != null ? curRate : '');
   if (rate === null) return;
   rate = parseFloat(rate);
   if (isNaN(rate) || rate < 0 || rate > 100) {
     alert('0~100 사이의 숫자를 입력해주세요.'); return;
   }
   google.script.run
-    .withSuccessHandler(function(res) { alert(res.msg); })
+    .withSuccessHandler(function(res) {
+      alert(res.msg);
+      loadActiveDepositProducts();
+    })
     .withFailureHandler(function(err) { alert('오류: ' + err.message); })
-    .setPenaltyRate(rate);
+    .setPenaltyRate(rate, prodId);
+}
+
+// ════════════════════════════════════════════════════════════════
+// ██ 적금(積金) 관리자 기능
+// ════════════════════════════════════════════════════════════════
+function openLaunchSavingModal() {
+  document.getElementById('savingLaunchModal').style.display = 'flex';
+}
+function closeSavingLaunchModal() {
+  document.getElementById('savingLaunchModal').style.display = 'none';
+}
+
+function doLaunchSaving() {
+  var name      = document.getElementById('svName').value.trim();
+  var rate      = parseFloat(document.getElementById('svRate').value);
+  var maxRounds = parseInt(document.getElementById('svMaxRounds').value);
+  var penalty   = parseFloat(document.getElementById('svPenalty').value);
+  var minPer    = parseInt(document.getElementById('svMin').value);
+  var maxPer    = parseInt(document.getElementById('svMax').value);
+
+  if (!name)            { alert('상품명을 입력해주세요.'); return; }
+  if (!rate || rate <= 0) { alert('주당 이자율을 입력해주세요.'); return; }
+  if (minPer > maxPer)  { alert('회차당 최소금액은 최대금액보다 작아야 합니다.'); return; }
+  if (maxRounds < 2 || maxRounds > 52) { alert('최대 회차는 2~52 사이로 설정해주세요.'); return; }
+
+  // 최대 회차·최대 금액 기준 예상 만기 이자 미리보기
+  var pGross = Math.floor(maxPer * (rate / 100) * maxRounds * (maxRounds + 1) / 2);
+
+  if (!confirm(
+    '[' + name + '] 적금 상품을 출시하시겠습니까?\n\n' +
+    '• 주당 이자율: ' + rate + '%\n' +
+    '• 회차당: $' + minPer + ' ~ $' + maxPer + ' / 최대 ' + maxRounds + '회\n' +
+    '• 패널티: ' + penalty + '%\n' +
+    '• (예: 회차당 $' + maxPer + ' × ' + maxRounds + '회 정상납입 시 세전이자 약 $' + pGross.toLocaleString() + ')\n\n' +
+    '기존 활성 상품과 함께 동시 운영되며, 전체 학생에게 우편이 발송됩니다.'
+  )) return;
+
+  var btn = document.getElementById('svLaunchBtn');
+  btn.disabled = true; btn.innerText = '처리 중...';
+  google.script.run
+    .withSuccessHandler(function(res) {
+      btn.disabled = false; btn.innerText = '🚀 출시하기';
+      alert(res.msg);
+      if (res.success) closeSavingLaunchModal();
+    })
+    .withFailureHandler(function(err) {
+      btn.disabled = false; btn.innerText = '🚀 출시하기';
+      alert('오류: ' + err.message);
+    })
+    .launchSavingProduct(name, rate, minPer, maxPer, maxRounds, penalty);
+}
+
+function openSavingManageModal() {
+  document.getElementById('savingManageModal').style.display = 'flex';
+  loadActiveSavingProducts();
+}
+function closeSavingManageModal() {
+  document.getElementById('savingManageModal').style.display = 'none';
+}
+
+function loadActiveSavingProducts() {
+  var list = document.getElementById('savingManageList');
+  list.innerHTML = '<div style="color:#aaa;font-size:13px;text-align:center;padding:20px;">불러오는 중...</div>';
+  google.script.run
+    .withSuccessHandler(function(prods) {
+      if (!prods || prods.length === 0) {
+        list.innerHTML = '<div style="color:#aaa;font-size:13px;text-align:center;padding:20px;">현재 활성 적금 상품이 없습니다.</div>';
+        return;
+      }
+      list.innerHTML = prods.map(function(p) {
+        var pid = _escapeHtmlAdmin(p.prodId);
+        return '<div style="border:1px solid #ddd;border-radius:8px;padding:12px;margin-bottom:10px;">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">' +
+            '<b style="font-size:14px;color:#e67e22;">' + _escapeHtmlAdmin(p.prodName) + '</b>' +
+            '<span style="font-size:11px;color:#888;">' + _escapeHtmlAdmin(p.launchDate) + ' 출시</span>' +
+          '</div>' +
+          '<div style="font-size:12px;color:#555;margin-bottom:4px;">' +
+            '주당 이자율: ' + p.weeklyRate + '% · 최대 ' + p.maxRounds + '회' +
+          '</div>' +
+          '<div style="font-size:12px;color:#555;margin-bottom:4px;">' +
+            '회차당: $' + p.minPer.toLocaleString() + ' ~ $' + p.maxPer.toLocaleString() +
+            ' · 패널티: ' + p.penalty + '%' +
+          '</div>' +
+          '<div style="font-size:12px;color:#16a085;margin-bottom:8px;">' +
+            '진행중 적금: ' + p.activeCount + '건 (누적원금 $' + Number(p.activeTotal).toLocaleString() + ')' +
+          '</div>' +
+          '<div style="display:flex;gap:8px;">' +
+            '<button onclick="doSetSavingPenaltyRate(\'' + pid + '\',' + p.penalty + ')" ' +
+              'style="flex:1;padding:6px;background:#7f8c8d;color:white;border:none;border-radius:6px;font-weight:bold;cursor:pointer;font-size:13px;">' +
+              '✏️ 패널티율 수정</button>' +
+            '<button onclick="doEndSavingProduct(\'' + pid + '\',\'' + _escapeHtmlAdmin(p.prodName).replace(/'/g, "\\'") + '\')" ' +
+              'style="flex:1;padding:6px;background:#e74c3c;color:white;border:none;border-radius:6px;font-weight:bold;cursor:pointer;font-size:13px;">' +
+              '⏹️ 상품 종료</button>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    })
+    .withFailureHandler(function(e) {
+      list.innerHTML = '<div style="color:#e74c3c;font-size:13px;">오류: ' + e.message + '</div>';
+    })
+    .getAdminSavingProducts();
+}
+
+function doEndSavingProduct(prodId, prodName) {
+  if (!confirm('[' + prodName + '] 적금 상품을 종료하시겠습니까?\n\n' +
+    '신규 가입만 차단되며, 이미 가입된 적금은 만기까지 정상 유지됩니다.')) return;
+  google.script.run
+    .withSuccessHandler(function(res) {
+      alert(res.msg);
+      loadActiveSavingProducts();
+    })
+    .withFailureHandler(function(err) { alert('오류: ' + err.message); })
+    .endSavingProduct(prodId);
+}
+
+function doSetSavingPenaltyRate(prodId, curRate) {
+  var rate = prompt('적금 중도해지 패널티율을 입력하세요 (숫자만, 예: 5)', curRate != null ? curRate : '');
+  if (rate === null) return;
+  rate = parseFloat(rate);
+  if (isNaN(rate) || rate < 0 || rate > 100) {
+    alert('0~100 사이의 숫자를 입력해주세요.'); return;
+  }
+  google.script.run
+    .withSuccessHandler(function(res) {
+      alert(res.msg);
+      loadActiveSavingProducts();
+    })
+    .withFailureHandler(function(err) { alert('오류: ' + err.message); })
+    .setSavingPenaltyRate(rate, prodId);
 }
 </script>
 </body>

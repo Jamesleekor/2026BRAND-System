@@ -706,15 +706,42 @@
       overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.3);
     }
     .mail-item {
-      padding: 12px; border-radius: 10px; margin-bottom: 10px;
+      border-radius: 10px; margin-bottom: 10px;
       border-left: 5px solid #eee; background: #fafafa;
+      overflow: hidden;
     }
     .mail-item.approved { border-left-color: #2ecc71; background: #f0fff4; }
     .mail-item.rejected { border-left-color: #e74c3c; background: #fff5f5; }
     .mail-item.reward   { border-left-color: #f39c12; background: #fffbf0; }
-    .mail-item.unread   { font-weight: bold; }
-    .mail-subject { font-size: 14px; color: #2c3e50; margin-bottom: 4px; }
-    .mail-body    { font-size: 13px; color: #555; white-space: pre-wrap; line-height: 1.5; }
+    /* 메일 제목 줄 (클릭 영역) */
+    .mail-head {
+      display: flex; align-items: center; gap: 8px;
+      padding: 12px; cursor: pointer; user-select: none;
+    }
+    .mail-head:hover { background: rgba(0,0,0,0.03); }
+    /* 읽지 않음 점 표시 */
+    .mail-dot {
+      flex: 0 0 auto; width: 9px; height: 9px; border-radius: 50%;
+      background: #e74c3c; visibility: hidden;
+    }
+    .mail-item.unread .mail-dot { visibility: visible; }
+    .mail-subject {
+      flex: 1; font-size: 14px; color: #2c3e50;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .mail-item.unread .mail-subject { font-weight: bold; }
+    .mail-caret {
+      flex: 0 0 auto; font-size: 12px; color: #bbb;
+      transition: transform 0.2s ease;
+    }
+    .mail-item.expanded .mail-caret { transform: rotate(180deg); }
+    /* 본문 영역 (펼침 시 노출) */
+    .mail-detail {
+      display: none; padding: 0 12px 12px 12px;
+      border-top: 1px solid rgba(0,0,0,0.06);
+    }
+    .mail-item.expanded .mail-detail { display: block; }
+    .mail-body    { font-size: 13px; color: #555; white-space: pre-wrap; line-height: 1.5; padding-top: 10px; }
     .mail-time    { font-size: 11px; color: #bbb; margin-top: 6px; }
 
     /* ══════════════════════════════════════════════════════
@@ -2512,6 +2539,13 @@
   </div>
   <div id="depositCardBody" class="card-toggle-body collapsed" style="margin-top:10px;">
 
+  <!-- 상품 선택 드롭다운 (상품이 2개 이상일 때만 표시) -->
+  <div id="depositProdSelectWrap" style="margin-bottom:8px;display:none;">
+    <label style="font-size:12px;color:#555;display:block;margin-bottom:4px;">예금 상품 선택</label>
+    <select id="depositProdSelect" onchange="onDepositProdChange()"
+      style="width:100%;padding:9px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;box-sizing:border-box;background:white;"></select>
+  </div>
+
   <!-- 활성 상품 정보 -->
   <div id="depositProdInfo" style="background:#eaf4fb;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:13px;">
     <div id="depositProdName" style="font-weight:bold;color:#2471a3;margin-bottom:4px;">로딩 중...</div>
@@ -2604,6 +2638,110 @@
       <button onclick="closeDepositHistoryModal()" style="background:rgba(255,255,255,0.2);border:none;color:white;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:15px;">✕</button>
     </div>
     <div id="depositHistoryList" style="overflow-y:auto;flex:1;padding:12px;">
+      <div style="text-align:center;padding:30px;color:#bbb;">로딩 중...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ 적금 카드 ════════════ -->
+<div class="card" style="border-left:6px solid #e67e22;">
+  <div class="card-title" style="cursor:pointer;margin-bottom:0;" onclick="toggleCard('savingCardBody','savingCardArrow')">
+    <span>🐷 적금 (매주 자동 납입)</span>
+    <span style="display:flex;align-items:center;gap:8px;">
+      <button onclick="event.stopPropagation();openSavingHistoryModal()"
+        style="padding:4px 10px;background:#e67e22;color:white;border:none;border-radius:6px;font-size:12px;font-weight:bold;cursor:pointer;">
+        📋 내 적금 현황
+      </button>
+      <span id="savingCardArrow" style="font-size:12px;color:#aaa;transition:transform 0.3s;">▼</span>
+    </span>
+  </div>
+  <div id="savingCardBody" class="card-toggle-body collapsed" style="margin-top:10px;">
+
+  <!-- 상품 선택 드롭다운 (2개 이상일 때만) -->
+  <div id="savingProdSelectWrap" style="margin-bottom:8px;display:none;">
+    <label style="font-size:12px;color:#555;display:block;margin-bottom:4px;">적금 상품 선택</label>
+    <select id="savingProdSelect" onchange="onSavingProdChange()"
+      style="width:100%;padding:9px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;box-sizing:border-box;background:white;"></select>
+  </div>
+
+  <!-- 활성 상품 정보 -->
+  <div id="savingProdInfo" style="background:#fdf2e9;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:13px;">
+    <div id="savingProdName" style="font-weight:bold;color:#ca6f1e;margin-bottom:4px;">로딩 중...</div>
+    <div id="savingProdRates" style="color:#555;font-size:12px;"></div>
+  </div>
+
+  <!-- 신규 적금 신청 폼 -->
+  <div id="savingFormWrap">
+    <!-- 회차당 금액 -->
+    <div style="margin-bottom:8px;">
+      <label style="font-size:12px;color:#555;display:block;margin-bottom:4px;">
+        회차당 금액 (100 단위, <span id="savingMin">$100</span> ~ <span id="savingMax">$2,000</span>)
+      </label>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+        <input type="number" id="savingPerAmount" min="100" step="100" placeholder="예: 500"
+          oninput="calcSavingPreviewUI()"
+          style="flex:1;min-width:100px;padding:9px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;box-sizing:border-box;">
+        <button onclick="addSavingAmount(100)" style="padding:7px 10px;background:#ecf0f1;border:1px solid #ddd;border-radius:6px;font-size:12px;cursor:pointer;">+100</button>
+        <button onclick="addSavingAmount(500)" style="padding:7px 10px;background:#ecf0f1;border:1px solid #ddd;border-radius:6px;font-size:12px;cursor:pointer;">+500</button>
+      </div>
+    </div>
+
+    <!-- 회차(주) 선택 -->
+    <div style="margin-bottom:12px;">
+      <label style="font-size:12px;color:#555;display:block;margin-bottom:4px;">
+        납입 회차 (매주 1회, 2 ~ <span id="savingMaxRounds">8</span>회)
+      </label>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <input type="number" id="savingRounds" min="2" step="1" placeholder="예: 4"
+          oninput="calcSavingPreviewUI()"
+          style="flex:1;padding:9px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;box-sizing:border-box;">
+        <span style="font-size:13px;color:#888;">회</span>
+      </div>
+    </div>
+
+    <!-- 예상 수령액 미리보기 -->
+    <div id="savingPreview" style="display:none;background:#fef9e7;border:1px solid #f5cba7;border-radius:8px;padding:12px;margin-bottom:8px;font-size:13px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+        <span style="color:#555;">누적 원금 <span id="savPrevDetail" style="color:#999;font-size:11px;"></span></span>
+        <span id="savPrevPrincipal" style="font-weight:bold;">-</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+        <span style="color:#555;">세전 이자</span>
+        <span id="savPrevGrossInt" style="color:#27ae60;font-weight:bold;">-</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+        <span style="color:#555;">소득세 (10%)</span>
+        <span id="savPrevTax" style="color:#e74c3c;font-weight:bold;">-</span>
+      </div>
+      <div style="border-top:1px solid #f5cba7;padding-top:6px;display:flex;justify-content:space-between;">
+        <span style="font-weight:bold;color:#ca6f1e;">만기 실수령액</span>
+        <span id="savPrevTotal" style="font-weight:bold;font-size:15px;color:#ca6f1e;">-</span>
+      </div>
+      <div style="margin-top:8px;font-size:11px;color:#888;" id="savPrevNote"></div>
+    </div>
+
+    <button onclick="submitSaving()" id="savingSubmitBtn"
+      style="width:100%;padding:11px;background:linear-gradient(135deg,#e67e22,#d35400);color:white;border:none;border-radius:8px;font-weight:bold;font-size:15px;cursor:pointer;">
+      🐷 적금 가입하기 (1회차 즉시 납입)
+    </button>
+  </div>
+
+  <!-- 상품 없을 때 -->
+  <div id="savingNoProduct" style="display:none;text-align:center;padding:20px;color:#aaa;font-size:13px;">
+    현재 가입 가능한 적금 상품이 없습니다.
+  </div>
+  </div><!-- /savingCardBody -->
+</div>
+
+<!-- ── 적금 현황 모달 ── -->
+<div id="savingHistoryModal"
+  style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1001;justify-content:center;align-items:center;">
+  <div style="background:white;border-radius:15px;width:92%;max-width:500px;max-height:88vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,0.3);">
+    <div style="background:linear-gradient(135deg,#e67e22,#d35400);color:white;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
+      <div style="font-size:17px;font-weight:bold;">📋 나의 적금 현황</div>
+      <button onclick="closeSavingHistoryModal()" style="background:rgba(255,255,255,0.2);border:none;color:white;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:15px;">✕</button>
+    </div>
+    <div id="savingHistoryList" style="overflow-y:auto;flex:1;padding:12px;">
       <div style="text-align:center;padding:30px;color:#bbb;">로딩 중...</div>
     </div>
   </div>
@@ -5868,6 +6006,9 @@
     //예금상품 로드
     loadDepositProduct();
 
+    // 적금상품 로드
+    loadSavingProduct();
+
     // 신용점수 카드 로드
     loadCreditScore();
 
@@ -5912,7 +6053,8 @@
 
   // ── 예금 전역 상태 ──
 // ── 예금 전역 상태 ────────────────────────────────────────────
-var _depositProd    = null;   // 현재 활성 상품
+var _depositProds   = [];     // 활성 상품 목록 (복수)
+var _depositProd    = null;   // 현재 선택된 상품
 var _selectedWeeks  = 0;      // 선택된 주수
 
 // ── 대시보드 로드 시 예금 상품 불러오기 (showDashboard에서 호출) ─
@@ -5922,15 +6064,62 @@ function loadDepositProduct() {
   var prodName = document.getElementById('depositProdName');
   if (prodName) prodName.innerText = '불러오는 중...';
   google.script.run
-    .withSuccessHandler(function(prod) {
-      _depositProd = prod;
-      renderDepositCard(prod);
+    .withSuccessHandler(function(list) {
+      _depositProds = list || [];
+      populateDepositSelect();
     })
     .withFailureHandler(function(err) {
       console.log('예금 상품 로드 실패: ' + err.message);
       if (prodName) prodName.innerText = '상품 정보를 불러올 수 없습니다.';
     })
-    .getActiveDepositProduct();
+    .getActiveDepositProducts();
+}
+
+// ── 드롭다운에 활성 상품 채우기 ───────────────────────────────
+function populateDepositSelect() {
+  var sel  = document.getElementById('depositProdSelect');
+  var wrap = document.getElementById('depositProdSelectWrap');
+
+  if (!_depositProds || _depositProds.length === 0) {
+    if (wrap) wrap.style.display = 'none';
+    _depositProd = null;
+    renderDepositCard(null);
+    return;
+  }
+
+  // 상품이 2개 이상일 때만 드롭다운 노출 (1개면 굳이 고를 필요 없음)
+  if (wrap) wrap.style.display = (_depositProds.length > 1) ? 'block' : 'none';
+  if (sel) {
+    sel.innerHTML = _depositProds.map(function(p, idx) {
+      return '<option value="' + idx + '">' +
+        _escapeHtml(p.prodName) + ' (1주 ' + p.rate1 + '% ~ 4주 ' + p.rate4 + '%)' +
+        '</option>';
+    }).join('');
+    sel.selectedIndex = 0;
+  }
+  _depositProd = _depositProds[0];
+  renderDepositCard(_depositProd);
+}
+
+// ── 드롭다운에서 상품 변경 시 ─────────────────────────────────
+function onDepositProdChange() {
+  var sel = document.getElementById('depositProdSelect');
+  var idx = sel ? parseInt(sel.value) : 0;
+  if (isNaN(idx) || !_depositProds[idx]) return;
+  _depositProd = _depositProds[idx];
+
+  // 상품 변경 시 기간 선택/미리보기 초기화 (이자율이 상품마다 다르므로)
+  _selectedWeeks = 0;
+  var btns = document.querySelectorAll('#depositWeekBtns button');
+  btns.forEach(function(b) {
+    b.style.borderColor = '#ddd';
+    b.style.background  = 'white';
+    b.style.color       = '#333';
+  });
+  var prev = document.getElementById('depositPreview');
+  if (prev) prev.style.display = 'none';
+
+  renderDepositCard(_depositProd);
 }
 
 // ── 예금 카드 렌더링 ──────────────────────────────────────────
@@ -6086,7 +6275,7 @@ function submitDeposit() {
       btn.disabled = false; btn.innerText = '🏦 예금 가입하기';
       alert('서버 오류: ' + err.message);
     })
-    .createDeposit(window._currentStudentName, amount, weeks);
+    .createDeposit(window._currentStudentName, amount, weeks, _depositProd.prodId);
 }
 
 // ── 예금 현황 모달 열기 ──────────────────────────────────────
@@ -6202,6 +6391,252 @@ function requestCancelDeposit(depId, amount) {
       alert('서버 오류: ' + err.message);
     })
     .cancelDeposit(window._currentStudentName, depId);
+}
+
+// ════════════════════════════════════════════════════════════════
+// ██ 적금(積金) 프론트엔드
+// ════════════════════════════════════════════════════════════════
+var _savingProds = [];   // 활성 적금 상품 목록
+var _savingProd  = null; // 현재 선택된 상품
+
+function loadSavingProduct() {
+  var nameEl = document.getElementById('savingProdName');
+  if (nameEl) nameEl.innerText = '불러오는 중...';
+  google.script.run
+    .withSuccessHandler(function(list) {
+      _savingProds = list || [];
+      populateSavingSelect();
+    })
+    .withFailureHandler(function(err) {
+      console.log('적금 상품 로드 실패: ' + err.message);
+      if (nameEl) nameEl.innerText = '상품 정보를 불러올 수 없습니다.';
+    })
+    .getActiveSavingProducts();
+}
+
+function populateSavingSelect() {
+  var sel  = document.getElementById('savingProdSelect');
+  var wrap = document.getElementById('savingProdSelectWrap');
+  if (!_savingProds || _savingProds.length === 0) {
+    if (wrap) wrap.style.display = 'none';
+    _savingProd = null;
+    renderSavingCard(null);
+    return;
+  }
+  if (wrap) wrap.style.display = (_savingProds.length > 1) ? 'block' : 'none';
+  if (sel) {
+    sel.innerHTML = _savingProds.map(function(p, idx) {
+      return '<option value="' + idx + '">' +
+        _escapeHtml(p.prodName) + ' (주당 ' + p.weeklyRate + '%, 최대 ' + p.maxRounds + '회)' +
+        '</option>';
+    }).join('');
+    sel.selectedIndex = 0;
+  }
+  _savingProd = _savingProds[0];
+  renderSavingCard(_savingProd);
+}
+
+function onSavingProdChange() {
+  var sel = document.getElementById('savingProdSelect');
+  var idx = sel ? parseInt(sel.value) : 0;
+  if (isNaN(idx) || !_savingProds[idx]) return;
+  _savingProd = _savingProds[idx];
+  var prev = document.getElementById('savingPreview');
+  if (prev) prev.style.display = 'none';
+  renderSavingCard(_savingProd);
+}
+
+function renderSavingCard(prod) {
+  var formWrap  = document.getElementById('savingFormWrap');
+  var noProduct = document.getElementById('savingNoProduct');
+  if (!prod) {
+    if (formWrap)  formWrap.style.display  = 'none';
+    if (noProduct) noProduct.style.display = 'block';
+    document.getElementById('savingProdName').innerText  = '현재 가입 가능한 상품이 없습니다.';
+    document.getElementById('savingProdRates').innerText = '';
+    return;
+  }
+  if (formWrap)  formWrap.style.display  = 'block';
+  if (noProduct) noProduct.style.display = 'none';
+  document.getElementById('savingProdName').innerText =
+    '📌 ' + prod.prodName + ' (론칭일: ' + prod.launchDate + ')';
+  document.getElementById('savingProdRates').innerText =
+    '주당 이자율 ' + prod.weeklyRate + '% · 먼저·꾸준히 넣을수록 이자가 커집니다';
+  document.getElementById('savingMin').innerText = '$' + prod.minPer.toLocaleString();
+  document.getElementById('savingMax').innerText = '$' + prod.maxPer.toLocaleString();
+  document.getElementById('savingMaxRounds').innerText = prod.maxRounds;
+  var pa = document.getElementById('savingPerAmount');
+  if (pa) { pa.min = prod.minPer; pa.max = prod.maxPer; }
+  var rd = document.getElementById('savingRounds');
+  if (rd) { rd.max = prod.maxRounds; }
+}
+
+function addSavingAmount(val) {
+  var input = document.getElementById('savingPerAmount');
+  input.value = (parseInt(input.value) || 0) + val;
+  calcSavingPreviewUI();
+}
+
+// B방식 회차별 이자: 세전이자 = perAmount × rate% × N(N+1)/2
+function calcSavingPreviewUI() {
+  var prev = document.getElementById('savingPreview');
+  if (!_savingProd) { prev.style.display = 'none'; return; }
+  var per    = parseInt(document.getElementById('savingPerAmount').value) || 0;
+  var rounds = parseInt(document.getElementById('savingRounds').value) || 0;
+  if (per <= 0 || rounds < 2) { prev.style.display = 'none'; return; }
+
+  var rate      = _savingProd.weeklyRate;
+  var principal = per * rounds;
+  var grossInt  = Math.floor(per * (rate / 100) * rounds * (rounds + 1) / 2);
+  var tax       = Math.floor(grossInt * 0.1);
+  var netInt    = grossInt - tax;
+  var total     = principal + netInt;
+  var plainSave = principal; // 그냥 모으기만 했을 때
+
+  document.getElementById('savPrevDetail').innerText    = '($' + per.toLocaleString() + ' × ' + rounds + '회)';
+  document.getElementById('savPrevPrincipal').innerText = '$ ' + principal.toLocaleString();
+  document.getElementById('savPrevGrossInt').innerText  = '+ $ ' + grossInt.toLocaleString();
+  document.getElementById('savPrevTax').innerText       = '- $ ' + tax.toLocaleString();
+  document.getElementById('savPrevTotal').innerText     = '$ ' + total.toLocaleString();
+  document.getElementById('savPrevNote').innerText =
+    '💡 매주 꾸준히 넣으면 그냥 모으기보다 $' + (total - plainSave).toLocaleString() + ' 이득! (잔액 부족으로 미납하면 그만큼 줄어듭니다)';
+  prev.style.display = 'block';
+}
+
+function submitSaving() {
+  if (!_savingProd) { alert('현재 가입 가능한 상품이 없습니다.'); return; }
+  var per    = parseInt(document.getElementById('savingPerAmount').value) || 0;
+  var rounds = parseInt(document.getElementById('savingRounds').value) || 0;
+  if (per <= 0)        { alert('회차당 금액을 입력해주세요.'); return; }
+  if (per % 100 !== 0) { alert('금액은 100 단위로 입력해주세요.'); return; }
+  if (per < _savingProd.minPer) { alert('회차당 최소 금액은 $' + _savingProd.minPer.toLocaleString() + '입니다.'); return; }
+  if (per > _savingProd.maxPer) { alert('회차당 최대 금액은 $' + _savingProd.maxPer.toLocaleString() + '입니다.'); return; }
+  if (rounds < 2 || rounds > _savingProd.maxRounds) { alert('회차는 2 ~ ' + _savingProd.maxRounds + '회 중 선택해주세요.'); return; }
+
+  var rate     = _savingProd.weeklyRate;
+  var principal= per * rounds;
+  var grossInt = Math.floor(per * (rate / 100) * rounds * (rounds + 1) / 2);
+  var total    = principal + grossInt - Math.floor(grossInt * 0.1);
+
+  if (!confirm(
+    '🐷 적금 가입\n\n' +
+    '회차당 $' + per.toLocaleString() + ' × ' + rounds + '회 (매주 자동 납입)\n' +
+    '예상 누적 원금: $' + principal.toLocaleString() + '\n' +
+    '만기 예상 실수령: $' + total.toLocaleString() + '\n\n' +
+    '※ 가입 즉시 1회차가 납입됩니다.\n가입하시겠습니까?'
+  )) return;
+
+  var btn = document.getElementById('savingSubmitBtn');
+  btn.disabled = true; btn.innerText = '처리 중...';
+  google.script.run
+    .withSuccessHandler(function(res) {
+      btn.disabled = false; btn.innerText = '🐷 적금 가입하기 (1회차 즉시 납입)';
+      if (res.success) {
+        alert(res.msg);
+        var balEl = document.getElementById('myBalance');
+        if (balEl) balEl.innerText = '$ ' + Number(res.newBalance).toLocaleString();
+        if (window._lastDashboardData) window._lastDashboardData.personal.balance = res.newBalance;
+        document.getElementById('savingPerAmount').value = '';
+        document.getElementById('savingRounds').value = '';
+        document.getElementById('savingPreview').style.display = 'none';
+      } else {
+        alert('가입 실패: ' + res.msg);
+      }
+    })
+    .withFailureHandler(function(err) {
+      btn.disabled = false; btn.innerText = '🐷 적금 가입하기 (1회차 즉시 납입)';
+      alert('서버 오류: ' + err.message);
+    })
+    .createSaving(window._currentStudentName, per, rounds, _savingProd.prodId);
+}
+
+function openSavingHistoryModal() {
+  document.getElementById('savingHistoryModal').style.display = 'flex';
+  document.getElementById('savingHistoryList').innerHTML =
+    '<div style="text-align:center;padding:30px;color:#bbb;">로딩 중...</div>';
+  google.script.run
+    .withSuccessHandler(renderSavingHistory)
+    .withFailureHandler(function(err) {
+      document.getElementById('savingHistoryList').innerHTML =
+        '<div style="color:#e74c3c;padding:16px;">오류: ' + err.message + '</div>';
+    })
+    .getMySavings(window._currentStudentName);
+}
+function closeSavingHistoryModal() {
+  document.getElementById('savingHistoryModal').style.display = 'none';
+}
+
+function renderSavingHistory(list) {
+  var container = document.getElementById('savingHistoryList');
+  if (!list || list.length === 0) {
+    container.innerHTML = '<div style="text-align:center;padding:30px;color:#bbb;font-size:14px;">아직 적금 내역이 없습니다.</div>';
+    return;
+  }
+  container.innerHTML = list.map(function(s) {
+    var statusColor = s.status === '진행중' ? '#e67e22' : s.status === '만기' ? '#27ae60' : '#e74c3c';
+    var statusBg    = s.status === '진행중' ? '#fdf2e9' : s.status === '만기' ? '#f0fff4' : '#fff5f5';
+
+    var progress = '';
+    if (s.status === '진행중') {
+      progress =
+        '<div style="font-size:12px;color:#888;margin-top:4px;">' +
+          '진행 ' + s.elapsed + '/' + s.rounds + '회 · 납입 ' + s.paidCount + '회' +
+          (s.missed > 0 ? ' · <span style="color:#e74c3c;">미납 ' + s.missed + '회</span>' : '') +
+          (s.nextDate ? ' · 다음 납입 ' + s.nextDate : '') +
+        '</div>' +
+        '<div style="font-size:12px;color:#2c3e50;margin-top:2px;">누적 원금 $' + s.principal.toLocaleString() +
+          ' · 적립 이자(세전) $' + Math.floor(s.accruedInt).toLocaleString() + '</div>';
+    }
+    var paidLine = '';
+    if (s.status === '만기') {
+      paidLine = '<div style="font-size:12px;color:#27ae60;margin-top:2px;">' +
+        '만기 지급 완료 · 원금 $' + s.principal.toLocaleString() + ' (납입 ' + s.paidCount + '회/미납 ' + s.missed + '회)</div>';
+    }
+    var cancelBtn = '';
+    if (s.status === '진행중') {
+      cancelBtn =
+        '<button onclick="requestCancelSaving(\'' + s.savId + '\',' + s.principal + ')"' +
+        ' style="margin-top:8px;width:100%;padding:7px;background:#fff5f5;border:1px solid #e74c3c;' +
+        'color:#e74c3c;border-radius:6px;font-size:12px;font-weight:bold;cursor:pointer;">⚠️ 중도 해지</button>';
+    }
+    return '<div style="padding:12px;border-bottom:1px solid #f5f5f5;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">' +
+        '<div style="font-size:15px;font-weight:bold;color:#2c3e50;">$' + s.perAmount.toLocaleString() + ' × ' + s.rounds + '회 · 주당 ' + s.rate + '%</div>' +
+        '<span style="background:' + statusBg + ';color:' + statusColor + ';border-radius:12px;padding:2px 10px;font-size:12px;font-weight:bold;">' + s.status + '</span>' +
+      '</div>' +
+      '<div style="font-size:12px;color:#888;">' + s.startDate + ' ~ ' + s.dueDate + '</div>' +
+      progress + paidLine + cancelBtn +
+    '</div>';
+  }).join('');
+}
+
+function requestCancelSaving(savId, principal) {
+  var penaltyRate = _savingProd ? _savingProd.penalty : 5;
+  var penalty = Math.floor(principal * penaltyRate / 100);
+  var refund  = principal - penalty;
+  if (!confirm(
+    '⚠️ 적금 중도 해지 안내\n\n' +
+    '누적 원금: $' + principal.toLocaleString() + '\n' +
+    '패널티 (' + penaltyRate + '%): -$' + penalty.toLocaleString() + '\n' +
+    '반환액: $' + refund.toLocaleString() + '\n' +
+    '※ 적립 이자는 지급되지 않습니다.\n\n중도 해지하시겠습니까?'
+  )) return;
+  if (!confirm('⚠️ 이 작업은 되돌릴 수 없습니다.\n정말 해지하시겠습니까?')) return;
+
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (res.success) {
+        alert(res.msg);
+        var balEl = document.getElementById('myBalance');
+        if (balEl) balEl.innerText = '$ ' + Number(res.newBalance).toLocaleString();
+        if (window._lastDashboardData) window._lastDashboardData.personal.balance = res.newBalance;
+        openSavingHistoryModal();
+      } else {
+        alert('해지 실패: ' + res.msg);
+      }
+    })
+    .withFailureHandler(function(err) { alert('서버 오류: ' + err.message); })
+    .cancelSaving(window._currentStudentName, savId);
 }
 
 // ── 대시보드 새로고침 ─────────────────────────────────────────
@@ -6759,27 +7194,58 @@ function requestCancelDeposit(depId, amount) {
     }
   }
 
+  // HTML 이스케이프 (제목/본문에 < > & 등이 있어도 안전하게 표시)
+  function _escapeHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
   function openMailModal() {
     document.getElementById('mailModal').classList.add('open');
     var list = document.getElementById('mailList');
     list.innerHTML = '<div style="text-align:center;padding:30px;color:#bbb;">로딩 중...</div>';
     google.script.run.withSuccessHandler(function(msgs) {
-      // 읽음 처리됐으므로 뱃지 0으로
-      updateMailBadge(0);
       if (!msgs || msgs.length === 0) {
         list.innerHTML = '<div style="text-align:center;padding:30px;color:#bbb;font-size:13px;">📭 받은 메시지가 없습니다.</div>';
+        updateMailBadge(0);
         return;
       }
+      // 처음엔 모두 접힌 상태(제목만) — 읽지 않은 메일은 점/굵은 글씨로 표시
+      var unreadCount = 0;
       list.innerHTML = msgs.map(function(m) {
+        if (!m.isRead) unreadCount++;
         var typeClass = m.type === '승인' ? 'approved' : m.type === '반려' ? 'rejected' : 'reward';
         var unread    = m.isRead ? '' : ' unread';
-        return '<div class="mail-item ' + typeClass + unread + '">' +
-          '<div class="mail-subject">' + m.subject + '</div>' +
-          '<div class="mail-body">' + m.body + '</div>' +
-          '<div class="mail-time">' + m.sentAt + '</div>' +
+        return '<div class="mail-item ' + typeClass + unread + '" data-msgid="' + _escapeHtml(m.msgId) + '">' +
+          '<div class="mail-head" onclick="toggleMailItem(this.parentNode)">' +
+            '<span class="mail-dot"></span>' +
+            '<span class="mail-subject">' + _escapeHtml(m.subject) + '</span>' +
+            '<span class="mail-caret">▾</span>' +
+          '</div>' +
+          '<div class="mail-detail">' +
+            '<div class="mail-body">' + _escapeHtml(m.body) + '</div>' +
+            '<div class="mail-time">' + _escapeHtml(m.sentAt) + '</div>' +
+          '</div>' +
         '</div>';
       }).join('');
+      // 실제 읽지 않은 수로 뱃지 갱신 (열어도 자동 읽음 처리하지 않음)
+      updateMailBadge(unreadCount);
     }).getMailboxMessages(window._currentStudentName);
+  }
+
+  // 메일 항목 펼침/접힘 + 읽지 않은 메일이면 읽음 처리
+  function toggleMailItem(item) {
+    var willExpand = !item.classList.contains('expanded');
+    item.classList.toggle('expanded');
+    // 펼치면서 아직 읽지 않은 메일이면 읽음 처리
+    if (willExpand && item.classList.contains('unread')) {
+      item.classList.remove('unread');
+      var msgId = item.getAttribute('data-msgid');
+      google.script.run.withSuccessHandler(function(cnt) {
+        updateMailBadge(cnt);
+      }).markMailAsRead(window._currentStudentName, msgId);
+    }
   }
 
   function closeMailModal() {

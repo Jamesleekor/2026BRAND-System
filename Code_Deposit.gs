@@ -20,26 +20,54 @@
 //                      H=상태, I=지급이자액, J=처리일, K=상품ID)
 // ════════════════════════════════════════════════════════════════
 
-// ── 현재 활성 예금 상품 반환 ──────────────────────────────────────
+// ── 시트 행 → 상품 객체 변환 (내부 헬퍼) ──────────────────────────
+function _parseDepositProdRow(row) {
+  return {
+    prodId:    String(row[0]).trim(),   // A
+    prodName:  String(row[1]).trim(),   // B
+    rate1:     Number(row[2]) || 0,     // C
+    rate2:     Number(row[3]) || 0,     // D
+    rate3:     Number(row[4]) || 0,     // E
+    rate4:     Number(row[5]) || 0,     // F
+    minAmount: Number(row[6]) || 500,   // G
+    maxAmount: Number(row[7]) || 5000,  // H
+    penalty:   Number(row[8]) || 5,     // I
+    status:    String(row[9]).trim(),   // J
+    launchDate: String(row[10]).trim()  // K
+  };
+}
+
+// ── 현재 활성 예금 상품 1개 반환 (하위호환용 — 첫 번째 활성 상품) ──
 function getActiveDepositProduct() {
+  const list = getActiveDepositProducts();
+  return list.length > 0 ? list[0] : null;
+}
+
+// ── 현재 활성 예금 상품 전체 반환 (복수 상품 지원) ────────────────
+function getActiveDepositProducts() {
+  const ss    = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_DEPOSIT_PROD);
+  if (!sheet) return [];
+  const data = sheet.getDataRange().getValues();
+  const out  = [];
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][9]).trim() === '활성') {  // J열: 상태
+      out.push(_parseDepositProdRow(data[i]));
+    }
+  }
+  return out;
+}
+
+// ── 특정 상품ID로 상품 1개 조회 (내부/검증용) ─────────────────────
+function _getDepositProductById(prodId) {
+  if (!prodId) return null;
   const ss    = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName(SHEET_DEPOSIT_PROD);
   if (!sheet) return null;
   const data = sheet.getDataRange().getValues();
   for (let i = 1; i < data.length; i++) {
-    if (String(data[i][9]).trim() === '활성') {  // J열: 상태
-      return {
-        prodId:    String(data[i][0]).trim(),   // A
-        prodName:  String(data[i][1]).trim(),   // B
-        rate1:     Number(data[i][2]) || 0,     // C
-        rate2:     Number(data[i][3]) || 0,     // D
-        rate3:     Number(data[i][4]) || 0,     // E
-        rate4:     Number(data[i][5]) || 0,     // F
-        minAmount: Number(data[i][6]) || 500,   // G
-        maxAmount: Number(data[i][7]) || 5000,  // H
-        penalty:   Number(data[i][8]) || 5,     // I
-        launchDate: String(data[i][10]).trim()  // K
-      };
+    if (String(data[i][0]).trim() === String(prodId).trim()) {
+      return _parseDepositProdRow(data[i]);
     }
   }
   return null;
@@ -61,17 +89,23 @@ function launchDepositProduct(prodName, rates, penalty, minAmount, maxAmount) {
   const prodSheet = ss.getSheetByName(SHEET_DEPOSIT_PROD);
   if (!prodSheet) return { success: false, msg: '예금상품 시트를 찾을 수 없습니다.' };
 
-  // 기존 활성 상품 → 종료 처리
+  // [복수 상품 지원] 기존 활성 상품을 종료하지 않고 그대로 유지 → 동시 운영
+  // 상품ID 중복 방지: 같은 날 여러 상품 론칭 시 뒤에 일련번호 부여
+  const today  = _todayStr();
+  const baseId = 'PROD_' + today.replace(/-/g, '');
+  let   prodId = baseId;
+  const existIds = {};
   const prodData = prodSheet.getDataRange().getValues();
   for (let i = 1; i < prodData.length; i++) {
-    if (String(prodData[i][9]).trim() === '활성') {
-      prodSheet.getRange(i + 1, 10).setValue('종료');
-    }
+    existIds[String(prodData[i][0]).trim()] = true;
+  }
+  if (existIds[prodId]) {
+    let n = 2;
+    while (existIds[baseId + '_' + n]) n++;
+    prodId = baseId + '_' + n;
   }
 
   // 신규 상품 행 추가
-  const today  = _todayStr();
-  const prodId = 'PROD_' + today.replace(/-/g, '');
   prodSheet.appendRow([
     prodId,
     prodName.trim(),
@@ -107,11 +141,56 @@ function launchDepositProduct(prodName, rates, penalty, minAmount, maxAmount) {
     }
   }
 
-  return { success: true, msg: `✅ [${prodName}] 상품이 론칭되었습니다. 전체 학생에게 우편이 발송되었습니다.` };
+  return { success: true, msg: `✅ [${prodName}] 상품이 론칭되었습니다. (기존 상품과 함께 동시 운영) 전체 학생에게 우편이 발송되었습니다.` };
 }
 
-// ── 현재 활성 상품 패널티율 수정 (AuctionAdmin에서 호출) ──────────
-function setPenaltyRate(rate) {
+// ── 관리자: 활성 예금 상품 목록 반환 (AuctionAdmin 관리 패널용) ────
+function getAdminDepositProducts() {
+  const list = getActiveDepositProducts();
+  const ss   = SpreadsheetApp.getActiveSpreadsheet();
+  const logSheet = ss.getSheetByName(SHEET_DEPOSIT_LOG);
+  // 상품별 진행중 예금 건수/합계 집계
+  const stats = {};
+  if (logSheet) {
+    const log = logSheet.getDataRange().getValues();
+    for (let i = 1; i < log.length; i++) {
+      if (String(log[i][7]).trim() !== '진행중') continue;
+      const pid = String(log[i][10]).trim();
+      if (!stats[pid]) stats[pid] = { count: 0, total: 0 };
+      stats[pid].count++;
+      stats[pid].total += Number(log[i][2]) || 0;
+    }
+  }
+  return list.map(function(p) {
+    const s = stats[p.prodId] || { count: 0, total: 0 };
+    p.activeCount = s.count;   // 진행중 예금 건수
+    p.activeTotal = s.total;   // 진행중 예금 원금 합계
+    return p;
+  });
+}
+
+// ── 관리자: 특정 예금 상품 종료 (신규 가입만 차단, 기존 예금은 만기까지 유지) ──
+function endDepositProduct(prodId) {
+  if (!prodId) return { success: false, msg: '상품 정보가 없습니다.' };
+  const ss        = SpreadsheetApp.getActiveSpreadsheet();
+  const prodSheet = ss.getSheetByName(SHEET_DEPOSIT_PROD);
+  if (!prodSheet) return { success: false, msg: '예금상품 시트를 찾을 수 없습니다.' };
+
+  const data = prodSheet.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]).trim() === String(prodId).trim()) {
+      if (String(data[i][9]).trim() !== '활성')
+        return { success: false, msg: '이미 종료된 상품입니다.' };
+      prodSheet.getRange(i + 1, 10).setValue('종료');  // J열
+      return { success: true, msg: `✅ [${String(data[i][1]).trim()}] 상품을 종료했습니다. (신규 가입만 차단되며, 진행중 예금은 만기까지 정상 유지됩니다.)` };
+    }
+  }
+  return { success: false, msg: '해당 상품을 찾을 수 없습니다.' };
+}
+
+// ── 특정 활성 상품 패널티율 수정 (prodId 지정) ────────────────────
+// prodId 미지정 시 첫 번째 활성 상품 (하위호환)
+function setPenaltyRate(rate, prodId) {
   rate = Number(rate);
   if (isNaN(rate) || rate < 0 || rate > 100)
     return { success: false, msg: '0~100 사이의 숫자를 입력해주세요.' };
@@ -122,16 +201,18 @@ function setPenaltyRate(rate) {
 
   const data = prodSheet.getDataRange().getValues();
   for (let i = 1; i < data.length; i++) {
-    if (String(data[i][9]).trim() === '활성') {
+    const isActive = String(data[i][9]).trim() === '활성';
+    const idMatch  = prodId ? (String(data[i][0]).trim() === String(prodId).trim()) : isActive;
+    if (idMatch && isActive) {
       prodSheet.getRange(i + 1, 9).setValue(rate);  // I열
-      return { success: true, msg: `✅ 패널티율이 ${rate}%로 변경되었습니다.` };
+      return { success: true, msg: `✅ [${String(data[i][1]).trim()}] 패널티율이 ${rate}%로 변경되었습니다.` };
     }
   }
-  return { success: false, msg: '현재 활성 상품이 없습니다.' };
+  return { success: false, msg: '대상 활성 상품이 없습니다.' };
 }
 
 // ── 예금 가입 (학생 → Index.html에서 호출) ───────────────────────
-function createDeposit(studentName, amount, weeks) {
+function createDeposit(studentName, amount, weeks, prodId) {
   amount = Number(amount);
   weeks  = Number(weeks);
 
@@ -144,8 +225,15 @@ function createDeposit(studentName, amount, weeks) {
   if (amount % 100 !== 0)
     return { success: false, msg: '금액은 100 단위로 입력해주세요. (예: 500, 1000)' };
 
-  // 활성 상품 조회
-  const prod = getActiveDepositProduct();
+  // 상품 조회 — prodId 지정 시 해당 상품, 미지정 시 첫 번째 활성 상품(하위호환)
+  let prod;
+  if (prodId) {
+    prod = _getDepositProductById(prodId);
+    if (!prod)               return { success: false, msg: '선택한 예금 상품을 찾을 수 없습니다.' };
+    if (prod.status !== '활성') return { success: false, msg: '이미 종료된 상품입니다. 다른 상품을 선택해주세요.' };
+  } else {
+    prod = getActiveDepositProduct();
+  }
   if (!prod) return { success: false, msg: '현재 가입 가능한 예금 상품이 없습니다.' };
 
   if (amount < prod.minAmount)
@@ -236,7 +324,7 @@ function createDeposit(studentName, amount, weeks) {
   const histSheet = ss.getSheetByName(SHEET_HISTORY);
   if (histSheet) {
     histSheet.appendRow([
-      today, studentName, mainData[studentIdx][COL_BRAND - 1],
+      _nowStr(), studentName, mainData[studentIdx][COL_BRAND - 1],
       0, -amount,
       mainData[studentIdx][COL_VALUE - 1], newAsset,
       `[예금가입] ${prod.prodName} ${weeks}주 $${amount.toLocaleString()} (만기: ${dueDateStr})`
@@ -365,7 +453,7 @@ function cancelDeposit(studentName, depId) {
   const histSheet = ss.getSheetByName(SHEET_HISTORY);
   if (histSheet) {
     histSheet.appendRow([
-      today, studentName, mainData[studentIdx][COL_BRAND - 1],
+      _nowStr(), studentName, mainData[studentIdx][COL_BRAND - 1],
       0, refund,
       mainData[studentIdx][COL_VALUE - 1], newAsset,
       `[예금중도해지] 원금 $${amount.toLocaleString()} → 패널티 $${penalty.toLocaleString()} 차감 → 반환 $${refund.toLocaleString()}`
@@ -475,7 +563,7 @@ function _payOneDeposit(ss, logSheet, rowIdx, row) {
   const histSheet = ss.getSheetByName(SHEET_HISTORY);
   if (histSheet) {
     histSheet.appendRow([
-      today, studentName, mainData[studentIdx][COL_BRAND - 1],
+      _nowStr(), studentName, mainData[studentIdx][COL_BRAND - 1],
       0, totalBack,
       mainData[studentIdx][COL_VALUE - 1], newAsset,
       `[예금만기] 원금 $${amount.toLocaleString()} + 세후이자 $${netInt.toLocaleString()} (세금 $${taxAmount.toLocaleString()} 복지기금 납부)`
@@ -535,5 +623,11 @@ function setupDepositTrigger() {
 
 // ── 트리거가 매일 자동 호출하는 실제 만기 처리 실행 함수 ────────────
 function runDailyDepositCheck() {
-  checkAndPayDeposits(null); // null = 전체 학생 처리
+  checkAndPayDeposits(null); // null = 전체 학생 처리(정기예금 만기)
+  // 적금: 매주 자동 납입 + 이자 누적 + 만기 처리 (다음납입일 도래분만 처리)
+  try {
+    if (typeof checkAndProcessSavings === 'function') checkAndProcessSavings(null);
+  } catch(e) {
+    // 적금 시트 미구성 등 예외 시 정기예금 처리에는 영향 없도록 무시
+  }
 }

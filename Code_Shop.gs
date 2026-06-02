@@ -273,11 +273,16 @@ function purchaseShopItem(studentName, itemId) {
       mainSheet.getRange(i + 1, COL_ASSET).setValue(current - price);
 
       // 자산사용 시트에 기록 (A=날짜, B=학생명, C=브랜드, D=구분, E=금액, F=사용후잔액, G=비고)
+      const today    = _nowStr();
+      const newAsset = current - price;
       const spendSheet = ss.getSheetByName(SHEET_SPEND);
       if (spendSheet) {
-        const today = _todayStr();
-        const newAsset = current - price;
         spendSheet.appendRow([today, studentName, mData[i][COL_BRAND-1], '상점구매', price, newAsset, `[${itemName}] 구매`]);
+      }
+      // 히스토리 시트에 기록
+      const histSheet = ss.getSheetByName(SHEET_HISTORY);
+      if (histSheet) {
+        histSheet.appendRow([today, studentName, mData[i][COL_BRAND-1], 0, -price, mData[i][COL_VALUE-1], newAsset, `[상점구매] ${itemName}`]);
       }
       break;
     }
@@ -471,7 +476,7 @@ function grantMilestoneReward(studentName, achCount) {
     // 히스토리 기록
     const histSheet = ss.getSheetByName(SHEET_HISTORY);
     if (histSheet) {
-      const ts = _todayStr();
+      const ts = _nowStr();
       histSheet.appendRow([ts, studentName, data[i][COL_BRAND-1], '업적보상', reward, data[i][COL_VALUE-1], current + reward, `업적 ${achCount}개 달성 자동 보상`]);
     }
 

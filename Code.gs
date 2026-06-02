@@ -583,6 +583,7 @@ function _updateTracker(date, ss) {
 // ════════════════════════════════════════════════════════════════
 function getScriptUrl() { return ScriptApp.getService().getUrl(); }
 function _todayStr()    { return Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd'); }
+function _nowStr()      { return Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss'); }
 
 
 // ════════════════════════════════════════════════════════════════
@@ -863,7 +864,7 @@ function donateToWelfare(studentName, amount, message) {
   mainSheet.getRange(studentRowIdx + 1, COL_TAX).setValue(newTax);
 
   // 히스토리 기록
-  const today    = _todayStr();
+  const today    = _nowStr();
   const memo     = message ? `[기부] ${message}` : '[복지 기금 기부]';
   const histSheet = ss.getSheetByName(SHEET_HISTORY);
   if (histSheet) {

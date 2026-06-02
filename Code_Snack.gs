@@ -64,7 +64,7 @@ function executeSnackPurchase(studentName, itemName, price) {
   const mainSheet  = ss.getSheetByName(SHEET_MAIN);
   const snackSheet = ss.getSheetByName(SHEET_SNACK);
   const mainData   = mainSheet.getDataRange().getValues();
-  const dateStr    = _todayStr();
+  const dateStr    = _nowStr();
 
   // 학생 찾기
   let studentRowNum = -1;

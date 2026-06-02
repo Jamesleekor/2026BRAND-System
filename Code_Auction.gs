@@ -79,13 +79,20 @@ function addAuctionTime(ms) {
 // 6. 경매 낙찰 처리 (AuctionAdmin.html 에서 호출)
 // ════════════════════════════════════════════════════════════════
 function executeAuctionSold(studentInfo, itemDetails, price, roundNum) {
+  // ── [진단용 타이머] 각 단계 소요시간(ms) 측정 ──
+  const _t0 = new Date().getTime();
+  const _T  = {};
+  const _mark = function(label) { _T[label] = new Date().getTime() - _t0; };
+
   const lock = LockService.getScriptLock();
   try { lock.waitLock(10000); }
   catch(e) { return { success: false, msg: '다른 처리 중입니다. 잠시 후 다시 시도해주세요.' }; }
+  _mark('lock');
   try {
   const ss        = SpreadsheetApp.getActiveSpreadsheet();
   const mainSheet = ss.getSheetByName(SHEET_MAIN);
-  const dateStr   = _todayStr();
+  const dateStr   = _nowStr();
+  _mark('open');
 
   const curAsset = Number(mainSheet.getRange(studentInfo.rowIdx + 1, COL_ASSET).getValue()) || 0;
   // ── 자산 동결 체크
@@ -94,6 +101,7 @@ function executeAuctionSold(studentInfo, itemDetails, price, roundNum) {
     const _usable = Math.floor(curAsset * (_emgA.freezeRate / 100));
     if (price > _usable) return { success: false, msg: `🔒 자산 동결 중! 사용 가능 금액: $${_usable.toLocaleString()} (보유액의 ${_emgA.freezeRate}%)` };
   }
+  _mark('emergency');
   if (curAsset < price) return { success: false, msg: '잔액이 부족합니다!' };
 
   const newAsset = curAsset - price;
@@ -111,6 +119,7 @@ function executeAuctionSold(studentInfo, itemDetails, price, roundNum) {
     dateStr, studentInfo.name, studentInfo.brand,
     0, -price, curValue, newAsset, `[경매낙찰] ${itemDetails.name}`
   ]);
+  _mark('write_logs');
 
   // 경매관리 시트에 낙찰가 기록 (n차 경매 해당 열에)
   try {
@@ -131,8 +140,16 @@ function executeAuctionSold(studentInfo, itemDetails, price, roundNum) {
   } catch (e) {
     console.log('경매관리 기록 오류: ' + e.message);
   }
+  _mark('mgmt');
 
-  updateRankings();
+  // [성능 개선] 낙찰은 낙찰자 1명의 자산만 변동됨.
+  // 전체 학생 Firebase 동기화(학생 수만큼 HTTP PUT → 10초+)를 제거하고,
+  // 랭킹 순위 컬럼만 재계산한 뒤 낙찰자 1명만 Firebase에 동기화한다.
+  // (Shop/P2P/Snack 등 다른 자산 변동 기능과 동일한 패턴)
+  _updateRankingsOnly();
+  _mark('rankings');
+  try { syncOneStudentToFirebase(studentInfo.name); } catch(e) { Logger.log('[Firebase 낙찰자 동기화] ' + e.message); }
+  _mark('fb_sync');
   // 낙찰 애니메이션 상태 송출
   setAuctionState({
     status:     'sold',
@@ -140,7 +157,21 @@ function executeAuctionSold(studentInfo, itemDetails, price, roundNum) {
     winner:     studentInfo.name,
     finalPrice: price
   });
-  return { success: true, newBalance: newAsset };
+  _mark('state');
+
+  // 단계별 소요시간을 문자열로 정리 (가장 오래 걸린 단계 식별용)
+  const _timingStr = '⏱️ 진단 (총 ' + _T.state + 'ms)\n'
+    + '· 락 대기: ' + _T.lock + 'ms\n'
+    + '· 시트 열기: ' + (_T.open - _T.lock) + 'ms\n'
+    + '· 잔액/동결 체크: ' + (_T.emergency - _T.open) + 'ms\n'
+    + '· 로그 2건 기록: ' + (_T.write_logs - _T.emergency) + 'ms\n'
+    + '· 경매관리 기록: ' + (_T.mgmt - _T.write_logs) + 'ms\n'
+    + '· 랭킹 재계산: ' + (_T.rankings - _T.mgmt) + 'ms\n'
+    + '· Firebase 동기화(1명): ' + (_T.fb_sync - _T.rankings) + 'ms\n'
+    + '· 상태 송출: ' + (_T.state - _T.fb_sync) + 'ms';
+  Logger.log(_timingStr);
+
+  return { success: true, newBalance: newAsset, __timing: _timingStr };
   } catch(e) {
     return { success: false, msg: '오류가 발생했습니다: ' + e.message };
   } finally { lock.releaseLock(); }

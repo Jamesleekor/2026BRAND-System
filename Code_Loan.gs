@@ -212,7 +212,7 @@ function approveLoan(rowNum, isApproved, rejectReason) {
 
     // 히스토리 기록 (8개 값 필수)
     ss.getSheetByName(SHEET_HISTORY).appendRow([
-      today, name, mainData[studentIdx][COL_BRAND - 1],
+      _nowStr(), name, mainData[studentIdx][COL_BRAND - 1],
       0, amount, curHonor, newAsset,
       `[대출 실행] ${purpose} / ${grade}등급 / 주${weeklyRate}%`
     ]);
@@ -299,7 +299,7 @@ function repayLoan(studentName, loanId) {
 
     const newAsset = curAsset - repayAmount;
     const curHonor = Number(mainData[studentIdx][COL_VALUE - 1]) || 0;
-    const today    = _todayStr();
+    const today    = _nowStr();
 
     // 자산 차감
     mainSheet.getRange(studentIdx + 1, COL_ASSET).setValue(newAsset);

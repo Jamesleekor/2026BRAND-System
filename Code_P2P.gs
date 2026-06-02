@@ -170,7 +170,7 @@ function p2pTransfer(senderName, receiverName, amount, tag, description, quantit
   mainSheet.getRange(receiverIdx + 1, COL_TAX  ).setValue(receiverTax + taxAmount);
 
   // ── 히스토리 기록 (보내는 쪽) ───────────────────────────────
-  const today     = _todayStr();
+  const today     = _nowStr();
   const histSheet = ss.getSheetByName(SHEET_HISTORY);
   if (histSheet) {
     histSheet.appendRow([

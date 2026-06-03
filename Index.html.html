@@ -3482,7 +3482,7 @@
             { id:'ECO-007', title:'경매 승부사',   tier:'희귀', isHiddenPolicy:'normal', prerequisites:[],           gridPos:{x:1,y:1} },
             { id:'ECO-023', title:'연승행진',       tier:'유니크',isHiddenPolicy:'normal', prerequisites:['ECO-007'], gridPos:{x:2,y:1} },
             { id:'ECO-027', title:'막을 수 없는',   tier:'에픽', isHiddenPolicy:'normal', prerequisites:['ECO-023'], gridPos:{x:3,y:1} },
-            { id:'ECO-016', title:'경매 고수',      tier:'희귀', isHiddenPolicy:'normal', prerequisites:['ECO-007'], gridPos:{x:2,y:2} },
+            { id:'ECO-016', title:'경매 고수',      tier:'유니크',isHiddenPolicy:'normal', prerequisites:['ECO-007'], gridPos:{x:2,y:2} },
             { id:'ECO-017', title:'경매의 신',      tier:'에픽', isHiddenPolicy:'normal', prerequisites:['ECO-016'], gridPos:{x:3,y:2} },
             { id:'ECO-025', title:'타이밍의 신',    tier:'희귀', isHiddenPolicy:'normal', prerequisites:['ECO-007'], gridPos:{x:2,y:3} }
           ]
@@ -3504,8 +3504,8 @@
             { id:'ECO-026', title:'전략적 짠돌이',  tier:'희귀', isHiddenPolicy:'normal', prerequisites:[],                       gridPos:{x:4,y:4} },
             { id:'ACH-001', title:'자본가',         tier:'희귀', isHiddenPolicy:'normal', prerequisites:['ECO-001','ECO-006'],    gridPos:{x:5,y:2.5} },
             { id:'ECO-024', title:'자수성가',       tier:'희귀', isHiddenPolicy:'normal', prerequisites:['ACH-001'],              gridPos:{x:6,y:2.5} },
-            { id:'ECO-029', title:'부유층',         tier:'에픽', isHiddenPolicy:'normal', prerequisites:['ECO-024'],              gridPos:{x:7,y:2.5} },
-            { id:'ECO-030', title:'재벌의 길',      tier:'초월', isHiddenPolicy:'normal', prerequisites:['ECO-029'],              gridPos:{x:8,y:2.5} }
+            { id:'ECO-029', title:'부유층 입성',    tier:'유니크',isHiddenPolicy:'normal', prerequisites:['ECO-024'],              gridPos:{x:7,y:2.5} },
+            { id:'ECO-030', title:'재벌의 길',      tier:'에픽', isHiddenPolicy:'normal', prerequisites:['ECO-029'],              gridPos:{x:8,y:2.5} }
           ]
         },
         {
@@ -3515,7 +3515,9 @@
             { id:'ECO-022', title:'장터 고수',      tier:'희귀', isHiddenPolicy:'normal', prerequisites:['ECO-021'], gridPos:{x:6,y:4} },
             { id:'ECO-020', title:'팬클럽',         tier:'희귀', isHiddenPolicy:'normal', prerequisites:['ECO-021'], gridPos:{x:6,y:5} },
             { id:'ECO-012', title:'부르주아',       tier:'유니크',isHiddenPolicy:'normal', prerequisites:['ECO-022'], gridPos:{x:7,y:4} },
-            { id:'ECO-002', title:'학급의 큰 손',   tier:'에픽', isHiddenPolicy:'normal', prerequisites:['ECO-012'], gridPos:{x:8,y:4} }
+            { id:'ECO-002', title:'학급의 큰 손',   tier:'에픽', isHiddenPolicy:'normal', prerequisites:['ECO-012'], gridPos:{x:8,y:4} },
+            { id:'ECO-031', title:'별점 장인',      tier:'유니크',isHiddenPolicy:'normal', prerequisites:['ECO-022'], gridPos:{x:7,y:5} },
+            { id:'ECO-032', title:'거래소의 큰손',  tier:'유니크',isHiddenPolicy:'normal', prerequisites:['ECO-021'], gridPos:{x:5,y:5} }
           ]
         },
         {
@@ -3525,7 +3527,8 @@
             { id:'ECO-004', title:'기부 천사',      tier:'유니크',isHiddenPolicy:'normal', prerequisites:['ACH-002'], gridPos:{x:2,y:7} },
             { id:'ECO-011', title:'통큰 기부왕',    tier:'유니크',isHiddenPolicy:'normal', prerequisites:['ECO-004'], gridPos:{x:3,y:7} },
             { id:'ECO-018', title:'경제수호대원',   tier:'유니크',isHiddenPolicy:'normal', prerequisites:[],           gridPos:{x:2,y:8} },
-            { id:'ECO-028', title:'경제 수호대장',  tier:'에픽', isHiddenPolicy:'normal', prerequisites:['ECO-018'], gridPos:{x:3,y:8} }
+            { id:'ECO-028', title:'경제 수호대장',  tier:'에픽', isHiddenPolicy:'normal', prerequisites:['ECO-018'], gridPos:{x:3,y:8} },
+            { id:'ECO-033', title:'성실 납세자',    tier:'희귀', isHiddenPolicy:'normal', prerequisites:['ACH-002'], gridPos:{x:1,y:8} }
           ]
         },
         {
@@ -3622,7 +3625,7 @@
         {
           id: 'CONST_ACA_EXPRESSION', name: '창조와 논리의 언어', type: 'standalone',
           nodes: [
-            { id:'ART-001',  title:'최고의 금손',        tier:'유니크',isHiddenPolicy:'normal', prerequisites:[], gridPos:{x:8,y:6} },
+            { id:'ART-001',  title:'최고의 금손',        tier:'에픽', isHiddenPolicy:'normal', prerequisites:[], gridPos:{x:8,y:6} },
             { id:'ART-002',  title:'뮤즈',               tier:'유니크',isHiddenPolicy:'normal', prerequisites:[], gridPos:{x:9,y:6} },
             { id:'STU-005',  title:'언어의 연금술사',    tier:'유니크',isHiddenPolicy:'normal', prerequisites:[], gridPos:{x:8,y:7} },
             { id:'STU-013',  title:'명언 수집가',        tier:'유니크',isHiddenPolicy:'normal', prerequisites:[], gridPos:{x:9,y:7} },
@@ -3724,7 +3727,7 @@
           nodes: [
             { id:'CHAL-001', title:'한계돌파',         tier:'유니크',isHiddenPolicy:'normal', prerequisites:[],            gridPos:{x:1,y:5} },
             { id:'CHAL-002', title:'도전의 화신',      tier:'에픽', isHiddenPolicy:'normal', prerequisites:['CHAL-001'],  gridPos:{x:2,y:5} },
-            { id:'CHAL-003', title:'불가능에 도전한',  tier:'유니크',isHiddenPolicy:'normal', prerequisites:['CHAL-002'],  gridPos:{x:3,y:5} }
+            { id:'CHAL-003', title:'불가능에 도전한',  tier:'에픽', isHiddenPolicy:'normal', prerequisites:['CHAL-002'],  gridPos:{x:3,y:5} }
           ]
         },
         {
@@ -3733,7 +3736,7 @@
             { id:'CHAL-004', title:'언더독',           tier:'에픽', isHiddenPolicy:'normal', prerequisites:[],            gridPos:{x:5,y:6} },
             { id:'CHAL-005', title:'역전의 승부사',    tier:'유니크',isHiddenPolicy:'normal', prerequisites:['CHAL-004'],  gridPos:{x:4,y:7} },
             { id:'CHAL-011', title:'불사조',           tier:'에픽', isHiddenPolicy:'normal', prerequisites:['CHAL-004'],  gridPos:{x:6,y:7} },
-            { id:'CHAL-014', title:'부활한 영웅',      tier:'유일', isHiddenPolicy:'normal', prerequisites:['CHAL-011'],  gridPos:{x:6,y:8} }
+            { id:'CHAL-014', title:'부활한 영웅',      tier:'초월', isHiddenPolicy:'normal', prerequisites:['CHAL-011'],  gridPos:{x:6,y:8} }
           ]
         },
         {
@@ -3757,7 +3760,8 @@
             { id:'HID-004', title:'업적수집가',        tier:'히든', isHiddenPolicy:'hidden_until_first', prerequisites:[], gridPos:{x:1,y:9} },
             { id:'HID-005', title:'업적마스터',        tier:'히든', isHiddenPolicy:'hidden_until_first', prerequisites:[], gridPos:{x:2,y:9} },
             { id:'HID-006', title:'영웅적 활약',       tier:'히든', isHiddenPolicy:'hidden_until_first', prerequisites:[], gridPos:{x:3,y:9} },
-            { id:'HID-007', title:'0000의 기적',       tier:'히든', isHiddenPolicy:'hidden_until_first', prerequisites:[], gridPos:{x:4,y:9} }
+            { id:'HID-007', title:'0000의 기적',       tier:'히든', isHiddenPolicy:'hidden_until_first', prerequisites:[], gridPos:{x:4,y:9} },
+            { id:'HID-008', title:'한 자릿수의 미학',  tier:'히든', isHiddenPolicy:'hidden_until_first', prerequisites:[], gridPos:{x:4,y:8} }
           ]
         }
       ]

@@ -104,7 +104,7 @@ function executeSnackPurchase(studentName, itemName, price) {
 
   // 자산사용 시트 기록
   ss.getSheetByName(SHEET_SPEND).appendRow([
-    dateStr, studentName, brand, `[간식구매] ${itemName}`, price, newAsset, '간식 구매'
+    _todayStr(), studentName, brand, `[간식구매] ${itemName}`, price, newAsset, '간식 구매', dateStr
   ]);
   // 히스토리 시트 기록
   const curValue = Number(mainSheet.getRange(studentRowNum, COL_VALUE).getValue()) || 0;

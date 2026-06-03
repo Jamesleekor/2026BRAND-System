@@ -883,7 +883,7 @@ function donateToWelfare(studentName, amount, message) {
   // 자산사용 시트 기록
   const spendSheet = ss.getSheetByName(SHEET_SPEND);
   if (spendSheet) {
-    spendSheet.appendRow([today, studentName, data[studentRowIdx][COL_BRAND - 1], '기부', amount, newAsset, memo]);
+    spendSheet.appendRow([_todayStr(), studentName, data[studentRowIdx][COL_BRAND - 1], '기부', amount, newAsset, memo, today]);
   }
 
   // Firebase 개별 학생 스냅샷 갱신 (전체 랭킹 재계산 불필요)

@@ -111,8 +111,8 @@ function executeAuctionSold(studentInfo, itemDetails, price, roundNum) {
 
   // 자산사용 시트에 기록
   ss.getSheetByName(SHEET_SPEND).appendRow([
-    dateStr, studentInfo.name, studentInfo.brand,
-    `[경매낙찰] ${itemDetails.name}`, price, newAsset, '재판매 불가/무료 나눔만 가능'
+    _todayStr(), studentInfo.name, studentInfo.brand,
+    `[경매낙찰] ${itemDetails.name}`, price, newAsset, '재판매 불가/무료 나눔만 가능', dateStr
   ]);
   // 히스토리 시트에 기록
   ss.getSheetByName(SHEET_HISTORY).appendRow([

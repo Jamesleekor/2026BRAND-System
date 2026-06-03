@@ -199,9 +199,9 @@ function p2pTransfer(senderName, receiverName, amount, tag, description, quantit
   const spendSheet = ss.getSheetByName(SHEET_SPEND);
   if (spendSheet) {
     spendSheet.appendRow([
-      today, senderName, mainData[senderIdx][COL_BRAND - 1],
+      _todayStr(), senderName, mainData[senderIdx][COL_BRAND - 1],
       `[P2P송금] ${tag}`, amount, newSenderBalance,
-      `→${receiverName}: ${description}`
+      `→${receiverName}: ${description}`, today
     ]);
   }
 

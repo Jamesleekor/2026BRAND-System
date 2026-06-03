@@ -277,7 +277,7 @@ function purchaseShopItem(studentName, itemId) {
       const newAsset = current - price;
       const spendSheet = ss.getSheetByName(SHEET_SPEND);
       if (spendSheet) {
-        spendSheet.appendRow([today, studentName, mData[i][COL_BRAND-1], '상점구매', price, newAsset, `[${itemName}] 구매`]);
+        spendSheet.appendRow([_todayStr(), studentName, mData[i][COL_BRAND-1], '상점구매', price, newAsset, `[${itemName}] 구매`, today]);
       }
       // 히스토리 시트에 기록
       const histSheet = ss.getSheetByName(SHEET_HISTORY);

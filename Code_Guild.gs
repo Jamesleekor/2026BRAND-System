@@ -629,7 +629,7 @@ function calcAllGuildMissionFinalScores() {
 // ============================================================
 
 /**
- * 매월 30일 13:00에 트리거로 자동 실행됩니다.
+ * 매주 월요일 13:00에 트리거로 자동 실행됩니다 (당월 누계 재산출).
  * calcAllGuildMissionFinalScores 선행 호출 후 GS 계산.
  */
 function calcMonthlyGS() {
@@ -650,14 +650,15 @@ function calcMonthlyGS() {
   var now       = new Date();
   var yearMonth = Utilities.formatDate(now, "Asia/Seoul", "yyyy-MM");
 
-  // 이미 이번 달 계산됐으면 중복 방지
-  var gsData = gsSheet.getDataRange().getValues();
-  for (var i = 1; i < gsData.length; i++) {
-    if (String(gsData[i][0]).trim() === yearMonth) {
-      Logger.log("[calcMonthlyGS] 이번 달 이미 계산됨: " + yearMonth);
-      return;
-    }
-  }
+  // [추가] 이번 달 범위 (미션/참여/세션 월별 필터에 공통 사용)
+  var monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  monthStart.setHours(0, 0, 0, 0);
+  var monthEnd   = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  monthEnd.setHours(23, 59, 59, 999);
+
+  // [수정] 매주 재계산 지원: 이번 달 기존 행이 있으면 삭제 후 재산출 (중복방지 → 덮어쓰기)
+  //        기존에는 이미 계산되어 있으면 return 했으나, 매주 갱신을 위해 당월 행을 지우고 다시 씀.
+  _deleteMonthRows(gsSheet, yearMonth, 0); // A열(0)=월 기준
 
   // ── 메인 시트에서 학생별 자산 조회 ───────────────────────────
   // ── 메인 시트에서 학생별 현재 브랜드가치 조회 (종료값용) ───────
@@ -679,8 +680,7 @@ if (trackSheet) {
   var trackHeaders = trackData[0]; // 1행: 날짜 헤더
 
   // 이번 달 1일 찾기 (없으면 이번 달 내 가장 첫 번째 날짜)
-  var monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  var monthEnd   = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  // [수정] monthStart/monthEnd는 함수 상단에서 이미 정의됨 (중복 선언 제거)
 
   var startColIdx = -1;
   var closestDate = null;
@@ -714,6 +714,9 @@ if (trackSheet) {
   for (var k = 1; k < logData.length; k++) {
     var mId    = String(logData[k][0]).trim();
     var gId    = String(logData[k][1]).trim();
+    // [수정] 이번 달에 마감된 미션만 집계 (D열=마감일 기준). 과거 달 미션 누적 방지.
+    var mEnd   = new Date(logData[k][3]); // D열: 마감일
+    if (isNaN(mEnd.getTime()) || mEnd < monthStart || mEnd > monthEnd) continue;
     var mScore = parseFloat(logData[k][8]) || 0; // I열
     var weight = MISSION_WEIGHTS[mId] || 0;
     if (missionScoreMap.hasOwnProperty(gId)) {
@@ -736,10 +739,13 @@ if (trackSheet) {
     var studentGuildMap = _buildStudentGuildMap(mbSheet);
 
     for (var a = 1; a < actData.length; a++) {
+      var aDate   = new Date(actData[a][0]); // A열: 날짜
       var aType   = String(actData[a][1]).trim(); // B열: 유형
       var aName   = String(actData[a][3]).trim(); // D열: 학생명
       var aResult = String(actData[a][4]).trim(); // E열: O/X
 
+      // [수정] 이번 달 참여만 집계 (A열=날짜 기준). 과거 달 누적 방지.
+      if (isNaN(aDate.getTime()) || aDate < monthStart || aDate > monthEnd) continue;
       if (aResult !== "O" || aType !== "미션") continue;
       var aGuildId = studentGuildMap[aName];
       if (!aGuildId || !actMap[aGuildId]) continue;
@@ -753,8 +759,11 @@ if (trackSheet) {
   if (sesSheet) {
     var sesData = sesSheet.getDataRange().getValues();
     for (var s = 1; s < sesData.length; s++) {
+      var sDate    = new Date(sesData[s][0]); // A열: 날짜
       var sGuildId = String(sesData[s][1]).trim(); // B열: 길드ID
       var sResult  = String(sesData[s][3]).trim(); // D열: O/X
+      // [수정] 이번 달 출석만 집계 (A열=날짜 기준). 과거 달 누적 방지.
+      if (isNaN(sDate.getTime()) || sDate < monthStart || sDate > monthEnd) continue;
       if (sResult !== "O") continue;
       if (!actMap[sGuildId]) continue;
       actMap[sGuildId].sessionCount++;
@@ -988,7 +997,7 @@ function _recalcGSRank(gsSheet, yearMonth) {
 /**
  * 이 함수를 한 번만 실행하면 자동 트리거 2개가 등록됩니다.
  *   1) runDailyGuildVerification — 매일 09:00
- *   2) calcMonthlyGS            — 매월 30일 13:00
+ *   2) calcMonthlyGS            — 매주 월요일 13:00
  *
  * ※ 중복 등록 방지: 기존 트리거를 먼저 삭제하고 새로 등록합니다.
  * ※ Apps Script 편집기에서 한 번만 실행하면 됩니다.
@@ -1013,16 +1022,18 @@ function setupGuildTriggers() {
     .atHour(9)
     .create();
 
-  // 2) 매월 30일 13:00 GS 산출
+  // 2) [수정] 매주 월요일 13:00 GS 산출 (기존: 매월 30일 → 매주 재계산)
+  //    calcMonthlyGS가 당월 기존 행을 삭제 후 재산출하므로 매주 실행해도 안전.
+  //    한 주가 지날 때마다 그 시점까지의 당월 누계로 GS가 갱신됨.
   ScriptApp.newTrigger("calcMonthlyGS")
     .timeBased()
-    .onMonthDay(30)
+    .onWeekDay(ScriptApp.WeekDay.MONDAY)
     .atHour(13)
     .create();
 
   Logger.log("[setupGuildTriggers] 트리거 2개 등록 완료.");
   SpreadsheetApp.getActiveSpreadsheet().toast(
-    "트리거 등록 완료: 일일 검증(09:00) + 월간 GS(매월 30일 13:00)",
+    "트리거 등록 완료: 일일 검증(09:00) + 주간 GS(매주 월요일 13:00)",
     "트리거 설정", 5
   );
 }
@@ -1216,6 +1227,36 @@ function _getPrevMonthGSRow(gsSheet, guildId, currentYearMonth) {
   }
 
   return prev;
+}
+
+/**
+ * [추가] 시트에서 특정 월(yyyy-MM)에 해당하는 행을 모두 삭제합니다.
+ * 매주 재계산 시 기존 행을 지우고 새로 쓰기 위해 사용합니다.
+ * (calcMonthlyGS / calcMonthlyIndividualGS 공용)
+ *
+ * @param {Sheet}  sheet      - 대상 시트
+ * @param {string} yearMonth  - "yyyy-MM"
+ * @param {number} colIdx     - 월 값이 들어있는 열의 0-based 인덱스 (보통 0 = A열)
+ */
+function _deleteMonthRows(sheet, yearMonth, colIdx) {
+  if (!sheet) return;
+  var data = sheet.getDataRange().getValues();
+  var deleted = 0;
+  // 아래에서 위로 삭제 (행 인덱스 밀림 방지)
+  for (var i = data.length - 1; i >= 1; i--) {
+    var cellVal = data[i][colIdx];
+    var cellYM  = cellVal instanceof Date
+      ? Utilities.formatDate(cellVal, 'Asia/Seoul', 'yyyy-MM')
+      : String(cellVal).trim().substring(0, 7);
+    if (cellYM === yearMonth) {
+      sheet.deleteRow(i + 1); // data는 0-based, 시트는 1-based
+      deleted++;
+    }
+  }
+  if (deleted > 0) {
+    Logger.log('[_deleteMonthRows] ' + sheet.getName() + ' / ' + yearMonth +
+               ' 기존 ' + deleted + '개 행 삭제 (재계산 준비).');
+  }
 }
 
 /** Date를 당일 00:00:00으로 변환 */
@@ -1610,6 +1651,30 @@ function getGuildCardDataForStudent(studentName) {
     });
   }
 
+  // ── [추가] 내 개인 기여도 + 길드 내 순위 (길드_개인기여도 시트) ──
+  // 길드_개인기여도: A=월, B=길드ID, C=학생명, D=증가량, E=미션참여, F=세션출석,
+  //                  G=α점수, H=참여점수, I=출석점수, J=기여점수합계, K=길드내순위
+  var myContribScore = null;
+  var myContribRank  = null;
+  var myGuildSize    = members.length;
+  var indSheet = ss.getSheetByName("길드_개인기여도");
+  if (indSheet) {
+    var indData = indSheet.getDataRange().getValues();
+    var foundYM = null; // 가장 최근 달 데이터 우선
+    for (var ii = 1; ii < indData.length; ii++) {
+      if (String(indData[ii][2]).trim() !== studentName) continue; // C열: 학생명
+      var iCell = indData[ii][0];
+      var iYM   = iCell instanceof Date
+        ? Utilities.formatDate(iCell, "Asia/Seoul", "yyyy-MM")
+        : String(iCell).trim().substring(0, 7);
+      if (foundYM === null || iYM > foundYM) {
+        foundYM        = iYM;
+        myContribScore = parseFloat(indData[ii][9]) || 0;   // J열: 기여점수합계
+        myContribRank  = parseInt(indData[ii][10])  || null; // K열: 길드내순위
+      }
+    }
+  }
+
   return {
     hasGuild            : true,
     guildId             : myGuildId,
@@ -1618,6 +1683,9 @@ function getGuildCardDataForStudent(studentName) {
     members             : members,
     myRank              : myRank,
     myGS                : myGS,
+    myContribScore      : myContribScore,   // [추가] 내 기여점수합계 (최대 0.75)
+    myContribRank       : myContribRank,    // [추가] 길드 내 순위
+    myGuildSize         : myGuildSize,      // [추가] 길드원 수 (n위 / m명 표기용)
     missionResults      : results,
     missionClearedCount : clearedCt,
     allRanks            : allRanks
@@ -1992,6 +2060,83 @@ function getPeerEvalStatusUI(studentName, missionId) {
 }
 
 
+/**
+ * [추가] 동료평가 강제용 — 이 학생이 "끝난 미션"에서 아직 제출하지 않은
+ *        동료평가 건수를 집계해 반환합니다.
+ *
+ * 평가 의무 대상: 본인 소속 길드의 미션 중 상태가 '클리어' 또는 '실패'인 것
+ *               (진행중/대기 미션은 아직 평가하지 않아도 됨)
+ *
+ * @param {string} studentName
+ * @returns {object} {
+ *   success: boolean,
+ *   totalPending: number,                 // 미완료 평가 총 건수
+ *   missions: [ { missionId, pending, total } ]  // 미션별 미완료 내역
+ * }
+ */
+function getPendingPeerEvalSummary(studentName) {
+  try {
+    if (!studentName) return { success: true, totalPending: 0, missions: [] };
+
+    var ss        = SpreadsheetApp.getActiveSpreadsheet();
+    var mbSheet   = ss.getSheetByName(SHEET_NAMES.GUILD_MEMBERS);
+    var logSheet  = ss.getSheetByName(SHEET_NAMES.MISSION_LOG);
+    var evalSheet = ss.getSheetByName("길드_동료평가");
+
+    var studentGuildMap = _buildStudentGuildMap(mbSheet);
+    var guildId = studentGuildMap[studentName];
+    if (!guildId) return { success: true, totalPending: 0, missions: [] };
+
+    // 같은 길드의 다른 멤버 = 평가해야 할 대상
+    var coMembers = _getGuildMembers(guildId).filter(function(n) { return n !== studentName; });
+    if (coMembers.length === 0) return { success: true, totalPending: 0, missions: [] };
+
+    // 끝난 미션(클리어/실패)만 평가 의무 대상으로 수집
+    var endedMissions = [];
+    if (logSheet) {
+      var logData = logSheet.getDataRange().getValues();
+      for (var i = 1; i < logData.length; i++) {
+        if (String(logData[i][1]).trim() !== guildId) continue; // B열: 길드ID
+        var st = String(logData[i][4]).trim();                  // E열: 상태
+        if (st === MISSION_STATUS.CLEARED || st === MISSION_STATUS.FAILED) {
+          endedMissions.push(String(logData[i][0]).trim());     // A열: 미션ID
+        }
+      }
+    }
+    if (endedMissions.length === 0) return { success: true, totalPending: 0, missions: [] };
+
+    // 이 학생이 이미 제출한 평가 맵 { missionId: { 대상명: true } }
+    var doneMap = {};
+    if (evalSheet) {
+      var evalData = evalSheet.getDataRange().getValues();
+      for (var e = 1; e < evalData.length; e++) {
+        if (String(evalData[e][2]).trim() !== studentName) continue; // C열: 평가자
+        var mid = String(evalData[e][0]).trim(); // A열: 미션ID
+        var tgt = String(evalData[e][3]).trim(); // D열: 피평가자
+        if (!doneMap[mid]) doneMap[mid] = {};
+        doneMap[mid][tgt] = true;
+      }
+    }
+
+    // 미션별 미완료 수 집계
+    var missions     = [];
+    var totalPending = 0;
+    endedMissions.forEach(function(mid) {
+      var done    = doneMap[mid] || {};
+      var pending = coMembers.filter(function(n) { return !done[n]; }).length;
+      if (pending > 0) {
+        missions.push({ missionId: mid, pending: pending, total: coMembers.length });
+        totalPending += pending;
+      }
+    });
+
+    return { success: true, totalPending: totalPending, missions: missions };
+  } catch (e) {
+    return { success: false, msg: e.message, totalPending: 0, missions: [] };
+  }
+}
+
+
 // ============================================================
 // 헬퍼: 학생명 → 길드ID 매핑 캐시 생성
 // ============================================================
@@ -2182,18 +2327,9 @@ function calcMonthlyIndividualGS() {
     Logger.log('[calcMonthlyIndividualGS] 길드_개인기여도 시트 자동 생성.');
   }
 
-  // ── 이번 달 중복 방지 ─────────────────────────────────────────────
-  var existingData = indSheet.getDataRange().getValues();
-  for (var ex = 1; ex < existingData.length; ex++) {
-    var cellVal = existingData[ex][0];
-    var cellYM  = cellVal instanceof Date
-      ? Utilities.formatDate(cellVal, 'Asia/Seoul', 'yyyy-MM')
-      : String(cellVal).trim().substring(0, 7);
-    if (cellYM === yearMonth) {
-      Logger.log('[calcMonthlyIndividualGS] 이번 달 이미 계산됨: ' + yearMonth);
-      return;
-    }
-  }
+  // [수정] 매주 재계산 지원: 이번 달 기존 행 삭제 후 재산출 (중복방지 → 덮어쓰기)
+  //        기존에는 이미 계산되어 있으면 return 했으나, 매주 갱신을 위해 당월 행을 지우고 다시 씀.
+  _deleteMonthRows(indSheet, yearMonth, 0); // A열(0)=월 기준
 
   // ── 1. 전체 활성 길드원 목록 수집 ────────────────────────────────
   // { 학생명: 길드ID }

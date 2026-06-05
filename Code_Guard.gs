@@ -478,23 +478,53 @@ function getGuardBriefingAI(period, startDate, endDate) {
 }
 
 // ── 수호대: 이상 거래 목록 반환 (메모 포함) ─────────────────────
-function getP2PAlertsForGuard() {
+function getP2PAlertsForGuard(period, startDate, endDate) {
   const ss    = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName(SHEET_P2P);
   if (!sheet) return [];
 
   const data = sheet.getDataRange().getValues();
 
-  // ─1단계: 전체 행 파싱
+  // ── [추가] 기간 필터 기준 계산 (스트리밍 탭 getGuardDashboardData와 동일 규칙) ──
+  // period가 'all' 또는 미지정이면 cutoff=null → 전체 조회(기존 동작과 동일)
+  const now = new Date();
+  let cutoff = null;
+  let customStart = null, customEnd = null;
+  if (period === 'custom') {
+    customStart = startDate ? String(startDate).substring(0, 10) : null;
+    customEnd   = endDate   ? String(endDate).substring(0, 10)   : null;
+  } else if (period === 'week') {
+    const day  = now.getDay();             // 0=일, 1=월
+    const diff = (day === 0 ? -6 : 1 - day);
+    cutoff = new Date(now);
+    cutoff.setDate(now.getDate() + diff);
+  } else if (period === 'month') {
+    cutoff = new Date(now.getFullYear(), now.getMonth(), 1);
+  }
+
+  // ─1단계: 전체 행 파싱 (+ [추가] 기간 필터 적용)
   const rows = [];
   for (let i = 1; i < data.length; i++) {
     if (!data[i][0]) continue;
+
+    // [수정] 날짜 문자열을 먼저 계산해서 기간 필터에 사용
+    const dateStr = (data[i][1] instanceof Date)
+      ? Utilities.formatDate(data[i][1], Session.getScriptTimeZone(), 'yyyy-MM-dd')
+      : String(data[i][1]).substring(0, 10);
+
+    // [추가] 기간 필터 (스트리밍 탭과 동일하게 적용 — 문자열 비교라 timezone 문제 없음)
+    if (period === 'custom') {
+      if (customStart && dateStr < customStart) continue;
+      if (customEnd   && dateStr > customEnd)   continue;
+    } else if (cutoff) {
+      const cutoffStr = Utilities.formatDate(cutoff, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+      if (dateStr < cutoffStr) continue;
+    }
+
     rows.push({
       rowNum:         i + 1,
       txnId:          String(data[i][0]),
-      date:           (data[i][1] instanceof Date)
-                        ? Utilities.formatDate(data[i][1], Session.getScriptTimeZone(), 'yyyy-MM-dd')
-                        : String(data[i][1]).substring(0, 10),
+      date:           dateStr,
       sender:         String(data[i][2]).trim(),
       receiver:       String(data[i][3]).trim(),
       amount:         Number(data[i][4]) || 0,
@@ -516,21 +546,26 @@ function getP2PAlertsForGuard() {
       tx.anomalyReasons.push('태그 불일치 의심');
   });
 
-  // ─3단계: 하루 기준 동일 페어 반복/금액 집중 감지
-  const dayPairCount  = {};
-  const dayPairAmount = {};
+  // ─3단계: 반복 거래 / 금액 집중 감지
+  // [수정] '반복 거래'는 스트리밍 탭과 동일하게 '기간 전체' 기준(보낸사람|받는사람)으로 집계
+  //        → 같은 두 사람이 기간 내 3회 이상 거래하면 반복 거래로 표시
+  //        ('금액 집중'은 기존대로 '하루(date)' 기준 그대로 유지)
+  const pairCount     = {};   // [추가] 기간 전체 동일 페어 건수 (날짜 무시)
+  const dayPairAmount = {};   // [原본 유지] 하루 기준 페어 금액 합계
   rows.forEach(function(tx) {
-    const key = tx.date + '|' + tx.sender + '|' + tx.receiver;
-    dayPairCount[key]  = (dayPairCount[key]  || 0) + 1;
-    dayPairAmount[key] = (dayPairAmount[key] || 0) + tx.amount;
+    const pairKey = tx.sender + '|' + tx.receiver;                  // [수정] 날짜 제거
+    const dayKey  = tx.date + '|' + tx.sender + '|' + tx.receiver;  // [原본 유지]
+    pairCount[pairKey]    = (pairCount[pairKey]    || 0) + 1;
+    dayPairAmount[dayKey] = (dayPairAmount[dayKey] || 0) + tx.amount;
   });
   rows.forEach(function(tx) {
-    const key = tx.date + '|' + tx.sender + '|' + tx.receiver;
-    if (dayPairCount[key] >= 3 &&
+    const pairKey = tx.sender + '|' + tx.receiver;
+    const dayKey  = tx.date + '|' + tx.sender + '|' + tx.receiver;
+    if (pairCount[pairKey] >= 3 &&
         tx.anomalyReasons.indexOf('반복 거래') === -1) {
       tx.anomalyReasons.push('반복 거래');
     }
-    if (dayPairAmount[key] >= 500 &&
+    if (dayPairAmount[dayKey] >= 500 &&
         tx.anomalyReasons.indexOf('금액 집중') === -1) {
       tx.anomalyReasons.push('금액 집중');
     }
@@ -669,4 +704,3 @@ function getGuardPenaltyLog() {
   }
   return result.reverse(); // 최신순
 }
-  

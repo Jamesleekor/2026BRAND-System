@@ -625,7 +625,7 @@ function loadData() {
     .withFailureHandler(function(e) {
       console.log('알림 데이터 로드 실패: ' + e.message);
     })
-    .getP2PAlertsForGuard();
+    .getP2PAlertsForGuard(_currentPeriod, _customStart, _customEnd);
 }
 
 function renderAll() {

@@ -55,7 +55,7 @@ function calcCreditScore(studentName) {
   const maxDonation = donVals.length > 0 ? Math.max.apply(null, donVals) : 0;
   const donationScore = maxDonation > 0 ? Math.floor((myDonation / maxDonation) * 100) : 50;
 
-  // P2P 거래로그: 평판 점수 (최대 100점) + 이상거래 건수
+  // P2P 거래로그: 평판 점수 (최대 100점) + 이상거래 '최종적발' 건수 (의심 단계 제외)
   const p2pSheet = ss.getSheetByName(SHEET_P2P);
   const p2pData  = p2pSheet ? p2pSheet.getDataRange().getValues() : [];
   let ratingSum = 0, ratingCount = 0, myAnomalyCount = 0;
@@ -67,8 +67,10 @@ function calcCreditScore(studentName) {
     if (receiver === String(studentName).trim() && rating > 0) {
       ratingSum += rating; ratingCount++;
     }
+    // [수정] 의심 단계('이상거래')는 신용점수 차감에서 제외.
+    //        실제 확정('최종적발')일 때만 차감하도록 변경.
     if ((sender === String(studentName).trim() || receiver === String(studentName).trim()) &&
-        (status === '이상거래' || status === '최종적발')) {
+        (status === '최종적발')) {
       myAnomalyCount++;
     }
   }

@@ -39,9 +39,18 @@ function _getAssignFolder(assignId) {
 function getAssignmentList(studentName) {
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const { listSheet, submitSheet } = _ensureAssignmentSheets(ss);
+
+    // [수정] 읽기 전용 조회이므로 _ensureAssignmentSheets(쓰기 포함) 대신
+    //        getSheetByName 직접 사용 → 과제제출 시트 없어도 오류 없이 진행
+    const listSheet = ss.getSheetByName(SHEET_ASSIGN_LIST);
+    if (!listSheet) return { success: false, msg: '과제목록 시트를 찾을 수 없습니다.' };
+
     const listData   = listSheet.getDataRange().getValues();
-    const submitData = submitSheet.getDataRange().getValues();
+    const submitSheet = ss.getSheetByName(SHEET_ASSIGN_SUBMIT);
+    // 과제제출 시트가 아직 없으면(첫 사용) 빈 배열로 대체 → submitMap = {}
+    const submitData = submitSheet && submitSheet.getLastRow() > 0
+      ? submitSheet.getDataRange().getValues()
+      : [];
     const tz         = Session.getScriptTimeZone();
     const now        = new Date();
 

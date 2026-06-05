@@ -2997,6 +2997,18 @@
         </div>
       </div>
 
+      <!-- [추가] 내 길드 기여도 -->
+      <div id="guildMyContribBox" style="display:none;align-items:center;justify-content:space-between;gap:10px;padding:11px 13px;background:rgba(212,172,13,0.10);border:1px solid rgba(212,172,13,0.28);border-radius:8px;margin-bottom:12px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:18px;">⭐</span>
+          <div>
+            <div style="font-size:11px;color:#9ca3af;">내 길드 기여도</div>
+            <div id="guildMyContribRank" style="font-size:12px;color:#d4ac0d;font-weight:bold;">-</div>
+          </div>
+        </div>
+        <div id="guildMyContribScore" style="font-size:17px;font-weight:bold;color:#fbbf24;">-</div>
+      </div>
+
       <!-- 길드 멤버 -->
       <div style="margin-bottom:14px;">
         <div style="font-size:12px;color:#888;margin-bottom:6px;font-weight:bold;">👥 길드원</div>
@@ -3092,6 +3104,20 @@
           <div style="font-size:32px;margin-bottom:8px;">✅</div>
           <div style="font-size:14px;color:#1a6b3c;font-weight:bold;">이 미션의 모든 평가를 완료했습니다!</div>
           <div style="font-size:12px;color:#aaa;margin-top:4px;">결과는 전원 제출 후 공개됩니다.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- [추가] 동료평가 강제 게이트 모달 -->
+    <div id="peerEvalGateModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.74);z-index:10000;align-items:center;justify-content:center;padding:20px;">
+      <div style="background:#161b22;border:1px solid rgba(212,172,13,0.45);border-radius:14px;max-width:360px;width:100%;padding:22px 20px;box-shadow:0 10px 40px rgba(0,0,0,0.55);">
+        <div style="text-align:center;font-size:36px;margin-bottom:6px;">🤝</div>
+        <div style="text-align:center;font-size:16px;font-weight:bold;color:#fbbf24;margin-bottom:8px;">동료평가를 완료해주세요</div>
+        <div id="peerEvalGateMsg" style="font-size:12px;color:#9ca3af;line-height:1.7;text-align:center;margin-bottom:14px;"></div>
+        <div id="peerEvalGateList" style="background:rgba(212,172,13,0.08);border:1px solid rgba(212,172,13,0.18);border-radius:8px;padding:11px 13px;margin-bottom:16px;font-size:12px;color:#e6edf3;line-height:1.9;"></div>
+        <button onclick="goToPeerEvalFromGate()" style="width:100%;padding:12px;border:none;border-radius:8px;background:#d4ac0d;color:#161b22;font-weight:bold;font-size:14px;cursor:pointer;">지금 평가하러 가기 ▶</button>
+        <div id="peerEvalGateCloseWrap" style="text-align:center;margin-top:11px;display:none;">
+          <span onclick="closePeerEvalGate()" style="font-size:11px;color:#6e7681;cursor:pointer;text-decoration:underline;">나중에 하기</span>
         </div>
       </div>
     </div>
@@ -6221,6 +6247,7 @@ function calcDepositPreview() {
 
 // ── 예금 가입 제출 ────────────────────────────────────────────
 function submitDeposit() {
+  if (_peerEvalGateActive('예금 가입')) return; // [추가] 동료평가 강제
   if (!_depositProd) { alert('현재 가입 가능한 상품이 없습니다.'); return; }
   var amount = parseInt(document.getElementById('depositAmount').value) || 0;
   var weeks  = _selectedWeeks;
@@ -6508,6 +6535,7 @@ function calcSavingPreviewUI() {
 }
 
 function submitSaving() {
+  if (_peerEvalGateActive('적금 가입')) return; // [추가] 동료평가 강제
   if (!_savingProd) { alert('현재 가입 가능한 상품이 없습니다.'); return; }
   var per    = parseInt(document.getElementById('savingPerAmount').value) || 0;
   var rounds = parseInt(document.getElementById('savingRounds').value) || 0;
@@ -7921,6 +7949,7 @@ function requestCancelSaving(savId, principal) {
   }
 
   function buyShopItem(itemId) {
+    if (_peerEvalGateActive('상점 구매')) return; // [추가] 동료평가 강제
     if (!confirm('구매하시겠습니까?')) return;
     google.script.run.withSuccessHandler(function(res) {
       if (!res.success) { alert('오류: ' + res.msg); return; }
@@ -8628,6 +8657,7 @@ function requestCancelSaving(savId, principal) {
 
   // 대출 신청 실행
   function submitLoan() {
+    if (_peerEvalGateActive('대출 신청')) return; // [추가] 동료평가 강제
     var amount  = Number(document.getElementById('loanAmountInput').value);
     var purpose = document.getElementById('loanPurposeSelect').value;
     var msgEl   = document.getElementById('loanModalMsg');
@@ -9036,6 +9066,7 @@ function showBuySuccessToast(itemName, qty, totalCost, newBalance) {
 }
 
 function confirmBuyItem() {
+  if (_peerEvalGateActive('간식 구매')) return; // [추가] 동료평가 강제
   var qty = parseInt(document.getElementById('buyQtyInput').value) || 1;
   if (qty < 1) { alert('수량은 1개 이상이어야 합니다.'); return; }
 
@@ -9270,6 +9301,8 @@ function loadGuildCardForStudent(studentName) {
       renderGuildCard(data);
       // 길드 카드 성공 후 동료 평가 결과도 로드
       loadPeerEvalResults(studentName);
+      // [추가] 미완료 동료평가 강제 게이트 로드 (있으면 강제 모달 + 기능 잠금)
+      loadPeerEvalGate(studentName);
     })
     .withFailureHandler(function(err) {
       // 길드 시스템 미가동 시에도 대시보드는 정상 동작해야 하므로 조용히 숨김
@@ -9353,6 +9386,25 @@ function renderGuildCard(data) {
     rankBadge.innerText = '순위 산출 전';
     rankBadge.style.color = '#aaa';
     if (myGSEl) myGSEl.innerText = '';
+  }
+
+  // ── [추가] 내 개인 기여도 표시 ──
+  var contribBox   = document.getElementById('guildMyContribBox');
+  var contribScore = document.getElementById('guildMyContribScore');
+  var contribRank  = document.getElementById('guildMyContribRank');
+  if (contribBox) {
+    if (data.myContribScore !== null && data.myContribScore !== undefined) {
+      contribBox.style.display = 'flex';
+      contribScore.innerText = Number(data.myContribScore).toFixed(2) + '점';
+      if (data.myContribRank) {
+        var sizeTxt = data.myGuildSize ? (' / ' + data.myGuildSize + '명') : '';
+        contribRank.innerText = '길드 내 ' + data.myContribRank + '위' + sizeTxt;
+      } else {
+        contribRank.innerText = '순위 산출 전';
+      }
+    } else {
+      contribBox.style.display = 'none';
+    }
   }
 
   // ── 길드 멤버 ──
@@ -9678,6 +9730,8 @@ function submitPeerEvalForm() {
       openPeerEvalModal(_peerEvalCurrentMissionId, _peerEvalCurrentMissionName);
       // 동료평가 결과 목록도 갱신
       loadPeerEvalResults(sName);
+      // [추가] 미완료 평가 게이트 재계산 (다 끝나면 잠금 자동 해제)
+      loadPeerEvalGate(sName);
     })
     .withFailureHandler(function(err) {
       if (submitBtn) { submitBtn.disabled = false; submitBtn.innerText = '제출하기'; }
@@ -9700,6 +9754,100 @@ function closePeerEvalModal() {
   if (modal) modal.style.display = 'none';
   _peerEvalCurrentTarget = null;
   _peerEvalCurrentScore  = null;
+}
+
+// ══════════════════════════════════════════════════════
+// [추가] 동료평가 강제 게이트
+//  - 끝난 미션의 미완료 평가가 있으면 로그인 시 강제 모달 표시
+//  - 상점/간식/예금/적금/대출 기능을 잠그고, 평가 완료 시 자동 해제
+// ══════════════════════════════════════════════════════
+window._peerEvalGate = { pending: 0, missions: [] };
+
+function loadPeerEvalGate(studentName) {
+  if (!studentName) return;
+  google.script.run
+    .withSuccessHandler(function(res) {
+      if (!res || !res.success) { window._peerEvalGate = { pending: 0, missions: [] }; return; }
+      window._peerEvalGate = { pending: res.totalPending || 0, missions: res.missions || [] };
+      if (window._peerEvalGate.pending > 0) {
+        showPeerEvalGate('login', null);
+      } else {
+        closePeerEvalGate();
+      }
+    })
+    .withFailureHandler(function() {
+      // 길드 시스템 미가동 등 — 잠그지 않음(정상 이용 보장)
+      window._peerEvalGate = { pending: 0, missions: [] };
+    })
+    .getPendingPeerEvalSummary(studentName);
+}
+
+/** 잠금 대상 액션 진입 시 호출. 잠겨 있으면 true 반환(액션 중단) */
+function _peerEvalGateActive(featureLabel) {
+  var g = window._peerEvalGate;
+  if (g && g.pending > 0) {
+    showPeerEvalGate('block', featureLabel);
+    return true;
+  }
+  return false;
+}
+
+/** 미션ID → 친근한 이름 */
+function _peerEvalMissionName(mid) {
+  if (mid === 'PROJECT') return '최종 프로젝트';
+  if (typeof GUILD_MISSION_META_STUDENT === 'undefined') return mid;
+  var m = GUILD_MISSION_META_STUDENT.find(function(x) { return x.id === mid; });
+  return m ? (mid + ' ' + m.name) : mid;
+}
+
+/**
+ * @param {string} mode  'login'(닫기 없음, 강제) | 'block'(액션 차단 안내, 닫기 허용)
+ * @param {string} featureLabel  'block' 모드에서 차단된 기능명
+ */
+function showPeerEvalGate(mode, featureLabel) {
+  var g = window._peerEvalGate || { pending: 0, missions: [] };
+  if (g.pending <= 0) return;
+
+  var modal     = document.getElementById('peerEvalGateModal');
+  var msgEl     = document.getElementById('peerEvalGateMsg');
+  var listEl    = document.getElementById('peerEvalGateList');
+  var closeWrap = document.getElementById('peerEvalGateCloseWrap');
+  if (!modal) return;
+
+  if (mode === 'block') {
+    msgEl.innerHTML = '<b style="color:#fbbf24;">' + (featureLabel || '이 기능') +
+      '</b> 이용은 동료평가를 모두 마친 뒤에 가능해요.<br>아직 <b style="color:#fbbf24;">' +
+      g.pending + '건</b>이 남아 있습니다.';
+    if (closeWrap) closeWrap.style.display = 'block'; // 본인이 연 경우 → 닫기 허용
+  } else {
+    msgEl.innerHTML = '아직 완료하지 않은 동료평가가 <b style="color:#fbbf24;">' +
+      g.pending + '건</b> 있어요.<br>평가를 모두 마쳐야 상점·간식·예금·대출을 이용할 수 있습니다.';
+    if (closeWrap) closeWrap.style.display = 'none';  // 로그인 강제 → 닫기 없음
+  }
+
+  listEl.innerHTML = (g.missions || []).map(function(m) {
+    return '• ' + _peerEvalMissionName(m.missionId) +
+      ' <span style="color:#fbbf24;">(' + m.pending + '명 남음)</span>';
+  }).join('<br>') || '평가 대기 항목 있음';
+
+  modal.style.display = 'flex';
+}
+
+function closePeerEvalGate() {
+  var modal = document.getElementById('peerEvalGateModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function goToPeerEvalFromGate() {
+  closePeerEvalGate();
+  var guildTabBtn = document.querySelector('.dash-tab[onclick*="guild"]');
+  switchDashTab('guild', guildTabBtn || null);
+  setTimeout(function() {
+    var anchor = document.getElementById('peerEvalList');
+    if (anchor && anchor.scrollIntoView) {
+      anchor.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, 150);
 }
 </script>
 

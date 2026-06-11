@@ -1669,7 +1669,7 @@ function getGuildCardDataForStudent(studentName) {
         : String(iCell).trim().substring(0, 7);
       if (foundYM === null || iYM > foundYM) {
         foundYM        = iYM;
-        myContribScore = parseFloat(indData[ii][9]) || 0;   // J열: 기여점수합계
+        myContribScore = Math.round((parseFloat(indData[ii][9]) || 0) * 1000);   // J열: 기여점수합계 (×1000 스케일)
         myContribRank  = parseInt(indData[ii][10])  || null; // K열: 길드내순위
       }
     }

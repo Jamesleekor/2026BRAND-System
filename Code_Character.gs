@@ -102,7 +102,10 @@ function getCharacterReply(studentName, charId, message){
       else                           reply = cfg.warn2   || cfg.warn1 || _crossedLine_(cfg);
     }
 
-    _saveAffinityRow_(sheet, row, d);
+    _saveAffinityRow_(sheet, row, d);   // ★ 추가: 갱신된 호감도/상태를 시트에 기록
+
+    _appendChatLog_(ss, studentName, charId, 'me',   message);
+    _appendChatLog_(ss, studentName, charId, 'char', reply);
 
     return {
       ok: true,
@@ -128,9 +131,15 @@ function _buildPrompt_(cfg, stage, studentName, economySummary){
     if (cfg.fragments[i-1]) fragments.push('(' + i + '단계) ' + cfg.fragments[i-1]);
   }
   var relation = cfg.relations[stage-1] || '';
+  var tone = (stage <= 2) ? '무뚝뚝하고 거리감 있는 반말' : '다정하고 편안한 반말';
 
   var tail =
     '\n\n[지금 이 학생과의 관계]\n' + relation +
+    '\n\n[말하기 규칙 — 반드시 지켜라]\n' +
+    '1) 말투: 항상 반말을 쓴다(존댓말 금지). 지금은 ' + tone + '로 말한다. 한 답변 안에서 존댓말과 반말을 절대 섞지 마라.\n' +
+    '2) 신비로운 비유(별·우주·시간)는 최대 한 문장까지만. 나머지는 학생이 지금 당장 실천할 수 있는 구체적인 조언으로 답하라. ' +
+    '"무엇을 어떻게 하면 되는지"를 반드시 한 가지 이상 분명히 알려주고, 모호하게 끝내지 마라. (예: 어떤 업적부터 노릴지, 얼마를 얼마간 모을지 등)\n' +
+    '3) 답변은 2~4문장으로 짧게.\n' +
     '\n\n[지금까지 너에게 돌아온 네 기억 — 반드시 이 범위 안에서만 이야기하라]\n' + (fragments.join('\n') || '(아직 거의 기억나지 않는다)') +
     '\n\n[이 학생의 최근 활동 — 참고용, 자연스럽게 활용]\n' + (economySummary || '(정보 없음)') +
     '\n\n[학생 메시지 판정 — 매우 중요]\n' +
@@ -281,6 +290,19 @@ function _isRead_(v){
   return s === 'true' || s === '읽음' || s === 'y' || s === '1' || s === 'o';
 }
 
+// 마지막대화일 정규화: 시트가 문자열을 Date로 바꿔 저장해도 'yyyy-MM-dd'로 통일
+function _normDate_(v){
+  if (!v) return '';
+  if (Object.prototype.toString.call(v) === '[object Date]'){
+    return Utilities.formatDate(v, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  }
+  var s = String(v).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  var d = new Date(s);
+  if (!isNaN(d.getTime())) return Utilities.formatDate(d, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  return s;
+}
+
 // ===== 캐릭터설정 시트 읽기 =====
 function _getCharConfig_(ss, charId){
   var sh = ss.getSheetByName(CHAR_CFG.SHEET_CFG);
@@ -298,7 +320,8 @@ function _getCharConfig_(ss, charId){
         fragments: [row[12],row[13],row[14],row[15],row[16]],
         warn1:    row[17] || '',   // R열: 1차 경고 대사
         warn2:    row[18] || '',   // S열: 2차 경고 대사
-        lockLine: row[19] || ''    // T열: 잠금 대사
+        lockLine: row[19] || '',   // T열: 잠금 대사
+        portrait: row[20] || ''    // U열: 프로필이미지URL
       };
     }
   }
@@ -313,7 +336,7 @@ function _getOrCreateAffinityRow_(ss, studentName, charId, cfg){
     if (String(values[r][0]).trim()===String(studentName).trim() &&
         String(values[r][1]).trim()===String(charId).trim()){
       return { sheet:sh, row:r+1, data:{
-        affinity:Number(values[r][2])||0, lastDate:String(values[r][3]||''),
+        affinity:Number(values[r][2])||0, lastDate:_normDate_(values[r][3]),
         todayCount:Number(values[r][4])||0, status:String(values[r][5]||'정상'),
         warnCount:Number(values[r][6])||0
       }};
@@ -374,4 +397,448 @@ function 테스트_정상() {
 }
 function 테스트_무례() {
   Logger.log(getCharacterReply('류은우', 'CHAR-022', '시발 닥쳐'));
+}
+
+
+/*************************************************************
+ * [Phase 2 추가] Code_Character.gs 맨 아래에 그대로 붙여넣기
+ * 메신저 허브가 쓸 로스터: 보유 여부 + 호감도 + 단계 + 관계텍스트
+ *************************************************************/
+function getCharacterRoster(studentName){
+  studentName = String(studentName).trim();
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  // 채팅 캐릭터 전체 (캐릭터설정)
+  var cfgSh = ss.getSheetByName(CHAR_CFG.SHEET_CFG);
+  if (!cfgSh || cfgSh.getLastRow() < 2) return [];
+  var cfg = cfgSh.getDataRange().getValues();
+
+  // 보유 캐릭터 (상점_구매로그: col1=학생명, col2=아이템ID)
+  var owned = {};
+  var logSh = ss.getSheetByName(SHEET_SHOP_LOG);
+  if (logSh && logSh.getLastRow() >= 2){
+    var ld = logSh.getDataRange().getValues();
+    for (var i = 1; i < ld.length; i++){
+      if (String(ld[i][1]).trim() === studentName) owned[String(ld[i][2]).trim()] = true;
+    }
+  }
+
+  // 이 학생의 호감도 행
+  var affMap = {};
+  var affSh = ss.getSheetByName(CHAR_CFG.SHEET_AFF);
+  if (affSh && affSh.getLastRow() >= 2){
+    var ad = affSh.getDataRange().getValues();
+    for (var j = 1; j < ad.length; j++){
+      if (String(ad[j][0]).trim() === studentName){
+        affMap[String(ad[j][1]).trim()] = { affinity:Number(ad[j][2])||0, status:String(ad[j][5]||'정상') };
+      }
+    }
+  }
+
+  var roster = [];
+  for (var r = 1; r < cfg.length; r++){
+    var id = String(cfg[r][0]).trim();
+    if (!id) continue;
+    var isOwned  = !!owned[id];
+    var a        = affMap[id];
+    var affinity = a ? a.affinity : (Number(cfg[r][5]) || 30);
+    var status   = a ? a.status : '정상';
+    var stage    = _stageFromAffinity_(affinity);
+    roster.push({
+      charId: id,
+      name: cfg[r][1],
+      aura: cfg[r][2],
+      auraSoft: cfg[r][3],
+      owned: isOwned,
+      affinity: affinity,
+      stage: stage,
+      relationText: isOwned ? (cfg[r][6 + stage] || '') : '', // 관계텍스트(현재 단계)
+      status: status,
+      dailyLimit: Number(cfg[r][4]) || 3,
+      portrait: cfg[r][20] || ''
+    });
+  }
+  return roster;
+}
+
+/*************************************************************
+ * [이야기/화첩 시스템] 시트 설계 — Code_Character.gs 맨 아래에 붙여넣기
+ *
+ * 최초 1회 setupStorySheets() 실행 → 아래 시트가 자동 생성됨.
+ * 기존 시트(캐릭터설정·캐릭터호감도)는 건드리지 않음.
+ * 단, 캐릭터설정에 '프로필이미지URL' 칸(U열)이 없으면 추가함.
+ *
+ * ── 시트 구조 요약 ──────────────────────────────────────────
+ * [캐릭터이야기]  라노벨 대본. 한 컷 = 한 행.
+ *   A 캐릭터ID | B 편번호 | C 컷순서 | D 타입(title/narr/line)
+ *   E 화자 | F 대사 | G 배경이미지URL | H 효과(flash/shake) | I 타이틀킥
+ *
+ * [캐릭터이야기_편]  편 단위 정보. 한 편 = 한 행.
+ *   A 캐릭터ID | B 편번호 | C 편제목 | D 해금호감도 | E BGM_URL
+ *   F 특별일러스트URL | G 특별일러스트_해금호감도
+ *   (특별 일러스트는 4단계 보상 → 보통 해금호감도 75)
+ *
+ * [학생이야기진행]  누가 무엇을 읽었나. 한 (학생×편) = 한 행.
+ *   A 학생명 | B 캐릭터ID | C 편번호 | D 읽음(TRUE/FALSE) | E 최초열람일시
+ *
+ * [캐릭터설정] (기존) … U 프로필이미지URL  ← 없으면 자동 추가
+ *************************************************************/
+
+var STORY_CFG = {
+  SHEET_STORY:    '캐릭터이야기',
+  SHEET_STORY_EP: '캐릭터이야기_편',
+  SHEET_PROGRESS: '학생이야기진행',
+  PROFILE_COL_HEADER: '프로필이미지URL'   // 캐릭터설정 U열
+};
+
+function setupStorySheets() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  // 1) 캐릭터이야기 (대본)
+  var st = ss.getSheetByName(STORY_CFG.SHEET_STORY);
+  if (!st) {
+    st = ss.insertSheet(STORY_CFG.SHEET_STORY);
+    st.appendRow(['캐릭터ID','편번호','컷순서','타입','화자','대사','배경이미지URL','효과','타이틀킥']);
+    st.setFrozenRows(1);
+    st.getRange('A1:I1').setFontWeight('bold');
+  }
+
+  // 2) 캐릭터이야기_편 (편 정보)
+  var ep = ss.getSheetByName(STORY_CFG.SHEET_STORY_EP);
+  if (!ep) {
+    ep = ss.insertSheet(STORY_CFG.SHEET_STORY_EP);
+    ep.appendRow(['캐릭터ID','편번호','편제목','해금호감도','BGM_URL','특별일러스트URL','특별일러스트_해금호감도']);
+    ep.setFrozenRows(1);
+    ep.getRange('A1:G1').setFontWeight('bold');
+  }
+
+  // 3) 학생이야기진행 (읽음 기록)
+  var pr = ss.getSheetByName(STORY_CFG.SHEET_PROGRESS);
+  if (!pr) {
+    pr = ss.insertSheet(STORY_CFG.SHEET_PROGRESS);
+    pr.appendRow(['학생명','캐릭터ID','편번호','읽음','최초열람일시']);
+    pr.setFrozenRows(1);
+    pr.getRange('A1:E1').setFontWeight('bold');
+  }
+
+  // 4) 캐릭터설정에 프로필이미지URL(U열) 보장
+  var cfg = ss.getSheetByName(CHAR_CFG.SHEET_CFG);
+  if (cfg) {
+    var lastCol = cfg.getLastColumn();
+    var headers = cfg.getRange(1, 1, 1, lastCol).getValues()[0];
+    var has = headers.some(function(h){ return String(h).trim() === STORY_CFG.PROFILE_COL_HEADER; });
+    if (!has) {
+      cfg.getRange(1, lastCol + 1).setValue(STORY_CFG.PROFILE_COL_HEADER).setFontWeight('bold');
+    }
+  }
+
+  SpreadsheetApp.getUi().alert(
+    '✅ 이야기 시트 준비 완료!\n\n' +
+    '· 캐릭터이야기 (대본)\n· 캐릭터이야기_편 (편 정보)\n· 학생이야기진행 (읽음 기록)\n' +
+    '· 캐릭터설정에 프로필이미지URL 칸 확인\n\n' +
+    '이제 캐릭터이야기 / _편 시트에 아스텔 대본을 붙여넣으면 됩니다.'
+  );
+}
+
+/*************************************************************
+ * [이야기 시스템] 서버 함수 — Code_Character.gs 맨 아래에 붙여넣기
+ *  - getCharacterStories(학생명, 캐릭터ID) : 편 목록(잠금/읽음/NEW)
+ *  - getStoryScript(학생명, 캐릭터ID, 편번호) : 한 편의 컷 배열(+읽음 기록)
+ *  의존: STORY_CFG, CHAR_CFG, _getCharConfig_, _getOrCreateAffinityRow_, _stageFromAffinity_
+ *************************************************************/
+
+// 편 목록: 만남 이벤트 화면용
+function getCharacterStories(studentName, charId){
+  studentName = String(studentName).trim();
+  charId = String(charId).trim();
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  var cfg = _getCharConfig_(ss, charId);
+  if (!cfg) return { ok:false, stories:[] };
+  var aff = _getOrCreateAffinityRow_(ss, studentName, charId, cfg);
+  var affinity = aff.data.affinity;
+
+  // 편 정보 (캐릭터이야기_편)
+  var epSh = ss.getSheetByName(STORY_CFG.SHEET_STORY_EP);
+  if (!epSh || epSh.getLastRow() < 2) return { ok:true, affinity:affinity, stories:[] };
+  var ed = epSh.getDataRange().getValues();
+
+  // 이 학생이 읽은 편 집합 (학생이야기진행)
+  var readSet = {};
+  var prSh = ss.getSheetByName(STORY_CFG.SHEET_PROGRESS);
+  if (prSh && prSh.getLastRow() >= 2){
+    var pd = prSh.getDataRange().getValues();
+    for (var p = 1; p < pd.length; p++){
+      if (String(pd[p][0]).trim() === studentName && String(pd[p][1]).trim() === charId && _isRead_(pd[p][3])){
+        readSet[String(pd[p][2]).trim()] = true;
+      }
+    }
+  }
+
+  var stories = [];
+  for (var i = 1; i < ed.length; i++){
+    if (String(ed[i][0]).trim() !== charId) continue;
+    var ep   = String(ed[i][1]).trim();
+    var need = Number(ed[i][3]) || 0;
+    var unlocked = affinity >= need;
+    var read = !!readSet[ep];
+    stories.push({
+      ep: Number(ep),
+      title: String(ed[i][2] || ''),
+      need: need,
+      unlocked: unlocked,
+      read: read,
+      isNew: unlocked && !read   // 열렸지만 아직 안 읽음 → NEW
+    });
+  }
+  stories.sort(function(a,b){ return a.ep - b.ep; });
+  return { ok:true, affinity:affinity, stories:stories };
+}
+
+// 한 편의 컷 배열: 라노벨 뷰어용 (+ 읽음 기록)
+function getStoryScript(studentName, charId, epNo){
+  studentName = String(studentName).trim();
+  charId = String(charId).trim();
+  epNo = Number(epNo);
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  var cfg = _getCharConfig_(ss, charId);
+  if (!cfg) return { ok:false, reason:'no-config' };
+  var aff = _getOrCreateAffinityRow_(ss, studentName, charId, cfg);
+  var affinity = aff.data.affinity;
+
+  // 편 정보 (제목·해금·BGM)
+  var epSh = ss.getSheetByName(STORY_CFG.SHEET_STORY_EP);
+  var title = '', need = 0, bgm = '';
+  if (epSh && epSh.getLastRow() >= 2){
+    var ed = epSh.getDataRange().getValues();
+    for (var i = 1; i < ed.length; i++){
+      if (String(ed[i][0]).trim() === charId && Number(ed[i][1]) === epNo){
+        title = String(ed[i][2] || ''); need = Number(ed[i][3]) || 0; bgm = String(ed[i][4] || '');
+        break;
+      }
+    }
+  }
+  if (affinity < need) return { ok:false, reason:'locked', need:need };
+
+  // 컷 수집 (캐릭터이야기) → 컷순서대로 정렬
+  var stSh = ss.getSheetByName(STORY_CFG.SHEET_STORY);
+  if (!stSh || stSh.getLastRow() < 2) return { ok:false, reason:'no-script' };
+  var sd = stSh.getDataRange().getValues();
+  var rows = [];
+  for (var r = 1; r < sd.length; r++){
+    if (String(sd[r][0]).trim() === charId && Number(sd[r][1]) === epNo){
+      rows.push(sd[r]);
+    }
+  }
+  rows.sort(function(a,b){ return (Number(a[2])||0) - (Number(b[2])||0); });
+
+  var cuts = rows.map(function(c){
+    // 효과 칸: "flash" / "shake" / "dim" / "shake dim" 등 → effect + spriteDim 분리
+    var fx = String(c[7] || '').trim().toLowerCase().split(/\s+/);
+    var effect = '';
+    if (fx.indexOf('flash') !== -1) effect = 'flash';
+    else if (fx.indexOf('shake') !== -1) effect = 'shake';
+    var cut = {
+      type: String(c[3] || 'line').trim(),
+      speaker: String(c[4] || ''),
+      text: String(c[5] || ''),
+      bg: String(c[6] || ''),
+      effect: effect,
+      spriteDim: (fx.indexOf('dim') !== -1),
+      cg: (fx.indexOf('cg') !== -1),
+      kick: String(c[8] || '')
+    };
+    return cut;
+  });
+  if (!cuts.length) return { ok:false, reason:'no-script' };
+
+  _markStoryRead_(ss, studentName, charId, epNo);   // 읽음 기록
+  return { ok:true, title:title, bgm:bgm, sprite:(cfg.portrait || ''), cuts:cuts };
+}
+
+// 읽음 기록 (없으면 추가, 있으면 그대로) — 학생이야기진행
+function _markStoryRead_(ss, studentName, charId, epNo){
+  var sh = ss.getSheetByName(STORY_CFG.SHEET_PROGRESS);
+  if (!sh) return;
+  var data = sh.getDataRange().getValues();
+  for (var i = 1; i < data.length; i++){
+    if (String(data[i][0]).trim() === studentName &&
+        String(data[i][1]).trim() === charId &&
+        Number(data[i][2]) === Number(epNo)){
+      if (!_isRead_(data[i][3])) sh.getRange(i + 1, 4).setValue(true);
+      return;
+    }
+  }
+  var now = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm');
+  sh.appendRow([studentName, charId, Number(epNo), true, now]);
+}
+
+/*************************************************************
+ * [먼저 인사] getCharacterGreeting — Code_Character.gs 맨 아래
+ *  대화창을 열 때 캐릭터가 먼저 한두 문장 말을 건넵니다.
+ *  - 호감도/일일횟수에 영향 없음 (단순 인사)
+ *  - 30분 캐시(같은 학생·캐릭터면 재호출 없이 즉시)
+ *  - 잠금 상태면 빈 문자열
+ *  의존: _getCharConfig_, _getOrCreateAffinityRow_, _stageFromAffinity_, _buildPrompt_, _buildEconomySummary_, _callClaude_
+ *************************************************************/
+function getCharacterGreeting(studentName, charId){
+  try {
+    studentName = String(studentName).trim();
+    charId = String(charId).trim();
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+
+    var cfg = _getCharConfig_(ss, charId);
+    if (!cfg) return { reply: '' };
+
+    var aff = _getOrCreateAffinityRow_(ss, studentName, charId, cfg);
+    if (aff.data.status === '잠금') return { reply: '' };
+
+    var cache = CacheService.getScriptCache();
+    var key = 'greet_' + studentName + '_' + charId;
+    var hit = cache.get(key);
+    if (hit !== null) return { reply: hit };
+
+    var stage = _stageFromAffinity_(aff.data.affinity);
+    var systemPrompt = _buildPrompt_(cfg, stage, studentName, _buildEconomySummary_(studentName));
+    var ask = '지금 학생이 막 너에게 접속했다. 학생이 묻기 전에, 네가 먼저 한두 문장으로 말을 건네라. ' +
+              '이 학생의 최근 활동이나 지금 너의 심정을 자연스럽게 담아라. 질문 공세 대신 따뜻한 한마디로. crossed_line은 false.';
+    var ai = _callClaude_(systemPrompt, ask);
+    var line = (ai && ai.reply) ? ai.reply : '';
+    if (line) cache.put(key, line, 1800); // 30분
+    return { reply: line };
+  } catch (e) {
+    return { reply: '' };
+  }
+}
+
+/*************************************************************
+ * [대화 기록] 캐릭터대화로그 — Code_Character.gs 맨 아래에 붙여넣기
+ *  - setupChatLogSheet() : 최초 1회 실행 → 로그 시트 생성
+ *  - getCharacterChatLog(학생명, 캐릭터ID, 개수) : 최근 N개 말풍선(시간순)
+ *  - _appendChatLog_(...) : 한 말풍선 저장 (getCharacterReply에서 호출)
+ *
+ * ★ 추가로, getCharacterReply 함수 안에 2줄을 넣어야 저장이 됩니다(아래 설명 참고).
+ *
+ * 시트 구조 [캐릭터대화로그]: A 학생명 | B 캐릭터ID | C 발신(me/char) | D 내용 | E 시각
+ *************************************************************/
+
+var CHATLOG_SHEET = '캐릭터대화로그';
+
+function setupChatLogSheet(){
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName(CHATLOG_SHEET);
+  if (!sh){
+    sh = ss.insertSheet(CHATLOG_SHEET);
+    sh.appendRow(['학생명','캐릭터ID','발신','내용','시각']);
+    sh.setFrozenRows(1);
+    sh.getRange('A1:E1').setFontWeight('bold');
+  }
+  SpreadsheetApp.getUi().alert('✅ 대화 기록 시트(캐릭터대화로그) 준비 완료!');
+}
+
+// 한 말풍선 저장 (내용이 비면 저장 안 함)
+function _appendChatLog_(ss, studentName, charId, sender, text){
+  try {
+    if (!text) return;
+    var sh = ss.getSheetByName(CHATLOG_SHEET);
+    if (!sh) return; // 시트가 아직 없으면 조용히 건너뜀
+    var now = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
+    sh.appendRow([String(studentName), String(charId), String(sender), String(text), now]);
+  } catch (e) { /* 로그 실패는 대화에 영향 주지 않음 */ }
+}
+
+// 대화창 열 때: 최근 N개를 시간순으로
+function getCharacterChatLog(studentName, charId, limit){
+  studentName = String(studentName).trim();
+  charId = String(charId).trim();
+  limit = Number(limit) || 40;
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName(CHATLOG_SHEET);
+  if (!sh || sh.getLastRow() < 2) return [];
+  var data = sh.getDataRange().getValues();
+  var mine = [];
+  for (var i = 1; i < data.length; i++){
+    if (String(data[i][0]).trim() === studentName && String(data[i][1]).trim() === charId){
+      mine.push({ sender: String(data[i][2]).trim(), text: String(data[i][3]) });
+    }
+  }
+  // 최근 limit개만 (시간순 유지)
+  if (mine.length > limit) mine = mine.slice(mine.length - limit);
+  return mine;
+}
+
+/*************************************************************
+ * [화첩] getCharacterGallery
+ *  학생이 '읽은 편'의 배경 이미지(중복 제거, 기본 배경 포함)를 모으고,4단계 특별 일러스트도 함께 돌려줍니다.
+ *  의존: STORY_CFG, CHAR_CFG, _getCharConfig_, _getOrCreateAffinityRow_, _isRead_
+ * *  반환: {
+ *    ok, affinity,
+ *    cutscenes: [ { url, ep } ... ],                 // 읽은 편의 배경(중복 제거, 등장 순서)
+ *    special:   [ { url, unlocked, need } ... ]      // 특별 일러스트(편 시트 F/G열)
+ *  }
+ *************************************************************/
+function getCharacterGallery(studentName, charId){
+  studentName = String(studentName).trim();
+  charId = String(charId).trim();
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  var cfg = _getCharConfig_(ss, charId);
+  if (!cfg) return { ok:false, cutscenes:[], special:[] };
+  var aff = _getOrCreateAffinityRow_(ss, studentName, charId, cfg);
+  var affinity = aff.data.affinity;
+
+  // 1) 이 학생이 읽은 편 집합 (학생이야기진행)
+  var readEps = {};
+  var prSh = ss.getSheetByName(STORY_CFG.SHEET_PROGRESS);
+  if (prSh && prSh.getLastRow() >= 2){
+    var pd = prSh.getDataRange().getValues();
+    for (var p = 1; p < pd.length; p++){
+      if (String(pd[p][0]).trim() === studentName && String(pd[p][1]).trim() === charId && _isRead_(pd[p][3])){
+        readEps[String(pd[p][2]).trim()] = true;
+      }
+    }
+  }
+
+  // 2) 읽은 편의 배경 이미지 수집 (캐릭터이야기 G열) — 컷순서대로, 중복 제거
+  var cutscenes = [], seen = {};
+  var stSh = ss.getSheetByName(STORY_CFG.SHEET_STORY);
+  if (stSh && stSh.getLastRow() >= 2){
+    var sd = stSh.getDataRange().getValues();
+    var rows = [];
+    for (var r = 1; r < sd.length; r++){
+      if (String(sd[r][0]).trim() !== charId) continue;
+      var ep = String(sd[r][1]).trim();
+      if (!readEps[ep]) continue;                 // 안 읽은 편은 제외
+      var url = String(sd[r][6] || '').trim();    // G열: 배경이미지URL
+      if (!url || url.toLowerCase() === 'none' || url === '-') continue;
+      rows.push({ ep: Number(ep), seq: Number(sd[r][2]) || 0, url: url });
+    }
+    rows.sort(function(a,b){ return a.ep - b.ep || a.seq - b.seq; });
+    rows.forEach(function(x){
+      if (seen[x.url]) return;                     // 중복 제거
+      seen[x.url] = true;
+      cutscenes.push({ url: x.url, ep: x.ep });
+    });
+  }
+
+  // 3) 특별 일러스트 (캐릭터이야기_편 F열 = URL, G열 = 해금호감도)
+  var special = [];
+  var epSh = ss.getSheetByName(STORY_CFG.SHEET_STORY_EP);
+  if (epSh && epSh.getLastRow() >= 2){
+    var ed = epSh.getDataRange().getValues();
+    for (var i = 1; i < ed.length; i++){
+      if (String(ed[i][0]).trim() !== charId) continue;
+      var surl = String(ed[i][5] || '').trim();    // F열
+      if (!surl) continue;
+      var need = Number(ed[i][6]) || 0;            // G열
+      special.push({ url: surl, unlocked: affinity >= need, need: need });
+    }
+  }
+
+  return { ok:true, affinity:affinity, cutscenes:cutscenes, special:special };
+}
+
+function 테스트_이야기목록() {
+  Logger.log(getCharacterStories('test1', 'CHAR-022'));
 }

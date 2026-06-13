@@ -3176,7 +3176,7 @@
     #panel-chat .h2-card:hover{ background:rgba(255,255,255,0.04); }
     #panel-chat .h2-card.sel{ background:color-mix(in srgb,var(--c) 14%, transparent); border-color:color-mix(in srgb,var(--c) 40%, transparent); }
     #panel-chat .h2-card.locked{ opacity:.5; cursor:default; }
-    #panel-chat .h2-ava{ position:relative; width:46px; height:46px; flex:none; border-radius:50%; overflow:hidden;
+    #panel-chat .h2-ava{ position:relative; width:92px; height:92px; flex:none; border-radius:50%; overflow:hidden;
       display:grid; place-items:center; font-size:20px; color:#fff;
       background:radial-gradient(circle at 50% 32%, color-mix(in srgb,var(--c) 65%,#000), #0a0a16 74%);
       box-shadow:0 0 14px color-mix(in srgb,var(--c) 50%, transparent); }
@@ -3213,6 +3213,18 @@
       background:rgba(0,0,0,0.5); padding:2px 8px; border-radius:9px; border:1px solid rgba(255,255,255,0.1); }
     #panel-chat .h2-name{ font-weight:800; font-size:19px; margin-top:13px; display:flex; align-items:center; gap:7px; }
     #panel-chat .h2-lvl{ font-size:12px; color:#2a1c05; background:linear-gradient(135deg,#f2c66a,#caa24a); padding:1px 8px; border-radius:9px; }
+    #panel-chat .h2-substat{ display:flex; align-items:center; justify-content:center; gap:9px; margin-top:8px; }
+    #panel-chat .h2-affbig{ font-size:15px; font-weight:800; color:var(--aura-soft); letter-spacing:.5px; }
+    #panel-chat .h2-cn .h2-lvl{ margin-left:7px; font-size:11px; vertical-align:middle; }
+    #panel-chat .h2-extra{ width:100%; max-width:340px; margin-top:18px; display:flex; flex-direction:column; gap:15px; }
+    #panel-chat .h2-prog-cap{ display:flex; justify-content:space-between; font-size:12px; color:#aab2cc; margin-bottom:7px; }
+    #panel-chat .h2-prog-bar{ height:7px; border-radius:5px; background:rgba(255,255,255,0.08); overflow:hidden; }
+    #panel-chat .h2-prog-fill{ height:100%; border-radius:5px; background:linear-gradient(90deg,var(--aura),var(--aura-soft)); transition:width .5s; }
+    #panel-chat .h2-sublabel{ font-size:11px; color:#97a0b8; letter-spacing:1px; margin-bottom:9px; }
+    #panel-chat .h2-galprev{ display:grid; grid-template-columns:repeat(3,1fr); gap:7px; }
+    #panel-chat .h2-galprev .cellp{ aspect-ratio:16/10; border-radius:9px; overflow:hidden; border:1px solid rgba(255,255,255,0.12); background:#08080f center/cover no-repeat; cursor:pointer; }
+    #panel-chat .h2-galprev .morep{ display:grid; place-items:center; color:#9aa3bd; font-size:12px; font-weight:700; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:9px; aspect-ratio:16/10; cursor:pointer; }
+    #panel-chat .h2-galprev-empty{ font-size:12.5px; color:#5f677e; padding:4px 2px; }
     #panel-chat .h2-rel{ font-size:13.5px; color:var(--aura-soft); text-align:center; margin-top:13px; line-height:1.55; max-width:340px;
       text-shadow:0 0 14px color-mix(in srgb,var(--aura) 30%, transparent); }
     #panel-chat .h2-actions{ margin-top:auto; display:flex; gap:12px; padding-top:18px; }
@@ -3253,6 +3265,14 @@
     /* 오버레이 */
     #panel-chat .h2-ov{ position:absolute; inset:0; z-index:10; background:rgba(5,6,15,0.72); backdrop-filter:blur(5px); display:none; align-items:center; justify-content:center; padding:18px; }
     #panel-chat .h2-ov.show{ display:flex; }
+    #panel-chat .h2-notice-body{ padding:30px 26px 24px; text-align:center; }
+    #panel-chat .h2-notice-ic{ font-size:40px; margin-bottom:10px; }
+    #panel-chat .h2-notice-title{ font-size:18px; font-weight:800; color:#e8edff; margin-bottom:14px; }
+    #panel-chat .h2-notice-msg{ font-size:14px; line-height:1.7; color:#aab2cc; margin-bottom:24px; }
+    #panel-chat .h2-notice-msg b{ color:var(--aura-soft); }
+    #panel-chat .h2-notice-btns{ display:flex; flex-direction:column; gap:10px; }
+    #panel-chat .h2-notice-enter{ padding:13px; border-radius:11px; border:none; background:linear-gradient(135deg,var(--aura),#5b8ef0); color:#fff; font-size:15px; font-weight:700; cursor:pointer; }
+    #panel-chat .h2-notice-later{ padding:12px; border-radius:11px; border:1px solid rgba(255,255,255,0.14); background:transparent; color:#97a0b8; font-size:13.5px; cursor:pointer; }
     #panel-chat .h2-ovcard{ width:min(420px,100%); max-height:100%; background:linear-gradient(180deg,#131734,#0d1024); border:1px solid rgba(255,255,255,0.14); border-radius:16px; overflow:hidden; display:flex; flex-direction:column; }
     #panel-chat .h2-ovhead{ display:flex; align-items:center; padding:15px 16px; border-bottom:1px solid rgba(255,255,255,0.08); font-weight:800; font-size:15px; }
     #panel-chat .h2-ovhead .x{ margin-left:auto; background:none; border:none; color:#97a0b8; font-size:15px; cursor:pointer; }
@@ -3268,7 +3288,10 @@
     #panel-chat .h2-std{ font-size:11.5px; color:#5a627c; margin-top:3px; }
     #panel-chat .h2-stat{ margin-left:auto; font-size:12px; color:var(--aura-soft); flex:none; }
     #panel-chat .h2-rw{ display:flex; align-items:center; gap:12px; padding:13px; border-radius:12px; border:1px solid rgba(255,255,255,0.08); margin-bottom:8px; }
-    #panel-chat .h2-rw.locked{ opacity:.5; } #panel-chat .h2-rw .ric{ font-size:21px; width:36px; text-align:center; flex:none; }
+    #panel-chat .h2-rw.locked{ opacity:.5; }
+    #panel-chat .h2-claim-btn{ padding:5px 14px; border-radius:8px; border:none; background:linear-gradient(135deg,var(--aura),#5b8ef0); color:#fff; font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap; }
+    #panel-chat .h2-claim-btn:disabled{ opacity:.5; cursor:default; }
+    #panel-chat .h2-claim-done{ font-size:12px; color:#6fcf97; font-weight:700; white-space:nowrap; } #panel-chat .h2-rw .ric{ font-size:21px; width:36px; text-align:center; flex:none; }
     #panel-chat .h2-rw .rt{ font-weight:700; font-size:14px; } #panel-chat .h2-rw .rd{ font-size:11.5px; color:#97a0b8; margin-top:2px; }
     #panel-chat .h2-rw .rs{ margin-left:auto; font-size:11px; color:#5a627c; flex:none; } #panel-chat .h2-rw.on .rs{ color:var(--aura-soft); }
     #panel-chat .h2-note{ font-size:11.5px; color:#5a627c; text-align:center; padding:6px 4px 2px; }
@@ -3301,6 +3324,17 @@
       <div class="h2-ovhead"><span id="h2GalTitle">화첩</span><button class="x" data-close="h2GalOv">✕</button></div>
       <div class="h2-ovbody" id="h2GalBody"></div>
     </div></div>
+    <div class="h2-ov" id="h2NoticeOv"><div class="h2-ovcard" style="max-width:380px">
+      <div class="h2-notice-body">
+        <div class="h2-notice-ic">🌌</div>
+        <div class="h2-notice-title">잠시만요</div>
+        <div class="h2-notice-msg">이번 편은 내용이 길고<br>여러 일러스트와 음악이 연출됩니다.<br><br>최소 <b>15분 이상</b>의 여유 시간을 가지고<br>천천히 감상해 주세요.</div>
+        <div class="h2-notice-btns">
+          <button class="h2-notice-later" id="h2NoticeLater">나중에 다시 감상하기</button>
+          <button class="h2-notice-enter" id="h2NoticeEnter">입장하기</button>
+        </div>
+      </div>
+    </div></div>
   </div>
 
   <script>
@@ -3313,6 +3347,11 @@
     function $(id){ return document.getElementById(id); }
     function esc(s){ return String(s==null?'':s).replace(/[&<>]/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[m];}); }
     function stageOf(a){ a=Number(a)||0; if(a>=100)return 5; if(a>=75)return 4; if(a>=50)return 3; if(a>=25)return 2; return 1; }
+    function stageLabel(st){ return st>=5 ? '호감 최종단계' : '호감 '+st+'단계'; }
+    // 브라우저 자동재생 잠금 해제 — 사용자 제스처(클릭) 안에서 1회 호출
+    function _unlockAudioCtx_(){
+      try{ var ac=new(window.AudioContext||window.webkitAudioContext)(); if(ac.state==='suspended') ac.resume(); }catch(e){}
+    }
     function avaInner(c){ return c.portrait ? '<img src="'+esc(c.portrait)+'" onerror="this.style.display=\'none\'">' : '✦'; }
 
     function initHub(){
@@ -3334,8 +3373,8 @@
         if(c.owned){
           var st=stageOf(c.affinity);
           el.className='h2-card'+(CUR===c?' sel':''); el.style.setProperty('--c', c.aura||'#888');
-          el.innerHTML='<div class="h2-ava">'+avaInner(c)+'<div class="h2-badge">'+st+'</div></div>'+
-            '<div style="min-width:0;flex:1"><div class="h2-cn">'+(c._hasNew?'<span class="nw"></span>':'')+esc(c.name)+(c.status==='잠금'?' 🔒':'')+'</div>'+
+          el.innerHTML='<div class="h2-ava">'+avaInner(c)+'</div>'+
+            '<div style="min-width:0;flex:1"><div class="h2-cn">'+(c._hasNew?'<span class="nw"></span>':'')+esc(c.name)+(c.status==='잠금'?' 🔒':'')+'<span class="h2-lvl">'+stageLabel(st)+'</span></div>'+
             '<div class="h2-cs">'+esc(c.relationText||'')+'</div></div>';
           el.onclick=function(){ selectFriend(c); };
         } else {
@@ -3362,14 +3401,24 @@
       var P=$('h2Profile'), st=stageOf(c.affinity), pct=Math.min(100,Number(c.affinity)||0);
       P.style.setProperty('--aura', c.aura||'#6c5cff'); P.style.setProperty('--aura-soft', c.auraSoft||'#8fd0ff');
       var off = RING*(1-pct/100);
+      // 다음 단계 진행 안내
+      var segS=[0,25,50,75], segE=[25,50,75,100], aff=Number(c.affinity)||0, progHtml;
+      if(st>=5){
+        progHtml='<div><div class="h2-prog-cap"><span>호감 최종단계 달성</span><span>100 / 100</span></div>'+
+                 '<div class="h2-prog-bar"><div class="h2-prog-fill" style="width:100%"></div></div></div>';
+      } else {
+        var ss=segS[st-1], se=segE[st-1], remain=se-aff, segPct=Math.max(0,Math.min(100,((aff-ss)/(se-ss))*100));
+        progHtml='<div><div class="h2-prog-cap"><span>다음 단계까지</span><span>'+remain+' 남음</span></div>'+
+                 '<div class="h2-prog-bar"><div class="h2-prog-fill" style="width:'+segPct+'%"></div></div></div>';
+      }
       P.innerHTML =
         '<button class="h2-backline" onclick="ChatHub.back && document.getElementById(\'h2\').classList.remove(\'show-right\')">‹ 목록</button>'+
         '<div class="h2-portrait" id="h2Portrait">'+
           '<svg width="118" height="118" viewBox="0 0 118 118"><circle cx="59" cy="59" r="52" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="5"/>'+
           '<circle cx="59" cy="59" r="52" fill="none" stroke="var(--aura)" stroke-width="5" stroke-linecap="round" stroke-dasharray="'+RING+'" stroke-dashoffset="'+off+'" style="filter:drop-shadow(0 0 5px var(--aura))"/></svg>'+
-          '<div class="h2-orb">'+avaInner(c)+'</div><div class="h2-cam">🖼️</div><div class="h2-aff">'+pct+' / 100</div></div>'+
-        '<div class="h2-name"><span class="h2-lvl">'+st+'단계</span>'+esc(c.name)+'</div>'+
-        '<div class="h2-rel">'+esc(c.relationText||STAGE_NAME[st])+'</div>'+
+          '<div class="h2-orb">'+avaInner(c)+'</div><div class="h2-cam">🖼️</div></div>'+
+        '<div class="h2-name">'+esc(c.name)+'</div>'+'<div class="h2-substat"><span class="h2-lvl">'+stageLabel(st)+'</span><span class="h2-affbig">'+pct+' / 100</span></div>'+
+        '<div class="h2-rel">'+esc(c.relationText||STAGE_NAME[st])+'</div>'+'<div class="h2-extra">'+progHtml+'<div><div class="h2-sublabel">화첩</div><div class="h2-galprev" id="h2GalPrev"><div class="h2-galprev-empty">불러오는 중…</div></div></div>'+'</div>'+
         '<div class="h2-actions">'+
           '<div class="h2-btn primary" id="h2BtnChat"><div class="ic">💬</div><div class="lb">대화하기</div></div>'+
           '<div class="h2-btn" id="h2BtnMeet"><div class="ic">▶</div><span class="dot" id="h2MeetDot" style="display:'+(c._hasNew?'block':'none')+'"></span><div class="lb">만남 이벤트</div></div>'+
@@ -3379,6 +3428,26 @@
       $('h2BtnChat').onclick=function(){ openChat(c); };
       $('h2BtnMeet').onclick=function(){ openStories(c); };
       $('h2BtnReward').onclick=function(){ openRewards(c); };
+      loadProfileExtras(c);
+    }
+    // 프로필 하단: 화첩 미리보기(최대 3장) 비동기 로드 (다음단계 진행바는 즉시 렌더됨)
+    function loadProfileExtras(c){
+      var box=$('h2GalPrev'); if(!box) return;
+      function thumb(u){ return '<div class="cellp" data-full="'+esc(u)+'" style="background-image:url(\''+esc(u)+'\')"></div>'; }
+      function fill(res){
+        var bx=$('h2GalPrev'); if(!bx) return;
+        var cut=(res&&res.cutscenes)||[];
+        if(!cut.length){ bx.innerHTML='<div class="h2-galprev-empty">아직 본 장면이 없어요. 만남 이벤트에서 이야기를 읽어보세요.</div>'; return; }
+        var cells=[], max=(cut.length>3?2:3);
+        for(var i=0;i<Math.min(max,cut.length);i++){ cells.push(thumb(cut[i].url)); }
+        if(cut.length>3){ cells.push('<div class="morep">+'+(cut.length-2)+'장</div>'); }
+        bx.innerHTML=cells.join('');
+        bx.querySelectorAll('.cellp,.morep').forEach(function(el){ el.onclick=function(){ openGallery(c); }; });
+      }
+      if(c._gallery){ fill(c._gallery); return; }
+      google.script.run.withSuccessHandler(function(res){ c._gallery=res||{}; fill(c._gallery); })
+        .withFailureHandler(function(){ var bx=$('h2GalPrev'); if(bx) bx.innerHTML='<div class="h2-galprev-empty">화첩을 불러오지 못했어요.</div>'; })
+        .getCharacterGallery(window._currentStudentName, c.charId);
     }
 
     // ===== 채팅 =====
@@ -3460,10 +3529,22 @@
           el.innerHTML='<div class="h2-ep">'+(s.unlocked?s.ep:'🔒')+'</div><div style="flex:1;min-width:0"><div class="h2-stt">'+s.ep+'편 · '+esc(s.title)+((s.isNew&&s.unlocked)?'<span class="new">NEW</span>':'')+'</div>'+
             '<div class="h2-std">'+(s.unlocked?'만남 이벤트':'호감도 '+s.need+'에서 열림')+'</div></div><div class="h2-stat">'+stat+'</div>';
           if(s.unlocked) el.onclick=function(){
-            $('h2StoryOv').classList.remove('show');
-            if(window.BrandStory) window.BrandStory.open(c.charId, s.ep);
-            s.read=true; s.isNew=false; c._hasNew=stories.some(function(x){return x.unlocked&&!x.read;});
-            var d=$('h2MeetDot'); if(d) d.style.display=c._hasNew?'block':'none'; renderFriends();
+            // 입장 처리(공통)
+            function _enterStory_(){
+              _unlockAudioCtx_();
+              $('h2StoryOv').classList.remove('show');
+              if(window.BrandStory) window.BrandStory.open(c.charId, s.ep);
+              s.read=true; s.isNew=false; c._hasNew=stories.some(function(x){return x.unlocked&&!x.read;});
+              var d=$('h2MeetDot'); if(d) d.style.display=c._hasNew?'block':'none'; renderFriends();
+            }
+            // 5편은 감상 안내 모달을 먼저 띄움
+            if(Number(s.ep)===5){
+              var ov=$('h2NoticeOv'); ov.classList.add('show');
+              $('h2NoticeEnter').onclick=function(){ ov.classList.remove('show'); _enterStory_(); };
+              $('h2NoticeLater').onclick=function(){ ov.classList.remove('show'); };
+            } else {
+              _enterStory_();
+            }
           };
           L.appendChild(el);
         });
@@ -3471,16 +3552,63 @@
         .getCharacterStories(window._currentStudentName, c.charId);
     }
 
-    // ===== 호감도 보상 (표시 전용 — 보상 지급은 추후) =====
+    // ===== 호감도 보상 =====
+    var REWARD_DEF=[
+      {stage:3,need:50,ic:'💰',t:'자산 +500',        d:'호감 3단계 도달 보상'},
+      {stage:4,need:75,ic:'🖼️',t:'자산 +500 + 특별 일러스트 해금',d:'호감 4단계 도달 보상'},
+      {stage:5,need:100,ic:'🏆',t:'자산 +1000 + 에픽 업적 신청권',d:'호감 최종단계 도달 보상'}
+    ];
     function openRewards(c){
-      var aff=Number(c.affinity)||0;
-      var rewards=[{need:50,ic:'💰',t:'자산 +1000',d:'3단계 도달 보상'},{need:75,ic:'🖼️',t:'특별 일러스트 해금',d:'4단계 도달 보상'},{need:100,ic:'🏆',t:'에픽 업적 획득',d:'5단계 도달 보상'}];
-      var L=$('h2RewardList'); L.innerHTML='';
-      rewards.forEach(function(r){ var on=aff>=r.need; var el=document.createElement('div'); el.className='h2-rw'+(on?' on':' locked');
-        el.innerHTML='<div class="ric">'+r.ic+'</div><div style="flex:1"><div class="rt">'+r.t+'</div><div class="rd">'+r.d+'</div></div><div class="rs">'+(on?'달성':'호감도 '+r.need)+'</div>';
-        L.appendChild(el); });
-      L.insertAdjacentHTML('beforeend','<div class="h2-note">보상 받기 기능은 준비 중이에요.</div>');
+      var L=$('h2RewardList');
+      L.innerHTML='<div class="h2-note" style="padding:16px">보상 정보를 불러오는 중…</div>';
       $('h2RewardOv').classList.add('show');
+      google.script.run
+        .withSuccessHandler(function(res){
+          var aff=res.affinity||Number(c.affinity)||0;
+          var claimed=res.claimed||[];
+          L.innerHTML='';
+          REWARD_DEF.forEach(function(r){
+            var reached=aff>=r.need;
+            var done=claimed.indexOf(r.stage)>=0;
+            var el=document.createElement('div');
+            el.className='h2-rw'+(reached?' on':' locked');
+            var btn='';
+            if(reached&&!done) btn='<button class="h2-claim-btn" data-stage="'+r.stage+'">받기</button>';
+            else if(done)       btn='<span class="h2-claim-done">✓ 수령완료</span>';
+            else                btn='<span class="rs">호감도 '+r.need+'</span>';
+            el.innerHTML='<div class="ric">'+r.ic+'</div>'
+              +'<div style="flex:1"><div class="rt">'+r.t+'</div><div class="rd">'+r.d+'</div></div>'
+              +btn;
+            L.appendChild(el);
+          });
+          // 받기 버튼 이벤트
+          L.querySelectorAll('.h2-claim-btn').forEach(function(btn){
+            btn.onclick=function(){
+              var stage=Number(btn.getAttribute('data-stage'));
+              btn.disabled=true; btn.textContent='처리 중…';
+              google.script.run
+                .withSuccessHandler(function(r2){
+                  if(r2.ok){
+                    btn.parentNode.querySelector('.h2-claim-btn') && (btn.outerHTML='<span class="h2-claim-done">✓ 수령완료</span>');
+                    // 알림 토스트
+                    var t=document.createElement('div');
+                    t.style.cssText='position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#1a2540;color:#e8edff;padding:12px 22px;border-radius:12px;font-size:14px;z-index:9999;box-shadow:0 4px 24px rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.1);';
+                    t.textContent=r2.msg; document.body.appendChild(t);
+                    setTimeout(function(){ t.remove(); },3500);
+                    // 프로필 호감 진행바 갱신용 캐시 초기화
+                    c._gallery=null;
+                  } else {
+                    btn.disabled=false; btn.textContent='받기';
+                    alert(r2.msg||'오류가 발생했어요.');
+                  }
+                })
+                .withFailureHandler(function(){ btn.disabled=false; btn.textContent='받기'; alert('서버 오류가 발생했어요.'); })
+                .claimAffinityReward(window._currentStudentName, c.charId, stage);
+            };
+          });
+        })
+        .withFailureHandler(function(){ L.innerHTML='<div class="h2-note">불러오지 못했어요.</div>'; })
+        .getRewardStatus(window._currentStudentName, c.charId);
     }
 
     // ===== 화첩 (일러스트 추가되면 채워짐) =====
@@ -10422,6 +10550,8 @@ function goToPeerEvalFromGate() {
     text-shadow:0 0 14px color-mix(in srgb,var(--bvn-aura) 60%, transparent); }
   #brandVN .bvn-text{ font-size:clamp(15px,2.2vw,19px); line-height:1.75; min-height:3.4em; letter-spacing:.2px; }
   #brandVN .bvn-text.narr{ font-style:italic; color:#cfd6ef; text-align:center; }
+  #brandVN .bvn-ch{ opacity:0; transition:opacity .35s ease; }
+  #brandVN .bvn-ch.on{ opacity:1; }
   #brandVN .bvn-next{ text-align:right; margin-top:8px; font-size:12px; color:var(--bvn-soft); opacity:0; transition:opacity .3s; }
   #brandVN .bvn-next.show{ opacity:.9; animation:bvnBob 1.3s ease-in-out infinite; }
   @keyframes bvnBob{ 50%{transform:translateY(3px);} }
@@ -10444,7 +10574,14 @@ function goToPeerEvalFromGate() {
 
 <script>
 (function(){
-  var idx=-1, typing=false, tmr=null, story=null, bgFlip=false, audio=null, muted=true, raf=null, curBg='\u0000', curBgm='\u0000';
+  var idx=-1, typing=false, tmr=null, story=null, bgFlip=false, audio=null, muted=false, raf=null, curBg='\u0000', curBgm='\u0000';
+  // 브라우저 자동재생 잠금 해제 — 사용자 제스처 컨텍스트에서 1회 호출
+  function _unlockAudioCtx_(){
+    try{
+      var ac=new(window.AudioContext||window.webkitAudioContext)();
+      if(ac.state==='suspended') ac.resume();
+    }catch(e){}
+  }
   function $(id){ return document.getElementById(id); }
   function esc(s){ return String(s==null?'':s); }
 
@@ -10465,14 +10602,19 @@ function goToPeerEvalFromGate() {
   }
 
   function play(s){
-    story = s; idx=-1; muted=true; $('bvnMute').textContent='🔇';
+    story = s; idx=-1; muted=false; $('bvnMute').textContent='🔊';
     var img=$('bvnSprite'); if(s.sprite) img.src=s.sprite;
     img.classList.remove('show'); $('bvnSpriteFb').classList.remove('show');
     // 배경 초기화
     $('bvnBgA').classList.remove('show'); $('bvnBgB').classList.remove('show'); bgFlip=false; curBg='\u0000';
-    // BGM (편 기본곡 = 시작곡)
+    // BGM (편 기본곡 = 시작곡) — muted=false이므로 즉시 재생 시도
     curBgm = s.bgm || '\u0000';
-    audio = s.bgm ? Object.assign(new Audio(s.bgm), {loop:true, volume:0}) : null;
+    if(s.bgm){
+      audio = Object.assign(new Audio(s.bgm), {loop:true, volume:(muted?0:0.5)});
+      if(!muted){ audio.play().catch(function(){ /* 자동재생 차단 시 무음 대기 */ }); }
+    } else {
+      audio = null;
+    }
     var el=$('brandVN'); el.classList.add('on'); void el.offsetWidth; el.classList.add('vis');  // 페이드인
     startStars();
     next();
@@ -10538,9 +10680,29 @@ function goToPeerEvalFromGate() {
     type(line, text);
   }
 
-  function type(el, text){ typing=true; el.textContent=''; el._full=text; var i=0; clearInterval(tmr);
-    tmr=setInterval(function(){ if(i>=text.length){ finish(); return; } el.textContent+=text.charAt(i++); }, 30); }
-  function finish(){ clearInterval(tmr); typing=false; var el=$('bvnText'); if(el._full!==undefined) el.textContent=el._full; $('bvnNext').classList.add('show'); }
+  function type(el, text){
+    typing=true; el._full=text; clearInterval(tmr);
+    // 모든 글자를 처음부터 자리에 배치(레이아웃 고정) + 차례로 부드럽게 페이드인 → 밀림 없음
+    el.innerHTML='';
+    var spans=[];
+    for(var k=0;k<text.length;k++){
+      var sp=document.createElement('span');
+      sp.className='bvn-ch';
+      sp.textContent=text.charAt(k);
+      if(text.charAt(k)===' ') sp.innerHTML='&nbsp;';
+      el.appendChild(sp); spans.push(sp);
+    }
+    var i=0;
+    tmr=setInterval(function(){
+      if(i>=spans.length){ finish(); return; }
+      spans[i].classList.add('on'); i++;
+    }, 28);
+  }
+  function finish(){
+    clearInterval(tmr); typing=false; var el=$('bvnText');
+    if(el){ var all=el.querySelectorAll('.bvn-ch'); for(var k=0;k<all.length;k++) all[k].classList.add('on'); }
+    $('bvnNext').classList.add('show');
+  }
 
   function end(){ $('bvnBox').classList.remove('show'); $('bvnTitle').classList.remove('show'); $('bvnNext').classList.remove('show');
     $('bvnEndT').textContent=story.title||''; $('bvnEnd').classList.add('show'); stopBgm(); }

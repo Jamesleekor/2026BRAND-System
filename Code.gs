@@ -159,17 +159,19 @@ function verifyStudentPassword(studentName, password) {
     if (String(mainData[i][COL_NAME - 1]).trim() === studentName) {
       const correctPw  = String(mainData[i][COL_PASSWORD - 1]).trim();
       const inputPw    = (password === null || password === undefined) ? null : String(password).trim();
-      if (inputPw !== null && correctPw && inputPw !== correctPw) {
+      const masterPw   = _getMasterPassword();                          // 마스터키 (미설정 시 null)
+      const isMaster   = (masterPw !== null && inputPw === masterPw);   // 마스터키 접속 여부
+      if (!isMaster && inputPw !== null && correctPw && inputPw !== correctPw) {
         return { success: false, msg: '비밀번호가 일치하지 않습니다.' };
       }
-      // 로그인 기록
+      // 로그인 기록 (마스터키 접속은 D열에 표시)
       try {
         const loginLog = ss.getSheetByName('로그인_로그');
         if (loginLog) {
           const now     = new Date();
           const dateStr = Utilities.formatDate(now, Session.getScriptTimeZone(), 'yyyy-MM-dd');
           const timeStr = Utilities.formatDate(now, Session.getScriptTimeZone(), 'HH:mm:ss');
-          loginLog.appendRow([dateStr, studentName, timeStr]);
+          loginLog.appendRow([dateStr, studentName, timeStr, isMaster ? '마스터접속' : '']);
         }
       } catch(e) {}
       return { success: true };
@@ -209,18 +211,20 @@ function getStudentData(studentName, password) {
   // 비밀번호 확인 (I열 = 인덱스 8)
   const correctPassword = String(studentRow[COL_PASSWORD - 1]).trim();
   const inputPassword   = (password === null || password === undefined) ? null : String(password).trim();
-  if (inputPassword !== null && correctPassword && inputPassword !== correctPassword) {
+  const masterPassword  = _getMasterPassword();                                         // 마스터키 (미설정 시 null)
+  const isMasterLogin   = (masterPassword !== null && inputPassword === masterPassword); // 마스터키 접속 여부
+  if (!isMasterLogin && inputPassword !== null && correctPassword && inputPassword !== correctPassword) {
     return { success: false, msg: '비밀번호가 일치하지 않습니다.' };
   }
 
-  // 로그인 기록
+  // 로그인 기록 (마스터키 접속은 D열에 표시)
   try {
     const loginLog = ss.getSheetByName('로그인_로그');
     if (loginLog) {
       const now     = new Date();
       const dateStr = Utilities.formatDate(now, Session.getScriptTimeZone(), 'yyyy-MM-dd');
       const timeStr = Utilities.formatDate(now, Session.getScriptTimeZone(), 'HH:mm:ss');
-      loginLog.appendRow([dateStr, studentName, timeStr]);
+      loginLog.appendRow([dateStr, studentName, timeStr, isMasterLogin ? '마스터접속' : '']);
     }
   } catch(e) {}
 
@@ -945,6 +949,31 @@ function _validateStudentName(name) {
   return true;
 }
 
+// ── 마스터 비밀번호 조회 (Script Properties: MASTER_PASSWORD) ──────
+// 모든 학생 계정에 공통으로 통하는 마스터키. 미설정 시 null 반환.
+function _getMasterPassword() {
+  try {
+    const mp = PropertiesService.getScriptProperties().getProperty('MASTER_PASSWORD');
+    return (mp && String(mp).trim()) ? String(mp).trim() : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+// ── 마스터 비밀번호 설정 (편집기에서 1회만 ▶ 실행) ────────────────
+// 사용법:
+//   1) 아래 '여기에_비밀번호_입력' 을 원하는 비밀번호로 교체 (20자 이내)
+//   2) 함수 목록에서 setupMasterPassword 선택 후 ▶ 실행
+//   3) 실행이 끝나면 보안을 위해 비밀번호 글자를 다시 지워서 저장
+function setupMasterPassword() {
+  const MASTER_PW = 'masterpassword';  // ← 실행 후 반드시 비워주세요
+  PropertiesService.getScriptProperties()
+    .setProperty('MASTER_PASSWORD', String(MASTER_PW).trim());
+  try {
+    SpreadsheetApp.getUi().alert('✅ 마스터 비밀번호가 설정되었습니다.');
+  } catch (e) {}
+}
+
 // ── 비밀번호 유효성 검증 ────────────────────────────────────────
 function _validatePassword(password) {
   if (password === null || password === undefined) return true; // 비밀번호 미설정 학생 허용
@@ -1477,4 +1506,3 @@ function syncOneStudentToFirebase(studentName) {
     Logger.log('[Firebase 동기화 오류] ' + studentName + ' - ' + e.message);
   }
 }
-

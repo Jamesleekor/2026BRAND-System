@@ -2323,7 +2323,7 @@
         <span class="dash-tab-icon">📚</span><span class="dash-tab-label">과제</span>
       </button>
       <button class="dash-tab" onclick="switchDashTab('chat',this)">
-        <span class="dash-tab-icon">💬</span><span class="dash-tab-label">교신</span>
+        <span class="dash-tab-icon">💬</span><span class="dash-tab-label">차원관문</span>
       </button>
     </div><!-- /dashTabBar -->
 
@@ -3300,7 +3300,7 @@
   <div class="h2" id="h2">
     <!-- 좌: 친구 목록 -->
     <div class="h2-friends">
-      <div class="h2-fhead">교신<small>캐릭터마다 하루 정해진 횟수만 대화할 수 있어요</small></div>
+      <div class="h2-fhead">차원관문<small>캐릭터마다 하루 정해진 횟수만 대화할 수 있어요</small></div>
       <div class="h2-flist" id="h2List"><div class="h2-loading">불러오는 중…</div></div>
     </div>
     <!-- 우: 프로필/채팅 -->
@@ -3354,19 +3354,73 @@
     }
     function avaInner(c){ return c.portrait ? '<img src="'+esc(c.portrait)+'" onerror="this.style.display=\'none\'">' : '✦'; }
 
-    function initHub(){
-      var name = window._currentStudentName; if(!name) return;
-      $('h2').classList.remove('show-right'); $('h2Right').classList.remove('chat');
-      $('h2List').innerHTML = '<div class="h2-loading">불러오는 중…</div>';
+    // [차원관문] 워프 연출: 만남 이벤트 입장 직전 1.4초 CSS 빛 전환. 캐릭터별 오라색 사용 후 cb()(이야기 시작) 실행.
+    function _warpTransition_(c, cb){
+      var w=$('dimWarp');
+      if(!w){ cb(); return; }                              // 안전장치: 오버레이 없으면 바로 진행
+      w.style.setProperty('--dw-aura', (c&&c.aura)||'#6c5cff');
+      w.style.setProperty('--dw-soft', (c&&c.auraSoft)||'#8fd0ff');
+      $('dwText').textContent = ((c&&c.name)||'') + '의 세계로 건너갑니다';
+      w.classList.remove('go','out'); void w.offsetWidth;  // 리플로우 → 애니메이션 재시작
+      w.classList.add('go');
+      setTimeout(function(){ cb(); }, 1100);               // 빛이 거의 가득 찼을 때 이야기 시작(뒤에서 페이드인)
+      setTimeout(function(){ w.classList.add('out'); }, 1450); // 빛 페이드아웃 → 이야기 드러남
+      setTimeout(function(){ w.classList.remove('go','out'); }, 2000); // 상태 정리
+    }
+
+    // [차원관문] 리미넬 인트로를 한 번 봤는지 브라우저에 기억 (서버 조회 줄여 빠르게).
+    //   ※ 테스트로 다시 보려면 브라우저 콘솔(F12)에서:
+    //        localStorage.removeItem('brand_liminel_intro_seen'); location.reload();
+    var LIMINEL_SEEN_KEY = 'brand_liminel_intro_seen';
+    function _liminelSeen_(){ try{ return localStorage.getItem(LIMINEL_SEEN_KEY)==='1'; }catch(e){ return false; } }
+    function _markLiminelSeen_(){ try{ localStorage.setItem(LIMINEL_SEEN_KEY,'1'); }catch(e){} }
+
+    function _loadRoster_(name){
       google.script.run
         .withSuccessHandler(function(r){ ROSTER=r||[]; renderFriends(); })
         .withFailureHandler(function(e){ $('h2List').innerHTML='<div class="h2-loading">불러오기 실패: '+esc(e&&e.message)+'</div>'; })
         .getCharacterRoster(name);
     }
 
+    function initHub(){
+      var name = window._currentStudentName; if(!name) return;
+      $('h2').classList.remove('show-right'); $('h2Right').classList.remove('chat');
+      console.log('[리미넬 디버그] initHub 진입 — localStorage seen?:', _liminelSeen_());
+
+      // 이미 인트로를 본 적 있으면 → 서버 조회 없이 친구목록 바로 표시 (빠름)
+      if(_liminelSeen_()){
+        console.log('[리미넬 디버그] → seen=true 분기: 서버 조회 건너뜀, 친구목록만 표시. (다시 보려면 localStorage 키 삭제 필요)');
+        $('h2List').innerHTML = '<div class="h2-loading">불러오는 중…</div>';
+        _loadRoster_(name);
+        return;
+      }
+
+      // 첫 진입: "차원관문이 열리는 중…" 안내 후 리미넬(MANAGER) 편1 열람 여부 조회
+      $('h2List').innerHTML = '<div class="h2-loading">⟡ 차원관문이 열리는 중…</div>';
+      console.log('[리미넬 디버그] 조회 시작 — 학생명:', name, '/ BrandStory 준비됨?:', !!window.BrandStory, '/ localStorage seen?:', _liminelSeen_());
+      google.script.run
+        .withSuccessHandler(function(res){
+          console.log('[리미넬 디버그] 서버 응답:', JSON.stringify(res));
+          var st = (res && res.stories) || [];
+          var ep1 = st.filter(function(s){ return Number(s.ep) === 1; })[0];
+          console.log('[리미넬 디버그] ep1:', JSON.stringify(ep1), '/ 재생조건(있음·해금·미열람·뷰어):',
+            !!ep1, ep1&&ep1.unlocked, ep1&&!ep1.read, !!window.BrandStory);
+          if(ep1 && ep1.unlocked && !ep1.read && window.BrandStory){
+            console.log('[리미넬 디버그] → 자동 재생 실행');
+            window.BrandStory.open('MANAGER', 1);   // 인트로 자동 재생
+          } else {
+            console.log('[리미넬 디버그] → 자동 재생 안 함 (위 조건 중 하나가 false)');
+          }
+          _markLiminelSeen_();   // 봤음 표시 → 다음 진입부터 즉시 친구목록
+          _loadRoster_(name);    // 친구목록 로드 (뷰어가 떠 있으면 그 뒤에서 준비됨)
+        })
+        .withFailureHandler(function(e){ console.log('[리미넬 디버그] 서버 조회 실패:', e && e.message); _loadRoster_(name); })  // 조회 실패해도 목록은 표시
+        .getCharacterStories(name, 'MANAGER');
+    }
+
     function renderFriends(){
       var L=$('h2List');
-      if(!ROSTER.length){ L.innerHTML='<div class="h2-loading">아직 교신 가능한 캐릭터가 없어요.</div>'; return; }
+      if(!ROSTER.length){ L.innerHTML='<div class="h2-loading">아직 차원관문이 열린 캐릭터가 없어요.</div>'; return; }
       L.innerHTML='';
       ROSTER.forEach(function(c){
         var el=document.createElement('div');
@@ -3533,7 +3587,7 @@
             function _enterStory_(){
               _unlockAudioCtx_();
               $('h2StoryOv').classList.remove('show');
-              if(window.BrandStory) window.BrandStory.open(c.charId, s.ep);
+              if(window.BrandStory){ _warpTransition_(c, function(){ window.BrandStory.open(c.charId, s.ep); }); }
               s.read=true; s.isNew=false; c._hasNew=stories.some(function(x){return x.unlocked&&!x.read;});
               var d=$('h2MeetDot'); if(d) d.style.display=c._hasNew?'block':'none'; renderFriends();
             }
@@ -3940,8 +3994,8 @@
     <div class="shop-tabs">
       <button class="shop-tab active" onclick="switchShopTab('스킨',this)">🎨 스킨</button>
       <button class="shop-tab" onclick="switchShopTab('폰트',this)">✏️ 폰트</button>
-      <button class="shop-tab" onclick="switchShopTab('캐릭터(남)',this)">👦 남</button>
-      <button class="shop-tab" onclick="switchShopTab('캐릭터(여)',this)">👧 여</button>
+      <button class="shop-tab" onclick="switchShopTab('캐릭터(남)',this)">👦 편린(남)</button>
+      <button class="shop-tab" onclick="switchShopTab('캐릭터(여)',this)">👧 편린(여)</button>
     </div>
     <div class="shop-items" id="shopItemList">
       <div style="text-align:center;padding:30px;color:#bbb;">로딩 중...</div>
@@ -8317,7 +8371,7 @@ function requestCancelSaving(savId, principal) {
         btnHtml = '<button style="flex:1;padding:12px;border-radius:10px;border:none;background:#555;color:#aaa;font-size:14px;font-weight:bold;" disabled>잔액 부족</button>';
       } else {
         btnHtml = '<button style="flex:1;padding:12px;border-radius:10px;border:none;background:#4da8f5;color:#fff;font-size:14px;font-weight:bold;cursor:pointer;" ' +
-          'onclick="buyShopItem(\'' + item.itemId + '\');_closeCharDetail()">구매 & 장착</button>';
+          'onclick="buyShopItem(\'' + item.itemId + '\');_closeCharDetail()">영입 & 장착</button>';
       }
     } else {
       btnHtml = '<button style="flex:1;padding:12px;border-radius:10px;border:none;background:#4da8f5;color:#fff;font-size:14px;font-weight:bold;cursor:pointer;" ' +
@@ -8448,7 +8502,10 @@ function requestCancelSaving(savId, principal) {
 
   function buyShopItem(itemId) {
     if (_peerEvalGateActive('상점 구매')) return; // [추가] 동료평가 강제
-    if (!confirm('구매하시겠습니까?')) return;
+    // [차원관문] 캐릭터(편린)는 '영입', 스킨/폰트는 '구매'로 확인창 분기
+    var _it = (_shopData.items || []).filter(function(i){ return i.itemId === itemId; })[0];
+    var _isChar = !!(_it && _it.category && _it.category.indexOf('캐릭터') === 0);
+    if (!confirm(_isChar ? '영입하시겠습니까?' : '구매하시겠습니까?')) return;
     google.script.run.withSuccessHandler(function(res) {
       if (!res.success) { alert('오류: ' + res.msg); return; }
       alert(res.msg);
@@ -10483,6 +10540,13 @@ function goToPeerEvalFromGate() {
   · BrandStory.open(charId, ep) 로 getStoryScript 받아 풀스크린 재생
   · 별가루 애니메이션은 뷰어가 열렸을 때만 동작(닫으면 정지) → 평소 0 비용
   ════════════════════════════════════════════════════════════ -->
+<!-- [차원관문] 워프 연출 오버레이 (CSS only) — 만남 이벤트 입장 직전 빛 전환 -->
+<div id="dimWarp" aria-hidden="true">
+  <div class="dw-ring"></div>
+  <div class="dw-core"></div>
+  <div class="dw-text" id="dwText"></div>
+</div>
+
 <div id="brandVN">
   <div class="bvn-bg" id="bvnBgA"></div>
   <div class="bvn-bg" id="bvnBgB"></div>
@@ -10514,6 +10578,31 @@ function goToPeerEvalFromGate() {
 </div>
 
 <style>
+  /* [차원관문] 워프 연출 — 만남 이벤트 입장 직전 1.4초 빛 전환 (CSS only). z-index는 BrandVN(99999) 위. */
+  #dimWarp{ position:fixed; inset:0; z-index:100000; display:none; pointer-events:none; opacity:1;
+    transition:opacity .45s ease; background:radial-gradient(circle at 50% 50%, rgba(3,5,16,0), rgba(3,5,16,.55));
+    --dw-aura:#6c5cff; --dw-soft:#8fd0ff; }
+  #dimWarp.go{ display:block; }
+  #dimWarp.out{ opacity:0; }
+  #dimWarp .dw-core{ position:absolute; left:50%; top:50%; width:14px; height:14px; border-radius:50%;
+    transform:translate(-50%,-50%) scale(0);
+    background:radial-gradient(circle, #ffffff 0%, var(--dw-soft) 30%, var(--dw-aura) 62%, transparent 72%);
+    box-shadow:0 0 140px 50px var(--dw-aura); }
+  #dimWarp.go .dw-core{ animation:dwCore 1.4s cubic-bezier(.6,0,.7,1) forwards; }
+  @keyframes dwCore{ 0%{ transform:translate(-50%,-50%) scale(0); opacity:0; }
+    18%{ opacity:1; } 65%{ transform:translate(-50%,-50%) scale(10); opacity:1; }
+    100%{ transform:translate(-50%,-50%) scale(80); opacity:1; } }
+  #dimWarp .dw-ring{ position:absolute; left:50%; top:50%; width:64vmax; height:64vmax; border-radius:50%;
+    transform:translate(-50%,-50%) scale(1.25); opacity:0; border:2px solid var(--dw-soft);
+    box-shadow:0 0 30px var(--dw-soft), inset 0 0 30px var(--dw-soft); }
+  #dimWarp.go .dw-ring{ animation:dwRing 1.05s ease-out forwards; }
+  @keyframes dwRing{ 0%{ opacity:0; transform:translate(-50%,-50%) scale(1.25);} 28%{ opacity:.85;} 100%{ opacity:0; transform:translate(-50%,-50%) scale(.02);} }
+  #dimWarp .dw-text{ position:absolute; left:0; right:0; top:60%; text-align:center; color:#fff;
+    font-size:clamp(.95rem,2.6vw,1.15rem); letter-spacing:.06em; opacity:0;
+    text-shadow:0 0 18px var(--dw-aura), 0 2px 6px rgba(0,0,0,.6); }
+  #dimWarp.go .dw-text{ animation:dwText 1.4s ease forwards; }
+  @keyframes dwText{ 0%{opacity:0; transform:translateY(8px);} 22%{opacity:1; transform:translateY(0);} 78%{opacity:1;} 100%{opacity:0;} }
+
   #brandVN{ position:fixed; inset:0; z-index:99999; display:none; opacity:0; transition:opacity .55s ease; overflow:hidden;
     --bvn-aura:#6c5cff; --bvn-soft:#8fd0ff;
     background:radial-gradient(120% 90% at 50% -10%, #15183a, #05060f 60%);
@@ -10644,7 +10733,11 @@ function goToPeerEvalFromGate() {
     $('bvnProg').textContent=(idx+1)+' / '+story.cuts.length;
     $('bvnNext').classList.remove('show');
     var bg = (c.bg==null ? '' : String(c.bg)).trim();
-    if(bg){ setBg((bg==='-' || bg.toLowerCase()==='none') ? '' : bg); }
+    if(bg){
+      // 배경 칸이 '-' / 'none' / '기본' / '배경없음' 이면 일러스트 제거 → 기본 배경(별가루·은은한 빛)으로 전환
+      var _clearBg = (bg==='-' || bg.toLowerCase()==='none' || bg==='기본' || bg==='배경없음');
+      setBg(_clearBg ? '' : bg);
+    }
     // 배경 칸이 비어 있으면 → 현재 배경 그대로 유지 (컷마다 다시 안 칠함)
     var cbgm = (c.bgm==null ? '' : String(c.bgm)).trim();
     if(cbgm){ switchBgm((cbgm==='-' || cbgm.toLowerCase()==='none') ? '' : cbgm); }
@@ -10705,7 +10798,7 @@ function goToPeerEvalFromGate() {
   }
 
   function end(){ $('bvnBox').classList.remove('show'); $('bvnTitle').classList.remove('show'); $('bvnNext').classList.remove('show');
-    $('bvnEndT').textContent=story.title||''; $('bvnEnd').classList.add('show'); stopBgm(); }
+    $('bvnEndT').textContent=story.title||''; $('bvnEnd').classList.add('show'); /* BGM 유지: 엔딩/돌아가기 화면 동안 음악 이어짐. 정지는 close()에서만. */ }
 
   function close(){ var el=$('brandVN'); el.classList.remove('vis');
     setTimeout(function(){ el.classList.remove('on'); $('bvnEnd').classList.remove('show'); stopStars(); }, 360);

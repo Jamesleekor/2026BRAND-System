@@ -324,7 +324,10 @@ function purchaseShopItem(studentName, itemId) {
   _updateRankingsOnly();
   try { syncOneStudentToFirebase(studentName); } catch(e) { Logger.log('[Firebase Shop] ' + e.message); }
 
-  return { success: true, msg: `[${itemName}] 구매 완료! $${price} 차감되었습니다.`, itemId, resourceVal: String(itemRow[7]).trim(), category: String(itemRow[1]).trim() };
+  // [차원관문] 캐릭터(편린)는 '영입 완료', 스킨/폰트는 '구매 완료'로 메시지 분기
+  var _cat = String(itemRow[1]).trim();
+  var _verb = _cat.indexOf('캐릭터') === 0 ? '영입' : '구매';
+  return { success: true, msg: `[${itemName}] ${_verb} 완료! $${price} 차감되었습니다.`, itemId, resourceVal: String(itemRow[7]).trim(), category: _cat };
 }
 
 // ※ getOwnedItems() 제거됨 (2026-05-17)

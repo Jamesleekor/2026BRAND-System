@@ -3328,7 +3328,7 @@
       <div class="h2-notice-body">
         <div class="h2-notice-ic">🌌</div>
         <div class="h2-notice-title">잠시만요</div>
-        <div class="h2-notice-msg">이번 편은 내용이 길고<br>여러 일러스트와 음악이 연출됩니다.<br><br>최소 <b>15분 이상</b>의 여유 시간을 가지고<br>천천히 감상해 주세요.</div>
+        <div class="h2-notice-msg">이번 편은 내용이 길고<br>여러 일러스트와 음악이 연출됩니다.<br>이어폰 혹은 헤드셋을 착용하시고<br>최소 <b>15분 이상</b>의 여유 시간을 가지고<br>천천히 감상해 주세요.</div>
         <div class="h2-notice-btns">
           <button class="h2-notice-later" id="h2NoticeLater">나중에 다시 감상하기</button>
           <button class="h2-notice-enter" id="h2NoticeEnter">입장하기</button>
@@ -10567,6 +10567,7 @@ function goToPeerEvalFromGate() {
   <div class="bvn-box" id="bvnBox"><div class="bvn-inner">
     <div class="bvn-name" id="bvnName"></div>
     <div class="bvn-text" id="bvnText"></div>
+    <div class="bvn-choices" id="bvnChoices"></div>
     <div class="bvn-next" id="bvnNext">다음 ▼</div>
   </div></div>
   <div class="bvn-flash" id="bvnFlash"></div>
@@ -10637,10 +10638,27 @@ function goToPeerEvalFromGate() {
     border-radius:18px; padding:18px 24px 22px; backdrop-filter:blur(8px); box-shadow:0 -10px 50px rgba(0,0,0,0.5); }
   #brandVN .bvn-name{ font-family:'Noto Serif KR',serif; font-weight:900; font-size:17px; color:var(--bvn-soft); margin-bottom:9px;
     text-shadow:0 0 14px color-mix(in srgb,var(--bvn-aura) 60%, transparent); }
+  /* [최종장] 칭호 첫 등장 — 이름 반짝 강조 (절제된 빛 플레어) */
+  #brandVN .bvn-name.bvn-name-glow{ animation:bvnNameGlow 4.2s ease-in-out; }
+  @keyframes bvnNameGlow{
+    0%{ opacity:0; filter:blur(6px); color:#fff3d6; text-shadow:0 0 0 transparent; }
+    40%{ opacity:1; filter:blur(0); color:#ffe9ad; text-shadow:0 0 26px #ffcf6a, 0 0 52px #ffb43c; }
+    52%{ color:#fff6e0; text-shadow:0 0 36px #ffd87a, 0 0 70px #ffb43c; }
+    70%{ color:#eadfc2; text-shadow:0 0 20px #e9c47a; }
+    100%{ filter:blur(0); color:var(--bvn-soft); text-shadow:0 0 14px color-mix(in srgb,var(--bvn-aura) 60%, transparent); }
+  }
   #brandVN .bvn-text{ font-size:clamp(15px,2.2vw,19px); line-height:1.75; min-height:3.4em; letter-spacing:.2px; }
   #brandVN .bvn-text.narr{ font-style:italic; color:#cfd6ef; text-align:center; }
   #brandVN .bvn-ch{ opacity:0; transition:opacity .35s ease; }
   #brandVN .bvn-ch.on{ opacity:1; }
+  #brandVN .bvn-choices{ display:none; flex-direction:column; gap:8px; margin-top:10px; }
+  #brandVN .bvn-choices.show{ display:flex; }
+  #brandVN .bvn-choice{ width:100%; text-align:left; padding:11px 14px; border-radius:10px; cursor:pointer;
+    background:rgba(255,255,255,.06); border:1px solid var(--bvn-soft); color:#fff; font-size:14px; line-height:1.4;
+    transition:background .15s, transform .1s; }
+  #brandVN .bvn-choice:hover{ background:rgba(255,255,255,.16); }
+  #brandVN .bvn-choice:active{ transform:scale(.99); }
+  #brandVN .bvn-choice .bvn-choice-mark{ color:var(--bvn-soft); margin-right:8px; font-weight:bold; }
   #brandVN .bvn-next{ text-align:right; margin-top:8px; font-size:12px; color:var(--bvn-soft); opacity:0; transition:opacity .3s; }
   #brandVN .bvn-next.show{ opacity:.9; animation:bvnBob 1.3s ease-in-out infinite; }
   @keyframes bvnBob{ 50%{transform:translateY(3px);} }
@@ -10663,7 +10681,7 @@ function goToPeerEvalFromGate() {
 
 <script>
 (function(){
-  var idx=-1, typing=false, tmr=null, story=null, bgFlip=false, audio=null, muted=false, raf=null, curBg='\u0000', curBgm='\u0000';
+  var idx=-1, typing=false, tmr=null, story=null, bgFlip=false, audio=null, muted=false, raf=null, curBg='\u0000', curBgm='\u0000', orderToIdx={};
   // 브라우저 자동재생 잠금 해제 — 사용자 제스처 컨텍스트에서 1회 호출
   function _unlockAudioCtx_(){
     try{
@@ -10674,7 +10692,7 @@ function goToPeerEvalFromGate() {
   function $(id){ return document.getElementById(id); }
   function esc(s){ return String(s==null?'':s); }
 
-  window.BrandVN = { play:play, close:close };
+  window.BrandVN = { play:play, close:close, jumpTo:jumpTo };   // jumpTo: 개발용 컷 점프
   window.BrandStory = { open:openStory };
   console.log('[BrandVN] ready ✓');
 
@@ -10692,6 +10710,9 @@ function goToPeerEvalFromGate() {
 
   function play(s){
     story = s; idx=-1; muted=false; $('bvnMute').textContent='🔊';
+    // [선택지] 점프 대상(순서번호) → 배열 인덱스 매핑 생성
+    orderToIdx = {};
+    for(var oi=0; oi<(s.cuts||[]).length; oi++){ var o=s.cuts[oi].order; if(o) orderToIdx[o]=oi; }
     var img=$('bvnSprite'); if(s.sprite) img.src=s.sprite;
     img.classList.remove('show'); $('bvnSpriteFb').classList.remove('show');
     // 배경 초기화
@@ -10711,6 +10732,12 @@ function goToPeerEvalFromGate() {
   // 스프라이트 표시/숨김 (story.sprite 있으면 사진, 없으면 폴백 실루엣)
   function showSprite(){ if(story && story.sprite){ $('bvnSprite').classList.add('show'); $('bvnSpriteFb').classList.remove('show'); } else { $('bvnSprite').classList.remove('show'); $('bvnSpriteFb').classList.add('show'); } }
   function hideSprite(){ $('bvnSprite').classList.remove('show'); $('bvnSpriteFb').classList.remove('show'); }
+  // [최종장] 이름 반짝 강조 — 애니메이션 클래스 재생
+  function _flashName(){
+    var el=$('bvnName'); if(!el) return;
+    el.classList.remove('bvn-name-glow'); void el.offsetWidth;   // 재생 리셋
+    el.classList.add('bvn-name-glow');
+  }
 
   function setBg(url){
     url = url || '';
@@ -10723,15 +10750,39 @@ function goToPeerEvalFromGate() {
   }
 
   function next(){
+    if(epiloguePlaying){ return; }   // [최종장] 에필로그 중 클릭/키 무시
     if(typing){ finish(); return; }
+    var cur = (idx>=0 && idx<story.cuts.length) ? story.cuts[idx] : null;
+    if(cur && cur.type==='choice'){ return; }       // [선택지] 버튼으로만 진행 (탭 무시)
+    if(cur && cur.jump!=null){ return goToOrder(cur.jump); }  // [선택지] 분기 끝 → 합류 지점 점프
     idx++;
     if(idx >= story.cuts.length){ return end(); }
     render(story.cuts[idx]);
   }
 
+  // [선택지] 순서번호로 점프 (못 찾으면 안전하게 다음 컷)
+  function goToOrder(order){
+    var t = orderToIdx[order];
+    idx = (t==null) ? idx+1 : t;
+    if(idx >= story.cuts.length){ return end(); }
+    render(story.cuts[idx]);
+  }
+
+  // [개발용] 특정 컷으로 즉시 이동. 이야기 연 뒤 콘솔에서 BrandVN.jumpTo(145) 처럼 호출.
+  function jumpTo(n){
+    if(!story || !story.cuts){ console.warn('[BrandVN] 먼저 이야기를 여세요.'); return; }
+    var t = Math.max(0, Math.min((parseInt(n,10)||1)-1, story.cuts.length-1));
+    epiloguePlaying = false;        // 혹시 에필로그 잠금 상태면 해제
+    $('bvnEnd').classList.remove('show');
+    idx = t;
+    render(story.cuts[idx]);
+    console.log('[BrandVN] '+(t+1)+'번 컷으로 이동 (총 '+story.cuts.length+'컷)');
+  }
+
   function render(c){
     $('bvnProg').textContent=(idx+1)+' / '+story.cuts.length;
     $('bvnNext').classList.remove('show');
+    $('bvnChoices').classList.remove('show'); $('bvnChoices').innerHTML='';   // [선택지] 컷마다 초기화
     var bg = (c.bg==null ? '' : String(c.bg)).trim();
     if(bg){
       // 배경 칸이 '-' / 'none' / '기본' / '배경없음' 이면 일러스트 제거 → 기본 배경(별가루·은은한 빛)으로 전환
@@ -10767,8 +10818,12 @@ function goToPeerEvalFromGate() {
 
     $('bvnBox').classList.add('show');
     var asSub = isCG || narr;     // 컷신/나레이션은 자막 스타일(이름 숨김, 가운데)
-    $('bvnName').textContent = asSub ? '' : (c.speaker||'');
+    var _spk = c.speaker || '';
+    var _nameGlow = false;
+    if(_spk.charAt(0)==='★'){ _nameGlow = true; _spk = _spk.slice(1).trim(); }   // [최종장] ★ = 이름 강조 신호
+    $('bvnName').textContent = asSub ? '' : _spk;
     $('bvnName').style.display = asSub ? 'none':'block';
+    if(_nameGlow && !asSub){ _flashName(); }   // 칭호 첫 등장: 이름 반짝 연출
     var line=$('bvnText'); line.className='bvn-text'+(asSub?' narr':'');
     type(line, text);
   }
@@ -10794,13 +10849,125 @@ function goToPeerEvalFromGate() {
   function finish(){
     clearInterval(tmr); typing=false; var el=$('bvnText');
     if(el){ var all=el.querySelectorAll('.bvn-ch'); for(var k=0;k<all.length;k++) all[k].classList.add('on'); }
-    $('bvnNext').classList.add('show');
+    var cur = (idx>=0 && idx<story.cuts.length) ? story.cuts[idx] : null;
+    if(cur && cur.type==='choice' && cur.choices && cur.choices.length){
+      showChoices(cur);              // [선택지] 버튼 표시 (다음 표시 안 함)
+    } else {
+      $('bvnNext').classList.add('show');
+    }
   }
 
-  function end(){ $('bvnBox').classList.remove('show'); $('bvnTitle').classList.remove('show'); $('bvnNext').classList.remove('show');
-    $('bvnEndT').textContent=story.title||''; $('bvnEnd').classList.add('show'); /* BGM 유지: 엔딩/돌아가기 화면 동안 음악 이어짐. 정지는 close()에서만. */ }
+  // [선택지] 선택지 버튼 렌더 — 누르면 해당 순서로 점프
+  function showChoices(cut){
+    var box=$('bvnChoices'); box.innerHTML=''; $('bvnNext').classList.remove('show');
+    var marks=['①','②','③','④'];
+    cut.choices.forEach(function(ch, i){
+      if(!ch.label) return;
+      var b=document.createElement('button');
+      b.className='bvn-choice';
+      var mark=document.createElement('span'); mark.className='bvn-choice-mark'; mark.textContent=marks[i]||'•';
+      b.appendChild(mark); b.appendChild(document.createTextNode(ch.label));
+      b.onclick=function(ev){ ev.stopPropagation(); box.classList.remove('show'); box.innerHTML=''; goToOrder(ch.to); };
+      box.appendChild(b);
+    });
+    box.classList.add('show');
+  }
+
+  var epiloguePlaying=false;   // [최종장] 에필로그 재생 중 입력 잠금용 (호이스팅되어 next()에서도 참조됨)
+
+  // [최종장 엔딩 연출] 이 제목의 이야기일 때만 에필로그 내레이션 재생. 다른 캐릭터/다른 편은 기존대로.
+  var EPILOGUE_TITLE = '멈춰버린 밤';
+  // 타이밍(ms) — 음악 길이에 맞춰 이 숫자만 조절하면 됨
+  var EPILOGUE_TIMING = {
+    fadeToBlack:2500, holdBlack:2500, lineFade:1800, afterOpening:1600,
+    gapSmall:450, betweenLines:1200, beforeWitness:900, longPause:2800,
+    narrationHold:3000, narrationFade:2200, revealEnding:2200, buttonDelay:3500
+  };
+  // 내레이션 줄 (opening=낭만적 도입, witness=칭호 강조, blankAfter=뒤 한 줄 띄움, longPauseAfter=뒤 긴 정적)
+  var EPILOGUE_LINES = [
+    { text:'별이 자라는 데엔, 아주 오랜 시간이 걸린다.', opening:true, blankAfter:true },
+    { text:'잊혀가던 그의 기억을 깨우고,' },
+    { text:'그 밤의 진실을 끝까지 들어준 단 한 사람.', blankAfter:true },
+    { text:'그는 오래도록 기억할 것이다.' },
+    { text:'그 멈춘 밤의 증인을.', witness:true, blankAfter:true, longPauseAfter:true },
+    { text:'그러니 가끔은, 그를 보러 와주길.' },
+    { text:'……그 긴 기다림이, 조금은 덜 외롭도록.' }
+  ];
+  function _epiSleep(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
+
+  // 에필로그 내레이션 재생 → 끝나면 onReveal() 호출(기존 엔딩 화면 표시)
+  async function playAstelEpilogue(onReveal){
+    var T = EPILOGUE_TIMING;
+    epiloguePlaying = true;
+
+    // 검은 오버레이 + 내레이션 DOM 생성 (기존 CSS 안 건드리고 인라인 스타일로)
+    var ov = document.createElement('div');
+    ov.id = 'bvnEpilogue';
+    ov.style.cssText = 'position:absolute;inset:0;z-index:70;display:flex;align-items:center;'
+      + 'justify-content:center;background:#000;opacity:0;transition:opacity '+T.fadeToBlack+'ms ease;';
+    var box = document.createElement('div');
+    box.style.cssText = "max-width:720px;padding:0 28px;text-align:center;color:#d7ddf5;"
+      + "line-height:2.1;font-family:'Noto Serif KR',serif;";
+    ov.appendChild(box);
+    $('brandVN').appendChild(ov);
+
+    var els = EPILOGUE_LINES.map(function(it){
+      var pp = document.createElement('p');
+      var base = 'margin:0;opacity:0;transition:opacity '+T.lineFade+'ms ease;font-size:23px;letter-spacing:.04em;';
+      if(it.opening) base += 'font-size:26px;letter-spacing:.12em;color:#c6cdf0;';
+      if(it.witness) base += 'color:#eaf0ff;letter-spacing:.14em;text-shadow:0 0 18px rgba(160,180,255,.55);';
+      pp.style.cssText = base; pp.textContent = it.text; box.appendChild(pp);
+      if(it.blankAfter){ var sp=document.createElement('div'); sp.style.height='14px'; box.appendChild(sp); }
+      return pp;
+    });
+
+    await _epiSleep(30);
+    ov.style.opacity = '1';                          // 암전
+    await _epiSleep(T.fadeToBlack + T.holdBlack);    // 정적
+
+    for(var i=0;i<els.length;i++){
+      els[i].style.opacity = '1';                    // 줄 페이드인
+      var it = EPILOGUE_LINES[i];
+      await _epiSleep(T.lineFade);
+      if(it.longPauseAfter)      await _epiSleep(T.longPause);
+      else if(it.blankAfter)     await _epiSleep(T.betweenLines);
+      else if(i===0)             await _epiSleep(T.afterOpening);
+      else                       await _epiSleep(T.gapSmall);
+      if(EPILOGUE_LINES[i+1] && EPILOGUE_LINES[i+1].witness) await _epiSleep(T.beforeWitness);
+    }
+
+    await _epiSleep(T.narrationHold);                // 마지막 두 줄 머무름
+    box.style.transition = 'opacity '+T.narrationFade+'ms ease';
+    box.style.opacity = '0';                         // 내레이션 사라짐
+    await _epiSleep(T.narrationFade);
+
+    if(typeof onReveal==='function') onReveal();     // 기존 엔딩 화면 표시(버튼은 숨김 상태)
+    ov.style.transition = 'opacity '+T.revealEnding+'ms ease';
+    ov.style.opacity = '0';                          // 오버레이 걷힘 → 엔딩 화면 드러남
+    await _epiSleep(T.revealEnding);
+    if(ov.parentNode) ov.parentNode.removeChild(ov);
+
+    await _epiSleep(T.buttonDelay);                  // 잠시 그림·음악만 → 돌아가기 버튼 등장
+    var b=$('bvnEndBtn'); if(b){ b.style.transition='opacity 1.2s ease'; b.style.opacity='1'; b.style.pointerEvents='auto'; }
+    epiloguePlaying = false;
+  }
+
+  function end(){
+    $('bvnBox').classList.remove('show'); $('bvnTitle').classList.remove('show'); $('bvnNext').classList.remove('show');
+    $('bvnEndT').textContent = story.title || '';
+    var isFinale = !!(story && story.title && story.title.indexOf(EPILOGUE_TITLE) !== -1);
+    if(isFinale){
+      var b=$('bvnEndBtn'); if(b){ b.style.opacity='0'; b.style.pointerEvents='none'; }   // 버튼 잠시 숨김
+      playAstelEpilogue(function(){ $('bvnEnd').classList.add('show'); });                // 내레이션 → 엔딩 화면
+    } else {
+      $('bvnEnd').classList.add('show');                                                  // 기존 동작 그대로
+    }
+    /* BGM 유지: 엔딩/돌아가기 화면 동안 음악 이어짐. 정지는 close()에서만. */
+  }
 
   function close(){ var el=$('brandVN'); el.classList.remove('vis');
+    var _ov=$('bvnEpilogue'); if(_ov&&_ov.parentNode) _ov.parentNode.removeChild(_ov); epiloguePlaying=false;   // [최종장] 정리
+    var _b=$('bvnEndBtn'); if(_b){ _b.style.opacity=''; _b.style.pointerEvents=''; }
     setTimeout(function(){ el.classList.remove('on'); $('bvnEnd').classList.remove('show'); stopStars(); }, 360);
     stopBgm(); clearInterval(tmr); typing=false; }
 

@@ -2346,8 +2346,11 @@ function calcMonthlyIndividualGS() {
   var mainData  = mainSheet.getDataRange().getValues();
   var curValMap = {}; // { 학생명: 현재 브랜드가치 }
   for (var m = 1; m < mainData.length; m++) {
-    var mName = String(mainData[m][COL_NAME  - 1]).trim();
-    var mVal  = parseFloat(mainData[m][COL_VALUE - 1]) || 0;
+    // [버그 수정 2026-06] 기존에는 COL_VALUE(자산보유량 D열)를 읽어
+    //   '현재 자산 − 월초 브랜드가치'를 계산하던 탓에 증가량이 비정상적으로 부풀려졌음.
+    //   길드 단위 calcMonthlyGS()와 동일하게 C열(index 2 = 브랜드가치)을 직접 참조하도록 수정.
+    var mName = String(mainData[m][1]).trim();   // B열(index 1) = 학생명
+    var mVal  = parseFloat(mainData[m][2]) || 0;  // C열(index 2) = 브랜드가치
     if (mName) curValMap[mName] = mVal;
   }
 

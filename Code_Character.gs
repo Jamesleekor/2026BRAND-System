@@ -850,8 +850,11 @@ function getStoryScript(studentName, charId, epNo){
     var effect = '';
     if (fx.indexOf('flash') !== -1) effect = 'flash';
     else if (fx.indexOf('shake') !== -1) effect = 'shake';
+    var type = String(c[3] || 'line').trim();
+    var kRaw = String(c[10] || '').trim();   // K열: 선택지 텍스트 ("A|B")
+    var lRaw = String(c[11] || '').trim();   // L열: 점프 (choice면 "12|14", 일반이면 "16")
     var cut = {
-      type: String(c[3] || 'line').trim(),
+      type: type,
       speaker: String(c[4] || ''),
       text: String(c[5] || ''),
       bg: String(c[6] || ''),
@@ -859,8 +862,24 @@ function getStoryScript(studentName, charId, epNo){
       spriteDim: (fx.indexOf('dim') !== -1),
       cg: (fx.indexOf('cg') !== -1),
       kick: String(c[8] || ''),
-      bgm: String(c[9] || '').trim()
+      bgm: String(c[9] || '').trim(),
+      order: Number(c[2]) || 0,   // 점프 대상 식별용 (C열 순서번호)
+      choices: null,              // 선택지 컷이면 [{label, to}] 채워짐
+      jump: null                  // 일반 컷의 점프 대상 순서 (없으면 null)
     };
+    if (type === 'choice') {
+      // K열 라벨과 L열 점프대상을 짝지어 선택지 구성 (2개 기준, |로 분리)
+      var labels = kRaw ? kRaw.split('|') : [];
+      var tos = lRaw ? lRaw.split('|') : [];
+      var ch = [];
+      for (var i = 0; i < labels.length; i++) {
+        ch.push({ label: String(labels[i]).trim(), to: Number(String(tos[i]||'').trim()) || 0 });
+      }
+      cut.choices = ch;
+    } else if (lRaw !== '') {
+      // 일반 컷의 점프: 이 컷 후 해당 순서로 (분기 끝 → 합류 지점)
+      cut.jump = Number(lRaw) || null;
+    }
     return cut;
   });
   if (!cuts.length) return { ok:false, reason:'no-script' };

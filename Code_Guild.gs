@@ -355,10 +355,30 @@ function verifyMissionM04(guildId, startDate, endDate) {
 }
 
 // ----------------------------------------------------------
-// 3-3. M07 — 미식 탐험가 (6월 월간)
-// 조건: 기간 내 길드원 전원이 간식 시장에서 각자 다른 상품 구매
-//        각 구매 시점의 가격 배율이 1.5배 이하일 것
+// 3-3. M07 — 미식 탐험가 (6월 월간)  [실데이터 정합 최종판]
+// 조건: 기간 내 길드원 전원이 간식 시장에서 각자 다른 상품을 1.5배 이하로 구매.
+//
+// [중요] 자산사용 시트 실제 컬럼 구조:
+//   A(0)=날짜/구매시각  B(1)=학생이름  C(2)=브랜드명  D(3)=사용항목
+//   E(4)=사용금액(총액)  F(5)=사용후잔액  G(6)=비고("수량 N개")  H(7)=타임스탬프
+//   ※ '항목유형' '배율' '기준가' 같은 별도 컬럼은 존재하지 않는다.
+//     간식 여부는 D열의 "[간식]" 포함으로 판정하고, 배율은 직접 계산한다.
+//
+// [판정 규칙] 같은 간식은 '먼저 산 사람' 우선, 단 그 사람에게 다른 유효 간식이
+//   있으면 양보(증대 경로 매칭). 전원에게 서로 다른 간식 1개씩 배정되면 통과.
 // ----------------------------------------------------------
+
+// 간식 기준가 (이 가격의 M07_PRICE_LIMIT 배까지 허용). 이름은 D열에서 추출한 순수 간식명 기준.
+var M07_SNACK_BASE = {
+  "토블론 다크": 650,
+  "참쌀 선과": 400,
+  "포테이토 크리스프": 300,
+  "크리스피롤": 500,
+  "하리보 젤리": 350,
+  "석기시대 초콜릿": 500,
+  "사우어 젤리": 500,
+  "누네띠네": 350
+};
 
 /**
  * @param {string} guildId
@@ -375,71 +395,102 @@ function verifyMissionM07(guildId, startDate, endDate) {
   var start = _toMidnight(startDate);
   var end   = _toEndOfDay(endDate);
 
-  // 자산사용 시트에서 간식 구매 내역 조회
-  // 자산사용 컬럼 구조: A=타임스탬프, B=학생명, C=항목유형, D=상품명, E=결제금액, F=기준가, G=배율, ...
-  // ※ 항목유형이 "간식" 또는 "snack"인 행만 대상
   var assetSheet = SpreadsheetApp.getActiveSpreadsheet()
                      .getSheetByName(SHEET_NAMES.ASSET_USE);
   if (!assetSheet) {
     return { cleared: false, resultText: "자산사용 시트 없음", detail: {} };
   }
-
   var assetData = assetSheet.getDataRange().getValues();
 
-  // { 학생명: { itemName: string, ratio: number } } — 조건 충족한 첫 구매만 기록
-  var validPurchaseMap = {};
-  members.forEach(function(name) { validPurchaseMap[name] = null; });
+  var memberSet = {};
+  members.forEach(function(name) { memberSet[name] = true; });
 
+  // 1) 유효한 간식 구매 '이벤트' 수집 (구매 시각 포함).
+  var events = [];  // { ts, student, snack }
   for (var i = 1; i < assetData.length; i++) {
-    var ts       = new Date(assetData[i][0]);
-    var student  = String(assetData[i][1]).trim();
-    var itemType = String(assetData[i][2]).trim();
-    var itemName = String(assetData[i][3]).trim();
-    var ratio    = parseFloat(assetData[i][6]); // G열: 배율
+    var ts      = new Date(assetData[i][0]);          // A: 구매 시각
+    var student = String(assetData[i][1]).trim();     // B: 학생이름
+    var useItem = String(assetData[i][3]).trim();     // D: 사용항목
+    var amount  = parseFloat(assetData[i][4]);        // E: 사용금액(총액)
+    var note    = String(assetData[i][6]).trim();     // G: 비고("수량 N개")
 
     if (ts < start || ts > end) continue;
-    if (!validPurchaseMap.hasOwnProperty(student)) continue;
-    if (itemType !== "간식" && itemType !== "snack") continue;
-    if (isNaN(ratio) || ratio > M07_PRICE_LIMIT) continue;
-    if (validPurchaseMap[student] !== null) continue; // 이미 기록됨
+    if (!memberSet[student]) continue;
+    if (useItem.indexOf("[간식]") === -1) continue;
 
-    validPurchaseMap[student] = { itemName: itemName, ratio: ratio };
+    // 간식명 추출: "[물품구매] [간식] 누네띠네" → "누네띠네"
+    var snack = useItem.substring(useItem.indexOf("[간식]") + "[간식]".length)
+                       .trim().replace(/\s+/g, " ");
+    if (snack.indexOf("참쌀 선과") === 0) snack = "참쌀 선과";  // 표기 흔들림 보정
+
+    var base = M07_SNACK_BASE[snack];
+    if (base === undefined) continue;                 // 미등록 간식
+    if (isNaN(amount)) continue;
+
+    var qty = 1;
+    var qm  = note.match(/(\d+)\s*개/);               // "수량 N개" → N
+    if (qm) qty = parseInt(qm[1], 10);
+    if (!qty || qty < 1) qty = 1;
+
+    var ratio = (amount / qty) / base;                // (총액÷수량)÷기준가
+    if (ratio > M07_PRICE_LIMIT) continue;            // 1.5배 초과 → 제외
+
+    events.push({ ts: ts, student: student, snack: snack });
   }
 
-  // 검증 1: 전원 유효 구매 여부
-  var notBought = members.filter(function(name) {
-    return validPurchaseMap[name] === null;
-  });
-  if (notBought.length > 0) {
-    return {
-      cleared: false,
-      resultText: "미구매(또는 1.5배 초과): " + notBought.join(", "),
-      detail: validPurchaseMap
-    };
-  }
+  // 2) 구매 시각순 정렬.
+  events.sort(function(a, b) { return a.ts - b.ts; });
 
-  // 검증 2: 상품 중복 여부
-  var usedItems = [];
-  var dupItem   = "";
-  members.forEach(function(name) {
-    var item = validPurchaseMap[name].itemName;
-    if (usedItems.indexOf(item) !== -1) {
-      dupItem = "상품 중복: " + item + " (" + name + ")";
-    } else {
-      usedItems.push(item);
+  // 3) 구매 시각순 증대 경로 매칭 (먼저 산 사람 우선 + 양보 허용).
+  var adj    = {};   // 학생 -> [후보 간식들]
+  var matchM = {};   // 학생 -> 배정 간식
+  var matchS = {};   // 간식 -> 배정 학생
+  var bought = {};   // 학생 -> 유효 구매 1건 이상?
+  members.forEach(function(name) { adj[name] = []; });
+
+  function augment(student, visited) {
+    var snacks = adj[student];
+    for (var k = 0; k < snacks.length; k++) {
+      var sn = snacks[k];
+      if (visited[sn]) continue;
+      visited[sn] = true;
+      if (matchS[sn] === undefined || augment(matchS[sn], visited)) {
+        matchS[sn] = student;
+        matchM[student] = sn;
+        return true;
+      }
     }
+    return false;
+  }
+
+  for (var e = 0; e < events.length; e++) {
+    var ev = events[e];
+    bought[ev.student] = true;
+    if (adj[ev.student].indexOf(ev.snack) === -1) adj[ev.student].push(ev.snack);
+    if (matchM[ev.student] === undefined) augment(ev.student, {});
+  }
+  members.forEach(function(name) {
+    if (matchM[name] === undefined) augment(name, {});
   });
 
-  if (dupItem) {
-    return { cleared: false, resultText: dupItem, detail: validPurchaseMap };
+  // 4) 미클리어 분류.
+  var noBuy   = members.filter(function(n) { return !bought[n]; });
+  var blocked = members.filter(function(n) { return bought[n] && matchM[n] === undefined; });
+
+  if (noBuy.length > 0 || blocked.length > 0) {
+    var parts = [];
+    if (noBuy.length)   parts.push("미구매(또는 1.5배 초과): " + noBuy.join(", "));
+    if (blocked.length) parts.push("상품 중복(다른 간식 종류 부족): " + blocked.join(", "));
+    return { cleared: false, resultText: parts.join(" / "), detail: { assigned: matchM } };
   }
 
   return {
     cleared: true,
     resultText: "클리어 — 전원 다른 상품 1.5배 이하 구매",
-    detail: validPurchaseMap
+    detail: { assigned: matchM }
   };
 }
+
 
 // ----------------------------------------------------------
 // 3-4. M12 — 길드 명예의 일격

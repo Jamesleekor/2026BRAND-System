@@ -383,6 +383,7 @@ function applyDailyPoints(date, entries, taxRate) {
   const mainRange = main.getDataRange();
   const mainData  = mainRange.getValues();
   const histRows  = [];
+  const nowStr    = _nowStr(); // 일괄 지급 시각 — 모든 행 동일 타임스탬프
 
   entries.forEach(e => {
     const rowIdx       = e.row;
@@ -398,16 +399,17 @@ function applyDailyPoints(date, entries, taxRate) {
     mainData[rowIdx][COL_TAX - 1]   = curTax + taxAmount;       // 누적납세액 증가
 
     histRows.push([
-      date, e.name, e.brand,
-      e.points, netAssetGain,
-      curValue + e.points, curAsset + netAssetGain,
-      e.note + (taxAmount > 0 ? ` (세금 ${taxAmount})` : '')
+      date, e.name, e.brand,                               // A=날짜(연-월-일), B=이름, C=브랜드
+      e.points, netAssetGain,                              // D=BV변동, E=자산변동
+      curValue + e.points, curAsset + netAssetGain,        // F=BV, G=자산
+      e.note + (taxAmount > 0 ? ` (세금 ${taxAmount})` : ''), // H=비고
+      nowStr                                               // I=타임스탬프
     ]);
   });
 
   mainRange.setValues(mainData);
   if (histRows.length > 0) {
-    hist.getRange(hist.getLastRow() + 1, 1, histRows.length, 8).setValues(histRows);
+    hist.getRange(hist.getLastRow() + 1, 1, histRows.length, 9).setValues(histRows); // 열 수 8→9
   }
   updateRankings();
   return `✅ ${entries.length}명 포인트 지급 완료!`;
@@ -420,7 +422,7 @@ function recordSpend(date, rowIdx, name, brand, category, amount, note) {
   if (curAsset < amount) return '❌ 자산이 부족합니다!';
   const newAsset = curAsset - amount;
   main.getRange(rowIdx + 1, COL_ASSET).setValue(newAsset);
-  ss.getSheetByName(SHEET_SPEND).appendRow([date, name, brand, category, amount, newAsset, note]);
+  ss.getSheetByName(SHEET_SPEND).appendRow([date, name, brand, category, amount, newAsset, note, _nowStr()]); // H=타임스탬프
   updateRankings();
   return '✅ 자산 차감 완료!';
 }
@@ -434,7 +436,7 @@ function grantMvp(date, rowIdx, name, brand, amount, note) {
   mainSheet.getRange(rowIdx + 1, COL_ASSET).setValue(curAsset + amount);
   ss.getSheetByName(SHEET_HISTORY).appendRow([
     date, name, brand, amount, amount,
-    curValue + amount, curAsset + amount, `[MVP] ${note}`
+    curValue + amount, curAsset + amount, `[MVP] ${note}`, _nowStr() // I=타임스탬프
   ]);
   updateRankings();
   return '🏆 MVP 포인트 지급 완료!';
@@ -868,26 +870,27 @@ function donateToWelfare(studentName, amount, message) {
   mainSheet.getRange(studentRowIdx + 1, COL_TAX).setValue(newTax);
 
   // 히스토리 기록
-  const today    = _nowStr();
+  const today    = _nowStr(); // I컬럼 타임스탬프용
   const memo     = message ? `[기부] ${message}` : '[복지 기금 기부]';
   const histSheet = ss.getSheetByName(SHEET_HISTORY);
   if (histSheet) {
     histSheet.appendRow([
-      today,
+      _todayStr(),              // A=날짜(연-월-일)
       studentName,
       data[studentRowIdx][COL_BRAND - 1],
       0,          // 브랜드가치 변동 없음
       -amount,    // 자산 변동
       curValue,   // 브랜드가치 (변동 없음)
       newAsset,   // 새 자산
-      memo
+      memo,
+      today       // I=타임스탬프
     ]);
   }
 
   // 자산사용 시트 기록
   const spendSheet = ss.getSheetByName(SHEET_SPEND);
   if (spendSheet) {
-    spendSheet.appendRow([_todayStr(), studentName, data[studentRowIdx][COL_BRAND - 1], '기부', amount, newAsset, memo, today]);
+    spendSheet.appendRow([_todayStr(), studentName, data[studentRowIdx][COL_BRAND - 1], '기부', amount, newAsset, memo, today]); // H=타임스탬프
   }
 
   // Firebase 개별 학생 스냅샷 갱신 (전체 랭킹 재계산 불필요)

@@ -109,7 +109,7 @@ function executeSnackPurchase(studentName, itemName, price) {
   // 히스토리 시트 기록
   const curValue = Number(mainSheet.getRange(studentRowNum, COL_VALUE).getValue()) || 0;
   ss.getSheetByName(SHEET_HISTORY).appendRow([
-    dateStr, studentName, brand, 0, -price, curValue, newAsset, `[간식구매] ${itemName}`
+    _todayStr(), studentName, brand, 0, -price, curValue, newAsset, `[간식구매] ${itemName}`, dateStr // A=날짜(연-월-일), I=타임스탬프
   ]);
 
   // Firebase 개별 학생 스냅샷 갱신 (전체 랭킹 재계산 불필요)

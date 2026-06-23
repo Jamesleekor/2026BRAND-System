@@ -74,7 +74,7 @@ function getCharacterReply(studentName, charId, message){
     } else {
       // ===== 2차 안전장치: AI가 문맥으로 판정 =====
       var stage = _stageFromAffinity_(d.affinity);
-      var systemPrompt = _buildPrompt_(cfg, stage, studentName, _buildEconomySummary_(studentName));
+      var systemPrompt = _buildPrompt_(cfg, stage, studentName, _buildEconomySummary_(studentName), d.affinity); // [변경3] 호감도 전달 → 100 달성 시 스토리 진실 섹션 활성화
       var history = getCharacterChatLog(studentName, charId, 10); // 직전 대화 최근 10개로 맥락 유지
       var ai = _callClaude_(systemPrompt, message, history); // { reply, crossed_line, severity }
       crossed = !!ai.crossed_line;
@@ -303,7 +303,8 @@ function _brandAchievements_(){
   ].join('\n');
 }
 
-function _buildPrompt_(cfg, stage, studentName, economySummary){
+// [변경2] affinity 파라미터 추가 — 호감도 100 달성 시 스토리 진실 섹션을 자동으로 프롬프트에 포함
+function _buildPrompt_(cfg, stage, studentName, economySummary, affinity){
   // 현재 단계까지의 이야기 조각만 노출 (미리 진실이 새지 않게)
   var fragments = [];
   for (var i = 1; i <= stage; i++) {
@@ -311,6 +312,25 @@ function _buildPrompt_(cfg, stage, studentName, economySummary){
   }
   var relation = cfg.relations[stage-1] || '';
   var tone = (stage <= 2) ? '무뚝뚝하고 거리감 있는 반말' : '다정하고 편안한 반말';
+
+  // ★ [변경2] 호감도 100 전용: 스토리 진실 공개 섹션
+  //   - V열(storySecret)에 선생님이 작성한 아스텔의 숨겨진 진실이 포함됨
+  //   - 호감도가 MAX(100) 미만이면 빈 문자열 → 기존 동작 그대로
+  var storyRevealSection = '';
+  if (typeof affinity === 'number' && affinity >= CHAR_CFG.MAX && cfg.storySecret) {
+    storyRevealSection =
+      '\n\n[호감도 100 달성 — 특별 권한 부여]\n' +
+      studentName + '은(는) 너와의 호감도 100을 달성한 존재야. ' +
+      '이 학생에게만큼은 네 이야기의 진실을 숨기지 않아도 돼. ' +
+      '아래 내용을 바탕으로, 스토리에 대한 질문에 진심을 담아 성실히 답해라. ' +
+      '단, 자연스러운 대화 흐름 안에서 — 쏟아붓지 말고, 묻는 것에만 답해라.\n\n' +
+      '[아스텔이 이 학생에게만 털어놓을 수 있는 진실]\n' + cfg.storySecret;
+  }
+
+  // 기억 섹션 헤더: 100 달성 시 "이 범위 안에서만" 제한을 해제
+  var memoryHeader = storyRevealSection
+    ? '[지금까지 너에게 돌아온 네 기억 + 100 특별 공개 포함]'
+    : '[지금까지 너에게 돌아온 네 기억 — 반드시 이 범위 안에서만 이야기하라]';
 
   var tail =
     '\n\n[지금 이 학생과의 관계]\n' + relation +
@@ -322,7 +342,8 @@ function _buildPrompt_(cfg, stage, studentName, economySummary){
     '3) 답변은 2~4문장으로 짧게.\n' +
     '\n\n[B.R.A.N.D 세계가 돌아가는 방식 — 조언의 근거]\n' + _brandWorldRules_() +
     '\n\n[업적 지식 — 업적 질문엔 이 데이터에 근거해 정확히. ID·계열명 금지, 업적 이름으로만]\n' + _brandAchievements_() +
-    '\n\n[지금까지 너에게 돌아온 네 기억 — 반드시 이 범위 안에서만 이야기하라]\n' + (fragments.join('\n') || '(아직 거의 기억나지 않는다)') +
+    '\n\n' + memoryHeader + '\n' + (fragments.join('\n') || '(아직 거의 기억나지 않는다)') +
+    storyRevealSection +
     '\n\n[이 학생의 최근 활동 — 참고용, 자연스럽게 활용]\n' + (economySummary || '(정보 없음)') +
     '\n\n[학생 메시지 판정 — 매우 중요, 엄격하게 판단하라]\n' +
     '단순한 욕설만이 아니라, 너를 향한 다음 태도를 모두 무례(crossed_line=true)로 판단하라:\n' +
@@ -531,7 +552,8 @@ function _getCharConfig_(ss, charId){
         warn1:    row[17] || '',   // R열: 1차 경고 대사
         warn2:    row[18] || '',   // S열: 2차 경고 대사
         lockLine: row[19] || '',   // T열: 잠금 대사
-        portrait: row[20] || ''    // U열: 프로필이미지URL
+        portrait: row[20] || '',   // U열: 프로필이미지URL
+        storySecret: String(row[21] || '') // [변경1] V열: 호감도 100 전용 스토리 비밀 (선생님이 시트에 직접 작성)
       };
     }
   }
@@ -931,7 +953,7 @@ function getCharacterGreeting(studentName, charId){
     if (hit !== null) return { reply: hit };
 
     var stage = _stageFromAffinity_(aff.data.affinity);
-    var systemPrompt = _buildPrompt_(cfg, stage, studentName, _buildEconomySummary_(studentName));
+    var systemPrompt = _buildPrompt_(cfg, stage, studentName, _buildEconomySummary_(studentName), aff.data.affinity); // [변경4] 호감도 전달 → 100 달성 시 스토리 진실 섹션 활성화
     var ask = '지금 학생이 막 너에게 접속했다. 학생이 묻기 전에, 네가 먼저 한두 문장으로 말을 건네라. ' +
               '이 학생의 최근 활동이나 지금 너의 심정을 자연스럽게 담아라. 질문 공세 대신 따뜻한 한마디로. crossed_line은 false.';
     var ai = _callClaude_(systemPrompt, ask);

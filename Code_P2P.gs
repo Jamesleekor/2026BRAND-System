@@ -170,28 +170,30 @@ function p2pTransfer(senderName, receiverName, amount, tag, description, quantit
   mainSheet.getRange(receiverIdx + 1, COL_TAX  ).setValue(receiverTax + taxAmount);
 
   // ── 히스토리 기록 (보내는 쪽) ───────────────────────────────
-  const today     = _nowStr();
+  const today     = _nowStr(); // I컬럼 타임스탬프용
   const histSheet = ss.getSheetByName(SHEET_HISTORY);
   if (histSheet) {
     histSheet.appendRow([
-      today,
+      _todayStr(),               // A=날짜(연-월-일)
       senderName,
       mainData[senderIdx][COL_BRAND - 1],
       0,           // 브랜드가치 변동 없음
       -amount,
       mainData[senderIdx][COL_VALUE - 1],
       newSenderBalance,
-      `[P2P송금→${receiverName}] ${tag} ${description}`
+      `[P2P송금→${receiverName}] ${tag} ${description}`,
+      today                      // I=타임스탬프
     ]);
     histSheet.appendRow([
-      today,
+      _todayStr(),               // A=날짜(연-월-일)
       receiverName,
       mainData[receiverIdx][COL_BRAND - 1],
       0,
       netReceived,  // 세후 수령액
       mainData[receiverIdx][COL_VALUE - 1],
       afterTaxBalance,
-      `[P2P수령←${senderName}] ${tag} ${description} (세금 $${taxAmount} 자동 차감)`
+      `[P2P수령←${senderName}] ${tag} ${description} (세금 $${taxAmount} 자동 차감)`,
+      today                      // I=타임스탬프
     ]);
   }
 

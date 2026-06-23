@@ -268,10 +268,12 @@ function createSaving(studentName, perAmount, rounds, prodId) {
     // 히스토리
     const histSheet = ss.getSheetByName(SHEET_HISTORY);
     if (histSheet) {
+      const nowStr = _nowStr();
       histSheet.appendRow([
-        _nowStr(), studentName, mainData[sIdx][COL_BRAND - 1],
+        _todayStr(), studentName, mainData[sIdx][COL_BRAND - 1],  // A=날짜(연-월-일)
         0, -perAmount, mainData[sIdx][COL_VALUE - 1], newAsset,
-        `[적금가입] ${prod.prodName} 회차당 $${perAmount.toLocaleString()} × ${rounds}회 (1회차 납입)`
+        `[적금가입] ${prod.prodName} 회차당 $${perAmount.toLocaleString()} × ${rounds}회 (1회차 납입)`,
+        nowStr // I=타임스탬프
       ]);
     }
 
@@ -371,10 +373,12 @@ function cancelSaving(studentName, savId) {
 
     const histSheet = ss.getSheetByName(SHEET_HISTORY);
     if (histSheet) {
+      const nowStr = _nowStr();
       histSheet.appendRow([
-        _nowStr(), studentName, mainData[sIdx][COL_BRAND - 1],
+        _todayStr(), studentName, mainData[sIdx][COL_BRAND - 1],  // A=날짜(연-월-일)
         0, refund, mainData[sIdx][COL_VALUE - 1], newAsset,
-        `[적금중도해지] 누적원금 $${principal.toLocaleString()} → 패널티 $${penalty.toLocaleString()} 차감 → 반환 $${refund.toLocaleString()} (이자 소멸)`
+        `[적금중도해지] 누적원금 $${principal.toLocaleString()} → 패널티 $${penalty.toLocaleString()} 차감 → 반환 $${refund.toLocaleString()} (이자 소멸)`,
+        nowStr // I=타임스탬프
       ]);
     }
     _sendMail(
@@ -457,10 +461,12 @@ function _processSavingTick(ss, log, rowNum, row) {
       paidCount += 1;
       const histSheet = ss.getSheetByName(SHEET_HISTORY);
       if (histSheet) {
+        const nowStr = _nowStr();
         histSheet.appendRow([
-          _nowStr(), studentName, mainData[sIdx][COL_BRAND - 1],
+          _todayStr(), studentName, mainData[sIdx][COL_BRAND - 1], // A=날짜(연-월-일)
           0, -perAmount, mainData[sIdx][COL_VALUE - 1], newAsset,
-          `[적금납입] ${paidCount}회차 $${perAmount.toLocaleString()} (누적 $${principal.toLocaleString()})`
+          `[적금납입] ${paidCount}회차 $${perAmount.toLocaleString()} (누적 $${principal.toLocaleString()})`,
+          nowStr // I=타임스탬프
         ]);
       }
     } else {
@@ -529,10 +535,12 @@ function _paySaving(ss, log, rowNum, studentName, principal, accruedInt, paidCou
 
   const histSheet = ss.getSheetByName(SHEET_HISTORY);
   if (histSheet) {
+    const nowStr = _nowStr();
     histSheet.appendRow([
-      _nowStr(), studentName, mainData[sIdx][COL_BRAND - 1],
+      _todayStr(), studentName, mainData[sIdx][COL_BRAND - 1], // A=날짜(연-월-일)
       0, totalBack, mainData[sIdx][COL_VALUE - 1], newAsset,
-      `[적금만기] 원금 $${principal.toLocaleString()} + 세후이자 $${netInt.toLocaleString()} (세금 $${taxAmount.toLocaleString()} 복지기금, 납입 ${paidCount}회/미납 ${missed}회)`
+      `[적금만기] 원금 $${principal.toLocaleString()} + 세후이자 $${netInt.toLocaleString()} (세금 $${taxAmount.toLocaleString()} 복지기금, 납입 ${paidCount}회/미납 ${missed}회)`,
+      nowStr // I=타임스탬프
     ]);
   }
   _sendMail(

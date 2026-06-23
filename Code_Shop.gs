@@ -282,7 +282,7 @@ function purchaseShopItem(studentName, itemId) {
       // 히스토리 시트에 기록
       const histSheet = ss.getSheetByName(SHEET_HISTORY);
       if (histSheet) {
-        histSheet.appendRow([today, studentName, mData[i][COL_BRAND-1], 0, -price, mData[i][COL_VALUE-1], newAsset, `[상점구매] ${itemName}`]);
+        histSheet.appendRow([_todayStr(), studentName, mData[i][COL_BRAND-1], 0, -price, mData[i][COL_VALUE-1], newAsset, `[상점구매] ${itemName}`, today]); // A=날짜, I=타임스탬프
       }
       break;
     }
@@ -480,7 +480,7 @@ function grantMilestoneReward(studentName, achCount) {
     const histSheet = ss.getSheetByName(SHEET_HISTORY);
     if (histSheet) {
       const ts = _nowStr();
-      histSheet.appendRow([ts, studentName, data[i][COL_BRAND-1], '업적보상', reward, data[i][COL_VALUE-1], current + reward, `업적 ${achCount}개 달성 자동 보상`]);
+      histSheet.appendRow([_todayStr(), studentName, data[i][COL_BRAND-1], '업적보상', reward, data[i][COL_VALUE-1], current + reward, `업적 ${achCount}개 달성 자동 보상`, ts]); // A=날짜, I=타임스탬프
     }
 
 

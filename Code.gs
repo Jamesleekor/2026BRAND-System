@@ -93,6 +93,14 @@ function doGet(e) {
       .setTitle('경제 수호대 대시보드')
       .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
   }
+
+  if (page === 'verify') {
+    return HtmlService.createTemplateFromFile('AchievementVerify').evaluate()
+      .setTitle('업적 검증 도우미')
+      .addMetaTag('viewport', 'width=device-width, initial-scale=1')
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  }
+  
   return HtmlService.createTemplateFromFile('Index').evaluate()
     .setTitle('우리 반 경제 대시보드')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')

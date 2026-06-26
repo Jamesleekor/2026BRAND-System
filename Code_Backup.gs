@@ -212,3 +212,97 @@ function showDeployInfo() {
   ui.alert('🚀 B.R.A.N.D 웹앱 배포 정보', msg, ui.ButtonSet.OK);
 }
 
+// ════════════════════════════════════════════════════════════════
+// 업적검증 데이터 보강용 — 미확인 시트 구조 덤프
+//
+// 사용법
+//   1) 이 함수를 아무 .gs 파일 맨 아래에 붙여넣기
+//   2) 함수목록에서 dumpSheetsForVerify 선택 후 ▶ 실행
+//   3) [실행 기록] 또는 [보기 > 로그]의 출력을 그대로 복사해서 전달
+//
+// 목적: 신용/경매/예금이자/벌점/상점구매 시트의 진짜 컬럼 구조를 확인하여,
+//       추측 없이 정확한 정량 업적 자동집계를 구현하기 위함.
+// ════════════════════════════════════════════════════════════════
+function dumpSheetsForVerify() {
+  var ss  = SpreadsheetApp.getActiveSpreadsheet();
+  var out = [];
+  function log(s){ out.push(s); Logger.log(s); }
+
+  var letters = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O"];
+
+  // 확인이 필요한 시트들
+  var targets = [
+    '학생별가입예금',   // 예금 이자/수익 컬럼 확인 (ECO-013/014/015)
+    '예금상품',         // 이자율 등
+    '신용점수이력',     // ECO-010
+    '경매관리',         // ECO-007/016/017/023/025/027 (낙찰 기록 위치)
+    '수호대적발로그',   // 벌점 (LIFE-006, CHAL-008)
+    '상점_구매로그',    // ECO-032
+    '대출현황',         // 대출 잔액/상태 (ECO-024/029/030)
+    '히스토리'          // 비고(태그) 종류 확인 (ECO-009/003)
+  ];
+
+  targets.forEach(function(nm){
+    log("\n══════════ [" + nm + "] ══════════");
+    var sh = ss.getSheetByName(nm);
+    if (!sh) { log("  ❌ 시트 없음"); return; }
+    var data = sh.getDataRange().getValues();
+    log("  데이터 행수: " + (data.length - 1) + " / 열수: " + (data.length ? data[0].length : 0));
+
+    // 헤더
+    if (data.length > 0) {
+      log("  ── 헤더 ──");
+      for (var c = 0; c < Math.min(data[0].length, 15); c++) {
+        log("     " + letters[c] + "열: \"" + data[0][c] + "\"");
+      }
+    }
+    // 샘플 3행
+    log("  ── 샘플(최대 3행) ──");
+    for (var r = 1; r < Math.min(data.length, 4); r++) {
+      var parts = [];
+      for (var cc = 0; cc < Math.min(data[r].length, 15); cc++) {
+        var v = data[r][cc];
+        if (v instanceof Date) v = "[Date]" + Utilities.formatDate(v, "Asia/Seoul", "yyyy-MM-dd HH:mm");
+        v = String(v);
+        if (v.length > 25) v = v.substring(0, 25) + "…";
+        parts.push(letters[cc] + "=" + v);
+      }
+      log("     행" + (r+1) + ": " + parts.join(" | "));
+    }
+  });
+
+  // 히스토리 비고(태그) 고유값 — ECO-009(하루 3경로) 판정 기준 파악용
+  log("\n══════════ [히스토리 비고 태그 분석] ══════════");
+  var hist = ss.getSheetByName('히스토리');
+  if (hist) {
+    var hData = hist.getDataRange().getValues();
+    var tagCount = {};
+    for (var i = 1; i < hData.length; i++) {
+      var note = String(hData[i][7] || '').trim();   // H열: 비고
+      // [xxx] 형태의 태그 추출
+      var m = note.match(/\[([^\]]+)\]/);
+      var key = m ? ('[' + m[1] + ']') : (note ? note.substring(0, 10) : '(빈칸)');
+      tagCount[key] = (tagCount[key] || 0) + 1;
+    }
+    var keys = Object.keys(tagCount).sort(function(a,b){ return tagCount[b]-tagCount[a]; });
+    keys.slice(0, 25).forEach(function(k){ log("   " + k + " : " + tagCount[k] + "건"); });
+  }
+
+  // 자산사용 사용항목(D열) 고유값 — 간식/상점/거래소/기부 구분 파악용
+  log("\n══════════ [자산사용 D열(사용항목) 종류] ══════════");
+  var spend = ss.getSheetByName('자산사용');
+  if (spend) {
+    var sData = spend.getDataRange().getValues();
+    var catCount = {};
+    for (var j = 1; j < sData.length; j++) {
+      var cat = String(sData[j][3] || '').trim();   // D열
+      catCount[cat] = (catCount[cat] || 0) + 1;
+    }
+    Object.keys(catCount).sort(function(a,b){ return catCount[b]-catCount[a]; })
+      .slice(0, 25).forEach(function(k){ log("   \"" + k + "\" : " + catCount[k] + "건"); });
+  }
+
+  log("\n════════ 덤프 끝 ════════");
+  return out.join("\n");
+}
+

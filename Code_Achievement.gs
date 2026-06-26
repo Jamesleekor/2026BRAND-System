@@ -605,7 +605,10 @@ function getPendingAchievements() {
       studentName: String(logData[i][1]),
       achId:       achId,
       achName:     achNameMap[achId] || '(알 수 없음)', // 업적명 추가
-      proof:       String(logData[i][3])
+      proof:       String(logData[i][3]),
+      myRec:       String(logData[i][5] || '').trim(),   // F열: 도우미추천
+      myMemo:      String(logData[i][6] || '').trim(),   // G열: 추천메모
+      recBy:       String(logData[i][7] || '').trim()    // H열: 추천도우미
     });
   }
 
@@ -808,3 +811,4 @@ function correctRejection(rowNumber) {
   const achId       = String(row[2]).trim();
   return { success: true, msg: `[${studentName}] ${achId} 신청이 대기 상태로 복원되었습니다.` };
 }
+

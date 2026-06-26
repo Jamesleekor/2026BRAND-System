@@ -312,23 +312,33 @@ function verifyMissionM04(guildId, startDate, endDate) {
   var start = _toMidnight(startDate);
   var end   = _toEndOfDay(endDate);
 
-  // P2P거래로그 컬럼 구조: A=타임스탬프, B=보낸사람, C=받는사람, D=금액, ...
+  // ★ P2P거래로그 실제 컬럼 구조 (2026-06 실데이터로 확인 완료)
+  //   A(0)=거래ID  B(1)=날짜  C(2)=보내는 학생  D(3)=받는 학생
+  //   E(4)=금액   F(5)=태그  G(6)=거래 설명   H(7)=상태(정상/이상거래)
+  //   ※ 구버전은 A를 타임스탬프로 오인 → 거래ID를 날짜로 파싱해 날짜필터가
+  //     무력화되고, 받는 학생(D열)을 아예 세지 않았음. ← 이번에 교정.
   var p2pSheet = SpreadsheetApp.getActiveSpreadsheet()
                    .getSheetByName(SHEET_NAMES.P2P_LOG);
   if (!p2pSheet) {
     return { cleared: false, resultText: "P2P거래로그 시트 없음", detail: {} };
   }
 
-  var p2pData = p2pSheet.getDataRange().getValues();
+  // (선택) 이상거래로 확정된 행을 제외하려면 true 로 바꾸세요.
+  var EXCLUDE_ABNORMAL = false;
+
+  var p2pData  = p2pSheet.getDataRange().getValues();
   var countMap = {}; // { 학생명: 건수 }
   members.forEach(function(name) { countMap[name] = 0; });
 
   for (var i = 1; i < p2pData.length; i++) {
-    var ts     = new Date(p2pData[i][0]);
-    var sender = String(p2pData[i][1]).trim();
-    var recvr  = String(p2pData[i][2]).trim();
+    var ts     = new Date(p2pData[i][1]);          // B열: 날짜
+    var sender = String(p2pData[i][2]).trim();     // C열: 보내는 학생
+    var recvr  = String(p2pData[i][3]).trim();     // D열: 받는 학생
+    var status = String(p2pData[i][7] || "").trim(); // H열: 상태
 
-    if (ts < start || ts > end) continue;
+    if (isNaN(ts.getTime())) continue;             // 날짜 파싱 실패 행 보호
+    if (ts < start || ts > end) continue;          // 미션 기간 필터(이제 정상 작동)
+    if (EXCLUDE_ABNORMAL && status.indexOf("이상") !== -1) continue;
 
     if (countMap.hasOwnProperty(sender)) countMap[sender]++;
     if (countMap.hasOwnProperty(recvr))  countMap[recvr]++;
@@ -340,18 +350,10 @@ function verifyMissionM04(guildId, startDate, endDate) {
     var detail = underFive.map(function(name) {
       return name + "(" + countMap[name] + "건)";
     }).join(", ");
-    return {
-      cleared: false,
-      resultText: "5건 미달: " + detail,
-      detail: countMap
-    };
+    return { cleared: false, resultText: "5건 미달: " + detail, detail: countMap };
   }
 
-  return {
-    cleared: true,
-    resultText: "클리어 — 전원 5건 이상 달성",
-    detail: countMap
-  };
+  return { cleared: true, resultText: "클리어 — 전원 5건 이상 달성", detail: countMap };
 }
 
 // ----------------------------------------------------------
@@ -2864,3 +2866,4 @@ function forceVerifyM07() { forceVerifyNow("M07"); }
 
 /** M12 강제 검증 단축 함수 */
 function forceVerifyM12() { forceVerifyNow("M12"); }
+

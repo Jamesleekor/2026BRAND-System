@@ -1790,7 +1790,7 @@ function doSaveMissionParticipation() {
   <span style="border-left: 1px solid #ddd; height: 20px; margin: 0 5px;"></span>
 
   <label style="font-weight:bold;">상품:</label>
-  <select id="itemSelect" style="max-width: 150px;"></select>
+  <select id="itemSelect" style="max-width: 150px;" onchange="refreshSuperPassUI()"></select>
 
   <button class="btn-start"                                onclick="startItem(0)">▶ 최초 송출</button>
   <button class="btn-start" style="background:#e67e22;"    onclick="startItem(1)">📉 1차 재경매 송출</button>
@@ -1804,6 +1804,13 @@ function doSaveMissionParticipation() {
   <button class="btn-end" onclick="endAuction()">🏁 모든 경매 종료 및 오늘 결과 화면 송출하기</button>
 </div>
 
+<!-- ── 슈퍼패스(우선입찰권) 안내 배너 ── -->
+<div id="superPassBanner"
+  style="margin:0 0 12px;padding:10px 14px;border-radius:8px;background:#ecf0f1;color:#7f8c8d;font-size:13px;line-height:1.6;">
+  상품을 선택하면 해당 슈퍼패스 보유 학생이 여기에 표시됩니다.
+</div>
+<div id="superPassCountHint" style="margin:-6px 0 12px;padding:0 4px;font-size:13px;color:#856404;"></div>
+
 <!-- ── 3단 레이아웃 ── -->
 <div class="auction-grid">
 
@@ -1812,7 +1819,7 @@ function doSaveMissionParticipation() {
     <div class="auction-panel-header blue">👥 학생 입찰 현황</div>
     <div class="auction-panel-body">
       <table>
-        <thead><tr><th>학생 이름</th><th>잔여 자산</th><th>입찰가 입력</th><th>낙찰 처리</th></tr></thead>
+        <thead><tr><th>학생 이름</th><th>잔여 자산</th><th>🎫슈퍼패스</th><th>입찰가 입력</th><th>낙찰 처리</th></tr></thead>
         <tbody id="studentList"></tbody>
       </table>
     </div>
@@ -1861,9 +1868,12 @@ function doSaveMissionParticipation() {
     } else {
       tbody.innerHTML = '';
       soldRecords.forEach(function(r) {
+        var spTag = r.superPass
+          ? ' <span style="background:#f1c40f;color:#7d6608;padding:1px 5px;border-radius:3px;font-size:10px;font-weight:bold;">🎫슈퍼패스</span>'
+          : '';
         var tr = document.createElement('tr');
         tr.innerHTML =
-          '<td style="font-size:12px;font-weight:bold;color:#2c3e50;">' + r.itemName + '</td>' +
+          '<td style="font-size:12px;font-weight:bold;color:#2c3e50;">' + r.itemName + spTag + '</td>' +
           '<td style="font-size:12px;">' + r.winner + '</td>' +
           '<td style="font-size:12px;font-weight:bold;color:#27ae60;text-align:right;">$' + r.price.toLocaleString() + '</td>';
         tbody.appendChild(tr);
@@ -1909,6 +1919,7 @@ function doSaveMissionParticipation() {
       tbody.innerHTML += '<tr>' +
         '<td style="font-size:13px;"><strong>' + st.name + '</strong> <span style="font-size:11px;color:gray;">(' + st.brand + ')</span></td>' +
         '<td id="bal_' + st.rowIdx + '" data-balance="' + st.balance + '" style="font-weight:bold;color:#2c3e50;">$' + st.balance.toLocaleString() + '</td>' +
+        '<td style="text-align:center;"><input type="checkbox" id="sp_' + st.rowIdx + '" class="sp-check" data-name="' + st.name + '" disabled onchange="updateSpCount()" style="transform:scale(1.4);cursor:pointer;" title="이 상품의 슈퍼패스 보유 학생만 선택할 수 있습니다"></td>' +
         '<td><input type="number" id="bid_' + st.rowIdx + '" class="bid-input" step="10" placeholder="금액"></td>' +
         '<td><button class="btn-sold" onclick="sellItem(' + st.rowIdx + ', \'' + st.name + '\', \'' + st.brand + '\')">쾅! 낙찰</button></td>' +
       '</tr>';
@@ -1930,6 +1941,9 @@ function doSaveMissionParticipation() {
         google.script.run.setAuctionState({ status: 'idle' });
       }
     }, 1500);
+
+    // 첫 상품의 슈퍼패스 보유자 표시
+    refreshSuperPassUI();
   }).getAuctionInitData();
 
 
@@ -1938,6 +1952,104 @@ function doSaveMissionParticipation() {
     google.script.run.withSuccessHandler(function(url) {
       window.open(url + '?page=display', '_blank');
     }).getScriptUrl();
+  }
+
+
+  // ── 슈퍼패스(우선입찰권) UI ─────────────────────────────────────
+  // 선택된 상품의 카테고리(자리/1인1역/급식순서)에 맞는 슈퍼패스 보유 학생만
+  // 체크박스를 활성화한다. 보유자가 아닌 학생은 비활성(회색) 상태로 둔다.
+  window._currentPassItemName = '';
+
+  function refreshSuperPassUI() {
+    var itemSel = document.getElementById('itemSelect');
+    if (!itemSel) return;
+    var itemIdx = parseInt(itemSel.value);
+    if (isNaN(itemIdx) || !globalItems[itemIdx]) return;
+
+    var itemName = globalItems[itemIdx].name;
+    var category = String(itemName).split(' - ')[0].trim();
+
+    // 모든 체크박스 초기화 + 비활성화
+    var allChecks = document.querySelectorAll('.sp-check');
+    allChecks.forEach(function(cb) { cb.checked = false; cb.disabled = true; });
+    updateSpCount();
+
+    var banner = document.getElementById('superPassBanner');
+    if (banner) {
+      banner.innerHTML = '🎫 [' + category + '] 슈퍼패스 보유자 확인 중...';
+      banner.style.background = '#ecf0f1';
+      banner.style.color = '#7f8c8d';
+    }
+
+    google.script.run
+      .withSuccessHandler(function(res) {
+        if (!res || !res.success) {
+          if (banner) {
+            banner.innerHTML = '<span style="color:#e74c3c;">슈퍼패스 정보를 불러오지 못했습니다.</span>';
+          }
+          return;
+        }
+        window._currentPassItemName = res.passItemName;
+
+        var holders = res.holders || [];
+        var holderNames = {};
+        holders.forEach(function(h) { holderNames[h.name] = h.count; });
+
+        // 보유 학생 체크박스만 활성화
+        document.querySelectorAll('.sp-check').forEach(function(cb) {
+          var nm = cb.getAttribute('data-name');
+          if (nm && holderNames[nm] !== undefined) {
+            cb.disabled = false;
+            cb.title = res.passItemName + ' 보유 (' + holderNames[nm] + '개) — 사용 선언 시 체크';
+          } else {
+            cb.title = '이 상품의 슈퍼패스 미보유';
+          }
+        });
+
+        renderSuperPassBanner(category, res.passItemName, holders);
+      })
+      .withFailureHandler(function(err) {
+        if (banner) {
+          banner.innerHTML = '<span style="color:#e74c3c;">슈퍼패스 조회 오류: ' + err.message + '</span>';
+        }
+      })
+      .getSuperPassHolders(category);
+  }
+
+  function renderSuperPassBanner(category, passItemName, holders) {
+    var banner = document.getElementById('superPassBanner');
+    if (!banner) return;
+    if (!holders || holders.length === 0) {
+      banner.innerHTML = '🎫 <b>' + passItemName + '</b> 보유 학생 없음 — 일반 경매로 진행하세요.';
+      banner.style.background = '#ecf0f1';
+      banner.style.color = '#7f8c8d';
+      return;
+    }
+    var names = holders.map(function(h) {
+      return h.name + (h.count > 1 ? '(' + h.count + '개)' : '');
+    }).join(', ');
+    banner.innerHTML =
+      '🎫 <b>' + passItemName + '</b> 보유: <b style="color:#b9770e;">' + names + '</b>' +
+      '<br><span style="font-size:12px;">→ 슈퍼패스 <b>사용을 선언한 학생</b>의 체크박스를 켠 뒤, ' +
+      '단독이면 시작가로 / 2명 이상이면 경쟁 입찰가로 낙찰 처리하세요.</span>';
+    banner.style.background = '#fff3cd';
+    banner.style.color = '#856404';
+  }
+
+  // 현재 체크된 슈퍼패스 인원 수에 따른 안내
+  function updateSpCount() {
+    var hint = document.getElementById('superPassCountHint');
+    if (!hint) return;
+    var n = document.querySelectorAll('.sp-check:checked').length;
+    if (n === 0) {
+      hint.innerHTML = '';
+    } else if (n === 1) {
+      hint.innerHTML = '✅ 슈퍼패스 사용 <b>1명</b> → <b>단독 낙찰 가능</b> (시작 입찰가로 바로 낙찰)';
+      hint.style.color = '#27ae60';
+    } else {
+      hint.innerHTML = '🔥 슈퍼패스 사용 <b>' + n + '명</b> → <b>이 학생들끼리 경쟁 입찰</b> (최고가 낙찰)';
+      hint.style.color = '#e67e22';
+    }
   }
 
 
@@ -2113,7 +2225,23 @@ function doSaveMissionParticipation() {
     if (!price || price <= 0) return alert('입찰가를 정확히 입력하세요!');
     if (price > curBalance)   return alert('잔액이 부족합니다! (현재 잔액: $' + curBalance + ')');
 
-    if (confirm(name + ' 학생에게 [' + itemName + ']을(를) $' + price + '에 낙찰하시겠습니까?')) {
+    // ── 슈퍼패스 사용 여부 (해당 학생의 체크박스가 켜져 있고 활성 상태일 때만)
+    var spCheckbox    = document.getElementById('sp_' + rowIdx);
+    var usedSuperPass = !!(spCheckbox && spCheckbox.checked && !spCheckbox.disabled);
+    var spFallbackMap = {
+      '자리'     : '[경매형] 자리 슈퍼패스(1회권)',
+      '1인1역'   : '[경매형] 1인1역 슈퍼패스(1회권)',
+      '급식순서' : '[경매형] 급식 슈퍼패스(1회권)'
+    };
+    var spCategory    = String(itemName).split(' - ')[0].trim();
+    var superPassInfo = usedSuperPass
+      ? { used: true, passItemName: window._currentPassItemName || spFallbackMap[spCategory] || ('[경매형] ' + spCategory + ' 슈퍼패스(1회권)') }
+      : null;
+
+    var confirmMsg = name + ' 학생에게 [' + itemName + ']을(를) $' + price + '에 낙찰하시겠습니까?'
+      + (usedSuperPass ? '\n\n🎫 슈퍼패스(우선입찰권) 사용으로 처리됩니다. (인벤토리에서 1개 차감)' : '');
+
+    if (confirm(confirmMsg)) {
       var studentInfo = { rowIdx: rowIdx, name: name, brand: brand };
       var itemDetails = { name: itemName };
 
@@ -2132,30 +2260,45 @@ function doSaveMissionParticipation() {
               status:     'sold',
               itemName:   itemName,
               winner:     name,
-              finalPrice: price
+              finalPrice: price,
+              superPass:  usedSuperPass
             });
           }
 
           // ✅ 낙찰 결과 대시보드에 행 추가
-          _addSoldRecord(itemName, name, price);
+          _addSoldRecord(itemName, name, price, usedSuperPass);
+
+          // ✅ 슈퍼패스로 낙찰된 학생의 체크박스 정리 (1개 소비됨)
+          if (usedSuperPass && spCheckbox) {
+            spCheckbox.checked = true;   // 사용됨 표시 유지
+            spCheckbox.disabled = true;  // 더 이상 변경 불가
+            updateSpCount();
+          }
 
           // ✅ 낙찰 완료 시 failCount 초기화 + 낙찰된 상품 목록 맨 뒤로 이동
           failCount = 0;
           var itemSel = document.getElementById('itemSelect');
           itemSel.appendChild(itemSel.options[itemSel.selectedIndex]);
 
-          alert('낙찰 및 기록 완료!' + (res.__timing ? '\n\n' + res.__timing : ''));
+          var doneMsg = '낙찰 및 기록 완료!';
+          if (usedSuperPass) {
+            doneMsg += res.superPassConsumed
+              ? '\n🎫 슈퍼패스 사용 기록 완료 (인벤토리 1개 차감)'
+              : '\n' + (res.superPassWarning || '⚠️ 슈퍼패스 사용 기록은 생략되었습니다.');
+          }
+          if (res.__timing) doneMsg += '\n\n' + res.__timing;
+          alert(doneMsg);
         } else {
           alert('오류: ' + res.msg);
         }
-      }).executeAuctionSold(studentInfo, itemDetails, price, roundNum);
+      }).executeAuctionSold(studentInfo, itemDetails, price, roundNum, superPassInfo);
     }
   }
 
 
   // ── 낙찰 테이블에 행 추가 ─────────────────────────────────────
-  function _addSoldRecord(itemName, winner, price) {
-    soldRecords.push({ itemName: itemName, winner: winner, price: price });
+  function _addSoldRecord(itemName, winner, price, superPass) {
+    soldRecords.push({ itemName: itemName, winner: winner, price: price, superPass: !!superPass });
     _renderSoldTable();
 
     // Firebase에 누적 기록 저장 (새로고침 복원용)
@@ -2170,9 +2313,12 @@ function doSaveMissionParticipation() {
     } else {
       tbody.innerHTML = '';
       soldRecords.forEach(function(r) {
+        var spTag = r.superPass
+          ? ' <span style="background:#f1c40f;color:#7d6608;padding:1px 5px;border-radius:3px;font-size:10px;font-weight:bold;">🎫슈퍼패스</span>'
+          : '';
         var tr = document.createElement('tr');
         tr.innerHTML =
-          '<td style="font-size:12px;font-weight:bold;color:#2c3e50;">' + r.itemName + '</td>' +
+          '<td style="font-size:12px;font-weight:bold;color:#2c3e50;">' + r.itemName + spTag + '</td>' +
           '<td style="font-size:12px;">' + r.winner + '</td>' +
           '<td style="font-size:12px;font-weight:bold;color:#27ae60;text-align:right;">$' + r.price.toLocaleString() + '</td>';
         tbody.appendChild(tr);

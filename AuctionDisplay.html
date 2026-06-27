@@ -354,9 +354,13 @@
 
     setTimeout(function() {
       playSoldSound(); // ✅ 낙찰 완료 효과음
+      var spBadge = stateObj.superPass
+        ? '<div style="display:inline-block;background:#f1c40f;color:#7d6608;font-size:40px;font-weight:900;padding:8px 30px;border-radius:50px;margin-bottom:20px;box-shadow:0 0 20px rgba(241,196,15,0.6);">🎫 슈퍼패스</div><br>'
+        : '';
       container.innerHTML =
         '<div style="animation:popIn 0.5s cubic-bezier(0.175,0.885,0.32,1.275);">' +
           '<div class="sold-title">쾅! 낙찰 완료!</div>' +
+          spBadge +
           '<div style="font-size:50px;color:#bdc3c7;margin-bottom:20px;">' + stateObj.itemName + '</div>' +
           '<div class="sold-winner">🎉 낙찰자: ' + stateObj.winner + '</div>' +
           '<div class="sold-price">최종가: $ ' + Number(stateObj.finalPrice).toLocaleString() + '</div>' +

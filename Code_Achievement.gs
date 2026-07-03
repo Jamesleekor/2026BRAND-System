@@ -308,8 +308,8 @@ function checkAndGrantAchievements(studentName, balance, totalTax, honor) {
     if (conditionMap[achId] === true) {
       achSheet.appendRow([studentName, achId, achName, cond, today, false]);
       // 자동 부여 업적도 유일/초월 등급이면 전역 알림
-      const achGrade = String(masterData[m][5] || '희귀').trim();
-      _checkAndPostGlobalAlert(studentName, achName, achGrade);
+      // [2026-06] achId 전달 → 함수가 정식 이름·등급 직접 조회
+      _checkAndPostGlobalAlert(studentName, achName, '', achId);
     }
   }
 }
@@ -564,14 +564,9 @@ function approveAchievement(rowNumber, isApproved, finalAchievementId) {
   grantMilestoneReward(studentName, totalCount);
 
   // ★ 전광판 알림 체크
-  const achGradeForAlert = masterSheet ? (() => {
-    const mData2 = masterSheet.getDataRange().getValues();
-    for (let m = 1; m < mData2.length; m++) {
-      if (String(mData2[m][0]).trim() === achId) return String(mData2[m][5] || '희귀').trim();
-    }
-    return '희귀';
-  })() : '희귀';
-  _checkAndPostGlobalAlert(studentName, achName, achGradeForAlert);
+  // [2026-06] achId를 넘기면 _checkAndPostGlobalAlert가 마스터에서
+  //   정식 업적명·등급을 직접 조회한다. (이름/ID 불일치로 2회 표시되던 문제 해결)
+  _checkAndPostGlobalAlert(studentName, achName, '', achId);
 
   return { success: true, msg: `[${studentName}] ${achName} 업적 승인 완료!` };
 }
@@ -706,44 +701,8 @@ function batchApproveAchievementsWithMail(rowNumbers, isApproved, rejectReason) 
       const res = approveAchievementWithMail(rowNum, isApproved, null, rejectReason || '조건 미충족');
       if (res.success) {
         successCount++;
-        // 승인인 경우 마일스톤 체크
-        if (isApproved) {
-          const ss       = SpreadsheetApp.getActiveSpreadsheet();
-          const logSheet = ss.getSheetByName(SHEET_ACH_LOG);
-          if (logSheet) {
-            const row         = logSheet.getRange(rowNum, 1, 1, 5).getValues()[0];
-            const studentName = String(row[1]).trim();
-            const achSheet    = ss.getSheetByName(SHEET_ACH_STUDENT);
-            const masterSheet = ss.getSheetByName(SHEET_ACH_MASTER);
-
-            // 총 업적 수 집계
-            let count = 0;
-            const gradeMap = {};
-            if (masterSheet) {
-              const mData = masterSheet.getDataRange().getValues();
-              for (let m = 1; m < mData.length; m++) {
-                if (mData[m][0]) gradeMap[String(mData[m][0]).trim()] = String(mData[m][5] || '희귀').trim();
-              }
-            }
-            let achGrade = '희귀';
-            if (achSheet) {
-              const aData = achSheet.getDataRange().getValues();
-              for (let i = 1; i < aData.length; i++) {
-                if (String(aData[i][0]).trim() === studentName) {
-                  count++;
-                  const id = String(aData[i][1]).trim();
-                  if (gradeMap[id]) achGrade = gradeMap[id];
-                }
-              }
-            }
-
-
-            // 전광판 체크
-            const achNameRow = logSheet.getRange(rowNum, 1, 1, 5).getValues()[0];
-            let achName = String(achNameRow[2]).trim();
-            _checkAndPostGlobalAlert(studentName, achName, achGrade);
-          }
-        }
+        // [2026-06] 마일스톤 보상·전광판 알림은 approveAchievementWithMail 내부에서
+        //   이미 처리하므로 여기서 중복 호출하지 않는다. (전역 알림 2회 발송 버그 수정)
       } else {
         failCount++;
       }
@@ -811,4 +770,3 @@ function correctRejection(rowNumber) {
   const achId       = String(row[2]).trim();
   return { success: true, msg: `[${studentName}] ${achId} 신청이 대기 상태로 복원되었습니다.` };
 }
-

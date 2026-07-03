@@ -42,8 +42,8 @@
       --card-bg-2:        #1c2333;
       --border-color:     #30363d;
       --text-primary:     #e6edf3;
-      --text-secondary:   #8b949e;
-      --text-muted:       #484f58;
+      --text-secondary:   #aeb9c5;
+      --text-muted:       #8b96a3;
       --accent-green:     #3fb950;
       --accent-red:       #f85149;
       --accent-blue:      #4da8f5;
@@ -388,11 +388,20 @@
       font-size: 13px; font-weight: bold; cursor: pointer;
     }
     .ach-inline-submit:disabled { opacity: 0.45; cursor: default; }
-    /* 특별 보고서 섹션 (모달 하단 고정) */
+    /* 특별 보고서 섹션 (모달 하단 고정 · 접이식) */
     .ach-special-section {
-      margin-top: 10px; padding: 12px; background: #1a0e00;
+      margin-top: 8px; padding: 9px 12px; background: #1a0e00;
       border-radius: 10px; border: 1px solid #7a4500; flex-shrink: 0;
     }
+    .ach-special-header {
+      display: flex; align-items: center; justify-content: space-between;
+      cursor: pointer; user-select: none;
+    }
+    .ach-special-arrow {
+      color: #e67e22; font-size: 13px; transition: transform 0.18s;
+    }
+    .ach-special-section.collapsed .ach-special-arrow { transform: rotate(-90deg); }
+    .ach-special-section.collapsed .ach-special-body { display: none; }
     .ach-special-section textarea {
       width: 100%; height: 56px; padding: 7px; border-radius: 6px;
       border: 1px solid #7a4500; background: #0d0800; color: #e6edf3;
@@ -607,7 +616,7 @@
       /* 다크 골드 & 흑연색 그라데이션 */
       background: linear-gradient(135deg, #1a1a1a 0%, #2d2416 30%, #b8860b 55%, #2d2416 75%, #0f0f0f 100%);
       background-size: 250% 250%;
-      color: #ffd700;
+      color: #fff7e0;   /* [가독성] 진금(#ffd700) → 밝은 샴페인: 어두운 배경 위에서 또렷 */
       padding: 3px 12px;
       border-radius: 12px;
       font-size: 12px;
@@ -616,12 +625,11 @@
       margin-right: 4px;
       position: relative;
       overflow: visible;
-      /* 금색 네온 글로우 — 입체감 */
+      /* 금색 네온 글로우 — 밝은 글자 가독성 유지 위해 약간 완화 */
       text-shadow:
-        0 0 6px  #ffd700,
-        0 0 14px #ffd700,
-        0 0 28px #b8860b,
-        0 0 50px rgba(184,134,11,0.7);
+        0 0 5px  rgba(255,247,224,0.5),
+        0 0 12px rgba(255,215,0,0.55),
+        0 0 26px rgba(184,134,11,0.5);
       /* 브리딩 펄스 + 배경 이동 + 박스 글로우 */
       animation:
         transcendentalBreath   3.5s ease-in-out infinite,
@@ -1065,8 +1073,8 @@
       --card-bg-2:        #1c2333;
       --border-color:     #30363d;
       --text-primary:     #e6edf3;
-      --text-secondary:   #8b949e;
-      --text-muted:       #484f58;
+      --text-secondary:   #aeb9c5;
+      --text-muted:       #8b96a3;
       --accent-green:     #3fb950;
       --accent-red:       #f85149;
       --accent-blue:      #4da8f5;
@@ -2217,6 +2225,41 @@
       #welcomeMsg { max-width: 100% !important; font-size: 14px !important; }
     }
 
+    /* ═══════════════════════════════════════════════════════════
+       가독성 개선 v2 — 전 화면폭 적용 (다크 배경 저대비 회색 교정)
+       ※ 기존 인라인 스타일/JS 로직은 그대로, 색상만 오버라이드
+          (기존 #555/#888 교정 규칙이 600px 미디어쿼리 안에만 있어
+           크롬북/데스크톱에서 미적용되던 문제를 전 화면폭으로 보강)
+       ═══════════════════════════════════════════════════════════ */
+
+    /* [전체] 카드 제목 — 홈/경제/업적/길드 모든 .card-title */
+    .card-title { color: #c9d1d9; }
+
+    /* [경제·나의 기록] 히스토리 모달 — 탭/통계라벨/날짜만 교정
+       (숫자=stat-val, 항목=memo, 금액=delta 색상은 기존 유지) */
+    .history-tab        { color: #aeb9c5; }
+    .history-stat-label { color: #aeb9c5; }
+    .history-date       { color: #aeb9c5; }
+
+    /* [경제·정기예금/적금/P2P] 라벨·안내문·미리보기 회색 (#555/#888/#aaa) */
+    #depositCardBody label,
+    #savingCardBody  label,
+    #p2pCard         label { color: #b8c8d4 !important; }
+    #depositCardBody [style*="color:#555"], #savingCardBody [style*="color:#555"], #p2pCard [style*="color:#555"],
+    #depositCardBody [style*="color:#888"], #savingCardBody [style*="color:#888"], #p2pCard [style*="color:#888"],
+    #depositCardBody [style*="color:#aaa"], #savingCardBody [style*="color:#aaa"], #p2pCard [style*="color:#aaa"]
+      { color: #9fb1be !important; }
+
+    /* [상점] 실시간 물품 거래소 '남은 수량'(#888) + 상점 안내 부제 */
+    #panel-shop2 [style*="color:#888"] { color: #9fb1be !important; }
+
+    /* [길드] 길드 탭 다크 배경 저대비 회색 일괄 교정 */
+    #panel-guild [style*="color:#888"],
+    #panel-guild [style*="color:#555"]    { color: #9fb1be !important; }
+    #panel-guild [style*="color:#aaa"]    { color: #b0bcc8 !important; }
+    #panel-guild [style*="color:#9ca3af"] { color: #b7c2cd !important; }
+    #panel-guild [style*="color:#7f8c8d"] { color: #a8b4bd !important; }
+
 </style>
 </head>
 <body>
@@ -2829,11 +2872,11 @@
     <div style="margin-bottom:8px;">
       <label style="font-size:12px;color:#555;display:block;margin-bottom:4px;">거래 태그 (필수)</label>
       <div style="display:flex;flex-wrap:wrap;gap:6px;">
-        <label style="cursor:pointer;"><input type="radio" name="p2pTag" value="#학습도움"> #학습도움</label>
-        <label style="cursor:pointer;"><input type="radio" name="p2pTag" value="#정서적지지"> #정서적지지</label>
-        <label style="cursor:pointer;"><input type="radio" name="p2pTag" value="#재능판매"> #재능판매</label>
-        <label style="cursor:pointer;"><input type="radio" name="p2pTag" value="#권리 및 기회"> #권리 및 기회</label>
-        <label style="cursor:pointer;"><input type="radio" name="p2pTag" value="#기타"> #기타</label>
+        <label style="cursor:pointer;"><input type="radio" name="p2pTag" value="#학습도움" onchange="onP2PTagChange()"> #학습도움</label>
+        <label style="cursor:pointer;"><input type="radio" name="p2pTag" value="#정서적지지" onchange="onP2PTagChange()"> #정서적지지</label>
+        <label style="cursor:pointer;"><input type="radio" name="p2pTag" value="#재능판매" onchange="onP2PTagChange()"> #재능판매</label>
+        <label style="cursor:pointer;"><input type="radio" name="p2pTag" value="#권리 및 기회" onchange="onP2PTagChange()"> #권리 및 기회</label>
+        <label style="cursor:pointer;"><input type="radio" name="p2pTag" value="#기타" onchange="onP2PTagChange()"> #기타</label>
       </div>
     </div>
 
@@ -2844,14 +2887,32 @@
         style="width:100%;padding:9px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;box-sizing:border-box;">
     </div>
 
-    <!-- 수량 (기타 태그 제외) -->
+    <!-- 수량 (기타 태그 제외) — [개선1] 버튼 선택 방식 -->
+    <style>
+      .p2pQtyBtn{padding:8px 12px;border:1.5px solid #ddd;border-radius:8px;background:#fff;font-size:13px;cursor:pointer;color:#333;}
+      .p2pQtyBtn.on{background:#16a085;color:#fff;border-color:#16a085;font-weight:bold;}
+    </style>
     <div id="p2pQuantityWrap" style="margin-bottom:8px;">
-      <label style="font-size:12px;color:#555;display:block;margin-bottom:4px;">📦 수량 <span style="color:#888;font-weight:normal;">(서비스 제공 횟수·건수)</span></label>
-      <div style="display:flex;gap:6px;align-items:center;">
-        <input type="number" id="p2pQuantity" min="1" max="999" value="1" placeholder="예: 10"
-          style="width:100px;padding:9px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;box-sizing:border-box;">
-        <span style="font-size:12px;color:#888;">※ 문제 10개 도움 → 10 입력. #기타 태그는 수량 입력 불필요.</span>
+      <label style="font-size:12px;color:#555;display:block;margin-bottom:4px;">
+        📦 며칠치 · 몇 번 분량인가요? <span style="color:#e74c3c;font-weight:bold;">(꼭 선택!)</span>
+      </label>
+      <div style="font-size:12px;color:#888;margin-bottom:6px;">
+        예) 월~금 청소 = <b>5</b> &nbsp;·&nbsp; 문제 10개 도움 = <b>10</b> &nbsp;·&nbsp; 한 번만 = <b>1</b>
       </div>
+      <div id="p2pQtyButtons" style="display:flex;flex-wrap:wrap;gap:6px;">
+        <button type="button" class="p2pQtyBtn" onclick="selectP2PQty(this,1)">1번</button>
+        <button type="button" class="p2pQtyBtn" onclick="selectP2PQty(this,2)">2번</button>
+        <button type="button" class="p2pQtyBtn" onclick="selectP2PQty(this,3)">3번</button>
+        <button type="button" class="p2pQtyBtn" onclick="selectP2PQty(this,4)">4번</button>
+        <button type="button" class="p2pQtyBtn" onclick="selectP2PQty(this,5)">일주일(5)</button>
+        <button type="button" class="p2pQtyBtn" onclick="selectP2PQtyCustom(this)">6번 이상 ✏️</button>
+      </div>
+      <div id="p2pQtyCustomWrap" style="display:none;margin-top:6px;">
+        <input type="number" id="p2pQtyCustom" min="6" max="999" placeholder="횟수 직접 입력 (예: 10)"
+          oninput="syncP2PCustomQty()"
+          style="width:170px;padding:9px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;box-sizing:border-box;">
+      </div>
+      <input type="hidden" id="p2pQuantity" value="">
     </div>
 
     <!-- 세금 안내 -->
@@ -2878,6 +2939,39 @@
     </div>
   </div>
 </div>
+
+    <!-- ── P2P 거래 확인 모달 (수량 강조 + 벌금 경고) ── -->
+    <div id="p2pConfirmModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.55);z-index:1002;justify-content:center;align-items:center;">
+      <div style="background:#1c2333;border-radius:16px;width:92%;max-width:420px;overflow:hidden;box-shadow:0 12px 48px rgba(0,0,0,0.55);">
+        <div style="background:linear-gradient(135deg,#16a085,#1abc9c);color:#fff;padding:16px 20px;font-size:17px;font-weight:bold;">🤝 거래 확인</div>
+        <div style="padding:20px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:14px;color:#c9d1d9;">
+            <span>받는 학생</span><b id="p2pcReceiver" style="color:#e6edf3;"></b>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:14px;color:#c9d1d9;">
+            <span>태그</span><b id="p2pcTag" style="color:#e6edf3;"></b>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:14px;font-size:14px;color:#c9d1d9;">
+            <span>금액</span><b id="p2pcAmount" style="color:#fcd34d;"></b>
+          </div>
+          <div id="p2pcQtyBox" style="text-align:center;background:rgba(56,189,248,0.10);border:1px solid rgba(56,189,248,0.35);border-radius:12px;padding:14px;margin-bottom:14px;">
+            <div style="font-size:13px;color:#aeb9c5;">이 거래는 다음 수량으로 기록돼요</div>
+            <div style="font-size:34px;font-weight:bold;color:#5eead4;font-family:monospace;line-height:1.2;"><span id="p2pcQty">1</span>건</div>
+          </div>
+          <div id="p2pcOutlier" style="display:none;background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.45);border-radius:10px;padding:12px;margin-bottom:14px;font-size:13px;color:#fde68a;line-height:1.5;">
+            🤔 건당 단가가 <b id="p2pcUnit"></b>로 꽤 높아요. 혹시 <b>여러 날·여러 번</b> 서비스인가요? 그렇다면 취소하고 수량을 늘려주세요.
+          </div>
+          <div style="background:rgba(239,68,68,0.14);border:1px solid rgba(239,68,68,0.5);border-radius:10px;padding:12px 14px;margin-bottom:18px;text-align:center;">
+            <div style="font-size:15px;font-weight:bold;color:#fca5a5;">⚠️ 수량이 비정상적이면 벌금이 부과됩니다</div>
+            <div style="font-size:12px;color:#f3b0b0;margin-top:4px;">수호대가 모든 거래의 수량을 확인하고 있어요.</div>
+          </div>
+          <div style="display:flex;gap:10px;">
+            <button onclick="closeP2PConfirm()" style="flex:1;padding:11px;background:#2a3447;color:#c9d1d9;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer;">취소</button>
+            <button onclick="confirmP2PExecute()" style="flex:1;padding:11px;background:linear-gradient(135deg,#16a085,#1abc9c);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer;">거래 실행</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <div class="card">
       <div class="card-title" style="cursor:pointer;margin-bottom:0;" onclick="toggleCard('priceCardBody','priceCardArrow')">
@@ -4054,12 +4148,17 @@
       <div class="ach-empty">로딩 중...</div>
     </div>
 
-    <!-- 히든 업적 특별 보고서 (하단 고정) -->
-    <div class="ach-special-section">
-      <div style="font-size:12px;font-weight:bold;color:#e67e22;">🌟 히든 업적 특별 보고서</div>
-      <div style="font-size:10px;color:#8b6a3a;margin-top:2px;">히든 업적 달성 시 자유롭게 작성해 제출하세요</div>
-      <textarea id="achSpecialProofNew" placeholder="달성 내용을 자유롭게 서술해주세요."></textarea>
-      <button class="ach-special-submit" id="achSpecialSubmitBtn" onclick="submitSpecialReportNew()">🚀 특별 보고서 제출</button>
+    <!-- 히든 업적 특별 보고서 (하단 고정 · 접이식, 기본 접힘) -->
+    <div class="ach-special-section collapsed" id="achSpecialSection">
+      <div class="ach-special-header" onclick="toggleSpecialReport()">
+        <span style="font-size:12px;font-weight:bold;color:#e67e22;">🌟 히든 업적 특별 보고서</span>
+        <span class="ach-special-arrow">▾</span>
+      </div>
+      <div class="ach-special-body">
+        <div style="font-size:10px;color:#b08d57;margin-top:4px;">히든 업적 달성 시 자유롭게 작성해 제출하세요</div>
+        <textarea id="achSpecialProofNew" placeholder="달성 내용을 자유롭게 서술해주세요."></textarea>
+        <button class="ach-special-submit" id="achSpecialSubmitBtn" onclick="submitSpecialReportNew()">🚀 특별 보고서 제출</button>
+      </div>
     </div>
 
   </div>
@@ -5977,6 +6076,10 @@
     if (searchEl) searchEl.value = '';
     document.getElementById('achCombinedModal').classList.add('open');
 
+    // 모달을 열 때마다 특별 보고서는 접힌 상태로 시작 (업적 목록 공간 확보)
+    var specSec = document.getElementById('achSpecialSection');
+    if (specSec) specSec.classList.add('collapsed');
+
     if (window._achData && (window._achData.allAchievements || []).length > 0) {
       renderAchCombined(window._achData);
       updateAchStats(window._achData.allAchievements||[], window._achData.myAchievements||[]);
@@ -6000,6 +6103,12 @@
 
   function closeAchCombined() {
     document.getElementById('achCombinedModal').classList.remove('open');
+  }
+
+  // 특별 보고서 섹션 펼치기/접기 (헤더 클릭)
+  function toggleSpecialReport() {
+    var sec = document.getElementById('achSpecialSection');
+    if (sec) sec.classList.toggle('collapsed');
   }
 
   // 기존 openAchModal / openAchDexModal → 통합 모달로 리디렉션
@@ -6281,7 +6390,7 @@
       'CONS-001':'🍪','CONS-002':'🎁',
       'CHAL-001':'⚡','CHAL-002':'🚀','CHAL-003':'🌊',
       'CHAL-004':'🔮','CHAL-005':'🎪',
-      'HID-001':'🕵️','HID-002':'🎩','HID-003':'💫','HID-004':'🛍','HID-005':'🏅',
+      'HID-001':'🕵️','HID-002':'🎩','HID-003':'💫','HID-004':'🛍','HID-005':'🏅','HID-006':'🔥',
       'START-001':'🌱','START-002':'🌿','START-003':'🌳',
       'ECO-015':'🗽','LIFE-017':'🔥','LIFE-019':'💥',
       'RANK-007':'🌌','CHAL-008':'0️⃣','CHAL-009':'🔝',
@@ -8851,60 +8960,144 @@ function requestCancelSaving(savId, principal) {
     input.value = current + amount;
   }
   
+  // ── [개선1] 수량 버튼 선택 동작 ──────────────────────────────
+  function selectP2PQty(btn, q) {
+    var btns = document.querySelectorAll('.p2pQtyBtn');
+    for (var i = 0; i < btns.length; i++) btns[i].classList.remove('on');
+    btn.classList.add('on');
+    document.getElementById('p2pQtyCustomWrap').style.display = 'none';
+    document.getElementById('p2pQuantity').value = q;
+  }
+  function selectP2PQtyCustom(btn) {
+    var btns = document.querySelectorAll('.p2pQtyBtn');
+    for (var i = 0; i < btns.length; i++) btns[i].classList.remove('on');
+    btn.classList.add('on');
+    document.getElementById('p2pQtyCustomWrap').style.display = 'block';
+    syncP2PCustomQty();
+    var c = document.getElementById('p2pQtyCustom'); if (c) c.focus();
+  }
+  function syncP2PCustomQty() {
+    var v = parseInt(document.getElementById('p2pQtyCustom').value);
+    document.getElementById('p2pQuantity').value = (v && v >= 1) ? v : '';
+  }
+  function resetP2PQty() {
+    var btns = document.querySelectorAll('.p2pQtyBtn');
+    for (var i = 0; i < btns.length; i++) btns[i].classList.remove('on');
+    document.getElementById('p2pQtyCustomWrap').style.display = 'none';
+    var c = document.getElementById('p2pQtyCustom'); if (c) c.value = '';
+    document.getElementById('p2pQuantity').value = '';
+  }
+  // 태그가 #기타면 수량칸 숨기고 1로 고정, 아니면 보이게
+  function onP2PTagChange() {
+    var tagEl = document.querySelector('input[name="p2pTag"]:checked');
+    var tag   = tagEl ? tagEl.value : '';
+    var wrap  = document.getElementById('p2pQuantityWrap');
+    if (!wrap) return;
+    if (tag === '#기타') {
+      wrap.style.display = 'none';
+      resetP2PQty();
+      document.getElementById('p2pQuantity').value = '1';
+    } else {
+      wrap.style.display = 'block';
+      if (!document.querySelector('.p2pQtyBtn.on')) {
+        document.getElementById('p2pQuantity').value = '';
+      }
+    }
+  }
+
+  // ── 거래 확인 모달용 임시 보관 ───────────────────────────────
+  var _p2pPending = null;
+  var P2P_UNIT_ALERT = 200; // 건당 단가 경고 기준($). 이 숫자만 바꾸면 민감도 조절
+
   function submitP2P() {
-    var receiver   = document.getElementById('p2pReceiver').value;
-    var amount     = parseInt(document.getElementById('p2pAmount').value);
-    var tagEl      = document.querySelector('input[name="p2pTag"]:checked');
-    var tag        = tagEl ? tagEl.value : '';
-    var desc       = document.getElementById('p2pDesc').value.trim();
-    var quantityEl = document.getElementById('p2pQuantity');
-    var quantity   = (tag !== '#기타' && quantityEl) ? (parseInt(quantityEl.value) || 1) : 1;
-  
+    var receiver = document.getElementById('p2pReceiver').value;
+    var amount   = parseInt(document.getElementById('p2pAmount').value);
+    var tagEl    = document.querySelector('input[name="p2pTag"]:checked');
+    var tag      = tagEl ? tagEl.value : '';
+    var desc     = document.getElementById('p2pDesc').value.trim();
+    var qtyRaw   = document.getElementById('p2pQuantity').value;
+    var quantity = (tag !== '#기타') ? parseInt(qtyRaw) : 1;
+
     if (!receiver) return alert('받는 학생을 선택해주세요.');
     if (!amount || amount <= 0) return alert('금액을 입력해주세요.');
     if (!tag) return alert('거래 태그를 선택해주세요.');
     if (!desc) return alert('거래 설명을 입력해주세요.');
-    if (tag !== '#기타' && quantity < 1) return alert('수량은 1 이상이어야 합니다.');
-  
-    var quantityText = (tag !== '#기타') ? '\n수량: ' + quantity + '건' : '';
-    if (!confirm(receiver + ' 학생에게 $' + amount.toLocaleString() + ' 거래하시겠습니까?' + quantityText + '\n(상대방은 소득세 10% 차감 후 수령)')) return;
-  
-    // 버튼 비활성화 (중복 클릭 방지)
+    // [개선1] 고정 태그는 수량을 반드시 선택해야 진행
+    if (tag !== '#기타' && (!quantity || quantity < 1)) {
+      return alert('📦 며칠치 · 몇 번 분량인지 꼭 선택해주세요!\n(월~금 청소라면 "일주일(5)" 이에요)');
+    }
+
+    // [개선2] 확인 모달 내용 채우기
+    document.getElementById('p2pcReceiver').innerText = receiver;
+    document.getElementById('p2pcTag').innerText      = tag;
+    document.getElementById('p2pcAmount').innerText   = '$' + amount.toLocaleString();
+    document.getElementById('p2pcQty').innerText      = quantity;
+    document.getElementById('p2pcQtyBox').style.display = (tag !== '#기타') ? 'block' : 'none';
+
+    // [개선3] 건당 단가가 높으면 소프트 경고
+    var outlierEl = document.getElementById('p2pcOutlier');
+    if (tag !== '#기타') {
+      var unit = Math.round(amount / quantity);
+      if (unit >= P2P_UNIT_ALERT) {
+        document.getElementById('p2pcUnit').innerText = '$' + unit.toLocaleString();
+        outlierEl.style.display = 'block';
+      } else {
+        outlierEl.style.display = 'none';
+      }
+    } else {
+      outlierEl.style.display = 'none';
+    }
+
+    _p2pPending = { receiver: receiver, amount: amount, tag: tag, desc: desc, quantity: quantity };
+    document.getElementById('p2pConfirmModal').style.display = 'flex';
+  }
+
+  function closeP2PConfirm() {
+    document.getElementById('p2pConfirmModal').style.display = 'none';
+    _p2pPending = null;
+  }
+
+  // 모달의 '거래 실행' 버튼 → 실제 서버 호출
+  function confirmP2PExecute() {
+    if (!_p2pPending) return;
+    var p = _p2pPending;
+    document.getElementById('p2pConfirmModal').style.display = 'none';
+
     var btn = document.querySelector('[onclick="submitP2P()"]');
     if (btn) { btn.disabled = true; btn.innerText = '처리 중...'; }
-  
+
     google.script.run
       .withSuccessHandler(function(res) {
         if (btn) { btn.disabled = false; btn.innerText = '🤝 거래 실행하기'; }
         if (res.success) {
           alert(res.msg + (res.isAnomaly ? '\n\n⚠️ 이상 거래로 기록됩니다: ' + res.anomalyReason : ''));
-          // 잔액 즉시 반영
           var balEl = document.getElementById('myBalance');
           if (balEl) balEl.innerText = '$ ' + Number(res.newBalance).toLocaleString();
-          // 입력창 초기화
           document.getElementById('p2pAmount').value = '';
           document.getElementById('p2pDesc').value = '';
           document.getElementById('p2pReceiver').value = '';
-          document.getElementById('p2pQuantity').value = '1';
+          resetP2PQty();
           var checkedTag = document.querySelector('input[name="p2pTag"]:checked');
           if (checkedTag) checkedTag.checked = false;
           var wrap = document.getElementById('p2pQuantityWrap');
           if (wrap) wrap.style.display = 'block';
-          // 대시보드 캐시 갱신
           if (window._lastDashboardData) {
             window._lastDashboardData.personal.balance = res.newBalance;
           }
         } else {
           alert('거래 실패: ' + res.msg);
         }
+        _p2pPending = null;
       })
       .withFailureHandler(function(err) {
         if (btn) { btn.disabled = false; btn.innerText = '🤝 거래 실행하기'; }
         alert('서버 오류: ' + err.message);
+        _p2pPending = null;
       })
-      .p2pTransfer(window._currentStudentName, receiver, amount, tag, desc, quantity);
+      .p2pTransfer(window._currentStudentName, p.receiver, p.amount, p.tag, p.desc, p.quantity);
   }
-  
+
+
   function openP2PHistoryModal() {
     document.getElementById('p2pHistoryModal').style.display = 'flex';
     document.getElementById('p2pHistoryList').innerHTML = '<div style="text-align:center;padding:30px;color:#bbb;">로딩 중...</div>';
@@ -9418,32 +9611,42 @@ function requestCancelSaving(savId, principal) {
 /* ── 매월 수정 구역 START ── */
 var GUILD_CELEBRATION_CONFIG = {
   enabled: true,
-  storageKey: 'brand_guild_celebration_2026_05',
-  month: '2026년 5월',
-  winnerGuild: 'Ruby',
-  winnerGuildEmoji: '♦️',
-  winnerScore: '9,750',
-  rivalGuild: '암흑장미',
-  rivalScore: '9,734',
-  diffPct: '1.7%',
-  monthlyMVP: '한서현',
-  mvpContribScore: '728',
-  mvpCandidates: ['김서영', '한서현'],
-  missions: ['M01', 'M03', 'M04'],
+  storageKey: 'brand_guild_celebration_2026_06',
+  month: '2026년 6월',
+  winnerGuild: '빛나는 은하수',
+  winnerGuildEmoji: '🌌',
+  missions: ['M04', 'M07'],
   allSessionAttended: true,
+
+  // 📜 운영국 서한 — 배열의 각 항목이 <p> 한 단락이 됩니다. 매월 이 부분만 자유롭게 교체하세요.
+  proseParagraphs: [
+    '빛나는 은하수 길드의 모든 용사들에게,',
+    'B.R.A.N.D 운영국은 <span class="gcl-highlight">6월의 최강 길드<\/span>로 우뚝 선 <span class="gcl-highlight">🌌 빛나는 은하수 길드<\/span> 전원에게 진심 어린 축하를 전합니다.',
+    '6월 내내 <b>단독 선두<\/b>를 지켜온 빛나는 은하수 길드는, 마지막 순간 Ruby 길드가 <b>M04 미션(P2P 거래 5건 이상)<\/b>을 완수하며 맹추격에 나서면서 손에 땀을 쥐는 초접전을 펼쳤습니다. 그러나 끝내 <span class="gcl-highlight">8,100점<\/span>으로 Ruby 길드(8,051점)를 단 <span class="gcl-highlight">0.7%<\/span> 차이로 따돌리고 6월의 최강 길드 자리에 발돋움했습니다! 🔥',
+    '또한 빛나는 은하수 길드의 <b>지담<\/b> 학생이 MVP 후보로 선정되었고, Ruby 길드의 <b>김서영·한서현<\/b> 학생은 <span class="gcl-highlight">2개월 연속<\/span> MVP 후보에 이름을 올리는 저력을 보여주었습니다. ✨'
+  ],
+
   rewards: [
     { icon: '💎', value: 'BV +500',     desc: '브랜드가치 포상' },
     { icon: '💰', value: '자산 +1,000', desc: '경제 자산 포상' },
     { icon: '🥇', value: '이달의 으뜸', desc: '업적 신청 자격 확정' }
   ],
-  rankings: [
-    { rank:1, emoji:'♦️', name:'Ruby',           score:'9,750', contrib:'한서현', contribScore:'728' },
-    { rank:2, emoji:'🖤', name:'암흑장미',        score:'9,734', contrib:'부희주',   contribScore:'660' },
-    { rank:3, emoji:'🌠', name:'빛나는 은하수', score:'9,473', contrib:'민사랑',   contribScore:'698' },
-    { rank:4, emoji:'🟢', name:'에메랄드',        score:'8,958', contrib:'정민준',   contribScore:'750' },
-    { rank:5, emoji:'⚡',     name:'라이징볼트태클즈', score:'4,583', contrib:'이한성',   contribScore:'662' }
+
+  // ⭐ MVP 섹션 — 월별로 '주인공' 유무·구성이 달라 라벨과 카드를 CONFIG에서 지정합니다.
+  mvpSectionLabel: '⭐ 6월의 MVP 후보',
+  mvpCards: [
+    { name: '지담', star: true, badgeClass: 'gold', badgeLabel: '🌟 MVP 후보', sub: '빛나는 은하수 · 기여도 1위 595점', ach: '🛡️ 길드의 수호신 신청 가능' }
   ],
-  closingMsg: '6월에도 모든 길드원들의 건투를 빕니다! 💪'
+
+  rankings: [
+    { rank:1, emoji:'🌌', name:'빛나는 은하수',       score:'8,100', contrib:'지담',   contribScore:'595' },
+    { rank:2, emoji:'♦️', name:'Ruby',                score:'8,051', contrib:'김서영', contribScore:'545' },
+    { rank:3, emoji:'⚡', name:'라이징볼트태클즈',    score:'5,550', contrib:'류은우', contribScore:'600' },
+    { rank:4, emoji:'🖤', name:'암흑장미',            score:'5,501', contrib:'박서은', contribScore:'472' },
+    { rank:5, emoji:'🟢', name:'에메랄드',            score:'2,985', contrib:'정민준', contribScore:'422' }
+  ],
+
+  closingMsg: '7월에도 모든 길드원들의 건투를 빕니다! 💪'
 };
 /* ── 매월 수정 구역 END ── */
 
@@ -9452,15 +9655,9 @@ function renderGuildCelebModal() {
   document.getElementById('gcl-badge-month').textContent = '🏆 B.R.A.N.D 운영국 공식 공문 · ' + c.month;
   document.getElementById('gcl-title').innerHTML = c.winnerGuildEmoji + ' ' + c.winnerGuild + ' 길드에 드리는 축전';
   document.getElementById('gcl-subtitle').textContent = c.month + ' · B.R.A.N.D 길드 대전 최종 결과';
-  var candStr = c.mvpCandidates.join('<\/b>와 <b>');
+  // 📜 운영국 서한 — proseParagraphs 배열의 각 항목을 <p> 단락으로 출력
   document.getElementById('gcl-prose').innerHTML =
-    '<p>' + c.winnerGuild + ' 길드의 모든 용사들에게,<\/p>' +
-    '<p>B.R.A.N.D 운영국은 <span class="gcl-highlight">이달의 최강 길드<\/span>로 우뚝 선 ' +
-    '<span class="gcl-highlight">' + c.winnerGuildEmoji + ' ' + c.winnerGuild + ' 길드<\/span> 전원에게 진심 어린 축하를 전합니다.<\/p>' +
-    '<p>최종 <span class="gcl-highlight">' + c.winnerScore + '점<\/span>을 획득하며 ' +
-    c.rivalGuild + ' 길드(' + c.rivalScore + '점)를 단 <span class="gcl-highlight">' + c.diffPct + '<\/span> 차이로 따돌리고 정상을 차지했습니다! 🔥<\/p>' +
-    '<p>또한 5월의 MVP 후보를 <b>' + candStr + '<\/b>, 두 명이나 배출했고 그 중 <span class="gcl-highlight">' +
-    c.monthlyMVP + '<\/span>학생은 이달의 주인공으로 최종 선정되는 영예까지 안았습니다. ✨<\/p>';
+    c.proseParagraphs.map(function(p){ return '<p>' + p + '<\/p>'; }).join('');
   var pillsHtml = '';
   c.missions.forEach(function(m){ pillsHtml += '<span class="gcl-pill">✅ ' + m + ' 전원 달성<\/span>'; });
   if (c.allSessionAttended) pillsHtml += '<span class="gcl-pill">📅 전 세션 참석 완료<\/span>';
@@ -9471,21 +9668,23 @@ function renderGuildCelebModal() {
       '<div class="gcl-reward-val">' + r.value + '<\/div><div class="gcl-reward-desc">' + r.desc + '<\/div><\/div>';
   });
   document.getElementById('gcl-rewards').innerHTML = rwHtml;
-  var mvpHtml =
-    '<div class="gcl-mvp-card star"><div class="gcl-mvp-badge gold">🌟 이달의 주인공<\/div>' +
-    '<div class="gcl-mvp-name">' + c.monthlyMVP + '<\/div>' +
-    '<div class="gcl-mvp-sub">' + c.winnerGuild + ' 길드 · 기여도 1위 (' + c.mvpContribScore + '점)<\/div>' +
-    '<div class="gcl-mvp-ach">🛡️ 길드의 수호신 업적 신청 가능<\/div><\/div>';
-  var others = c.mvpCandidates.filter(function(n){ return n !== c.monthlyMVP; });
-  others.forEach(function(name){
-    mvpHtml += '<div class="gcl-mvp-card"><div class="gcl-mvp-badge silver">🏅 MVP 후보<\/div>' +
-      '<div class="gcl-mvp-name">' + name + '<\/div>' +
-      '<div class="gcl-mvp-sub">' + c.winnerGuild + ' 길드 · MVP 후보 선정<\/div>' +
-      '<div class="gcl-mvp-ach" style="color:#8b949e;">이달의 으뜸 업적 신청 가능<\/div><\/div>';
+  // ⭐ MVP 카드 — mvpCards 배열을 그대로 렌더 (gold=대표/주인공, silver=후보, star=강조 테두리)
+  if (c.mvpSectionLabel) document.getElementById('gcl-mvp-label').textContent = c.mvpSectionLabel;
+  var mvpHtml = '';
+  var mvpCompact = (c.mvpCards.length === 1);  // 후보 1명이면 카드를 좁게(메인 아님)
+  c.mvpCards.forEach(function(m){
+    var achStyle = m.achColor ? ' style="color:' + m.achColor + ';"' : '';
+    var cardStyle = mvpCompact ? ' style="flex:0 1 260px;"' : '';
+    mvpHtml +=
+      '<div class="gcl-mvp-card' + (m.star ? ' star' : '') + '"' + cardStyle + '>' +
+      '<div class="gcl-mvp-badge ' + m.badgeClass + '">' + m.badgeLabel + '<\/div>' +
+      '<div class="gcl-mvp-name">' + m.name + '<\/div>' +
+      '<div class="gcl-mvp-sub">' + m.sub + '<\/div>' +
+      '<div class="gcl-mvp-ach"' + achStyle + '>' + m.ach + '<\/div><\/div>';
   });
   document.getElementById('gcl-mvp').innerHTML = mvpHtml;
   var maxScore = parseInt((c.rankings[0].score||'').replace(/,/g,''),10)||1;
-  var barColors = ['#f85149','#8b949e','#e67e22','#4da8f5','#3fb950'];
+  var barColors = ['#a78bfa','#aeb9c5','#e67e22','#4da8f5','#3fb950'];
   var tbodyHtml = '';
   c.rankings.forEach(function(r,i){
     var sc = parseInt((r.score||'').replace(/,/g,''),10)||0;
@@ -9494,9 +9693,9 @@ function renderGuildCelebModal() {
     tbodyHtml += '<tr><td><span class="gcl-rank-num ' + cc + '">' + r.rank + '위<\/span><\/td>' +
       '<td><b>' + r.emoji + ' ' + r.name + '<\/b><\/td>' +
       '<td><div class="gcl-score-wrap"><div class="gcl-bar" style="width:' + pct + 'px;background:' + barColors[i] + ';"><\/div>' +
-      '<span style="font-size:11px;color:#8b949e;white-space:nowrap;">' + r.score + '<\/span><\/div><\/td>' +
+      '<span style="font-size:11px;color:#c9d1d9;white-space:nowrap;">' + r.score + '<\/span><\/div><\/td>' +
       '<td style="font-size:11px;"><span style="color:#c9d1d9;">' + r.contrib + '<\/span><br>' +
-      '<span style="color:#8b949e;">' + r.contribScore + '점 🛡️<\/span><\/td><\/tr>';
+      '<span style="color:#c9d1d9;">' + r.contribScore + '점 🛡️<\/span><\/td><\/tr>';
   });
   document.getElementById('gcl-rank-tbody').innerHTML = tbodyHtml;
   document.getElementById('gcl-closing').textContent = c.closingMsg;
@@ -10514,46 +10713,46 @@ function goToPeerEvalFromGate() {
 #guildCelebBox{background:#161b22;border:1px solid #30363d;border-radius:16px;max-width:480px;width:100%;max-height:88vh;overflow-y:auto;position:relative;animation:celebIn .35s cubic-bezier(.22,.68,0,1.2);}
 @keyframes celebIn{from{opacity:0;transform:translateY(24px) scale(.97)}to{opacity:1;transform:none}}
 #guildCelebBox::-webkit-scrollbar{width:4px;}#guildCelebBox::-webkit-scrollbar-thumb{background:#30363d;border-radius:4px;}
-.gcl-header{background:linear-gradient(135deg,#1a0a0a,#2a0e0e,#1a0a0a);border-bottom:1px solid #4a1515;padding:24px 20px 18px;text-align:center;border-radius:16px 16px 0 0;position:relative;}
-.gcl-close-btn{position:absolute;top:12px;right:14px;background:rgba(255,255,255,.08);border:none;color:#8b949e;font-size:18px;cursor:pointer;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
+.gcl-header{background:radial-gradient(1px 1px at 18% 28%,rgba(255,255,255,.8),transparent),radial-gradient(1px 1px at 68% 22%,rgba(255,255,255,.55),transparent),radial-gradient(1px 1px at 42% 62%,rgba(199,210,254,.65),transparent),radial-gradient(1.4px 1.4px at 84% 54%,rgba(255,255,255,.45),transparent),radial-gradient(1px 1px at 30% 80%,rgba(167,139,250,.55),transparent),linear-gradient(135deg,#0b0a1e,#1a1340,#0b0a1e);border-bottom:1px solid #2e2a5e;padding:24px 20px 18px;text-align:center;border-radius:16px 16px 0 0;position:relative;}
+.gcl-close-btn{position:absolute;top:12px;right:14px;background:rgba(255,255,255,.08);border:none;color:#c9d1d9;font-size:18px;cursor:pointer;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
 .gcl-close-btn:hover{background:rgba(255,255,255,.15);color:#e6edf3;}
-.gcl-badge{display:inline-block;font-size:10px;font-weight:bold;padding:3px 10px;border-radius:99px;background:rgba(248,130,30,.15);color:#f5a623;border:1px solid rgba(245,166,35,.3);letter-spacing:.8px;margin-bottom:10px;}
+.gcl-badge{display:inline-block;font-size:10px;font-weight:bold;padding:3px 10px;border-radius:99px;background:rgba(167,139,250,.15);color:#c4b5fd;border:1px solid rgba(167,139,250,.32);letter-spacing:.8px;margin-bottom:10px;}
 .gcl-title{font-size:20px;font-weight:bold;color:#e6edf3;line-height:1.4;margin-bottom:4px;}
-.gcl-subtitle{font-size:12px;color:#8b949e;}
-.gcl-highlight{color:#f85149;font-weight:bold;}
+.gcl-subtitle{font-size:12px;color:#aeb9c5;}
+.gcl-highlight{color:#a78bfa;font-weight:bold;}
 .gcl-body{padding:18px 20px;}
 .gcl-section{margin-bottom:18px;}
-.gcl-section-label{font-size:10px;font-weight:bold;letter-spacing:1px;color:#8b949e;margin-bottom:10px;}
+.gcl-section-label{font-size:10px;font-weight:bold;letter-spacing:1px;color:#aeb9c5;margin-bottom:10px;}
 .gcl-prose{font-size:13px;color:#c9d1d9;line-height:1.75;}
 .gcl-prose p{margin-bottom:8px;}.gcl-prose p:last-child{margin-bottom:0;}
 .gcl-pills{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;}
-.gcl-pill{font-size:11px;padding:3px 10px;border-radius:99px;background:rgba(248,81,73,.1);color:#f85149;border:1px solid rgba(248,81,73,.25);}
+.gcl-pill{font-size:11px;padding:3px 10px;border-radius:99px;background:rgba(167,139,250,.12);color:#a78bfa;border:1px solid rgba(167,139,250,.3);}
 .gcl-reward-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
 .gcl-reward-card{background:#0d1117;border:1px solid #30363d;border-radius:10px;padding:10px 8px;text-align:center;}
-.gcl-reward-icon{font-size:18px;margin-bottom:4px;}.gcl-reward-val{font-size:13px;font-weight:bold;color:#e6edf3;}.gcl-reward-desc{font-size:10px;color:#8b949e;margin-top:2px;}
-.gcl-mvp-row{display:flex;gap:8px;}
-.gcl-mvp-card{flex:1;background:#0d1117;border:1px solid #30363d;border-radius:10px;padding:10px 12px;}
+.gcl-reward-icon{font-size:18px;margin-bottom:4px;}.gcl-reward-val{font-size:13px;font-weight:bold;color:#e6edf3;}.gcl-reward-desc{font-size:10px;color:#aeb9c5;margin-top:2px;}
+.gcl-mvp-row{display:flex;gap:8px;flex-wrap:wrap;}
+.gcl-mvp-card{flex:1 1 118px;min-width:118px;background:#0d1117;border:1px solid #30363d;border-radius:10px;padding:10px 12px;}
 .gcl-mvp-card.star{border-color:#f5a623;}
 .gcl-mvp-badge{display:inline-block;font-size:10px;padding:2px 8px;border-radius:99px;margin-bottom:5px;}
 .gcl-mvp-badge.gold{background:rgba(245,166,35,.15);color:#f5a623;border:1px solid rgba(245,166,35,.3);}
-.gcl-mvp-badge.silver{background:rgba(139,148,158,.15);color:#8b949e;border:1px solid rgba(139,148,158,.3);}
-.gcl-mvp-name{font-size:15px;font-weight:bold;color:#e6edf3;}.gcl-mvp-sub{font-size:11px;color:#8b949e;margin-top:3px;}.gcl-mvp-ach{font-size:11px;color:#f5a623;margin-top:5px;}
+.gcl-mvp-badge.silver{background:rgba(139,148,158,.15);color:#c9d1d9;border:1px solid rgba(139,148,158,.3);}
+.gcl-mvp-name{font-size:15px;font-weight:bold;color:#e6edf3;}.gcl-mvp-sub{font-size:11px;color:#c9d1d9;margin-top:3px;}.gcl-mvp-ach{font-size:11px;color:#f5a623;margin-top:5px;}
 .gcl-divider{border:none;border-top:1px solid #21262d;margin:16px 0;}
 .gcl-rank-table{width:100%;border-collapse:collapse;font-size:12px;}
-.gcl-rank-table th{text-align:left;font-size:10px;font-weight:bold;color:#8b949e;padding:0 0 8px;border-bottom:1px solid #21262d;}
+.gcl-rank-table th{text-align:left;font-size:10px;font-weight:bold;color:#aeb9c5;padding:0 0 8px;border-bottom:1px solid #21262d;}
 .gcl-rank-table td{padding:8px 0;border-bottom:1px solid #21262d;color:#c9d1d9;vertical-align:middle;}
 .gcl-rank-table td:nth-child(2){white-space:nowrap;}
 .gcl-rank-table tr:last-child td{border-bottom:none;}
 .gcl-rank-num{font-weight:bold;font-size:13px;}
-.gcl-rank-1{color:#f5a623;}.gcl-rank-2{color:#8b949e;}.gcl-rank-3{color:#e67e22;}
+.gcl-rank-1{color:#f5a623;}.gcl-rank-2{color:#cbd5e1;}.gcl-rank-3{color:#e67e22;}
 .gcl-score-wrap{display:flex;align-items:center;gap:6px;}.gcl-bar{height:5px;border-radius:3px;}
 .gcl-footer{background:#0d1117;border-top:1px solid #21262d;padding:14px 20px;border-radius:0 0 16px 16px;text-align:center;}
 .gcl-footer-msg{font-size:13px;font-weight:bold;color:#e6edf3;margin-bottom:12px;}
 .gcl-footer-actions{display:flex;gap:8px;}
-.gcl-btn-dismiss{flex:1;padding:10px;border-radius:8px;font-size:12px;font-weight:bold;cursor:pointer;border:1px solid #30363d;background:transparent;color:#8b949e;}
+.gcl-btn-dismiss{flex:1;padding:10px;border-radius:8px;font-size:12px;font-weight:bold;cursor:pointer;border:1px solid #30363d;background:transparent;color:#c9d1d9;}
 .gcl-btn-dismiss:hover{background:#21262d;color:#e6edf3;}
-.gcl-btn-close{flex:1;padding:10px;border-radius:8px;font-size:12px;font-weight:bold;cursor:pointer;background:#f85149;color:white;border:none;}
-.gcl-btn-close:hover{background:#da3633;}
+.gcl-btn-close{flex:1;padding:10px;border-radius:8px;font-size:12px;font-weight:bold;cursor:pointer;background:#7c6df2;color:white;border:none;}
+.gcl-btn-close:hover{background:#6354d6;}
 
 /* ═══════════════════════════════════════════════════════════
    gcl 길드 랭킹 테이블 — 모바일 전용 flex 재설계 (600px 이하)
@@ -10614,7 +10813,7 @@ function goToPeerEvalFromGate() {
         <div class="gcl-reward-grid" id="gcl-rewards"></div>
       </div>
       <div class="gcl-section">
-        <div class="gcl-section-label">⭐ 이달의 주인공 &amp; MVP후보</div>
+        <div class="gcl-section-label" id="gcl-mvp-label">⭐ 6월의 MVP 후보</div>
         <div class="gcl-mvp-row" id="gcl-mvp"></div>
       </div>
       <hr class="gcl-divider">
@@ -10624,7 +10823,7 @@ function goToPeerEvalFromGate() {
           <thead><tr><th style="width:30px">순위</th><th>길드</th><th>점수</th><th>기여도 1위</th></tr></thead>
           <tbody id="gcl-rank-tbody"></tbody>
         </table>
-        <div style="margin-top:6px;font-size:10px;color:#8b949e">🛡️ 표시 학생은 '길드의 수호신' 업적 신청 자격 획득</div>
+        <div style="margin-top:6px;font-size:10px;color:#aeb9c5">🛡️ 표시 학생은 '길드의 수호신' 업적 신청 자격 획득</div>
       </div>
     </div>
     <div class="gcl-footer">
@@ -10672,6 +10871,8 @@ function goToPeerEvalFromGate() {
     <div class="bvn-next" id="bvnNext">다음 ▼</div>
   </div></div>
   <div class="bvn-flash" id="bvnFlash"></div>
+  <canvas class="bvn-particles" id="bvnParticles"></canvas>
+  <div class="bvn-fxov" id="bvnFxOverlay"></div>
   <div class="bvn-end" id="bvnEnd">
     <div class="bvn-kick">— 이야기의 끝 —</div>
     <div class="bvn-endt" id="bvnEndT"></div>
@@ -10809,6 +11010,36 @@ function goToPeerEvalFromGate() {
     margin-bottom: 8px !important;
   }
 }
+
+/* ===== [효과 확장] BrandVN 추가 효과 (기존 flash/shake/dim/cg 위에 추가) ===== */
+/* 1) 씬(배경+스프라이트) 지속 필터 — 텍스트박스는 영향 없음 */
+#brandVN.fx-gray  .bvn-bg, #brandVN.fx-gray  .bvn-sprite{ filter:grayscale(1) brightness(.9) !important; transition:filter .8s ease; }
+#brandVN.fx-sepia .bvn-bg, #brandVN.fx-sepia .bvn-sprite{ filter:sepia(.7) contrast(.95) brightness(.95) !important; transition:filter .8s ease; }
+#brandVN.fx-blur  .bvn-bg, #brandVN.fx-blur  .bvn-sprite{ filter:blur(5px) !important; transition:filter .6s ease; }
+/* 2) 배경 줌 (켄번스 덮어쓰기) */
+#brandVN.fx-zoomin  .bvn-bg.show{ animation:bvnZoomIn  7s ease forwards !important; }
+#brandVN.fx-zoomout .bvn-bg.show{ animation:bvnZoomOut 7s ease forwards !important; }
+@keyframes bvnZoomIn { from{transform:scale(1);} to{transform:scale(1.18);} }
+@keyframes bvnZoomOut{ from{transform:scale(1.18);} to{transform:scale(1);} }
+/* 3) 느린 좌우 흔들림(불안·몽환, 지속) */
+#brandVN.fx-sway .bvn-bg, #brandVN.fx-sway .bvn-sprite{ animation:bvnSway 4.5s ease-in-out infinite !important; }
+@keyframes bvnSway{ 0%,100%{transform:translateX(-1.6%);} 50%{transform:translateX(1.6%);} }
+/* 4) 비네트 강조(긴장·집중) */
+#brandVN.fx-vignette .bvn-vignette{ box-shadow:inset 0 0 300px 110px rgba(0,0,0,.95); transition:box-shadow .8s ease; }
+/* 5) 대사 글자 떨림(공포·절규) */
+#brandVN.fx-textshake .bvn-text{ animation:bvnTextShake .34s ease infinite; }
+@keyframes bvnTextShake{ 0%,100%{transform:translate(0,0);} 25%{transform:translate(-1.6px,1px);} 50%{transform:translate(1.6px,-1px);} 75%{transform:translate(-1px,-1px);} }
+/* 6) 단발 오버레이(붉은섬광/화이트아웃/페이드) — flash(z50) 위 */
+#brandVN .bvn-fxov{ position:absolute; inset:0; z-index:51; opacity:0; pointer-events:none; }
+#brandVN .bvn-fxov.redflash{ background:#e23b3b; animation:bvnFlash .55s ease; }
+#brandVN .bvn-fxov.whiteout{ background:#fff;    animation:bvnWhiteout 1.6s ease; }
+@keyframes bvnWhiteout{ 0%{opacity:0;} 22%{opacity:1;} 68%{opacity:1;} 100%{opacity:0;} }
+#brandVN .bvn-fxov.fadein { background:#04060f; animation:bvnFadeIn  1.1s ease; }
+@keyframes bvnFadeIn { from{opacity:1;} to{opacity:0;} }
+#brandVN .bvn-fxov.fadeout{ background:#04060f; animation:bvnFadeOut 1.1s ease forwards; }
+@keyframes bvnFadeOut{ from{opacity:0;} to{opacity:1;} }
+/* 7) 파티클 캔버스(눈·불티·빛가루·꽃잎·비) — 씬 위, 텍스트박스 아래 */
+#brandVN .bvn-particles{ position:absolute; inset:0; z-index:5; pointer-events:none; }
 </style>
 
 <script>
@@ -10858,12 +11089,94 @@ function goToPeerEvalFromGate() {
       audio = null;
     }
     var el=$('brandVN'); el.classList.add('on'); void el.offsetWidth; el.classList.add('vis');  // 페이드인
+    applyFx({effects:[]});   // [효과확장] 새 이야기 시작 시 효과 초기화(파티클·필터 잔류 방지)
     startStars();
     next();
   }
   // 스프라이트 표시/숨김 (story.sprite 있으면 사진, 없으면 폴백 실루엣)
   function showSprite(){ if(story && story.sprite){ $('bvnSprite').classList.add('show'); $('bvnSpriteFb').classList.remove('show'); } else { $('bvnSprite').classList.remove('show'); $('bvnSpriteFb').classList.add('show'); } }
   function hideSprite(){ $('bvnSprite').classList.remove('show'); $('bvnSpriteFb').classList.remove('show'); }
+
+  // ===== [효과 확장] 효과 적용 + 파티클 엔진 =====
+  var FX_SCENE   = ['gray','sepia','blur','zoomin','zoomout','sway','vignette','textshake'];
+  var FX_OVERLAY = ['redflash','whiteout','fadein','fadeout'];
+  var FX_PARTICLE= ['snow','embers','starlight','petals','rain'];
+  function _fxList(c){
+    var arr = (c && c.effects && c.effects.length) ? c.effects.slice() : [];
+    if(!arr.length && c){   // 구버전 호환: effects 없으면 effect/dim/cg에서 유추
+      if(c.effect) arr.push(c.effect);
+      if(c.spriteDim) arr.push('dim');
+      if(c.cg) arr.push('cg');
+    }
+    return arr;
+  }
+  function applyFx(c){
+    var root=$('brandVN'); if(!root) return;
+    var fx=_fxList(c);
+    // 1) 씬 지속 필터: 매 컷 토글(없으면 자동 해제)
+    FX_SCENE.forEach(function(k){ root.classList.toggle('fx-'+k, fx.indexOf(k)!==-1); });
+    // 2) 단발 오버레이: 초기화 후 해당 효과만 재생
+    var ov=$('bvnFxOverlay');
+    if(ov){
+      ov.className='bvn-fxov';
+      var one=null; FX_OVERLAY.forEach(function(k){ if(fx.indexOf(k)!==-1) one=k; });
+      if(one){ void ov.offsetWidth; ov.classList.add(one); }
+    }
+    // 3) 파티클
+    var pType=null; FX_PARTICLE.forEach(function(k){ if(fx.indexOf(k)!==-1) pType=k; });
+    setParticles(pType);
+  }
+
+  // --- 파티클(캔버스) ---
+  var _pcv=null,_pctx=null,_praf=null,_parts=[],_pCur=null;
+  function _pcInit(){
+    _pcv=$('bvnParticles'); if(!_pcv) return;
+    _pctx=_pcv.getContext('2d'); _pcResize();
+    window.addEventListener('resize',_pcResize);
+  }
+  function _pcResize(){ if(!_pcv) return; _pcv.width=_pcv.clientWidth||window.innerWidth; _pcv.height=_pcv.clientHeight||window.innerHeight; }
+  function _pcSpawn(type, anyY){
+    var w=_pcv.width, h=_pcv.height;
+    var y = anyY ? Math.random()*h : (type==='embers'? h+10 : -10);
+    return {
+      x: Math.random()*w, y:y, ph:Math.random()*6.28, sw:Math.random()*1.6,
+      vx:(Math.random()-.5)*(type==='petals'?.7:type==='snow'?.4:.2),
+      vy: type==='embers' ? -(0.4+Math.random()*0.9)
+        : type==='rain'  ? (6+Math.random()*5)
+        : type==='starlight' ? (Math.random()-.5)*0.3
+        : (0.5+Math.random()*1.3),
+      s: type==='rain' ? (8+Math.random()*9) : (1.8+Math.random()*3),
+      a: 0.4+Math.random()*0.6
+    };
+  }
+  function setParticles(type){
+    if(type===_pCur) return;            // 같은 종류면 유지
+    _pCur=type;
+    if(!type){ if(_praf){cancelAnimationFrame(_praf);_praf=null;} if(_pctx&&_pcv) _pctx.clearRect(0,0,_pcv.width,_pcv.height); _parts=[]; return; }
+    if(!_pctx) _pcInit(); if(!_pctx) return;
+    _pcResize(); _parts=[];
+    var n = (type==='rain')?100 : (type==='starlight')?44 : (type==='embers')?60 : 75;
+    for(var i=0;i<n;i++) _parts.push(_pcSpawn(type,true));
+    if(!_praf) _pcLoop();
+  }
+  function _pcLoop(){
+    _praf=requestAnimationFrame(_pcLoop);
+    if(!_pctx||!_pCur) return;
+    var w=_pcv.width,h=_pcv.height; _pctx.clearRect(0,0,w,h);
+    for(var i=0;i<_parts.length;i++){
+      var p=_parts[i]; p.ph+=0.02;
+      p.x += p.vx + ((_pCur==='snow'||_pCur==='petals')? Math.sin(p.ph)*p.sw*0.35 : 0);
+      p.y += p.vy;
+      _pctx.globalAlpha=p.a;
+      if(_pCur==='snow'){ _pctx.fillStyle='#dcebff'; _pctx.beginPath(); _pctx.arc(p.x,p.y,p.s,0,6.28); _pctx.fill(); }
+      else if(_pCur==='petals'){ _pctx.fillStyle='#ffd0e4'; _pctx.save(); _pctx.translate(p.x,p.y); _pctx.rotate(p.ph); _pctx.fillRect(-p.s,-p.s*.6,p.s*2,p.s*1.2); _pctx.restore(); }
+      else if(_pCur==='embers'){ _pctx.fillStyle='#ff9b3d'; _pctx.shadowColor='#ff7a18'; _pctx.shadowBlur=9; _pctx.beginPath(); _pctx.arc(p.x,p.y,p.s*.7,0,6.28); _pctx.fill(); _pctx.shadowBlur=0; }
+      else if(_pCur==='starlight'){ var tw=0.35+Math.abs(Math.sin(p.ph))*0.65; _pctx.globalAlpha=p.a*tw; _pctx.fillStyle='#bcd2ff'; _pctx.beginPath(); _pctx.arc(p.x,p.y,p.s*.7,0,6.28); _pctx.fill(); }
+      else if(_pCur==='rain'){ _pctx.strokeStyle='rgba(174,198,255,.5)'; _pctx.lineWidth=1; _pctx.beginPath(); _pctx.moveTo(p.x,p.y); _pctx.lineTo(p.x-p.vx*1.5,p.y-p.s); _pctx.stroke(); }
+      if(p.y>h+14 || p.y<-14 || p.x<-14 || p.x>w+14){ _parts[i]=_pcSpawn(_pCur,false); }
+    }
+    _pctx.globalAlpha=1;
+  }
   // [최종장] 이름 반짝 강조 — 애니메이션 클래스 재생
   function _flashName(){
     var el=$('bvnName'); if(!el) return;
@@ -10927,6 +11240,7 @@ function goToPeerEvalFromGate() {
     // BGM 칸이 비어 있으면 → 현재 곡 그대로 유지
     if(c.effect==='flash'){ var f=$('bvnFlash'); f.classList.remove('go'); void f.offsetWidth; f.classList.add('go'); }
     if(c.effect==='shake'){ var v=$('brandVN'); v.classList.remove('shake'); void v.offsetWidth; v.classList.add('shake'); }
+    applyFx(c);   // [효과확장] 필터·줌·흔들림·오버레이·파티클 적용 (없으면 자동 해제)
 
     if(c.type==='title'){
       $('bvnBox').classList.remove('show'); hideSprite();
@@ -11147,4 +11461,4 @@ function goToPeerEvalFromGate() {
 </script>
 
 </body>
-</html>
+</html>\

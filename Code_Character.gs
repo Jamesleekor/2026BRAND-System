@@ -883,6 +883,7 @@ function getStoryScript(studentName, charId, epNo){
       effect: effect,
       spriteDim: (fx.indexOf('dim') !== -1),
       cg: (fx.indexOf('cg') !== -1),
+      effects: fx,   // [효과확장] 효과 칸의 모든 토큰 배열을 그대로 전달 (앞으로 효과 추가는 Index.html만 수정)
       kick: String(c[8] || ''),
       bgm: String(c[9] || '').trim(),
       order: Number(c[2]) || 0,   // 점프 대상 식별용 (C열 순서번호)

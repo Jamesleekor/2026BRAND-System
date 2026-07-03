@@ -131,11 +131,29 @@ function approveAchievementWithMail(rowNumber, isApproved, finalAchievementId, r
 // ════════════════════════════════════════════════════════════════
 
 // 학생 업적 개수 & 등급 기반 전광판 메시지 생성 (approveAchievement 후 호출)
-function _checkAndPostGlobalAlert(studentName, achName, achGrade) {
+// [2026-06 수정] 전역 알림 발송을 이 함수 하나로 일원화.
+//   - achId를 넘기면 마스터 시트에서 정식 업적명/등급을 직접 조회 → 이름 불일치 방지
+//   - achName/achGrade는 하위 호환용(achId가 없을 때만 사용)
+function _checkAndPostGlobalAlert(studentName, achName, achGrade, achId) {
   const ss    = SpreadsheetApp.getActiveSpreadsheet();
   const achSheet = ss.getSheetByName(SHEET_ACH_STUDENT);
   const notify   = ss.getSheetByName(SHEET_GLOBAL_NOTIFY);
   if (!achSheet || !notify) return;
+
+  // achId가 주어지면 마스터에서 정식 업적명과 등급을 직접 조회(가장 신뢰할 수 있는 출처)
+  if (achId) {
+    const masterSheet = ss.getSheetByName(SHEET_ACH_MASTER);
+    if (masterSheet) {
+      const mData = masterSheet.getDataRange().getValues();
+      for (let m = 1; m < mData.length; m++) {
+        if (String(mData[m][0]).trim() === String(achId).trim()) {
+          achName  = String(mData[m][1] || achName).trim();
+          achGrade = String(mData[m][5] || achGrade || '희귀').trim();
+          break;
+        }
+      }
+    }
+  }
 
   // 해당 학생 총 업적 수
   const achData = achSheet.getDataRange().getValues();
@@ -148,8 +166,8 @@ function _checkAndPostGlobalAlert(studentName, achName, achGrade) {
   let msg = null;
   let noticeId = null;
 
-  // ① 10개 단위 달성
-  if (count > 0 && count % 10 === 0) {
+  // ① 10개 단위 달성 (30개부터 시작: 30, 40, 50 ...)
+  if (count >= 30 && count % 10 === 0) {
     noticeId = `MILESTONE_${studentName}_${count}_${new Date().getTime()}`;
     msg = `🏆 [${studentName}] 학생이 업적 ${count}개 달성! 대단한 업적 수집가가 탄생했습니다!`;
   }

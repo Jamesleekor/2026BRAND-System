@@ -140,16 +140,17 @@ function getGuardDashboardData(period, startDate, endDate) {
     edgeMap[edgeKey].total += amount;
   }
 
-  // ── 이번 주 동일인 간 반복 거래 감지 (별도 패스) ─────────────
-  // 현재 필터 기간 내 sender+receiver 조합별 건수 집계
+  // ── 동일인 간 '하루 3회 이상' 반복 거래 감지 (별도 패스) ─────────────
+  // [2026-06 수정] 기존엔 필터 기간(주) 전체로 집계해 하루 기준이 아니었음.
+  //   key에 날짜(tx.date)를 포함하여 "같은 날 동일 sender→receiver 3회 이상"만 감지.
   const pairCount = {};
   transactions.forEach(function(tx) {
-    const key = tx.sender + '|' + tx.receiver;
+    const key = tx.date + '|' + tx.sender + '|' + tx.receiver;
     pairCount[key] = (pairCount[key] || 0) + 1;
   });
-  // 3회 이상인 거래에 '반복 거래' 사유 추가
+  // 같은 날 3회 이상인 거래에만 '반복 거래' 사유 추가
   transactions.forEach(function(tx) {
-    const key = tx.sender + '|' + tx.receiver;
+    const key = tx.date + '|' + tx.sender + '|' + tx.receiver;
     if (pairCount[key] >= 3 && tx.anomalyReasons.indexOf('반복 거래') === -1) {
       tx.anomalyReasons.push('반복 거래');
     }
@@ -547,19 +548,19 @@ function getP2PAlertsForGuard(period, startDate, endDate) {
   });
 
   // ─3단계: 반복 거래 / 금액 집중 감지
-  // [수정] '반복 거래'는 스트리밍 탭과 동일하게 '기간 전체' 기준(보낸사람|받는사람)으로 집계
-  //        → 같은 두 사람이 기간 내 3회 이상 거래하면 반복 거래로 표시
-  //        ('금액 집중'은 기존대로 '하루(date)' 기준 그대로 유지)
-  const pairCount     = {};   // [추가] 기간 전체 동일 페어 건수 (날짜 무시)
-  const dayPairAmount = {};   // [原본 유지] 하루 기준 페어 금액 합계
+  // [2026-06 수정] '반복 거래'를 '하루(date) 동일 페어 3회 이상' 기준으로 통일.
+  //   (이전엔 기간 전체로 집계했으나, 실제 P2P 판정 기준인 '하루 3회'와 일치시킴)
+  //   '금액 집중'은 기존대로 하루 기준 유지.
+  const pairCount     = {};   // 하루 기준 동일 페어 건수
+  const dayPairAmount = {};   // 하루 기준 페어 금액 합계
   rows.forEach(function(tx) {
-    const pairKey = tx.sender + '|' + tx.receiver;                  // [수정] 날짜 제거
-    const dayKey  = tx.date + '|' + tx.sender + '|' + tx.receiver;  // [原본 유지]
+    const pairKey = tx.date + '|' + tx.sender + '|' + tx.receiver;  // 날짜 포함(하루 기준)
+    const dayKey  = tx.date + '|' + tx.sender + '|' + tx.receiver;
     pairCount[pairKey]    = (pairCount[pairKey]    || 0) + 1;
     dayPairAmount[dayKey] = (dayPairAmount[dayKey] || 0) + tx.amount;
   });
   rows.forEach(function(tx) {
-    const pairKey = tx.sender + '|' + tx.receiver;
+    const pairKey = tx.date + '|' + tx.sender + '|' + tx.receiver;
     const dayKey  = tx.date + '|' + tx.sender + '|' + tx.receiver;
     if (pairCount[pairKey] >= 3 &&
         tx.anomalyReasons.indexOf('반복 거래') === -1) {

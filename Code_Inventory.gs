@@ -133,13 +133,13 @@ function buyItem(studentName, itemName, quantity) {
     // ── 자산사용 시트 기록 (curValue는 mainData에서 이미 읽은 값 재사용)
     const spendSheet = ss.getSheetByName(SHEET_SPEND);
     if (spendSheet) {
-      spendSheet.appendRow([dateStr, studentName, brand, `[물품구매] ${itemName}`, totalCost, newAsset, `수량 ${quantity}개`]);
+      spendSheet.appendRow([_todayStr(), studentName, brand, `[물품구매] ${itemName}`, totalCost, newAsset, `수량 ${quantity}개`, dateStr]); // A=날짜(연-월-일), H=타임스탬프
     }
 
     // ── 히스토리 시트 기록
     const histSheet = ss.getSheetByName(SHEET_HISTORY);
     if (histSheet) {
-      histSheet.appendRow([dateStr, studentName, brand, 0, -totalCost, curValue, newAsset, `[물품구매] ${itemName} x${quantity}`]);
+      histSheet.appendRow([_todayStr(), studentName, brand, 0, -totalCost, curValue, newAsset, `[물품구매] ${itemName} x${quantity}`, dateStr]); // A=날짜(연-월-일), I=타임스탬프
     }
 
     // ── 캐시 무효화
@@ -283,4 +283,74 @@ function useItem(studentName, itemName, useQty) {
   } finally {
     lock.releaseLock();
   }
+}
+
+/**
+ * [일회성 마이그레이션] '자산사용'(SHEET_SPEND) 시트 A열 날짜 정규화
+ *
+ * 목적:
+ *   - A열에 섞여 있는 기존 값(풀 타임스탬프 문자열 / Date 혼재)을
+ *     모두 '연-월-일' 자정 날짜로 통일 → 필터가 하루당 1개 값으로 접힘
+ *   - A열 표시형식을 yyyy-mm-dd 로 고정 (이후 추가되는 행까지 커버)
+ *   - 데이터 손실 방지: A에만 시간이 있고 H가 비어 있던 옛날 행은
+ *     원래 타임스탬프를 H열로 백업한 뒤 A를 날짜로 절삭
+ *
+ * 사용법: Apps Script 편집기에서 이 함수를 1회 실행. 완료 후 삭제해도 무방.
+ *   ※ 정확한 타임스탬프는 H열에 보존되므로 A열만 손댑니다.
+ */
+function normalizeSpendDateColumn() {
+  const ss    = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_SPEND);
+  if (!sheet) { Logger.log('❌ 자산사용 시트를 찾을 수 없습니다.'); return; }
+
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) { Logger.log('처리할 데이터가 없습니다.'); return; }
+
+  const tz     = Session.getScriptTimeZone();
+  const n      = lastRow - 1;
+  const aRange = sheet.getRange(2, 1, n, 1);   // A2:A
+  const hRange = sheet.getRange(2, 8, n, 1);   // H2:H
+  const aVals  = aRange.getValues();
+  const hVals  = hRange.getValues();
+
+  let normalized = 0, backfilled = 0;
+
+  for (let i = 0; i < n; i++) {
+    const v = aVals[i][0];
+    if (v === '' || v === null) continue;
+
+    // 1) 원본에서 순수 날짜(자정) 추출 — 타임존 밀림 방지를 위해 부분값을 직접 파싱
+    let y, mo, d, hasTime = false;
+    if (v instanceof Date) {
+      y = v.getFullYear(); mo = v.getMonth(); d = v.getDate();
+      hasTime = (v.getHours() || v.getMinutes() || v.getSeconds()) > 0;
+    } else {
+      const s = String(v).trim();
+      const m = s.match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);  // "2026-07-02 14:30:22" 등
+      if (!m) continue;                       // 파싱 불가 → 원본 유지
+      y = +m[1]; mo = +m[2] - 1; d = +m[3];
+      hasTime = /\d{1,2}:\d{2}/.test(s);       // 시:분 패턴이 있으면 시간 포함으로 간주
+    }
+
+    // 2) H열(타임스탬프)이 비어 있고 A에 시간정보가 있었다면 → H로 백업(무손실)
+    if (hasTime && (hVals[i][0] === '' || hVals[i][0] === null)) {
+      hVals[i][0] = (v instanceof Date)
+        ? Utilities.formatDate(v, tz, 'yyyy-MM-dd HH:mm:ss')
+        : String(v).trim();
+      backfilled++;
+    }
+
+    // 3) A열을 자정 날짜로 통일
+    aVals[i][0] = new Date(y, mo, d);
+    normalized++;
+  }
+
+  aRange.setValues(aVals);
+  hRange.setValues(hVals);
+
+  // 4) 표시형식 고정 — 기존 범위 + 이후 추가될 행까지
+  aRange.setNumberFormat('yyyy-mm-dd');
+  sheet.getRange('A2:A').setNumberFormat('yyyy-mm-dd');
+
+  Logger.log('✅ A열 정규화 ' + normalized + '행, H열 백필 ' + backfilled + '행 완료');
 }

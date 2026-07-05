@@ -614,7 +614,7 @@
     /* ── 초월(Transcendental) 등급 칭호 뱃지 ── */
     .title-badge-transcendental {
       /* 다크 골드 & 흑연색 그라데이션 */
-      background: linear-gradient(135deg, #1a1a1a 0%, #2d2416 30%, #b8860b 55%, #2d2416 75%, #0f0f0f 100%);
+      background: linear-gradient(135deg, #1a1a1a 0%, #2d2416 30%, #8a6510 55%, #2d2416 75%, #0f0f0f 100%);
       background-size: 250% 250%;
       color: #fff7e0;   /* [가독성] 진금(#ffd700) → 밝은 샴페인: 어두운 배경 위에서 또렷 */
       padding: 3px 12px;
@@ -625,11 +625,11 @@
       margin-right: 4px;
       position: relative;
       overflow: visible;
-      /* 금색 네온 글로우 — 밝은 글자 가독성 유지 위해 약간 완화 */
+      /* [가독성] 금색 글로우가 작은 글자를 금색으로 번지게 해 → 어두운 대비 그림자 + 은은한 웜글로우로 교체 */
       text-shadow:
-        0 0 5px  rgba(255,247,224,0.5),
-        0 0 12px rgba(255,215,0,0.55),
-        0 0 26px rgba(184,134,11,0.5);
+        0 1px 2px rgba(0,0,0,0.65),
+        0 0 3px  rgba(0,0,0,0.5),
+        0 0 8px  rgba(255,240,205,0.35);
       /* 브리딩 펄스 + 배경 이동 + 박스 글로우 */
       animation:
         transcendentalBreath   3.5s ease-in-out infinite,
@@ -672,6 +672,201 @@
       60%  { opacity: 0.5; }
       100% { transform: translateY(-38px) translateX(var(--dx)) scale(0); opacity: 0; }
     }
+
+    .tcx-frame {
+      display: inline-block;
+      border-radius: 13px;
+      padding: 2px;
+      position: relative;
+      overflow: visible;
+      margin-right: 4px;
+      vertical-align: middle;
+    }
+    .tcx-badge {
+      position: relative;
+      z-index: 2;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 11px;
+      padding: 4px 13px;
+      font-size: 12px;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+      overflow: hidden;
+      white-space: nowrap;
+      cursor: default;
+    }
+    /* 사선 광택 스윕(모든 초월 특수 프레임 공통) */
+    .tcx-badge::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 45%; height: 100%;
+      background: linear-gradient(105deg, transparent, rgba(255,255,255,0.55), transparent);
+      transform: skewX(-18deg) translateX(-220%);
+      animation: tcxSweep 3.6s ease-in-out infinite;
+    }
+    /* 파티클 레이어 + 파티클 */
+    .tcx-plyr {
+      position: absolute;
+      left: 0; right: 0; top: 0; bottom: 2px;
+      z-index: 3;
+      pointer-events: none;
+    }
+    .tcx-particle {
+      position: absolute;
+      bottom: 0;
+      border-radius: 50%;
+      animation: tcxRise linear infinite;
+    }
+    @keyframes tcxSweep {
+      0%   { transform: skewX(-18deg) translateX(-220%); }
+      55%  { transform: skewX(-18deg) translateX(360%); }
+      100% { transform: skewX(-18deg) translateX(360%); }
+    }
+    @keyframes tcxRise {
+      0%   { transform: translateY(0) scale(1);       opacity: 0.95; }
+      70%  { opacity: 0.5; }
+      100% { transform: translateY(-30px) scale(0.15); opacity: 0; }
+    }
+    @keyframes tcxBorderFlow {
+      0%   { background-position: 0% 50%; }
+      50%  { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* ── 1. 부활한 영웅 (CHAL-014): 불사조 / 재생 ── */
+    .tcx-phoenix {
+      background: linear-gradient(115deg, #ff4d1a, #ffb020, #ff6a00, #b8860b, #ff4d1a);
+      background-size: 300% 300%;
+      animation: tcxBorderFlow 4s ease infinite,
+                 tcxAuraFire 2.4s ease-in-out infinite,
+                 tcxHeartbeat 2.4s ease-in-out infinite;
+    }
+    .tcx-phoenix .tcx-badge {
+      background: linear-gradient(135deg, #160804 0%, #5c1808 42%, #c0392b 68%, #160804 100%);
+      color: #ffdcb0;
+      text-shadow: 0 0 8px rgba(255,120,40,0.7), 0 0 16px rgba(255,80,20,0.4);
+    }
+    @keyframes tcxAuraFire {
+      0%,100% { box-shadow: 0 0 8px 1px rgba(255,90,20,0.5),  0 0 22px 3px rgba(200,50,20,0.3); }
+      50%     { box-shadow: 0 0 18px 4px rgba(255,140,40,0.85), 0 0 40px 9px rgba(220,60,20,0.5); }
+    }
+    @keyframes tcxHeartbeat {
+      0%,100% { transform: scale(1);    }
+      12%     { transform: scale(1.06); }
+      24%     { transform: scale(1);    }
+      38%     { transform: scale(1.09); }
+      52%     { transform: scale(1);    }
+    }
+
+    /* ── 2. 영웅적 활약 (HID-006): 월간 MVP 2회 / 쌍성 ── */
+    .tcx-champion {
+      background: linear-gradient(115deg, #ffd700, #5b6cff, #ffe066, #3a2c9e, #ffd700);
+      background-size: 300% 300%;
+      animation: tcxBorderFlow 5s ease infinite,
+                 tcxAuraRoyal 3s ease-in-out infinite;
+    }
+    .tcx-champion .tcx-badge {
+      background: linear-gradient(135deg, #0c0f2e 0%, #2b2f8f 52%, #4a3ca8 76%, #0c0f2e 100%);
+      color: #ffe9a8;
+      text-shadow: 0 0 8px rgba(255,215,0,0.6);
+    }
+    .tcx-champion .tcx-star {
+      color: #ffe066;
+      text-shadow: 0 0 8px rgba(255,220,80,0.9);
+      font-size: 12px;
+    }
+    .tcx-champion .tcx-s1 { animation: tcxTwinkle 1.8s ease-in-out infinite; }
+    .tcx-champion .tcx-s2 { animation: tcxTwinkle 1.8s ease-in-out 0.9s infinite; }
+    @keyframes tcxTwinkle {
+      0%,100% { opacity: 0.45; transform: scale(0.85); }
+      50%     { opacity: 1;    transform: scale(1.25); }
+    }
+    @keyframes tcxAuraRoyal {
+      0%,100% { box-shadow: 0 0 8px 1px rgba(255,215,0,0.4),  0 0 20px 3px rgba(70,60,168,0.35); }
+      50%     { box-shadow: 0 0 16px 4px rgba(255,215,0,0.7), 0 0 34px 7px rgba(90,108,255,0.45); }
+    }
+
+    /* ── 3. 마스터피스 (CHAL-013): 완벽 / 프리즘 ── */
+    .tcx-master {
+      background: linear-gradient(115deg, #e0f7ff, #ffd6f5, #d6e4ff, #d9fff0, #fff3d6, #e0f7ff);
+      background-size: 320% 320%;
+      animation: tcxBorderFlow 6s ease infinite,
+                 tcxAuraDia 3.4s ease-in-out infinite;
+    }
+    .tcx-master .tcx-badge {
+      background: linear-gradient(135deg, #171c28 0%, #3a4a66 48%, #93a7c8 70%, #171c28 100%);
+      color: #eaf6ff;
+      text-shadow: 0 0 8px rgba(200,230,255,0.6);
+    }
+    /* 프리즘 굴절 광택(글자 뒤로 흐름) */
+    .tcx-master .tcx-badge::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background: linear-gradient(115deg, transparent 30%, rgba(180,220,255,0.28), rgba(255,200,245,0.24), transparent 70%);
+      background-size: 250% 250%;
+      animation: tcxBorderFlow 5s ease infinite;
+      pointer-events: none;
+    }
+    .tcx-master .tcx-glint {
+      position: absolute;
+      top: -4px; right: 8px;
+      z-index: 4;
+      color: #fff;
+      font-size: 13px;
+      text-shadow: 0 0 10px #cfeaff;
+      pointer-events: none;
+      animation: tcxGlint 4s ease-in-out infinite;
+    }
+    @keyframes tcxGlint {
+      0%,88%,100% { opacity: 0; transform: scale(0.4); }
+      92%         { opacity: 1; transform: scale(1.3); }
+      96%         { opacity: 0; transform: scale(0.5); }
+    }
+    @keyframes tcxAuraDia {
+      0%,100% { box-shadow: 0 0 8px 1px rgba(190,225,255,0.45), 0 0 20px 3px rgba(210,200,255,0.3); }
+      50%     { box-shadow: 0 0 16px 4px rgba(190,225,255,0.8), 0 0 34px 7px rgba(210,200,255,0.5); }
+    }
+
+
+    /* ══ 초월 개별 프레임: 부활한 영웅 / 영웅적 활약 / 마스터피스 ══ */
+    /* [정리] 초월 프레임은 신형(System A)로 통일 — 아래 구형(System B) .tcx-phoenix 중복은 비활성화 */
+    .tcx-dualmvp, .tcx-prism{
+      padding:3px 12px; border-radius:12px; font-size:12px; font-weight:bold;
+      display:inline-block; margin-right:4px; position:relative; overflow:visible;
+      letter-spacing:.5px; cursor:default; background-size:250% 250%;
+      animation: transcendentalBreath 3.5s ease-in-out infinite,
+                 transcendentalBgShift 6s ease-in-out infinite;
+    }
+    /* 부활한 영웅 — 불사조 화염 (구형/미사용: 신형 .tcx-phoenix 우선) */
+    .tcx-phoenix-legacy{
+      background:linear-gradient(135deg,#1a0f0a 0%,#3a1508 28%,#b5341a 52%,#e67e22 60%,#3a1508 78%,#12080a 100%);
+      color:#fff2d8; border:1px solid rgba(230,126,34,.6);
+      text-shadow:0 1px 2px rgba(0,0,0,.7),0 0 6px rgba(255,120,40,.5),0 0 12px rgba(200,60,20,.4);
+      box-shadow:0 0 10px rgba(230,90,30,.45), inset 0 0 8px rgba(255,140,60,.15);
+    }
+    /* 영웅적 활약 — 듀얼 챔피언(청금) */
+    .tcx-dualmvp{
+      background:linear-gradient(135deg,#0a0f24 0%,#16224e 30%,#b58f1e 53%,#16224e 72%,#0a0f24 100%);
+      color:#fff6df; border:1px solid rgba(201,162,39,.6);
+      text-shadow:0 1px 2px rgba(0,0,0,.7),0 0 6px rgba(255,215,90,.5),0 0 12px rgba(70,110,220,.35);
+      box-shadow:0 0 10px rgba(201,162,39,.4), inset 0 0 8px rgba(120,150,255,.12);
+    }
+    /* 마스터피스 — 프리즘 홀로그램 */
+    .tcx-prism{
+      background:linear-gradient(135deg,#12071f 0%,#2a1150 26%,#5a3aa8 50%,#2a1150 74%,#0f0720 100%);
+      color:#fdfcff; border:1px solid rgba(150,110,220,.6);
+      text-shadow:0 1px 2px rgba(0,0,0,.7),0 0 7px rgba(180,150,255,.55),0 0 14px rgba(120,200,255,.35);
+      box-shadow:0 0 10px rgba(140,90,220,.45), inset 0 0 8px rgba(180,150,255,.15);
+      animation: transcendentalBreath 3.5s ease-in-out infinite,
+                 transcendentalBgShift 6s ease-in-out infinite,
+                 tcxPrismHue 6s linear infinite;
+    }
+    @keyframes tcxPrismHue{ 0%{filter:hue-rotate(0deg);} 100%{filter:hue-rotate(360deg);} }
 
     /* ══════════════════════════════════════════════════════
        우편함 뱃지
@@ -807,7 +1002,7 @@
     .wof-grade.에픽   { background:linear-gradient(135deg,#3d0f6e,#7b2fff); color:#e0c4ff; }
     .wof-grade.히든   { background:#f1c40f; color:#1c2333; }
     .wof-grade.유일   { background:linear-gradient(135deg,#8e44ad,#f39c12); color:white; }
-    .wof-grade.초월   { background:linear-gradient(135deg,#1a1a1a,#b8860b); color:#ffd700; }
+    .wof-grade.초월   { background:linear-gradient(135deg,#1a1a1a,#b8860b); color:#fff7e0; }
     .wof-count { font-size: 13px; font-weight: bold; color: #f85149; white-space: nowrap; }
     .wof-zero  { color: #6e7681; }
 
@@ -1970,7 +2165,7 @@
     .ctt-tier.tier-유니크 { background:linear-gradient(135deg,#4da8f5,#3498db); color:#fff; }
     .ctt-tier.tier-에픽  { background:linear-gradient(135deg,#a29bfe,#7b2fff); color:#fff; }
     .ctt-tier.tier-유일  { background:linear-gradient(135deg,#fdcb6e,#f39c12); color:#5d3a00; }
-    .ctt-tier.tier-초월  { background:linear-gradient(135deg,#1a1a1a,#b8860b); color:#ffd700; }
+    .ctt-tier.tier-초월  { background:linear-gradient(135deg,#1a1a1a,#b8860b); color:#fff7e0; }
     .ctt-tier.tier-히든  { background:linear-gradient(135deg,#3d0080,#0d001a); color:#d1a6ff; }
     .ctt-name  { font-size: 14px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
     .ctt-hint  { font-size: 11px; color: var(--text-secondary); margin-bottom: 6px; line-height: 1.4; }
@@ -4098,7 +4293,7 @@
         <button class="dex-filter-btn" data-grade="에픽"   onclick="setDexGrade(this,'에픽')"   style="background:linear-gradient(135deg,#3d0f6e,#7b2fff);color:#e0c4ff;">에픽</button>
         <button class="dex-filter-btn" data-grade="히든"   onclick="setDexGrade(this,'히든')"   style="background:#f1c40f;color:#2c3e50;">히든</button>
         <button class="dex-filter-btn" data-grade="유일"   onclick="setDexGrade(this,'유일')"   style="background:linear-gradient(135deg,#8e44ad,#f39c12);color:white;">유일</button>
-        <button class="dex-filter-btn" data-grade="초월"   onclick="setDexGrade(this,'초월')"   style="background:linear-gradient(135deg,#1a1a1a,#b8860b);color:#ffd700;">초월</button>
+        <button class="dex-filter-btn" data-grade="초월"   onclick="setDexGrade(this,'초월')"   style="background:linear-gradient(135deg,#1a1a1a,#b8860b);color:#fff7e0;">초월</button>
       </div>
     </div>
     <div style="font-size:11px;color:#aaa;margin-bottom:8px;">
@@ -4133,7 +4328,7 @@
       <button class="ach-grade-btn"        data-grade="유니크" onclick="setAchCombGrade(this,'유니크')" style="background:linear-gradient(135deg,#e74c3c,#9b59b6);color:#fff;">유니크</button>
       <button class="ach-grade-btn"        data-grade="에픽"  onclick="setAchCombGrade(this,'에픽')"  style="background:linear-gradient(135deg,#3d0f6e,#7b2fff);color:#e0c4ff;">에픽</button>
       <button class="ach-grade-btn"        data-grade="유일"  onclick="setAchCombGrade(this,'유일')"  style="background:linear-gradient(135deg,#8e44ad,#f39c12);color:#fff;">유일</button>
-      <button class="ach-grade-btn"        data-grade="초월"  onclick="setAchCombGrade(this,'초월')"  style="background:linear-gradient(135deg,#1a1a1a,#b8860b);color:#ffd700;">초월</button>
+      <button class="ach-grade-btn"        data-grade="초월"  onclick="setAchCombGrade(this,'초월')"  style="background:linear-gradient(135deg,#1a1a1a,#b8860b);color:#fff7e0;">초월</button>
       <button class="ach-grade-btn"        data-grade="히든"  onclick="setAchCombGrade(this,'히든')"  style="background:#f1c40f;color:#1c2333;">히든</button>
     </div>
 
@@ -6457,6 +6652,13 @@
     var emoji = getEmojiForAchievement(achId);
     var displayText = emoji ? emoji + ' ' + titleText : titleText;
 
+    // ★ 초월 특수 프레임(부활한 영웅/영웅적 활약/마스터피스): 해당 업적이면 전용 프레임으로 렌더 후 종료
+    var __tcxKind = (grade === '초월') ? tcxFrameKind(achId) : '';
+    if (__tcxKind) {
+      badgeArea.appendChild(buildTcxBadge(__tcxKind, displayText));
+      return;
+    }
+
     var badgeClass = 'title-badge';
     if      (grade === '유니크') badgeClass = 'title-badge-unique';
     else if (grade === '에픽')   badgeClass = 'title-badge-epic';
@@ -7707,6 +7909,89 @@ function requestCancelSaving(savId, principal) {
     }
     existingNew.innerHTML = top3Html + listHtml;
   }
+
+  // 초월 특수 프레임 헬퍼 (updateTitleBadge / renderTitleBadge 공용)
+  // ══════════════════════════════════════════════════════
+  function tcxFrameKind(achId) {
+    if (achId === 'CHAL-014') return 'phoenix';   // 부활한 영웅
+    if (achId === 'HID-006')  return 'champion';  // 영웅적 활약(MVP 2회)
+    if (achId === 'CHAL-013') return 'master';    // 마스터피스
+    return '';
+  }
+  function tcxParticleSpecs(kind) {
+    if (kind === 'phoenix') return [
+      'left:18%;width:3px;height:3px;background:radial-gradient(circle,#ffd27a,#ff5a1a 70%,transparent);animation-duration:2.6s;animation-delay:0s;',
+      'left:42%;width:2.5px;height:2.5px;background:radial-gradient(circle,#ffb060,#d0300f 70%,transparent);animation-duration:3.1s;animation-delay:0.7s;',
+      'left:66%;width:3.5px;height:3.5px;background:radial-gradient(circle,#ffe08a,#ff6a1a 70%,transparent);animation-duration:2.8s;animation-delay:1.3s;',
+      'left:84%;width:2px;height:2px;background:radial-gradient(circle,#ffcf80,#c02810 70%,transparent);animation-duration:3.4s;animation-delay:0.4s;'
+    ];
+    if (kind === 'master') return [
+      'left:30%;width:2px;height:2px;background:radial-gradient(circle,#ffffff,#bfe4ff 70%,transparent);animation-duration:3.5s;animation-delay:0.5s;',
+      'left:72%;width:2px;height:2px;background:radial-gradient(circle,#ffffff,#e4d6ff 70%,transparent);animation-duration:4s;animation-delay:1.8s;'
+    ];
+    return []; // champion 은 파티클 대신 좌우 쌍성(✦) 사용
+  }
+  // DOM 노드 생성 (updateTitleBadge 용)
+  function buildTcxBadge(kind, text) {
+    var frame = document.createElement('span');
+    frame.className = 'tcx-frame tcx-' + kind;
+
+    var badge = document.createElement('span');
+    badge.className = 'tcx-badge';
+    if (kind === 'champion') {
+      var s1 = document.createElement('span'); s1.className = 'tcx-star tcx-s1'; s1.textContent = '\u2726';
+      var s2 = document.createElement('span'); s2.className = 'tcx-star tcx-s2'; s2.textContent = '\u2726';
+      badge.appendChild(s1);
+      badge.appendChild(document.createTextNode(text));
+      badge.appendChild(s2);
+    } else {
+      badge.textContent = text;
+    }
+    frame.appendChild(badge);
+
+    if (kind === 'master') {
+      var glint = document.createElement('span');
+      glint.className = 'tcx-glint';
+      glint.textContent = '\u2727';
+      frame.appendChild(glint);
+    }
+
+    var specs = tcxParticleSpecs(kind);
+    if (specs.length) {
+      var layer = document.createElement('span');
+      layer.className = 'tcx-plyr';
+      for (var i = 0; i < specs.length; i++) {
+        var pt = document.createElement('span');
+        pt.className = 'tcx-particle';
+        pt.style.cssText = specs[i];
+        layer.appendChild(pt);
+      }
+      frame.appendChild(layer);
+    }
+    return frame;
+  }
+  // HTML 문자열 생성 (renderTitleBadge 용)
+  function tcxBadgeHtml(kind, text) {
+    var inner = (kind === 'champion')
+      ? '<span class="tcx-star tcx-s1">\u2726</span>' + text + '<span class="tcx-star tcx-s2">\u2726</span>'
+      : text;
+    var extra = '';
+    if (kind === 'master') extra += '<span class="tcx-glint">\u2727</span>';
+    var specs = tcxParticleSpecs(kind);
+    if (specs.length) {
+      var pl = '<span class="tcx-plyr">';
+      for (var i = 0; i < specs.length; i++) {
+        pl += '<span class="tcx-particle" style="' + specs[i] + '"></span>';
+      }
+      pl += '</span>';
+      extra += pl;
+    }
+    return '<span class="tcx-frame tcx-' + kind + '">' +
+             '<span class="tcx-badge">' + inner + '</span>' +
+             extra +
+           '</span>';
+  }
+
   function renderTitleBadge(title, achievements) {
     // 장착한 칭호의 등급 및 힌트 찾기
     var grade = '희귀'; // 기본값
@@ -7743,6 +8028,11 @@ function requestCancelSaving(savId, principal) {
 
     // 초월 등급: 파티클 span 내장 (position:relative 래퍼 필요)
     if (grade === '초월') {
+      // ★ 초월 특수 프레임: 해당 업적이면 전용 프레임 HTML 반환
+      var __tcxKind = (grade === '초월') ? tcxFrameKind(achId) : '';
+      if (__tcxKind) {
+        return tcxBadgeHtml(__tcxKind, title);
+      }
       var particlesHtml = '';
       var particleCount = 6;
       for (var p = 0; p < particleCount; p++) {
@@ -11097,6 +11387,34 @@ function goToPeerEvalFromGate() {
   function showSprite(){ if(story && story.sprite){ $('bvnSprite').classList.add('show'); $('bvnSpriteFb').classList.remove('show'); } else { $('bvnSprite').classList.remove('show'); $('bvnSpriteFb').classList.add('show'); } }
   function hideSprite(){ $('bvnSprite').classList.remove('show'); $('bvnSpriteFb').classList.remove('show'); }
 
+  // ===== [조연 스프라이트] 화자에 따라 스프라이트 교체 =====
+  // ↓↓↓ 조연 이미지 URL만 여기에 채우면 됩니다 (비워두면 루미 스프라이트로 대체) ↓↓↓
+  var BVN_SPEAKER_SPRITES = {
+    '코니':  '',
+    '설란':  '',
+    '그레이': '',
+    '키릭스': ''
+  };
+  // 스프라이트 없이 대사만 띄울 화자(내면의 목소리·정체 미공개 등)
+  var BVN_NO_SPRITE = ['녹티스', '???'];
+  function _cleanSpk(s){ s=s||''; if(s.charAt(0)==='★') s=s.slice(1).trim(); return s; }
+  function showSpeakerSprite(c){
+    var spk=_cleanSpk(c.speaker);
+    var img=$('bvnSprite'), fb=$('bvnSpriteFb');
+    var url=BVN_SPEAKER_SPRITES[spk];
+    if(url){                                   // 조연: 전용 스프라이트
+      if(img.getAttribute('src')!==url) img.src=url;
+      img.classList.add('show'); fb.classList.remove('show'); return;
+    }
+    if(BVN_NO_SPRITE.indexOf(spk)!==-1){       // 내면 목소리/미공개: 스프라이트 없음
+      img.classList.remove('show'); fb.classList.remove('show'); return;
+    }
+    if(story && story.sprite){                 // 기본(주인공 루미) = 편 대표 스프라이트
+      if(img.getAttribute('src')!==story.sprite) img.src=story.sprite;
+      img.classList.add('show'); fb.classList.remove('show');
+    } else { img.classList.remove('show'); fb.classList.add('show'); }
+  }
+
   // ===== [효과 확장] 효과 적용 + 파티클 엔진 =====
   var FX_SCENE   = ['gray','sepia','blur','zoomin','zoomout','sway','vignette','textshake'];
   var FX_OVERLAY = ['redflash','whiteout','fadein','fadeout'];
@@ -11256,7 +11574,7 @@ function goToPeerEvalFromGate() {
 
     // 스프라이트: 컷신이면 숨김 / 아니면 표시(+ dim·나레이션 어둡게)
     if(isCG){ hideSprite(); }
-    else { showSprite(); $('bvnSprite').classList.toggle('dim', !!c.spriteDim || narr); }
+    else { showSpeakerSprite(c); $('bvnSprite').classList.toggle('dim', !!c.spriteDim || narr); }
 
     var text = c.text || '';
     // 컷신인데 대사가 없으면 → 일러스트 한 장만 (대화창 숨김)

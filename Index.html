@@ -3976,12 +3976,24 @@
         .getCharacterStories(window._currentStudentName, c.charId);
     }
 
-    // ===== 호감도 보상 =====
-    var REWARD_DEF=[
+    // ===== 호감도 보상 (캐릭터별) =====
+    // 기본값(아스텔 등 대부분의 캐릭터가 사용)
+    var REWARD_DEF_DEFAULT=[
       {stage:3,need:50,ic:'💰',t:'자산 +500',        d:'호감 3단계 도달 보상'},
       {stage:4,need:75,ic:'🖼️',t:'자산 +500 + 특별 일러스트 해금',d:'호감 4단계 도달 보상'},
       {stage:5,need:100,ic:'🏆',t:'자산 +1000 + 에픽 업적 신청권',d:'호감 최종단계 도달 보상'}
     ];
+    // 캐릭터별 개별 설정 (여기에 charId를 키로 추가하면 그 캐릭터만 다르게 적용)
+    var REWARD_DEF_BY_CHAR={
+      'CHAR-012':[   // 루미
+        {stage:3,need:50,ic:'💰',t:'자산 +250',        d:'호감 3단계 도달 보상'},
+        {stage:4,need:75,ic:'🖼️',t:'자산 +250 + 특별 일러스트 해금',d:'호감 4단계 도달 보상'},
+        {stage:5,need:100,ic:'🏆',t:'자산 +500 + 에픽 업적 신청권',d:'호감 최종단계 도달 보상'}
+      ]
+    };
+    function rewardDefOf(charId){
+      return REWARD_DEF_BY_CHAR[String(charId||'').trim()] || REWARD_DEF_DEFAULT;
+    }
     function openRewards(c){
       var L=$('h2RewardList');
       L.innerHTML='<div class="h2-note" style="padding:16px">보상 정보를 불러오는 중…</div>';
@@ -5854,10 +5866,10 @@
     '연마된 루비':     'https://raw.githubusercontent.com/Jamesleekor/brand-assets/main/tier_icon/rankicon_ruby2.png',
     '각성한 루비':     'https://raw.githubusercontent.com/Jamesleekor/brand-assets/main/tier_icon/rankicon_ruby3.png',
     '홍염의 정점':     'https://raw.githubusercontent.com/Jamesleekor/brand-assets/main/tier_icon/rankicon_ruby4.png',
-    '다이아 원석':     'https://lh3.googleusercontent.com/d/1Q407DyyD5wndI-rVvKjt6981cRGXxIqN=s200',
-    '세공된 다이아':   'https://lh3.googleusercontent.com/d/1XYMWlQ3QWFeIf0bO_z2Kn8CxJpmPq4Gb=s200',
-    '무결 다이아':     'https://lh3.googleusercontent.com/d/1Wdb5TSQ3HH_c4Ea0lSBMt7iH4m5L9dlU=s200',
-    '영원의 결정':     'https://lh3.googleusercontent.com/d/12KsCvjljkzBP1aMEKN1lFDTshliUNMFp=s200',
+    '다이아 원석':     'https://cdn.jsdelivr.net/gh/Jamesleekor/brand-assets@main/tier_icon/rankicon_diamond1.png',
+    '세공된 다이아':   'https://cdn.jsdelivr.net/gh/Jamesleekor/brand-assets@main/tier_icon/rankicon_diamond2.png',
+    '무결 다이아':     'https://cdn.jsdelivr.net/gh/Jamesleekor/brand-assets@main/tier_icon/rankicon_diamond3.png',
+    '영원의 결정':     'https://cdn.jsdelivr.net/gh/Jamesleekor/brand-assets@main/tier_icon/rankicon_diamond4.png',
     '마스터':          'https://lh3.googleusercontent.com/d/1aLJ93TjnCrfIw9qNIqHbx2i7NV_xk97w=s200',
     '천상의 마스터':   'https://lh3.googleusercontent.com/d/1aLJ93TjnCrfIw9qNIqHbx2i7NV_xk97w=s200',
     '그랜드마스터':    'https://lh3.googleusercontent.com/d/1IMzjE091rxonvuq_DiVzu-rG2o7yI7nu=s200'
@@ -11163,6 +11175,8 @@ function goToPeerEvalFromGate() {
   <div class="bvn-flash" id="bvnFlash"></div>
   <canvas class="bvn-particles" id="bvnParticles"></canvas>
   <div class="bvn-fxov" id="bvnFxOverlay"></div>
+  <div class="bvn-eyelid bvn-eyelid-top" id="bvnEyelidTop"></div>
+  <div class="bvn-eyelid bvn-eyelid-bot" id="bvnEyelidBot"></div>
   <div class="bvn-end" id="bvnEnd">
     <div class="bvn-kick">— 이야기의 끝 —</div>
     <div class="bvn-endt" id="bvnEndT"></div>
@@ -11202,7 +11216,7 @@ function goToPeerEvalFromGate() {
     font-family:'Noto Sans KR',sans-serif; color:#eef1f8; }
   #brandVN.on{ display:block; }
   #brandVN.on.vis{ opacity:1; }
-  #brandVN .bvn-bg{ position:absolute; inset:0; background-size:cover; background-position:center; opacity:0; transition:opacity 1.1s ease; }
+  #brandVN .bvn-bg{ position:absolute; inset:0; background-size:cover; background-position:center; opacity:0; transition:opacity 2.2s cubic-bezier(.4,0,.2,1); }
   #brandVN .bvn-bg.show{ opacity:1; animation:bvnKen 22s ease-in-out infinite alternate; }
   @keyframes bvnKen{ from{transform:scale(1.05);} to{transform:scale(1.16) translate(-2%,-2%);} }
   #brandVN #bvnStars{ position:absolute; inset:0; }
@@ -11330,6 +11344,30 @@ function goToPeerEvalFromGate() {
 @keyframes bvnFadeOut{ from{opacity:0;} to{opacity:1;} }
 /* 7) 파티클 캔버스(눈·불티·빛가루·꽃잎·비) — 씬 위, 텍스트박스 아래 */
 #brandVN .bvn-particles{ position:absolute; inset:0; z-index:5; pointer-events:none; }
+/* 8) 눈꺼풀(소생·각성 시 눈 뜨는 1인칭 연출) — 최상단 */
+#brandVN .bvn-eyelid{ position:absolute; left:0; width:100%; height:52%; background:#000; z-index:55; pointer-events:none; transform:translateY(0); }
+#brandVN .bvn-eyelid-top{ top:0;    transform:translateY(-100%); }
+#brandVN .bvn-eyelid-bot{ bottom:0; transform:translateY(100%); }
+/* eyeopen: 감긴 상태(닫힘)에서 시작 → 천천히 열림 (도중 한 번 깜빡) */
+#brandVN.fx-eyeopen .bvn-eyelid-top{ animation:bvnEyelidTop 2.6s ease-out forwards; }
+#brandVN.fx-eyeopen .bvn-eyelid-bot{ animation:bvnEyelidBot 2.6s ease-out forwards; }
+@keyframes bvnEyelidTop{
+  0%{ transform:translateY(0); }        /* 감김 */
+  35%{ transform:translateY(-62%); }    /* 살짝 뜸 */
+  50%{ transform:translateY(-30%); }    /* 깜빡(도로 내려옴) */
+  100%{ transform:translateY(-100%); }  /* 완전히 열림 */
+}
+@keyframes bvnEyelidBot{
+  0%{ transform:translateY(0); }
+  35%{ transform:translateY(62%); }
+  50%{ transform:translateY(30%); }
+  100%{ transform:translateY(100%); }
+}
+/* eyeblink: 한 번 깜빡임(잠깐 닫혔다 열림) */
+#brandVN.fx-eyeblink .bvn-eyelid-top{ animation:bvnBlinkTop .5s ease-in-out; }
+#brandVN.fx-eyeblink .bvn-eyelid-bot{ animation:bvnBlinkBot .5s ease-in-out; }
+@keyframes bvnBlinkTop{ 0%{transform:translateY(-100%);} 50%{transform:translateY(-8%);} 100%{transform:translateY(-100%);} }
+@keyframes bvnBlinkBot{ 0%{transform:translateY(100%);}  50%{transform:translateY(8%);}   100%{transform:translateY(100%);} }
 </style>
 
 <script>
@@ -11361,8 +11399,35 @@ function goToPeerEvalFromGate() {
       .getStoryScript(window._currentStudentName, charId, ep);
   }
 
+  // [이미지 프리로드] 이야기 시작 시 등장하는 모든 이미지(배경·스프라이트)를 미리 받아 캐시에 적재.
+  //   → 컷이 바뀔 때 다운로드 지연 없이 즉시 표시. (jsDelivr는 CDN 캐시라 최초 1회만 받으면 이후 즉시)
+  var _preloadedImgs = [];   // GC 방지용 참조 보관
+  function _preloadStoryImages(s){
+    if(!s) return;
+    var urls = {};
+    function add(u){
+      if(!u) return;
+      u = String(u).trim(); if(!u) return;
+      var low = u.toLowerCase();
+      if(low==='-' || low==='none' || u==='기본' || u==='배경없음' || low==='숨김') return;
+      if(u.indexOf('http')!==0) return;   // 실제 URL만 프리로드
+      urls[u] = 1;
+    }
+    add(s.sprite);
+    var cuts = s.cuts || [];
+    for(var i=0;i<cuts.length;i++){
+      add(cuts[i].bg);
+      add(_spriteToken(cuts[i]));   // 효과칸 sprite:URL 토큰
+    }
+    Object.keys(urls).forEach(function(u){
+      var im = new Image(); im.src = u;   // 브라우저가 백그라운드로 받아 캐시에 적재
+      _preloadedImgs.push(im);
+    });
+  }
+
   function play(s){
     story = s; idx=-1; muted=false; $('bvnMute').textContent='🔊';
+    _preloadStoryImages(s);   // ★ 등장 이미지 전부 미리 받아두기
     // [선택지] 점프 대상(순서번호) → 배열 인덱스 매핑 생성
     orderToIdx = {};
     for(var oi=0; oi<(s.cuts||[]).length; oi++){ var o=s.cuts[oi].order; if(o) orderToIdx[o]=oi; }
@@ -11380,7 +11445,8 @@ function goToPeerEvalFromGate() {
     }
     var el=$('brandVN'); el.classList.add('on'); void el.offsetWidth; el.classList.add('vis');  // 페이드인
     applyFx({effects:[]});   // [효과확장] 새 이야기 시작 시 효과 초기화(파티클·필터 잔류 방지)
-    startStars();
+    if(!_pctx) _pcInit(); else _pcResize();   // VN 표시 직후 파티클 캔버스 크기 재측정
+    stopStars();                             // [수정] 별가루 자동시작 제거(효과칸으로만 입자 제어)
     next();
   }
   // 스프라이트 표시/숨김 (story.sprite 있으면 사진, 없으면 폴백 실루엣)
@@ -11397,19 +11463,42 @@ function goToPeerEvalFromGate() {
   };
   // 스프라이트 없이 대사만 띄울 화자(내면의 목소리·정체 미공개 등)
   var BVN_NO_SPRITE = ['녹티스', '???'];
+  // [나레이션 스프라이트 모드] narr(내레이션) 컷에서 스프라이트 처리 방식 선택
+  //   'hide' = 완전 숨김 / 'dim' = 어둡게 유지(기존 동작) / 'keep' = 직전 스프라이트 그대로 둠
+  var BVN_NARR_SPRITE = 'dim';
   function _cleanSpk(s){ s=s||''; if(s.charAt(0)==='★') s=s.slice(1).trim(); return s; }
+  // [컷별 스프라이트] 효과 토큰에서 "sprite:URL" 추출 (없으면 null)
+  function _spriteToken(c){
+    if(!c || !c.effects) return null;
+    for(var i=0;i<c.effects.length;i++){
+      if(c.effects[i].indexOf('sprite:')===0) return c.effects[i].slice(7).trim();
+    }
+    return null;
+  }
   function showSpeakerSprite(c){
     var spk=_cleanSpk(c.speaker);
     var img=$('bvnSprite'), fb=$('bvnSpriteFb');
+    // ① [컷별 스프라이트] H열에 sprite:URL 토큰이 있으면 해당 이미지로 교체
+    var cutSprite=_spriteToken(c);
+    if(cutSprite){
+      // sprite:none / sprite:- 는 이 컷만 스프라이트 숨김
+      var _cs=cutSprite.toLowerCase();
+      if(_cs==='none' || _cs==='-' || _cs==='숨김'){ img.classList.remove('show'); fb.classList.remove('show'); return; }
+      if(img.getAttribute('src')!==cutSprite) img.src=cutSprite;
+      img.classList.add('show'); fb.classList.remove('show'); return;
+    }
+    // ② 조연: 전용 스프라이트
     var url=BVN_SPEAKER_SPRITES[spk];
-    if(url){                                   // 조연: 전용 스프라이트
+    if(url){
       if(img.getAttribute('src')!==url) img.src=url;
       img.classList.add('show'); fb.classList.remove('show'); return;
     }
-    if(BVN_NO_SPRITE.indexOf(spk)!==-1){       // 내면 목소리/미공개: 스프라이트 없음
+    // ③ 내면 목소리/미공개: 스프라이트 없음
+    if(BVN_NO_SPRITE.indexOf(spk)!==-1){
       img.classList.remove('show'); fb.classList.remove('show'); return;
     }
-    if(story && story.sprite){                 // 기본(주인공 루미) = 편 대표 스프라이트
+    // ④ 기본(주인공 루미) = 편 대표 스프라이트
+    if(story && story.sprite){
       if(img.getAttribute('src')!==story.sprite) img.src=story.sprite;
       img.classList.add('show'); fb.classList.remove('show');
     } else { img.classList.remove('show'); fb.classList.add('show'); }
@@ -11443,18 +11532,40 @@ function goToPeerEvalFromGate() {
     // 3) 파티클
     var pType=null; FX_PARTICLE.forEach(function(k){ if(fx.indexOf(k)!==-1) pType=k; });
     setParticles(pType);
+    // 4) 눈꺼풀(eyeopen/eyeblink): 단발 재생 (클래스 재부팅으로 매번 재생)
+    var _lid=null;
+    if(fx.indexOf('eyeopen')!==-1) _lid='fx-eyeopen';
+    else if(fx.indexOf('eyeblink')!==-1) _lid='fx-eyeblink';
+    root.classList.remove('fx-eyeopen','fx-eyeblink');
+    if(_lid){ void root.offsetWidth; root.classList.add(_lid); }
   }
 
   // --- 파티클(캔버스) ---
-  var _pcv=null,_pctx=null,_praf=null,_parts=[],_pCur=null;
+  var _pcv=null,_pctx=null,_praf=null,_parts=[],_pCur=null,_pcW=0,_pcH=0,_pcRetry=false;
   function _pcInit(){
     _pcv=$('bvnParticles'); if(!_pcv) return;
     _pctx=_pcv.getContext('2d'); _pcResize();
     window.addEventListener('resize',_pcResize);
   }
-  function _pcResize(){ if(!_pcv) return; _pcv.width=_pcv.clientWidth||window.innerWidth; _pcv.height=_pcv.clientHeight||window.innerHeight; }
+  function _pcResize(){
+    if(!_pcv) return;
+    // [중요] 캔버스 내부 해상도를 '화면에 보이는 크기'와 1:1로 맞춘다.
+    //   둘이 어긋나면 파티클이 좌상단에만 크게 뭉쳐 보인다. (DPR 배율은 쓰지 않는다 — 어긋남의 원인)
+    var w = _pcv.clientWidth, h = _pcv.clientHeight;
+    if(!w || !h){
+      var r = _pcv.getBoundingClientRect();
+      w = Math.round(r.width); h = Math.round(r.height);
+    }
+    if(!w || !h){   // 아직 레이아웃 전이면 다음 프레임에 재시도
+      if(!_pcRetry){ _pcRetry=true; requestAnimationFrame(function(){ _pcRetry=false; _pcResize(); if(_pCur) setParticles(_pCur, true); }); }
+      return;
+    }
+    if(_pcv.width !== w || _pcv.height !== h){ _pcv.width = w; _pcv.height = h; }
+    if(_pctx) _pctx.setTransform(1,0,0,1,0,0);   // 배율 없이 1:1
+    _pcW = w; _pcH = h;
+  }
   function _pcSpawn(type, anyY){
-    var w=_pcv.width, h=_pcv.height;
+    var w=_pcW||_pcv.width, h=_pcH||_pcv.height;
     var y = anyY ? Math.random()*h : (type==='embers'? h+10 : -10);
     return {
       x: Math.random()*w, y:y, ph:Math.random()*6.28, sw:Math.random()*1.6,
@@ -11467,10 +11578,10 @@ function goToPeerEvalFromGate() {
       a: 0.4+Math.random()*0.6
     };
   }
-  function setParticles(type){
-    if(type===_pCur) return;            // 같은 종류면 유지
+  function setParticles(type, force){
+    if(!force && type===_pCur && (!type || _pcW)) return;   // 같은 종류면 유지(단, 캔버스 크기가 0이거나 강제면 재구성)
     _pCur=type;
-    if(!type){ if(_praf){cancelAnimationFrame(_praf);_praf=null;} if(_pctx&&_pcv) _pctx.clearRect(0,0,_pcv.width,_pcv.height); _parts=[]; return; }
+    if(!type){ if(_praf){cancelAnimationFrame(_praf);_praf=null;} if(_pctx&&_pcv) _pctx.clearRect(0,0,_pcW||_pcv.width,_pcH||_pcv.height); _parts=[]; return; }
     if(!_pctx) _pcInit(); if(!_pctx) return;
     _pcResize(); _parts=[];
     var n = (type==='rain')?100 : (type==='starlight')?44 : (type==='embers')?60 : 75;
@@ -11480,7 +11591,9 @@ function goToPeerEvalFromGate() {
   function _pcLoop(){
     _praf=requestAnimationFrame(_pcLoop);
     if(!_pctx||!_pCur) return;
-    var w=_pcv.width,h=_pcv.height; _pctx.clearRect(0,0,w,h);
+    // [자가복구] 표시 크기와 캔버스 해상도가 어긋나면 즉시 다시 맞춘다(좌상단 뭉침 방지)
+    if(_pcv.clientWidth && (_pcv.clientWidth!==_pcW || _pcv.clientHeight!==_pcH)) _pcResize();
+    var w=_pcW||_pcv.width,h=_pcH||_pcv.height; _pctx.clearRect(0,0,w,h);
     for(var i=0;i<_parts.length;i++){
       var p=_parts[i]; p.ph+=0.02;
       p.x += p.vx + ((_pCur==='snow'||_pCur==='petals')? Math.sin(p.ph)*p.sw*0.35 : 0);
@@ -11502,19 +11615,42 @@ function goToPeerEvalFromGate() {
     el.classList.add('bvn-name-glow');
   }
 
+  var _bgSeq = 0;   // 배경 교체 순번(늦게 도착한 옛 이미지가 최신 배경을 덮어쓰지 않도록)
   function setBg(url){
     url = url || '';
     if(url === curBg) return;   // 같은 배경이면 그대로 둠 (컷마다 깜빡이는 현상 방지)
     curBg = url;
-    var a=$('bvnBgA'), b=$('bvnBgB'), front=bgFlip?b:a, back=bgFlip?a:b;
-    if(url){ front.style.backgroundImage='url("'+url+'")'; front.classList.add('show'); back.classList.remove('show'); }
-    else { a.classList.remove('show'); b.classList.remove('show'); }
-    bgFlip=!bgFlip;
+    var seq = ++_bgSeq;
+    var a=$('bvnBgA'), b=$('bvnBgB');
+    if(!url){ a.classList.remove('show'); b.classList.remove('show'); return; }
+    // [전환개선] 이미지를 '미리 다 받은 뒤'에 페이드를 시작한다.
+    //   예전엔 로드 전에 show를 붙여서, 그림이 늦게 뜨면 페이드가 헛돌고 뚝 끊겨 보였다.
+    var img = new Image();
+    img.onload = img.onerror = function(){
+      if(seq !== _bgSeq) return;                 // 그 사이 더 최신 배경이 요청됐으면 무시
+      var front = bgFlip?b:a, back = bgFlip?a:b;
+      front.style.backgroundImage = 'url("'+url+'")';
+      void front.offsetWidth;                    // 트랜지션 재시작 보장
+      front.classList.add('show');               // 새 배경 페이드 인
+      back.classList.remove('show');             // 옛 배경 페이드 아웃 → 크로스페이드
+      bgFlip = !bgFlip;
+    };
+    img.src = url;
+  }
+  // [전환개선] 다음 컷들의 배경/CG를 미리 받아둔다(전환 지연 방지)
+  function _preloadBgs(from, count){
+    if(!story || !story.cuts) return;
+    var end = Math.min(story.cuts.length, from + (count||3));
+    for(var i=from; i<end; i++){
+      var u = story.cuts[i] && story.cuts[i].bg;
+      if(u){ var im=new Image(); im.src=u; }
+    }
   }
 
   function next(){
     if(epiloguePlaying){ return; }   // [최종장] 에필로그 중 클릭/키 무시
     if(typing){ finish(); return; }
+    _preloadBgs(idx+1, 3);   // [전환개선] 다음 컷 배경/CG 미리 로드
     var cur = (idx>=0 && idx<story.cuts.length) ? story.cuts[idx] : null;
     if(cur && cur.type==='choice'){ return; }       // [선택지] 버튼으로만 진행 (탭 무시)
     if(cur && cur.jump!=null){ return goToOrder(cur.jump); }  // [선택지] 분기 끝 → 합류 지점 점프
@@ -11572,9 +11708,18 @@ function goToPeerEvalFromGate() {
     var isCG = !!c.cg;            // 컷신: 일러스트만, 아스텔 스프라이트 숨김
     var narr = (c.type==='narr');
 
-    // 스프라이트: 컷신이면 숨김 / 아니면 표시(+ dim·나레이션 어둡게)
+    // 스프라이트: 컷신이면 숨김 / 명시적 sprite 토큰 있으면 우선 / 그 외 나레이션은 전역 모드(BVN_NARR_SPRITE)
     if(isCG){ hideSprite(); }
-    else { showSpeakerSprite(c); $('bvnSprite').classList.toggle('dim', !!c.spriteDim || narr); }
+    else {
+      var _hasSpriteTok = (_spriteToken(c) != null);
+      if(narr && !_hasSpriteTok){
+        if(BVN_NARR_SPRITE==='hide'){ hideSprite(); }
+        else if(BVN_NARR_SPRITE==='keep'){ /* 유지: 스프라이트를 건드리지 않음 */ }
+        else { showSpeakerSprite(c); $('bvnSprite').classList.toggle('dim', true); }  // 'dim'(기본)
+      } else {
+        showSpeakerSprite(c); $('bvnSprite').classList.toggle('dim', !!c.spriteDim);
+      }
+    }
 
     var text = c.text || '';
     // 컷신인데 대사가 없으면 → 일러스트 한 장만 (대화창 숨김)
@@ -11744,7 +11889,7 @@ function goToPeerEvalFromGate() {
     for(var i=0;i<stars.length;i++){ var st=stars[i]; st.y+=st.s; st.t+=.03; if(st.y>cv.height){st.y=0;st.x=Math.random()*cv.width;}
       ctx.beginPath(); ctx.arc(st.x,st.y,st.r,0,7); ctx.fillStyle='rgba(180,200,255,'+(.4+Math.sin(st.t)*.35)+')'; ctx.fill(); }
     raf=requestAnimationFrame(loop); }
-  function stopStars(){ if(raf){ cancelAnimationFrame(raf); raf=null; } }
+  function stopStars(){ if(raf){ cancelAnimationFrame(raf); raf=null; } if(cv&&ctx){ try{ ctx.clearRect(0,0,cv.width,cv.height); }catch(e){} } stars=[]; }
   window.addEventListener('resize', function(){ if($('brandVN').classList.contains('on')) resize(); });
 
   // BGM

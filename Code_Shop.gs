@@ -462,37 +462,69 @@ function unequipShopItem(studentName, category) {
 // ════════════════════════════════════════════════════════════════
 function grantMilestoneReward(studentName, achCount) {
   // 마일스톤별 보상 정의 (업적 개수 → 자산 보상)
-  const MILESTONES = { 5: 500, 10: 1000, 15: 1500, 20: 2000, 25:2500, 30: 3000, 40:4000, 50:5000 };
-  const reward = MILESTONES[achCount];
-  if (!reward) return;
+  const MILESTONES = { 5: 500, 10: 1000, 15: 1500, 20: 2000, 25: 2500, 30: 3000, 40: 4000, 50: 5000, 60: 6000, 70: 7000, 80: 8000, 90: 9000, 100: 20000 };
 
   const ss        = SpreadsheetApp.getActiveSpreadsheet();
   const mainSheet = ss.getSheetByName(SHEET_MAIN);
+  const histSheet = ss.getSheetByName(SHEET_HISTORY);
   if (!mainSheet) return;
 
-  const data = mainSheet.getDataRange().getValues();
-  for (let i = 1; i < data.length; i++) {
-    if (String(data[i][COL_NAME-1]).trim() !== studentName) continue;
-    const current = Number(data[i][COL_ASSET-1]) || 0;
-    mainSheet.getRange(i + 1, COL_ASSET).setValue(current + reward);
-
-    // 히스토리 기록
-    const histSheet = ss.getSheetByName(SHEET_HISTORY);
-    if (histSheet) {
-      const ts = _nowStr();
-      histSheet.appendRow([_todayStr(), studentName, data[i][COL_BRAND-1], '업적보상', reward, data[i][COL_VALUE-1], current + reward, `업적 ${achCount}개 달성 자동 보상`, ts]); // A=날짜, I=타임스탬프
+  // ① 히스토리 시트에서 이미 지급된 마일스톤 확인
+  // [2026-07 버그수정] 기존 정확히 일치(achCount===threshold) 방식은
+  // 자동 부여로 개수가 한 번에 2개 이상 증가할 때 마일스톤을 건너뛰는 문제가 있었음.
+  // → 히스토리 기록을 기준으로 "이 학생에게 이미 지급했는가"를 판단하는 방식으로 변경.
+  const alreadyRewarded = new Set();
+  if (histSheet) {
+    const histData = histSheet.getDataRange().getValues();
+    for (let i = 1; i < histData.length; i++) {
+      if (String(histData[i][1]).trim() !== studentName) continue;
+      if (String(histData[i][3]).trim() !== '업적보상') continue;
+      // H열(인덱스7) 메모: "업적 N개 달성 자동 보상" 형식
+      const match = String(histData[i][7]).match(/업적\s*(\d+)개\s*달성/);
+      if (match) alreadyRewarded.add(Number(match[1]));
     }
+  }
 
+  // ② achCount 이하이면서 아직 지급 안 된 마일스톤만 추려냄
+  const thresholds = Object.keys(MILESTONES)
+    .map(Number)
+    .sort((a, b) => a - b)
+    .filter(t => t <= achCount && !alreadyRewarded.has(t));
 
-    // 우편함 알림 발송
+  if (thresholds.length === 0) return;
+
+  // ③ 학생 행 한 번만 탐색
+  const data = mainSheet.getDataRange().getValues();
+  let rowIdx = -1;
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][COL_NAME - 1]).trim() === studentName) { rowIdx = i; break; }
+  }
+  if (rowIdx === -1) return;
+
+  // ④ 미지급 마일스톤 순서대로 누적 지급
+  let currentAsset = Number(data[rowIdx][COL_ASSET - 1]) || 0;
+  const brandValue = data[rowIdx][COL_BRAND - 1];
+  const ts = _nowStr();
+
+  for (const threshold of thresholds) {
+    const reward = MILESTONES[threshold];
+    currentAsset += reward;
+    mainSheet.getRange(rowIdx + 1, COL_ASSET).setValue(currentAsset);
+    if (histSheet) {
+      histSheet.appendRow([
+        _todayStr(), studentName, brandValue, '업적보상', reward,
+        data[rowIdx][COL_VALUE - 1], currentAsset,
+        `업적 ${threshold}개 달성 자동 보상`, ts
+      ]);
+    }
     _sendMail(
       studentName,
-      `🎁 업적 ${achCount}개 달성 보상!`,
-      `축하합니다! 업적 ${achCount}개를 달성하여 자동 보상 $${reward}이 지급되었습니다! 계속 도전하세요! 🚀`,
+      `🎁 업적 ${threshold}개 달성 보상!`,
+      `축하합니다! 업적 ${threshold}개를 달성하여 자동 보상 $${reward}이 지급되었습니다! 계속 도전하세요! 🚀`,
       '보상'
     );
-    break;
   }
+
   CacheService.getScriptCache().remove('student_' + studentName);
 }
 

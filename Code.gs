@@ -1065,7 +1065,7 @@ function _getMasterPassword() {
 }
 
 function setupMasterPassword() {
-  const MASTER_PW = 'masterpassword';
+  const MASTER_PW = 'master';
   PropertiesService.getScriptProperties()
     .setProperty('MASTER_PASSWORD', String(MASTER_PW).trim());
   try { SpreadsheetApp.getUi().alert('✅ 마스터 비밀번호가 설정되었습니다.'); } catch (e) {}

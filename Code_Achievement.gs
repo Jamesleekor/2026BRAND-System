@@ -312,6 +312,16 @@ function checkAndGrantAchievements(studentName, balance, totalTax, honor) {
       _checkAndPostGlobalAlert(studentName, achName, '', achId);
     }
   }
+
+  // ★ 마일스톤 자산 보상 체크 (자동 부여 완료 후)
+  // [2026-07 버그수정] 기존에는 교사 승인 경로에만 grantMilestoneReward가 호출되어
+  // 자동 부여로 마일스톤을 달성한 학생은 보상을 받지 못하는 문제가 있었음.
+  const finalAchDataAuto = achSheet.getDataRange().getValues();
+  let totalCountAuto = 0;
+  for (let i = 1; i < finalAchDataAuto.length; i++) {
+    if (String(finalAchDataAuto[i][0]).trim() === String(studentName).trim()) totalCountAuto++;
+  }
+  grantMilestoneReward(studentName, totalCountAuto);
 }
 
 // ════════════════════════════════════════════════════════════════

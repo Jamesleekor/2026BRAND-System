@@ -496,7 +496,10 @@ function verifyMissionM07(guildId, startDate, endDate) {
 
 // ----------------------------------------------------------
 // 3-4. M12 — 길드 명예의 일격
-// 조건: M02와 동일하나 기간이 한 주 (검증 로직 재사용)
+// 조건: 기간 내 길드원 전원이 '서로 다른' 신규 업적 1개 이상 달성.
+//        같은 업적을 여러 명이 달성했으면, 먼저 달성한 학생이
+//        다른 업적으로 '양보'해서 전원이 각기 다른 업적을 갖도록 배정.
+//        (M07과 동일한 증대 경로 이분 매칭 사용 — 양보 자동 처리)
 // ----------------------------------------------------------
 
 /**
@@ -506,11 +509,107 @@ function verifyMissionM07(guildId, startDate, endDate) {
  * @returns {object} { cleared: boolean, resultText: string, detail: object }
  */
 function verifyMissionM12(guildId, startDate, endDate) {
-  // M02 검증 로직과 동일 — 기간만 다름
-  var result = verifyMissionM02(guildId, startDate, endDate);
-  // resultText 앞에 [M12] 태그 추가해서 구분
-  result.resultText = "[M12] " + result.resultText;
-  return result;
+  var members = _getGuildMembers(guildId);
+  if (members.length === 0) {
+    return { cleared: false, resultText: "[M12] 길드 멤버 없음", detail: {} };
+  }
+
+  var start = _toMidnight(startDate);
+  var end   = _toEndOfDay(endDate);
+
+  var achieveSheet = SpreadsheetApp.getActiveSpreadsheet()
+                       .getSheetByName(SHEET_NAMES.ACHIEVEMENT);
+  if (!achieveSheet) {
+    return { cleared: false, resultText: "[M12] 업적 시트 없음", detail: {} };
+  }
+
+  var memberSet = {};
+  members.forEach(function(name) { memberSet[name] = true; });
+
+  // 1) 기간 내 이 길드원의 업적 '이벤트'를 달성 시각과 함께 수집.
+  //    학생업적달성 컬럼: A=학생명, B=업적ID, E열(index4)=달성일시
+  var achieveData = achieveSheet.getDataRange().getValues();
+  var events = []; // { date, name, achId }
+  for (var j = 1; j < achieveData.length; j++) {
+    var sName   = String(achieveData[j][0]).trim();
+    var achId   = String(achieveData[j][1]).trim();
+    var achDate = new Date(achieveData[j][4]);
+
+    if (!memberSet[sName])        continue; // 이 길드원 아님
+    if (!achId)                   continue; // 업적ID 없음
+    if (isNaN(achDate.getTime())) continue; // 날짜 파싱 실패
+    if (achDate < start)          continue; // 발표일 이전
+    if (achDate > end)            continue; // 마감일 이후
+
+    events.push({ date: achDate, name: sName, achId: achId });
+  }
+
+  // 2) 달성 시각 오름차순 정렬 (먼저 달성한 사람 우선 + 양보 허용).
+  events.sort(function(a, b) { return a.date - b.date; });
+
+  // 3) 증대 경로(augmenting path) 이분 매칭.
+  //    학생 ↔ 업적ID 를 1:1 로 배정. 한 업적을 여러 명이 원하면,
+  //    먼저 배정받았던 학생이 자기 다른 후보 업적으로 '양보'해서
+  //    전원이 서로 다른 업적을 갖도록 최대 매칭을 찾는다. (M07과 동일 방식)
+  var adj    = {};   // 학생 -> [후보 업적ID들]
+  var matchM = {};   // 학생 -> 배정 업적ID
+  var matchS = {};   // 업적ID -> 배정 학생
+  var hasAch = {};   // 학생 -> 기간 내 유효 업적 1건 이상?
+  members.forEach(function(name) { adj[name] = []; });
+
+  function augment(student, visited) {
+    var list = adj[student];
+    for (var k = 0; k < list.length; k++) {
+      var a = list[k];
+      if (visited[a]) continue;
+      visited[a] = true;
+      // 이 업적이 비어있거나, 지금 가진 학생이 다른 업적으로 양보 가능하면 배정
+      if (matchS[a] === undefined || augment(matchS[a], visited)) {
+        matchS[a] = student;
+        matchM[student] = a;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  for (var e = 0; e < events.length; e++) {
+    var ev = events[e];
+    hasAch[ev.name] = true;
+    if (adj[ev.name].indexOf(ev.achId) === -1) adj[ev.name].push(ev.achId);
+    if (matchM[ev.name] === undefined) augment(ev.name, {});
+  }
+  // 아직 배정 못 받은 학생 대상으로 한 번 더 시도 (양보 재배치 유도).
+  members.forEach(function(name) {
+    if (matchM[name] === undefined) augment(name, {});
+  });
+
+  // 4) 미클리어 분류.
+  var noAch   = members.filter(function(n) { return !hasAch[n]; });
+  var blocked = members.filter(function(n) { return hasAch[n] && matchM[n] === undefined; });
+
+  if (noAch.length > 0 || blocked.length > 0) {
+    var parts = [];
+    if (noAch.length)   parts.push("기간 내 업적 없음: " + noAch.join(", "));
+    if (blocked.length) parts.push("업적 중복(양보해도 서로 다른 업적 부족): " + blocked.join(", "));
+    return {
+      cleared: false,
+      resultText: "[M12] " + parts.join(" / "),
+      detail: { assigned: matchM, noAch: noAch, blocked: blocked }
+    };
+  }
+
+  // 배정 현황 요약 (Logger용): 학생→최종 배정 업적
+  var summary = members.map(function(name) {
+    return name + "→" + matchM[name];
+  }).join(" | ");
+  Logger.log("[verifyMissionM12] " + guildId + " 배정: " + summary);
+
+  return {
+    cleared: true,
+    resultText: "[M12] 클리어 — 전원 서로 다른 업적 배정 완료",
+    detail: { assigned: matchM }
+  };
 }
 
 
@@ -1921,43 +2020,78 @@ function submitPeerEval(missionId, evaluatorName, targetName, score, comment) {
 
 
 /**
- * 해당 미션+길드의 전원 작성 완료 여부를 확인하고,
- * 완료 시 H열(공개여부)을 TRUE로 일괄 전환합니다.
+ * 해당 미션+길드의 "현재 활성 멤버 전원"이 서로를 평가했는지 확인하고,
+ * 완료 시 현재 멤버 쌍의 H열(공개여부)을 TRUE로 전환합니다.
  *
- * 완료 조건: 길드 내 N명이 각자 (N-1)명을 평가했을 때
+ * 완료 조건: 현재 활성 멤버끼리 (평가자→피평가자) 쌍이 모두 채워졌을 때.
+ *   - 단순 "행 개수"가 아니라 "쌍 채움 여부"로 판정 → 신규 영입/로스터 변동에 안전.
+ *   - 평가자·피평가자가 모두 현재 멤버인 행만 공개 대상 → 신규 멤버를 향한 평가가
+ *     본인이 평가를 마치기 전에 먼저 공개되어 버튼이 비활성화되는 문제를 방지.
  */
 function _checkAndRevealPeerEval(missionId, guildId, evalSheet, mbSheet) {
-  var members    = _getGuildMembers(guildId);      // 활성 멤버 목록
-  var memberCount = members.length;
-  if (memberCount < 2) return;
+  var members = _getGuildMembers(guildId);   // 현재 활성 멤버 목록
+  if (members.length < 2) return;
 
-  var required   = memberCount * (memberCount - 1); // 총 필요 평가 수
-  var data       = evalSheet.getDataRange().getValues();
+  var data = evalSheet.getDataRange().getValues();
+  if (!_isPeerEvalComplete(missionId, guildId, members, data)) return; // 아직 미완료
 
-  // 이 미션+길드의 현재 제출 건수 카운트 (공개 여부 무관)
-  var submitted  = 0;
-  var targetRows = []; // 행 번호 (1-based)
+  var memberSet = {};
+  members.forEach(function(n) { memberSet[n] = true; });
+
+  // 현재 멤버 쌍에 해당하는 행만 H열(8번째)을 TRUE로 전환
   for (var i = 1; i < data.length; i++) {
-    if (String(data[i][0]).trim() === missionId &&
-        String(data[i][1]).trim() === guildId) {
-      submitted++;
-      targetRows.push(i + 1);
+    if (String(data[i][0]).trim() !== missionId) continue;
+    if (String(data[i][1]).trim() !== guildId)   continue;
+    if (!memberSet[String(data[i][2]).trim()])   continue; // 평가자가 현재 멤버 아님
+    if (!memberSet[String(data[i][3]).trim()])   continue; // 피평가자가 현재 멤버 아님
+    evalSheet.getRange(i + 1, 8).setValue(true);
+  }
+  Logger.log("[_checkAndRevealPeerEval] " + missionId + "/" + guildId + " 현재 멤버 전원 완료 → 공개 전환");
+}
+
+
+/**
+ * 현재 활성 멤버끼리 (평가자→피평가자) 쌍이 모두 제출되었는지 검사합니다.
+ * 각자 자신을 제외한 전원을 평가했을 때에만 true. 탈퇴 멤버가 낀 행은 무시합니다.
+ *
+ * @param {string}   missionId
+ * @param {string}   guildId
+ * @param {string[]} members  - 현재 활성 멤버 이름 배열 (_getGuildMembers 결과)
+ * @param {Array[]}  data     - 길드_동료평가 시트 전체 값 (getValues 결과)
+ * @returns {boolean}
+ */
+function _isPeerEvalComplete(missionId, guildId, members, data) {
+  if (!members || members.length < 2) return false;
+
+  var memberSet = {};
+  members.forEach(function(n) { memberSet[n] = true; });
+
+  // 실제 제출된 (평가자→피평가자) 쌍 수집 — 현재 멤버끼리만 인정
+  var pairs = {};
+  for (var i = 1; i < data.length; i++) {
+    if (String(data[i][0]).trim() !== missionId) continue;
+    if (String(data[i][1]).trim() !== guildId)   continue;
+    var ev = String(data[i][2]).trim();
+    var tg = String(data[i][3]).trim();
+    if (!memberSet[ev] || !memberSet[tg]) continue;
+    pairs[ev + "→" + tg] = true;
+  }
+
+  // 필요한 모든 쌍이 채워졌는지 확인 (하나라도 비면 미완료)
+  for (var a = 0; a < members.length; a++) {
+    for (var b = 0; b < members.length; b++) {
+      if (a === b) continue;
+      if (!pairs[members[a] + "→" + members[b]]) return false;
     }
   }
-
-  if (submitted >= required) {
-    // 전원 완료 → H열 TRUE로 일괄 전환
-    targetRows.forEach(function(rowNum) {
-      evalSheet.getRange(rowNum, 8).setValue(true);
-    });
-    Logger.log("[_checkAndRevealPeerEval] " + missionId + "/" + guildId + " 전원 완료 → 공개 전환");
-  }
+  return true;
 }
 
 
 /**
  * 특정 학생이 특정 미션에서 받은 동료 평가 결과를 반환합니다.
- * H열=TRUE(공개)인 행만 반환 → 평가자 이름은 포함하지 않음(익명).
+ * "현재 활성 멤버 전원"이 서로 평가를 마친 경우에만 공개(revealed=true)하며,
+ * 평가자 이름은 포함하지 않습니다(익명). 탈퇴 멤버가 낀 행은 평균에서 제외합니다.
  *
  * @param {string} studentName
  * @param {string} missionId
@@ -1973,26 +2107,32 @@ function getPeerEvalResult(studentName, missionId) {
   var guildId         = studentGuildMap[studentName];
   if (!guildId) return { revealed: false, myAvg: null, guildAvg: null, reviews: [] };
 
-  var data         = evalSheet.getDataRange().getValues();
-  var myScores     = [];
-  var myReviews    = [];
-  var guildScores  = []; // 이 미션에서 길드 전체 점수 (공개된 것만)
-  var isRevealed   = false;
+  var members = _getGuildMembers(guildId);
+  var data    = evalSheet.getDataRange().getValues();
+
+  // 현재 활성 멤버 전원이 완료해야만 공개 — 신규 영입 시 자동으로 다시 잠깁니다.
+  if (!_isPeerEvalComplete(missionId, guildId, members, data)) {
+    return { revealed: false, myAvg: null, guildAvg: null, reviews: [] };
+  }
+
+  var memberSet = {};
+  members.forEach(function(n) { memberSet[n] = true; });
+
+  var myScores    = [];
+  var myReviews   = [];
+  var guildScores = []; // 이 미션 길드 전체 점수 (현재 멤버 쌍만)
 
   for (var i = 1; i < data.length; i++) {
-    var rowMission = String(data[i][0]).trim();
-    var rowGuild   = String(data[i][1]).trim();
-    var rowTarget  = String(data[i][3]).trim();
+    if (String(data[i][0]).trim() !== missionId) continue;
+    if (String(data[i][1]).trim() !== guildId)   continue;
+    var rowEval   = String(data[i][2]).trim(); // 평가자
+    var rowTarget = String(data[i][3]).trim(); // 피평가자
+    if (!memberSet[rowEval] || !memberSet[rowTarget]) continue; // 현재 멤버 쌍만 반영
+
     var rowScore   = parseFloat(data[i][4]) || 0;
     var rowComment = String(data[i][5]).trim();
-    var rowPublic  = data[i][7]; // H열: 공개여부
 
-    if (rowMission !== missionId || rowGuild !== guildId) continue;
-    if (!rowPublic) continue; // 아직 비공개
-
-    isRevealed = true;
     guildScores.push(rowScore);
-
     if (rowTarget === studentName) {
       myScores.push(rowScore);
       if (rowComment) myReviews.push(rowComment);
@@ -2003,7 +2143,7 @@ function getPeerEvalResult(studentName, missionId) {
   var guildAvg = guildScores.length > 0 ? Math.round((_sum(guildScores) / guildScores.length) * 10) / 10 : null;
 
   return {
-    revealed  : isRevealed,
+    revealed  : true,
     myAvg     : myAvg,
     guildAvg  : guildAvg,
     reviews   : myReviews
@@ -2866,4 +3006,3 @@ function forceVerifyM07() { forceVerifyNow("M07"); }
 
 /** M12 강제 검증 단축 함수 */
 function forceVerifyM12() { forceVerifyNow("M12"); }
-

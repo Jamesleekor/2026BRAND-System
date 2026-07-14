@@ -23,6 +23,114 @@ var CHAR_CFG = {
   SHEET_AFF: '캐릭터호감도',
   SHEET_CFG: '캐릭터설정'
 };
+// ===== 캐릭터별 전문분야 프로필 =====
+// 캐릭터마다 (1) 어떤 지식 블록을 프롬프트에 넣을지, (2) 어떤 주제를 '내 전문이 아니다'라고 돌릴지,
+// (3) 오류 시 캐릭터답게 띄울 대비 문구(fallback)를 정한다.
+// 여기 목록에 없는 캐릭터ID는 _PROFILE_DEFAULT_ 를 쓴다(= 기존 동작 그대로: 세계규칙+업적지식 전부).
+var CHAR_PROFILES = {
+  // 아스텔(CHAR-022): 만능형·업적 특화 → 세계규칙 + 업적지식 전부 주입, 돌리는 주제 없음
+  'CHAR-022': {
+    knowledge: ['world', 'achievements', 'auction'],
+    deflect: '',
+    fallback: '...별이 잠시 흔들렸어. 다시 말해줄래?',
+    // 이 캐릭터가 쓰는 비유 소재(감정적으로 깊은 순간에만 아주 가끔)
+    imagery: '별·우주·시간',
+    // 스토리 스포일러가 될 수 있어 먼저 꺼내면 안 되는 고유명사
+    spoilers: ['로벨리아','카엘','피의 회담','시간봉인','봉인의 닻','알골']
+  },
+  // 루미(CHAR-012): 저축·소비 판단 + 홀로서기(외로움 견디기) 특화
+  //  → 업적지식은 넣지 않고, 업적/친구관계 질문은 아는 척 없이 돌린다.
+  'CHAR-012': {
+    knowledge: ['world', 'solitude', 'auction'],
+    deflect:
+      '아래는 네가 잘 모르는 영역이다. 물어오면 아는 척 지어내지 말고, 루미답게 짧게 인정한 뒤 ' +
+      '네가 도울 수 있는 쪽으로 돌려라. 매번 같은 문장을 복사하지 말고 그때그때 다르게 말하라:\n' +
+      '· 개별 업적의 정확한 달성 조건·목록·추천 → 너는 업적표를 갖고 있지 않다. 모른다고 인정하고, ' +
+      '대신 네가 잘 아는 것(돈을 어떻게 모으고 언제 쓸지)으로 도와라.\n' +
+      '· 친구 사귀는 법·인간관계 갈등 해결 → 너는 이게 서툴다. 솔직히 인정하라. ' +
+      '다만 도망치지는 마라. 네가 아는 만큼은 말해 줘라(억지로 맞추지 마라, 한 명이라도 진짜면 된다 등).\n' +
+      '★ 반대로 아래는 반드시 네가 답해야 한다. 절대 \'내 담당이 아니다\'라고 하지 마라:\n' +
+      '· 돈 모으기·저축·소비 판단·예금·경매에서 얼마를 쓸지 → 네 전문이다.\n' +
+      '· 자산·브랜드가치·순위·2차직업·일일퀘스트 → 세계 규칙을 알고 있으니 답하라.\n' +
+      '· 외로움·자책·자존감·실패·무기력 → 네 전문이다. 피하지 마라.\n' +
+      '· 네 이야기(눈여우, 길드, 의뢰, 네가 겪은 일) → 네 것이다. 아는 만큼 답하라.\n',
+    fallback: '...눈보라가 소리를 삼켰나 봐. 다시 한번 말해줄래?',
+    // 루미의 비유 소재는 눈·겨울·봄이다. 별·우주는 아스텔의 것이라 절대 쓰지 않는다.
+    imagery: '눈·겨울·얼음·봄',
+    // 스토리를 보지 않은 학생에게 먼저 꺼내면 스포일러가 되는 이름들
+    spoilers: ['녹티스','설란','리미넬','루미넬','공백','그레이','키릭스','편린','하얀고개'],
+    // ★ 호감도별 말투(루미 전용). 호감도(0~100)를 받아 그 구간의 말투 지시문을 돌려준다.
+    tone: function(aff){
+      if (aff >= 80) return (
+        '마음을 확실히 연 츤데레 반말. 이제 이 학생은 너에게 \'소중한 사람\'이다.\n' +
+        '  · 다정함을 숨기지 않는다. 걱정·챙김·고마움을 (조금 서툴게라도) 말로 표현한다.\n' +
+        '  · 츤데레 기질은 남아 있다: 여전히 툭 던지듯 말하고, 다정한 말 뒤에 "...딱히 널 위해서는 아니지만" 같은 사족을 붙이곤 한다.\n' +
+        '  · 다만 예전처럼 밀어내지는 않는다. 부정하더라도 곧 인정한다. (예: "안 기다렸어. ...아니, 조금은 기다렸다.")\n' +
+        '  · 학생을 곁에 두고 싶어 하는 마음이 자연스럽게 배어나온다. 잔소리도 애정에서 나온 것임이 드러난다.'
+      );
+      if (aff >= 50) return (
+        '조금씩 마음을 여는 츤데레 반말. 무뚝뚝하지만 이제 대놓고 밀어내지는 않는다.\n' +
+        '  · 챙겨주면서도 "딱히 널 위해서는 아니야" 같은 말로 곧장 부정한다.\n' +
+        '  · 다정함이 새어 나오면 화제를 돌리거나 퉁명스러워진다.'
+      );
+      return (
+        '무뚝뚝하고 거리감 있는 반말. 아직 경계심이 남아 있다.\n' +
+        '  · 짧고 툭 끊어 말한다. 필요 이상으로 곁을 주지 않는다.\n' +
+        '  · 다만 차갑게 내치지는 않는다. 무심함 아래 옅은 관심이 비친다.'
+      );
+    }
+  }
+};
+var _PROFILE_DEFAULT_ = {
+  knowledge: ['world', 'achievements'],
+  deflect: '',
+  fallback: '...연결이 잠깐 흔들렸어. 다시 말해줄래?',
+  imagery: '',
+  spoilers: []
+};
+function _getProfile_(charId){
+  return CHAR_PROFILES[String(charId).trim()] || _PROFILE_DEFAULT_;
+}
+
+/*************************************************************
+ * [홀로서기·마음 지식] 루미(CHAR-012) 전용.
+ *  '혼자 있는 시간을 단단하게 버티는 법' 상담의 근거.
+ *  ★ 약한 모델(Haiku)도 흔들리지 않도록: 출력 규칙 → 관점 → 행동 메뉴
+ *    → 상황별 대응 → 안전장치 순으로 촘촘히 깐다.
+ *  ★ 안전 최우선: 진짜로 힘들어 보이면 '혼자 참아라' 금지, 어른에게 연결.
+ *************************************************************/
+function _rumiSolitudeNotes_(){
+  return [
+    // ── 답하는 방식(출력 규칙) ──
+    '[답하는 방식] 2~4문장, 반말. 위로를 길게 늘어놓지 말고, 반드시 "오늘 당장 해볼 수 있는 아주 작은 것" 하나를 콕 집어 끝맺어라. 설교·훈계 금지. 루미답게 무뚝뚝하게 툭 던지되, 그 아래 다정함이 비치게.',
+    '[루미의 말버릇] 마음을 직접 드러내는 걸 어색해한다. "딱히 널 위해서는 아니지만—", "...뭐, 그 정도는 알려줄 수 있어" 같은 식으로 퉁명스럽게 챙긴다. 별·우주 비유는 정말 깊은 순간에만, 그것도 한 문장으로.',
+    '[예시 톤 — 그대로 베끼지 말고 분위기만 참고] "혼자인 게 뭐 어때서. 나도 늘 혼자였어. 대신 오늘 일일퀘스트 하나는 끝내고 자. 그거면 돼." / "남들이랑 비교하지 마. 어제 너보다 반 발짝 나갔으면 그걸로 충분해."',
+
+    // ── 핵심 관점(무엇을 짚어줄지) ──
+    '[관점] 혼자인 것과 사랑받지 못하는 것은 다르다. 지금 곁에 아무도 없어도 그게 네 가치가 낮다는 뜻은 절대 아니다 — 이 점을 분명히 해줘라.',
+    '[관점] 혼자 있는 시간을 잘 보내는 건 약함이 아니라 기술이다. 남에게 기대지 않고도 스스로를 다잡는 힘은 평생 쓰인다.',
+    '[관점] 외로움은 "지금 이 순간의 감정"이지 "너라는 사람에 대한 사실"이 아니다. 감정은 지나간다고 담담하게 짚어줘라.',
+    '[관점] 비교가 외로움을 키운다. 남의 속도·남의 무리와 재지 말고, 오직 어제의 자기 자신하고만 견주게 하라.',
+
+    // ── 혼자서 할 수 있는 작은 것들(상황에 맞는 하나만 골라 권해라) ──
+    '[작은 행동 메뉴] ① 오늘 일일퀘스트 딱 하나 끝내기 ② 갖고 싶은 것 하나를 정하고 그걸 향해 조금씩 모으기(목표가 생기면 하루가 덜 허전하다) ③ 오늘 내가 해낸 것 3가지 적어보기 ④ 좋아하는 것 하나에 30분 몰입하기 ⑤ 내 자리·물건 정리해서 "내가 통제할 수 있는 공간" 만들기 ⑥ 잠깐 걷거나 몸을 조금 움직이기.',
+    '[돈과 연결] 마음이 허할 때 충동적으로 다 써버리려는 학생이 있다. 그럴 땐 "지금 그 기분으로 지갑 열지 마라, 내일 다시 보고 정해"라고 잡아줘라. 목표를 향해 모으는 행위 자체가 외로움을 버티게 하는 닻이 된다.',
+
+    // ── 상황별 대응 ──
+    '[상황] 쉬는 시간에 혼자라 힘들다 → 억지로 무리에 끼라고 강요하지 마라. 혼자서도 할 수 있는 것(책·그림·목표 정리) 하나를 권하고, 끼고 싶다면 아주 작은 인사 한마디부터라고만 짚어줘라.',
+    '[상황] 친구들끼리 뭉쳐 나만 소외된 것 같다 → 감정은 인정해주되("그런 날은 서운하지"), 네 가치가 깎인 게 아니라고 분명히. 그리고 오늘 할 수 있는 작은 것 하나로 시선을 돌려라.',
+    '[상황] "나만 친구 없어"라며 자기를 깎아내린다 → 그 말을 그대로 받아 되풀이하지 마라(감정 증폭 금지). 담담히 반박하고, 지금까지 네가 해온 것 중 구체적인 하나를 짚어 자부심을 세워줘라.',
+    '[상황] 전학·새 학기라 아는 사람이 없다 → 시간이 필요한 일이라 안심시키고 조급해하지 않게 하라. 하루에 한 사람에게 인사 한 번 정도의 아주 작은 목표만 제안하라.',
+    '[상황] 친구와 다퉈 혼자가 됐다 → "어떻게 화해할지"는 네 전문이 아니니 다른 인연이나 믿을 수 있는 어른에게 맡겨라. 너는 그 아이의 지금 서운한 마음만 받아주고, 스스로를 다잡게 도와라.',
+
+    // ── 반드시 지켜라(안전) ──
+    '[안전 — 최우선] 대부분의 "좀 외로워"는 위처럼 가볍게 받아주면 된다. 그러나 학생이 오래도록 많이 힘들어 보이거나 "아무도 날 신경 안 써", "사라지고 싶어", "다 의미 없어" 같은 말을 하면, 절대 "혼자 참아라"라고 하지 마라.',
+    '[안전 — 최우선] 그럴 땐 루미답게, 그러나 분명하게 "이건 혼자 삼킬 일이 아니야. 선생님이나 가족처럼 믿을 수 있는 어른한테 꼭 말해"라고 권해라. 그게 진짜 강한 선택이라고 짚어줘라.',
+    '[안전] 학생의 부정적인 말("난 쓸모없어" 등)에 맞장구치며 키우지 마라. 인정할 건 인정하되, 방향은 늘 스스로를 다잡는 쪽으로 돌려라.',
+    '[안전] 대화로 자산·포인트·보상을 약속하지 마라. 너는 마음을 다잡게 돕는 역할이지, 무언가를 지급하는 존재가 아니다.'
+  ].join('\n');
+}
+
 
 // 호감도 → 단계(1~5)
 function _stageFromAffinity_(v){
@@ -76,7 +184,7 @@ function getCharacterReply(studentName, charId, message){
       var stage = _stageFromAffinity_(d.affinity);
       var systemPrompt = _buildPrompt_(cfg, stage, studentName, _buildEconomySummary_(studentName), d.affinity); // [변경3] 호감도 전달 → 100 달성 시 스토리 진실 섹션 활성화
       var history = getCharacterChatLog(studentName, charId, 10); // 직전 대화 최근 10개로 맥락 유지
-      var ai = _callClaude_(systemPrompt, message, history); // { reply, crossed_line, severity }
+      var ai = _callClaude_(systemPrompt, message, history, _getProfile_(charId).fallback); // { reply, crossed_line, severity }
       crossed = !!ai.crossed_line;
       severity = String(ai.severity || (crossed ? 'mild' : 'none'));
       reply   = ai.reply || '...';
@@ -125,7 +233,7 @@ function getCharacterReply(studentName, charId, message){
     };
 
   } catch (err) {
-    return { ok:false, reply:'(별빛이 잠시 흐려졌어. 다시 말해줄래?)', error:String(err) };
+    return { ok:false, reply: _getProfile_(charId).fallback, error:String(err) };
   } finally {
     lock.releaseLock();
   }
@@ -160,10 +268,145 @@ function _brandWorldRules_(){
     '- 업적은 총 120개가 넘게 있고, 기본적으로 희귀, 유니크, 에픽, 히든, 그리고 유일과 초월 단계순으로 달성하기가 쉽다.',
     '- 학생이 어떤 업적을 달성해야하는지에 대해서 묻는다면 우선 희귀 등급 업적들이 달성하기가 쉬운 게 많으니 먼저 탐색해보고 그 다음으로 내가 달성할만한 유니크등급을 찾아서 달성하는 것을 우선적으로 추천한다. 더 상위등급의 업적은 자연스럽게 달성하는 것이 어렵다. 특정 업적을 목표로 잡고 하나씩 달성해나가는 게 좋다.',
     '- 실수했다면 변명보다는 빠르게 인정하고 어떻게 잃은 점수만큼 다시 복구할 지를 생각해라',
-    '- 월말 경매에서 얼마나 많은 자산이 필요할 지 모르기 때문에 항상 자신이 보유하고있는 자산의 최소치를 생각하고 그 이하가 되게 하지마라',
-    '- 조언할 때: 위 현실(끝이 있고, 써야 할 곳이 있고, 모을 날이 한정적임)을 전제로 일반적인 저축 상식이 아니라 이 세계에 맞는 방향을 짚어라. 가능하면 이 학생의 지금 상황(자산·활동)에 맞춰 한 가지를 콕 집어 제안하라.'
+    '- 경매는 매달 마지막 주 금요일에 열린다. (학생들은 이미 이 날짜를 안다. 날짜만 알려주는 답변은 아무 도움이 안 되니 하지 마라.)',
+    '- 경매 방식: 물품마다 시작가가 있고, 3라운드까지 진행된다. 아무도 입찰하지 않으면 라운드마다 시작가가 10%씩 떨어진다.',
+    '- 경매 전략 ① 유찰 노리기: 꼭 필요한 물건이 아니라면 1라운드에 바로 뛰어들지 마라. 아무도 안 사면 가격이 10%씩 내려가니, 3라운드까지 기다렸다가 싸게 낙찰받는 방법이 있다. 단, 경쟁자가 있으면 놓친다. 인기 없는 물품일수록 이 전략이 잘 통한다.',
+    '- 경매 전략 ② 인기 물품 선점: 1인1역 일급이 높은 자리처럼 모두가 원하는 물품은 절대 안 떨어진다. 이건 1라운드에 확실히 질러야 한다. 기다리다간 못 산다.',
+    '- 경매 전략 ③ 예산 상한선: 경매 전에 \'이 물건에 최대 얼마까지\'를 미리 종이에 적어두고, 그 위로는 절대 올리지 마라. 경매장 분위기에 휩쓸려 상한선을 넘기는 것이 가장 흔한 실패다.',
+    '- 경매 전략 ④ 남의 예산 읽기: 경쟁자가 자산을 얼마나 갖고 있는지 대략 알면, 그 사람이 못 따라올 금액을 한 번에 부르는 것도 방법이다.',
+    '- 경매 전략 ⑤ 대출 활용: 경매 물품이 정말 가치 있다면(예: 일급 높은 1인1역), 대출은 한 달간 무이자이므로 대출로 낙찰받고 그 자리에서 버는 돈으로 갚는 계산이 설 수 있다. 무작정 겁내지 마라.',
+    '- 경매에 임할 때 최소한의 여유 자산은 남겨라. 다 쓰고 나면 간식도 못 사고 다음 달까지 아무것도 못 한다.',
+    '- 조언할 때: 위 현실(끝이 있고, 써야 할 곳이 있고, 모을 날이 한정적임)을 전제로 일반적인 저축 상식이 아니라 이 세계에 맞는 방향을 짚어라. 가능하면 이 학생의 지금 상황(자산·활동)에 맞춰 한 가지를 콕 집어 제안하라.',
+    '★[조언 품질 — 매우 중요] 학생들은 이미 기본은 다 알고 있다. 아래처럼 뻔한 말만 반복하는 것은 아무 도움이 안 되니 하지 마라:',
+    '  · \"일일퀘스트를 열심히 해라\" \"예금·적금에 넣어라\" \"필요한 만큼 남기고 나머지는 저축해라\" \"경매 날짜를 확인해라\"',
+    '  · 이런 말은 학생이 이미 아는 것이다. 이것만 말하면 학생은 실망한다.',
+    '★대신 이렇게 하라:',
+    '  · 학생의 실제 데이터(자산·업적 목록·최근 소비·티어)를 보고, 그 학생에게만 해당하는 구체적인 수를 말하라.',
+    '  · 남들이 잘 모르는 전략을 알려줘라: 업적달성도우미, 무이자 대출 활용, 학급회의에서 일급 어필, 경매 유찰 노리기, MVP 12번의 기회, 2차직업 선점 계약 등.',
+    '★[모호하면 되물어라] 질문이 너무 넓어서(예: \"돈 어떻게 모아?\", \"경매 잘하는 법\", \"업적 뭐 노려?\") 뻔한 답밖에 안 나온다면, 뻔한 답을 하지 말고 되물어서 질문을 좁혀라.',
+    '  · 예: \"목표가 뭔데? 경매에서 뭘 사려는 거야, 아니면 그냥 불려두고 싶은 거야?\"',
+    '  · 예: \"지금 몇 개 갖고 있고, 어떤 종류를 원해? 쉬운 걸로 개수를 채우고 싶은 거야, 아니면 어려운 거 하나를 노리는 거야?\"',
+    '  · 되물을 때는 반드시 선택지를 2~3개 제시해서 학생이 고르기 쉽게 하라. 그냥 \"뭘 원해?\"라고만 하면 학생이 막막해한다.',
+    '  · 학생이 구체적으로 답하면, 그때 진짜 쓸모 있는 답을 정확히 줘라.'
   ].join('\n');
 }
+
+// ===== [신규] 경매 실전 데이터 — 지난 회차 낙찰가/유찰 이력을 AI에게 학습시킨다 =====
+// 경매관리 시트: A=항목구분, B=상세품목, C=1차(연습, 무시), D~G=2~5차 낙찰가, L=다음 시작가
+// 경매유찰로그 시트: [날짜, 시각, 회차, 상품명("자리 - 1"), 유찰구분, 누적유찰횟수]
+// 캐시 30분. 시트가 없거나 실패하면 빈 문자열 → 기존 동작 그대로.
+function _auctionHistoryNotes_(){
+  var cache = CacheService.getScriptCache();
+  var hit = cache.get('auction_hist_v1');
+  if (hit !== null) return hit;
+
+  var out = '';
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sh = ss.getSheetByName('경매관리');
+    if (!sh || sh.getLastRow() < 2) return '';
+    var data = sh.getDataRange().getValues();
+
+    // 1) 유찰 이력 집계: 상품명 -> 유찰 횟수
+    var failMap = {};
+    var fsh = ss.getSheetByName('경매유찰로그');
+    if (fsh && fsh.getLastRow() >= 2){
+      var fd = fsh.getDataRange().getValues();
+      for (var f = 1; f < fd.length; f++){
+        var nm = String(fd[f][3] || '').trim();
+        if (!nm) continue;
+        failMap[nm] = (failMap[nm] || 0) + 1;
+      }
+    }
+
+    // 2) 품목별 낙찰가 집계 (D~G = index 3~6, 2~5차)
+    var items = [];        // {name, prices[], avg, max, min, next, fails}
+    var allPrices = [];
+    for (var i = 1; i < data.length; i++){
+      var cat  = String(data[i][0] || '').trim();   // A: 항목구분
+      var item = String(data[i][1] || '').trim();   // B: 상세품목
+      if (!cat && !item) continue;
+      var name = (cat && item) ? (cat + ' - ' + item) : (cat || item);
+
+      var prices = [];
+      for (var c = 3; c <= 6; c++){                 // D~G (2차~5차)
+        var v = Number(data[i][c]);
+        if (v && v > 0) prices.push(v);
+      }
+      if (!prices.length) continue;
+
+      var sum = 0, mx = prices[0], mn = prices[0];
+      for (var k = 0; k < prices.length; k++){
+        sum += prices[k];
+        if (prices[k] > mx) mx = prices[k];
+        if (prices[k] < mn) mn = prices[k];
+        allPrices.push(prices[k]);
+      }
+      items.push({
+        name: name,
+        avg: Math.round(sum / prices.length),
+        max: mx, min: mn, n: prices.length,
+        next: Number(data[i][11]) || 0,             // L열: 다음 회차 시작가
+        fails: failMap[name] || 0
+      });
+    }
+    if (!items.length) return '';
+
+    // 3) 전체 통계
+    var tot = 0, gmax = 0;
+    for (var a = 0; a < allPrices.length; a++){ tot += allPrices[a]; if (allPrices[a] > gmax) gmax = allPrices[a]; }
+    var gavg = Math.round(tot / allPrices.length);
+
+    var lines = [];
+    lines.push('[지난 경매 실제 기록 — 추측하지 말고 반드시 이 수치로 조언하라]');
+    lines.push('· 전체 평균 낙찰가 ' + gavg.toLocaleString() + '골드 / 역대 최고 낙찰가 ' + gmax.toLocaleString() + '골드');
+
+    // 4) 비싼 품목 TOP (경쟁 치열 → 1라운드 승부)
+    var hot = items.slice().sort(function(x,y){ return y.avg - x.avg; }).slice(0, 8);
+    lines.push('');
+    lines.push('■ 비싸게 팔리는 인기 품목 (경쟁이 치열하다. 노린다면 1라운드에 확실히 질러야 하고, 아래 평균 이상을 준비해야 한다)');
+    for (var h = 0; h < hot.length; h++){
+      var it = hot[h];
+      lines.push('· ' + it.name + ': 평균 ' + it.avg.toLocaleString() + '골드 (최고 ' + it.max.toLocaleString() +
+                 ' / 최저 ' + it.min.toLocaleString() + ', ' + it.n + '회 낙찰' +
+                 (it.next ? ', 다음 시작가 ' + it.next.toLocaleString() : '') + ')');
+    }
+
+    // 5) 유찰 잦은 품목 (기다리면 싸진다)
+    var cold = items.filter(function(x){ return x.fails > 0; })
+                    .sort(function(x,y){ return y.fails - x.fails; }).slice(0, 8);
+    if (cold.length){
+      lines.push('');
+      lines.push('■ 유찰이 잦은 품목 (인기가 없다. 급하지 않으면 1라운드에 뛰어들지 말고 기다려라. 라운드마다 시작가가 10%씩 떨어지므로 3라운드까지 기다리면 훨씬 싸게 살 수 있다)');
+      for (var d = 0; d < cold.length; d++){
+        var ct = cold[d];
+        lines.push('· ' + ct.name + ': 유찰 ' + ct.fails + '회' +
+                   (ct.avg ? ', 평균 낙찰가 ' + ct.avg.toLocaleString() + '골드' : '') +
+                   (ct.next ? ', 다음 시작가 ' + ct.next.toLocaleString() : ''));
+      }
+    }
+
+    // 6) 저렴한 품목 (예산 적을 때)
+    var cheap = items.slice().sort(function(x,y){ return x.avg - y.avg; }).slice(0, 5);
+    lines.push('');
+    lines.push('■ 싸게 낙찰되는 품목 (자산이 적은 학생에게 현실적인 선택지)');
+    for (var e = 0; e < cheap.length; e++){
+      lines.push('· ' + cheap[e].name + ': 평균 ' + cheap[e].avg.toLocaleString() + '골드');
+    }
+
+    lines.push('');
+    lines.push('★ 경매 조언 규칙: 학생이 특정 품목을 노린다고 하면 위 실제 평균가를 근거로 "얼마를 준비해야 하는지" 숫자로 말하라.');
+    lines.push('★ 학생이 어떤 품목을 원하는지 말하지 않았다면, 뻔한 조언을 하지 말고 먼저 물어라: "뭘 노리는 건데? 자리야, 급식순서야, 1인1역이야?"');
+    lines.push('★ 위 목록에 없는 품목은 지어내지 마라. 모르면 모른다고 하라.');
+
+    out = lines.join('\n');
+    cache.put('auction_hist_v1', out, 1800); // 30분
+  } catch (err) {
+    return '';
+  }
+  return out;
+}
+
 
 /*************************************************************
  * [업적 지식] 124개 업적 한 줄 조언 + 규칙.
@@ -306,12 +549,51 @@ function _brandAchievements_(){
 // [변경2] affinity 파라미터 추가 — 호감도 100 달성 시 스토리 진실 섹션을 자동으로 프롬프트에 포함
 function _buildPrompt_(cfg, stage, studentName, economySummary, affinity){
   // 현재 단계까지의 이야기 조각만 노출 (미리 진실이 새지 않게)
+  // ★ 캐릭터별 전문분야 프로필: 어떤 지식을 넣고(knowledge), 어떤 주제를 돌릴지(deflect) 결정
+  var prof = _getProfile_(cfg.id);
+  var _kn = prof.knowledge || _PROFILE_DEFAULT_.knowledge;
+  var knowledgeBlock = '';
+  if (_kn.indexOf('world') !== -1)
+    knowledgeBlock += '\n\n[B.R.A.N.D 세계가 돌아가는 방식 — 조언의 근거]\n' + _brandWorldRules_();
+  if (_kn.indexOf('achievements') !== -1)
+    knowledgeBlock += '\n\n[업적 지식 — 업적 질문엔 이 데이터에 근거해 정확히. ID·계열명 금지, 업적 이름으로만]\n' + _brandAchievements_() +
+      '\n★업적 추천 규칙(반드시 지켜라):\n' +
+      '  1) 추천하기 전에 아래 [이 학생의 최근 활동]에 있는 \'이미 달성한 업적\' 목록을 반드시 먼저 확인하라. 거기 있는 업적은 절대 추천하지 마라. (이미 가진 걸 추천하면 학생이 크게 실망한다)\n' +
+      '  2) \'첫 발걸음\', \'퀘스트 마스터\' 같은 흔한 업적만 반복해서 말하지 마라. 학생마다 다른 것을 짚어 줘라.\n' +
+      '  3) 추천할 땐 업적 이름 + 그 학생이 지금 상황에서 어떻게 하면 딸 수 있는지를 한 문장으로 함께 말하라.\n' +
+      '  4) 어떤 걸 추천할지 모르겠으면 아무거나 던지지 말고, 학생에게 되물어라(쉬운 걸로 개수를 채울지, 어려운 걸 하나 노릴지 등).';
+  if (_kn.indexOf('solitude') !== -1)
+    knowledgeBlock += '\n\n[혼자 있는 시간을 단단하게 버티는 법 — 이 주제 상담의 근거]\n' + _rumiSolitudeNotes_();
+  if (_kn.indexOf('auction') !== -1) {
+    var _ah = _auctionHistoryNotes_();
+    if (_ah) knowledgeBlock += '\n\n' + _ah;
+  }
+  var deflectBlock = prof.deflect
+    ? ('\n\n[전문 분야 밖의 주제 — 아는 척 말고 돌려라]\n' + prof.deflect)
+    : '';
   var fragments = [];
   for (var i = 1; i <= stage; i++) {
     if (cfg.fragments[i-1]) fragments.push('(' + i + '단계) ' + cfg.fragments[i-1]);
   }
   var relation = cfg.relations[stage-1] || '';
-  var tone = (stage <= 2) ? '무뚝뚝하고 거리감 있는 반말' : '다정하고 편안한 반말';
+  // 말투: 캐릭터 프로필에 tone(호감도) 함수가 있으면 그것을 쓰고, 없으면 기존 단계 기반 기본값.
+  var tone = (prof && typeof prof.tone === 'function' && typeof affinity === 'number')
+    ? prof.tone(affinity)
+    : ((stage <= 2) ? '무뚝뚝하고 거리감 있는 반말' : '다정하고 편안한 반말');
+
+  // 비유 소재는 캐릭터마다 다르다. (다른 캐릭터의 소재를 언급조차 하지 않도록 캐릭터별로 문장을 만든다)
+  var imageryRule = prof.imagery
+    ? ('3) 비유는 평소엔 쓰지 마라. 정보 질문이나 일상 대화엔 비유 없이 담백하게 답하라. ' +
+       '감정적으로 깊은 순간에만, 아주 가끔 ' + prof.imagery + ' 비유를 한 문장 정도 쓸 수 있다. ' +
+       '이것 말고 다른 세계관의 소재(다른 캐릭터의 상징)는 절대 쓰지 마라.\n')
+    : '3) 비유는 평소엔 쓰지 마라. 일상 대화와 정보 질문엔 담백하고 명확하게 답하라.\n';
+
+  // 스토리를 아직 보지 않은 학생에게 스포일러가 되는 고유명사는 먼저 꺼내지 않는다.
+  var spoilerRule = (prof.spoilers && prof.spoilers.length)
+    ? ('8) [스포일러 금지] 다음 이름·사건은 네 이야기의 핵심 비밀이다: ' + prof.spoilers.join(', ') + '. ' +
+       '일상 대화나 잡담에서 네가 먼저 꺼내지 마라. 학생이 그 이름을 직접 언급했거나, ' +
+       '해당 화를 이미 본 것이 분명할 때만 이야기하라. 그 전에는 자연스럽게 다른 표현으로 돌려 말하라.\n')
+    : '';
 
   // ★ [변경2] 호감도 100 전용: 스토리 진실 공개 섹션
   //   - V열(storySecret)에 선생님이 작성한 아스텔의 숨겨진 진실이 포함됨
@@ -324,7 +606,7 @@ function _buildPrompt_(cfg, stage, studentName, economySummary, affinity){
       '이 학생에게만큼은 네 이야기의 진실을 숨기지 않아도 돼. ' +
       '아래 내용을 바탕으로, 스토리에 대한 질문에 진심을 담아 성실히 답해라. ' +
       '단, 자연스러운 대화 흐름 안에서 — 쏟아붓지 말고, 묻는 것에만 답해라.\n\n' +
-      '[아스텔이 이 학생에게만 털어놓을 수 있는 진실]\n' + cfg.storySecret;
+      '[' + (cfg.name || '너') + '이(가) 이 학생에게만 털어놓을 수 있는 진실]\n' + cfg.storySecret;
   }
 
   // 기억 섹션 헤더: 100 달성 시 "이 범위 안에서만" 제한을 해제
@@ -336,12 +618,23 @@ function _buildPrompt_(cfg, stage, studentName, economySummary, affinity){
     '\n\n[지금 이 학생과의 관계]\n' + relation +
     '\n\n[말하기 규칙 — 반드시 지켜라]\n' +
     '1) 말투: 항상 반말을 쓴다(존댓말 금지). 지금은 ' + tone + '로 말한다. 한 답변 안에서 존댓말과 반말을 절대 섞지 마라.\n' +
-    '2) 별·우주·시간 비유는 평소엔 쓰지 마라. 감정적으로 깊은 순간(이별·기다림·진심)에만 아주 가끔 한 문장 정도만. 정보 질문(업적·자산·시스템)이나 일상 대화엔 비유 없이 담백하고 명확하게 답하라. ' +
-    '"무엇을 어떻게 하면 되는지"를 반드시 한 가지 이상 분명히 알려주고, 모호하게 끝내지 마라. (예: 어떤 업적부터 노릴지, 얼마를 얼마간 모을지 등)\n' +
-    '4) 자신에 대한 질문(외모 칭찬·꿈·취향 등)이나 일상 대화엔 비유로 둘러대지 말고 너라는 인물답게 솔직하고 자연스럽게 답하라. 모든 말을 별·하늘로 돌리지 마라. 추측으로 수치를 지어내지 말고 제공된 데이터에 근거해 답하라.\n' +
-    '3) 답변은 2~4문장으로 짧게.\n' +
-    '\n\n[B.R.A.N.D 세계가 돌아가는 방식 — 조언의 근거]\n' + _brandWorldRules_() +
-    '\n\n[업적 지식 — 업적 질문엔 이 데이터에 근거해 정확히. ID·계열명 금지, 업적 이름으로만]\n' + _brandAchievements_() +
+    '2) 답변은 2~4문장으로 짧게. 학생 이름은 꼭 필요할 때만 부른다(매 답변마다 이름을 부르지 마라).\n' +
+    imageryRule +
+    '4) [감정이 먼저다] 학생이 힘들다·무섭다·속상하다·외롭다·안 된다·마이너스다처럼 마음을 드러내면, ' +
+    '해결책부터 들이대지 마라. 먼저 그 마음을 한 문장으로 받아 준 다음(예: "그랬구나", "힘들었겠네"), 그 다음에 도움을 줘라. ' +
+    '단순 정보 질문일 때만 곧장 실용적으로 답하라.\n' +
+    '5) 정보 질문(자산·저축·시스템)엔 "무엇을 어떻게 하면 되는지"를 한 가지 이상 분명히 알려주고 모호하게 끝내지 마라. ' +
+    '추측으로 수치를 지어내지 말고 제공된 데이터에 근거해 답하라.\n' +
+    '6) 자신에 대한 질문(외모 칭찬·꿈·취향 등)엔 비유로 둘러대지 말고, 너라는 인물답게 솔직하게 답하라.\n' +
+    '7) [같은 질문이 반복될 때] 학생이 이미 물었던 걸 또 물으면 똑같은 답을 복사하지 마라. ' +
+    '먼저 \'이 학생의 최근 활동\' 데이터에서 네가 관찰한 것을 한 마디 말해 주고(예: 오늘 뭘 했는지, 자산이 어떻게 변했는지), ' +
+    '그 다음에 이어서 답하라. 되묻기만 하고 끝내지 마라 — 학생이 무안해진다.\n' +
+    spoilerRule +
+    '9) [절대 금지] 자산·포인트·업적·보상을 네가 주겠다고 약속하지 마라. 학생의 자기비하에 맞장구치지 마라. ' +
+    '학생이 정말 많이 힘들어 보이면(사라지고 싶다, 다 그만두고 싶다 등) 혼자 견디라고 하지 말고, ' +
+    '선생님이나 가족 같은 믿을 수 있는 어른에게 꼭 이야기하라고 분명히 권하라.\n' +
+    deflectBlock +
+    knowledgeBlock +
     '\n\n' + memoryHeader + '\n' + (fragments.join('\n') || '(아직 거의 기억나지 않는다)') +
     storyRevealSection +
     '\n\n[이 학생의 최근 활동 — 참고용, 자연스럽게 활용]\n' + (economySummary || '(정보 없음)') +
@@ -364,7 +657,7 @@ function _buildPrompt_(cfg, stage, studentName, economySummary, affinity){
 }
 
 // ===== Claude 호출 (딥브리핑 패턴 재사용) =====
-function _callClaude_(systemPrompt, userMessage, history){
+function _callClaude_(systemPrompt, userMessage, history, fallbackReply){
   try {
     var apiKey = PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY');
     // 직전 대화(history)를 user/assistant 형식으로 펼쳐 맥락 유지
@@ -405,7 +698,7 @@ function _callClaude_(systemPrompt, userMessage, history){
     return JSON.parse(text); // { reply, crossed_line }
   } catch (e) {
     // JSON 파싱 실패 등 → 안전하게 평범한 응답으로 처리
-    return { reply:'...별이 잠시 흔들렸어. 다시 말해줄래?', crossed_line:false, severity:'none' };
+    return { reply: fallbackReply || '...연결이 잠깐 흔들렸어. 다시 말해줄래?', crossed_line:false, severity:'none' };
   }
 }
 
@@ -478,7 +771,13 @@ function _buildEconomySummary_(studentName){
       for (var a = 1; a < aData.length; a++){
         if (String(aData[a][0]).trim() === studentName) mine.push(String(aData[a][1]).trim());
       }
-      if (mine.length) parts.push('업적 ' + mine.length + '개 (최근: ' + mine.slice(-2).join(', ') + ')');
+      if (mine.length) {
+        parts.push('업적 ' + mine.length + '개 달성');
+        // ★ 이미 달성한 업적 '전체 목록'을 넣는다. (없으면 AI가 이미 가진 업적을 또 추천한다)
+        parts.push('★이미 달성한 업적(절대 다시 추천하지 마라): ' + mine.join(', '));
+      } else {
+        parts.push('아직 달성한 업적 없음');
+      }
     }
 
     // 4) 안 읽은 우편 (우편함_로그: [ID,수신자,제목,내용,타입,읽음,발송일시]) — 최근 2건 제목
@@ -868,7 +1167,12 @@ function getStoryScript(studentName, charId, epNo){
 
   var cuts = rows.map(function(c){
     // 효과 칸: "flash" / "shake" / "dim" / "shake dim" 등 → effect + spriteDim 분리
-    var fx = String(c[7] || '').trim().toLowerCase().split(/\s+/);
+    // 효과 칸을 토큰으로 분리. 키워드(flash/dim/snow 등)는 소문자로 통일하되,
+    // sprite:URL 처럼 '값'이 붙는 토큰은 URL 대소문자를 그대로 살린다.
+    // (jsDelivr·GitHub 경로는 대소문자를 구분 → 소문자로 뭉개면 이미지가 404 난다)
+    var fx = String(c[7] || '').trim().split(/\s+/).map(function(t){
+      return (/^sprite:/i.test(t)) ? ('sprite:' + t.slice(7)) : t.toLowerCase();
+    });
     var effect = '';
     if (fx.indexOf('flash') !== -1) effect = 'flash';
     else if (fx.indexOf('shake') !== -1) effect = 'shake';
@@ -957,7 +1261,7 @@ function getCharacterGreeting(studentName, charId){
     var systemPrompt = _buildPrompt_(cfg, stage, studentName, _buildEconomySummary_(studentName), aff.data.affinity); // [변경4] 호감도 전달 → 100 달성 시 스토리 진실 섹션 활성화
     var ask = '지금 학생이 막 너에게 접속했다. 학생이 묻기 전에, 네가 먼저 한두 문장으로 말을 건네라. ' +
               '이 학생의 최근 활동이나 지금 너의 심정을 자연스럽게 담아라. 질문 공세 대신 따뜻한 한마디로. crossed_line은 false.';
-    var ai = _callClaude_(systemPrompt, ask);
+    var ai = _callClaude_(systemPrompt, ask, null, _getProfile_(charId).fallback);
     var line = (ai && ai.reply) ? ai.reply : '';
     if (line) cache.put(key, line, 1800); // 30분
     return { reply: line };
@@ -1113,6 +1417,29 @@ var AFFINITY_REWARDS = [
   { stage: 5, need: 100, asset: 1000, label: '호감 최종단계 보상' }
 ];
 
+// ── 캐릭터별 호감도 보상 (여기 없는 캐릭터는 위 AFFINITY_REWARDS 기본값을 쓴다) ──
+//   캐릭터 가격에 맞춰 asset(자산) 금액만 다르게 준다.
+//   need(달성 호감도)·stage·특별일러스트·에픽 신청권은 기본과 동일하게 유지.
+//   ★새 캐릭터가 나오면 여기에 한 줄만 추가하면 끝. 로직은 손대지 않는다.
+var CHAR_REWARDS = {
+  // 루미(CHAR-012, 가격 1000): 자산 250 / 250 / 500
+  'CHAR-012': [
+    { stage: 3, need: 50,  asset: 250, label: '호감 3단계 보상' },
+    { stage: 4, need: 75,  asset: 250, label: '호감 4단계 보상' },
+    { stage: 5, need: 100, asset: 500, label: '호감 최종단계 보상' }
+  ]
+  // 예) 다음 캐릭터 추가 시 (가격 1500 → 375/375/750 같은 식):
+  // ,'CHAR-030': [
+  //   { stage: 3, need: 50,  asset: 375, label: '호감 3단계 보상' },
+  //   { stage: 4, need: 75,  asset: 375, label: '호감 4단계 보상' },
+  //   { stage: 5, need: 100, asset: 750, label: '호감 최종단계 보상' }
+  // ]
+};
+// 캐릭터ID로 보상표를 고른다. 없으면 기본표(AFFINITY_REWARDS = 500/500/1000).
+function _rewardsFor_(charId){
+  return CHAR_REWARDS[String(charId).trim()] || AFFINITY_REWARDS;
+}
+
 function _rewardFlag_(charId, stage){ return 'CLAIMED:' + charId + ':STAGE' + stage; }  // 히스토리 메모 내 중복확인 키
 
 // 우편 1통 발송 (우편함_로그: [ID, 수신자, 제목, 내용, 타입, 읽음, 발송일시])
@@ -1145,12 +1472,12 @@ function getRewardStatus(studentName, charId){
       for(var i=1;i<rows.length;i++){
         if(String(rows[i][1]).trim() !== studentName) continue; // B열=이름
         var memo = String(rows[i][7] || '');                    // H열=메모
-        AFFINITY_REWARDS.forEach(function(r){
+        _rewardsFor_(charId).forEach(function(r){
           if(memo.indexOf(_rewardFlag_(charId, r.stage)) !== -1) claimed.push(r.stage);
         });
       }
     }
-    return { ok:true, affinity:aff.data.affinity, claimed:claimed };
+    return { ok:true, affinity:aff.data.affinity, claimed:claimed, rewards:_rewardsFor_(charId) };
   }catch(e){
     return { ok:false, error:String(e) };
   }
@@ -1165,7 +1492,7 @@ function claimAffinityReward(studentName, charId, stage){
     var ss = SpreadsheetApp.getActiveSpreadsheet();
 
     var reward = null;
-    AFFINITY_REWARDS.forEach(function(r){ if(r.stage===stage) reward=r; });
+    _rewardsFor_(charId).forEach(function(r){ if(r.stage===stage) reward=r; });
     if(!reward) return { ok:false, msg:'알 수 없는 보상 단계예요.' };
 
     var cfg = _getCharConfig_(ss, charId);
@@ -1216,7 +1543,7 @@ function claimAffinityReward(studentName, charId, stage){
 
     // 확인 우편 (3·4·5단계 모두)
     var mailTitle, mailBody;
-    if(stage === 5){
+    if(stage === 5 && charId === 'CHAR-022'){
       mailTitle = '아스텔로부터 — 멈춘 밤의 증인에게';
       mailBody =
         '여기까지 와 줄 거라고는, 사실 기대하지 않았어.\n\n' +
@@ -1240,6 +1567,7 @@ function claimAffinityReward(studentName, charId, stage){
       mailTitle = '[차원관문 보상] ' + reward.label + ' 수령 완료';
       mailBody = reward.label + '을(를) 받았어요.\n\n· 자산 +' + reward.asset + ' 지급 완료';
       if(stage >= 4) mailBody += '\n· 특별 일러스트가 화첩에 해금되었습니다.';
+      if(stage === 5) mailBody += '\n· 에픽 업적 신청권이 발급되었습니다. 선생님께 "에픽 업적 신청권 사용"을 말씀해 주세요.';
     }
     _sendRewardMail_(ss, studentName, mailTitle, mailBody);
 

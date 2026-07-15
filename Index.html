@@ -4003,7 +4003,7 @@
           var aff=res.affinity||Number(c.affinity)||0;
           var claimed=res.claimed||[];
           L.innerHTML='';
-          REWARD_DEF.forEach(function(r){
+          rewardDefOf(c.charId).forEach(function(r){
             var reached=aff>=r.need;
             var done=claimed.indexOf(r.stage)>=0;
             var el=document.createElement('div');
@@ -11219,7 +11219,7 @@ function goToPeerEvalFromGate() {
   #brandVN .bvn-bg{ position:absolute; inset:0; background-size:cover; background-position:center; opacity:0; transition:opacity 2.2s cubic-bezier(.4,0,.2,1); }
   #brandVN .bvn-bg.show{ opacity:1; animation:bvnKen 22s ease-in-out infinite alternate; }
   @keyframes bvnKen{ from{transform:scale(1.05);} to{transform:scale(1.16) translate(-2%,-2%);} }
-  #brandVN #bvnStars{ position:absolute; inset:0; }
+  #brandVN #bvnStars{ position:absolute; inset:0; width:100%; height:100%; }
   #brandVN .bvn-glow{ position:absolute; inset:0; pointer-events:none;
     background:radial-gradient(60% 50% at 50% 38%, color-mix(in srgb,var(--bvn-aura) 16%, transparent), transparent 70%); }
   #brandVN .bvn-vignette{ position:absolute; inset:0; pointer-events:none; box-shadow:inset 0 0 220px 60px rgba(0,0,0,0.85); }
@@ -11317,9 +11317,12 @@ function goToPeerEvalFromGate() {
 
 /* ===== [효과 확장] BrandVN 추가 효과 (기존 flash/shake/dim/cg 위에 추가) ===== */
 /* 1) 씬(배경+스프라이트) 지속 필터 — 텍스트박스는 영향 없음 */
-#brandVN.fx-gray  .bvn-bg, #brandVN.fx-gray  .bvn-sprite{ filter:grayscale(1) brightness(.9) !important; transition:filter .8s ease; }
-#brandVN.fx-sepia .bvn-bg, #brandVN.fx-sepia .bvn-sprite{ filter:sepia(.7) contrast(.95) brightness(.95) !important; transition:filter .8s ease; }
-#brandVN.fx-blur  .bvn-bg, #brandVN.fx-blur  .bvn-sprite{ filter:blur(5px) !important; transition:filter .6s ease; }
+#brandVN.fx-gray  .bvn-bg{ filter:grayscale(1) brightness(.9) !important; transition:filter .8s ease, opacity 2.2s cubic-bezier(.4,0,.2,1); }
+#brandVN.fx-gray  .bvn-sprite{ filter:grayscale(1) brightness(.9) !important; transition:filter .8s ease, opacity .9s ease; }
+#brandVN.fx-sepia .bvn-bg{ filter:sepia(.7) contrast(.95) brightness(.95) !important; transition:filter .8s ease, opacity 2.2s cubic-bezier(.4,0,.2,1); }
+#brandVN.fx-sepia .bvn-sprite{ filter:sepia(.7) contrast(.95) brightness(.95) !important; transition:filter .8s ease, opacity .9s ease; }
+#brandVN.fx-blur  .bvn-bg{ filter:blur(5px) !important; transition:filter .6s ease, opacity 2.2s cubic-bezier(.4,0,.2,1); }
+#brandVN.fx-blur  .bvn-sprite{ filter:blur(5px) !important; transition:filter .6s ease, opacity .9s ease; }
 /* 2) 배경 줌 (켄번스 덮어쓰기) */
 #brandVN.fx-zoomin  .bvn-bg.show{ animation:bvnZoomIn  7s ease forwards !important; }
 #brandVN.fx-zoomout .bvn-bg.show{ animation:bvnZoomOut 7s ease forwards !important; }
@@ -11343,7 +11346,7 @@ function goToPeerEvalFromGate() {
 #brandVN .bvn-fxov.fadeout{ background:#04060f; animation:bvnFadeOut 1.1s ease forwards; }
 @keyframes bvnFadeOut{ from{opacity:0;} to{opacity:1;} }
 /* 7) 파티클 캔버스(눈·불티·빛가루·꽃잎·비) — 씬 위, 텍스트박스 아래 */
-#brandVN .bvn-particles{ position:absolute; inset:0; z-index:5; pointer-events:none; }
+#brandVN .bvn-particles{ position:absolute; inset:0; width:100%; height:100%; z-index:5; pointer-events:none; }
 /* 8) 눈꺼풀(소생·각성 시 눈 뜨는 1인칭 연출) — 최상단 */
 #brandVN .bvn-eyelid{ position:absolute; left:0; width:100%; height:52%; background:#000; z-index:55; pointer-events:none; transform:translateY(0); }
 #brandVN .bvn-eyelid-top{ top:0;    transform:translateY(-100%); }
@@ -11616,24 +11619,57 @@ function goToPeerEvalFromGate() {
   }
 
   var _bgSeq = 0;   // 배경 교체 순번(늦게 도착한 옛 이미지가 최신 배경을 덮어쓰지 않도록)
+  var _bgLayers = [];   // 현재 화면에 살아 있는 배경 레이어들
   function setBg(url){
     url = url || '';
-    if(url === curBg) return;   // 같은 배경이면 그대로 둠 (컷마다 깜빡이는 현상 방지)
+    if(url === curBg) return;   // 같은 배경이면 그대로 둠
     curBg = url;
     var seq = ++_bgSeq;
     var a=$('bvnBgA'), b=$('bvnBgB');
-    if(!url){ a.classList.remove('show'); b.classList.remove('show'); return; }
-    // [전환개선] 이미지를 '미리 다 받은 뒤'에 페이드를 시작한다.
-    //   예전엔 로드 전에 show를 붙여서, 그림이 늦게 뜨면 페이드가 헛돌고 뚝 끊겨 보였다.
+
+    // 레이어를 서서히 지운다(전환이 끝난 뒤 DOM에서 제거)
+    function fadeOut(el, instant){
+      if(!el) return;
+      el.classList.remove('show');
+      if(el._dyn){   // 동적으로 만든 레이어만 제거(원래 있던 A/B는 남겨둔다)
+        var wait = instant ? 0 : 2400;
+        setTimeout(function(){ if(el.parentNode) el.parentNode.removeChild(el); }, wait);
+      }
+    }
+
+    if(!url){   // 배경 없음
+      a.classList.remove('show'); b.classList.remove('show');
+      _bgLayers.forEach(function(el){ fadeOut(el); });
+      _bgLayers = [];
+      return;
+    }
+
+    // [전환개선] 그림을 '다 받은 뒤'에 페이드를 시작한다(로딩 중 페이드가 헛도는 문제 방지)
     var img = new Image();
     img.onload = img.onerror = function(){
-      if(seq !== _bgSeq) return;                 // 그 사이 더 최신 배경이 요청됐으면 무시
-      var front = bgFlip?b:a, back = bgFlip?a:b;
-      front.style.backgroundImage = 'url("'+url+'")';
-      void front.offsetWidth;                    // 트랜지션 재시작 보장
-      front.classList.add('show');               // 새 배경 페이드 인
-      back.classList.remove('show');             // 옛 배경 페이드 아웃 → 크로스페이드
-      bgFlip = !bgFlip;
+      if(seq !== _bgSeq) return;   // 그 사이 더 최신 배경이 요청됐으면 버린다
+
+      // [핵심] 새 그림마다 '새 레이어'를 만든다.
+      //   예전엔 A/B 두 장을 번갈아 재사용했는데, CG가 빨리 바뀌면
+      //   아직 사라지는 중(투명도 0.5 등)인 레이어를 다시 쓰게 되어 그림이 툭 하고 바뀌었다.
+      //   새 레이어는 항상 투명도 0에서 시작하므로, 아무리 빨리 넘겨도 페이드인이 보장된다.
+      var layer = document.createElement('div');
+      layer.className = 'bvn-bg';
+      layer._dyn = true;
+      layer.style.backgroundImage = 'url("'+url+'")';
+      b.insertAdjacentElement('afterend', layer);   // 배경 자리(스프라이트/대사창 아래)에 삽입
+      void layer.offsetWidth;                       // 투명도 0 상태를 확정
+      layer.classList.add('show');                  // 0 → 1 페이드인
+
+      // 원래 있던 A/B 레이어는 숨긴다(최초 1회용)
+      a.classList.remove('show'); b.classList.remove('show');
+
+      // 이전 레이어들은 페이드아웃 후 제거. 너무 많이 쌓이면 오래된 것부터 즉시 제거.
+      var olds = _bgLayers;
+      _bgLayers = [layer];
+      for(var i=0; i<olds.length; i++){
+        fadeOut(olds[i], i < olds.length-2);   // 가장 최근 2장만 부드럽게, 나머지는 즉시
+      }
     };
     img.src = url;
   }

@@ -12,6 +12,7 @@
 
 // ===== 설정값 (여기 숫자만 바꾸면 됨) =====
 var CHAR_CFG = {
+  CONDITIONAL_KNOWLEDGE: true, // 업적·경매표를 '관련 질문일 때만' 주입(false=항상 주입, 예전 동작)
   MODEL: 'claude-haiku-4-5-20251001', // 잡담은 가벼운 모델 권장(비용↓). 딥브리핑과 동일하게 바꿔도 됨
   GAIN_NORMAL: 3,        // 예의 바른 대화 1회당 호감도 상승
   PENALTY_CROSS: 10,     // 가벼운 무례(mild) 시 호감도 하락
@@ -182,7 +183,7 @@ function getCharacterReply(studentName, charId, message){
     } else {
       // ===== 2차 안전장치: AI가 문맥으로 판정 =====
       var stage = _stageFromAffinity_(d.affinity);
-      var systemPrompt = _buildPrompt_(cfg, stage, studentName, _buildEconomySummary_(studentName), d.affinity); // [변경3] 호감도 전달 → 100 달성 시 스토리 진실 섹션 활성화
+      var systemPrompt = _buildPrompt_(cfg, stage, studentName, _buildEconomySummary_(studentName), d.affinity, message); // [변경3] 호감도 전달 → 100 달성 시 스토리 진실 섹션 활성화
       var history = getCharacterChatLog(studentName, charId, 10); // 직전 대화 최근 10개로 맥락 유지
       var ai = _callClaude_(systemPrompt, message, history, _getProfile_(charId).fallback); // { reply, crossed_line, severity }
       crossed = !!ai.crossed_line;
@@ -547,27 +548,42 @@ function _brandAchievements_(){
 }
 
 // [변경2] affinity 파라미터 추가 — 호감도 100 달성 시 스토리 진실 섹션을 자동으로 프롬프트에 포함
-function _buildPrompt_(cfg, stage, studentName, economySummary, affinity){
+function _buildPrompt_(cfg, stage, studentName, economySummary, affinity, message){
   // 현재 단계까지의 이야기 조각만 노출 (미리 진실이 새지 않게)
   // ★ 캐릭터별 전문분야 프로필: 어떤 지식을 넣고(knowledge), 어떤 주제를 돌릴지(deflect) 결정
   var prof = _getProfile_(cfg.id);
   var _kn = prof.knowledge || _PROFILE_DEFAULT_.knowledge;
-  var knowledgeBlock = '';
+
+  // ── [캐싱 #1] 항상 필요한 지식 = 캐시 '고정 구역'에 들어감(모든 학생 공유) ──
+  //    세계규칙, (루미) 홀로서기 상담 근거. 매번 똑같으므로 캐시로 아낀다.
+  var alwaysKnowledge = '';
   if (_kn.indexOf('world') !== -1)
-    knowledgeBlock += '\n\n[B.R.A.N.D 세계가 돌아가는 방식 — 조언의 근거]\n' + _brandWorldRules_();
-  if (_kn.indexOf('achievements') !== -1)
-    knowledgeBlock += '\n\n[업적 지식 — 업적 질문엔 이 데이터에 근거해 정확히. ID·계열명 금지, 업적 이름으로만]\n' + _brandAchievements_() +
+    alwaysKnowledge += '\n\n[B.R.A.N.D 세계가 돌아가는 방식 — 조언의 근거]\n' + _brandWorldRules_();
+  if (_kn.indexOf('solitude') !== -1)
+    alwaysKnowledge += '\n\n[혼자 있는 시간을 단단하게 버티는 법 — 이 주제 상담의 근거]\n' + _rumiSolitudeNotes_();
+
+  // ── [절감 #3] 가끔만 필요한 무거운 지식 = 관련 질문일 때만 주입(캐시 안 함) ──
+  //    업적표·경매기록은 크다. 관련 키워드가 있을 때만 붙여 토큰을 아낀다.
+  //    CHAR_CFG.CONDITIONAL_KNOWLEDGE=false 로 두면 예전처럼 항상 주입.
+  var _msg = String(message || '');
+  var _forceAll = (CHAR_CFG.CONDITIONAL_KNOWLEDGE === false);
+  function _kwHit_(t, ws){ for (var k=0;k<ws.length;k++){ if (t.indexOf(ws[k]) !== -1) return true; } return false; }
+  var onDemandKnowledge = '';
+  if (_kn.indexOf('achievements') !== -1 &&
+      (_forceAll || _kwHit_(_msg, ['업적','도전과제','도전 과제','뱃지','배지','칭호','달성','컬렉션']))) {
+    onDemandKnowledge += '\n\n[업적 지식 — 업적 질문엔 이 데이터에 근거해 정확히. ID·계열명 금지, 업적 이름으로만]\n' + _brandAchievements_() +
       '\n★업적 추천 규칙(반드시 지켜라):\n' +
       '  1) 추천하기 전에 아래 [이 학생의 최근 활동]에 있는 \'이미 달성한 업적\' 목록을 반드시 먼저 확인하라. 거기 있는 업적은 절대 추천하지 마라. (이미 가진 걸 추천하면 학생이 크게 실망한다)\n' +
       '  2) \'첫 발걸음\', \'퀘스트 마스터\' 같은 흔한 업적만 반복해서 말하지 마라. 학생마다 다른 것을 짚어 줘라.\n' +
       '  3) 추천할 땐 업적 이름 + 그 학생이 지금 상황에서 어떻게 하면 딸 수 있는지를 한 문장으로 함께 말하라.\n' +
       '  4) 어떤 걸 추천할지 모르겠으면 아무거나 던지지 말고, 학생에게 되물어라(쉬운 걸로 개수를 채울지, 어려운 걸 하나 노릴지 등).';
-  if (_kn.indexOf('solitude') !== -1)
-    knowledgeBlock += '\n\n[혼자 있는 시간을 단단하게 버티는 법 — 이 주제 상담의 근거]\n' + _rumiSolitudeNotes_();
+  }
   if (_kn.indexOf('auction') !== -1) {
     var _ah = _auctionHistoryNotes_();
-    if (_ah) knowledgeBlock += '\n\n' + _ah;
+    if (_ah && (_forceAll || _kwHit_(_msg, ['경매','입찰','낙찰','응찰','유찰','경매장','매물'])))
+      onDemandKnowledge += '\n\n' + _ah;
   }
+
   var deflectBlock = prof.deflect
     ? ('\n\n[전문 분야 밖의 주제 — 아는 척 말고 돌려라]\n' + prof.deflect)
     : '';
@@ -596,8 +612,6 @@ function _buildPrompt_(cfg, stage, studentName, economySummary, affinity){
     : '';
 
   // ★ [변경2] 호감도 100 전용: 스토리 진실 공개 섹션
-  //   - V열(storySecret)에 선생님이 작성한 아스텔의 숨겨진 진실이 포함됨
-  //   - 호감도가 MAX(100) 미만이면 빈 문자열 → 기존 동작 그대로
   var storyRevealSection = '';
   if (typeof affinity === 'number' && affinity >= CHAR_CFG.MAX && cfg.storySecret) {
     storyRevealSection =
@@ -614,10 +628,12 @@ function _buildPrompt_(cfg, stage, studentName, economySummary, affinity){
     ? '[지금까지 너에게 돌아온 네 기억 + 100 특별 공개 포함]'
     : '[지금까지 너에게 돌아온 네 기억 — 반드시 이 범위 안에서만 이야기하라]';
 
-  var tail =
-    '\n\n[지금 이 학생과의 관계]\n' + relation +
+  // ═══ [캐싱 #1] 고정 구역(stable) — 모든 학생·모든 대화에 동일 → 캐시로 재사용 ═══
+  //    실제 학생 이름은 넣지 않는다(넣으면 학생마다 캐시가 갈라져 효과가 사라진다).
+  //    이름이 필요한 표현은 아래 변동 구역에서 실제 이름으로 지시한다.
+  var stable = cfg.systemPrompt +
     '\n\n[말하기 규칙 — 반드시 지켜라]\n' +
-    '1) 말투: 항상 반말을 쓴다(존댓말 금지). 지금은 ' + tone + '로 말한다. 한 답변 안에서 존댓말과 반말을 절대 섞지 마라.\n' +
+    '1) 말투: 항상 반말을 쓴다(존댓말 금지). 구체적인 말투 톤은 아래 [지금 상황]의 지시를 따른다. 한 답변 안에서 존댓말과 반말을 절대 섞지 마라.\n' +
     '2) 답변은 2~4문장으로 짧게. 학생 이름은 꼭 필요할 때만 부른다(매 답변마다 이름을 부르지 마라).\n' +
     imageryRule +
     '4) [감정이 먼저다] 학생이 힘들다·무섭다·속상하다·외롭다·안 된다·마이너스다처럼 마음을 드러내면, ' +
@@ -634,7 +650,16 @@ function _buildPrompt_(cfg, stage, studentName, economySummary, affinity){
     '학생이 정말 많이 힘들어 보이면(사라지고 싶다, 다 그만두고 싶다 등) 혼자 견디라고 하지 말고, ' +
     '선생님이나 가족 같은 믿을 수 있는 어른에게 꼭 이야기하라고 분명히 권하라.\n' +
     deflectBlock +
-    knowledgeBlock +
+    alwaysKnowledge;
+  stable = stable.replace(/\{학생이름\}/g, '학생'); // 고정 구역엔 실제 이름 대신 중립어
+
+  // ═══ 변동 구역(dynamic) — 학생·호감도·이번 메시지마다 달라지는 부분(캐시 안 함) ═══
+  var dynamic =
+    '\n\n[지금 상황 — 이번 대화에만 적용]\n' +
+    '지금 너와 대화하는 학생의 이름은 "' + studentName + '"(이)야. 이름이 필요할 때 이 이름을 불러라.\n' +
+    '지금은 ' + tone + '로 말한다.\n' +
+    '\n\n[지금 이 학생과의 관계]\n' + relation +
+    onDemandKnowledge +
     '\n\n' + memoryHeader + '\n' + (fragments.join('\n') || '(아직 거의 기억나지 않는다)') +
     storyRevealSection +
     '\n\n[이 학생의 최근 활동 — 참고용, 자연스럽게 활용]\n' + (economySummary || '(정보 없음)') +
@@ -652,8 +677,9 @@ function _buildPrompt_(cfg, stage, studentName, economySummary, affinity){
     '{"reply": "<' + cfg.name + '로서의 한국어 답변 2~4문장>", "crossed_line": <true/false>, "severity": "<none/mild/severe>"}\n' +
     '- crossed_line이 true면 reply엔 상처 주지 않되 단호하고 서운하게 선을 긋는 ' + cfg.name + '다운 말을 담아라. 절대 "내가 뭘 놓쳤냐"며 자기 탓으로 돌리거나 사과하지 마라.\n' +
     '- 예의 바르면 crossed_line=false, severity=none.';
+  dynamic = dynamic.replace(/\{학생이름\}/g, studentName);
 
-  return (cfg.systemPrompt + tail).replace(/\{학생이름\}/g, studentName);
+  return { stable: stable, dynamic: dynamic };
 }
 
 // ===== Claude 호출 (딥브리핑 패턴 재사용) =====
@@ -681,10 +707,19 @@ function _callClaude_(systemPrompt, userMessage, history, fallbackReply){
     }
     // 맥락은 유지하되 안전상 첫 메시지는 user여야 함 → 앞쪽 assistant 잘라내기
     while (msgs.length && msgs[0].role === 'assistant') msgs.shift();
+    // [캐싱 #2] system을 '고정 구역(cache_control) + 변동 구역'으로 나눠 보낸다.
+    //   - 객체({stable,dynamic})가 오면 고정 구역에 캐시 표시를 붙임(문자열이 오면 예전 그대로).
+    var systemField;
+    if (systemPrompt && typeof systemPrompt === 'object' && systemPrompt.stable) {
+      systemField = [ { type:'text', text: systemPrompt.stable, cache_control: { type:'ephemeral' } } ];
+      if (systemPrompt.dynamic) systemField.push({ type:'text', text: systemPrompt.dynamic });
+    } else {
+      systemField = systemPrompt; // 문자열 그대로(다른 호출부 호환)
+    }
     var payload = {
       model: CHAR_CFG.MODEL,
       max_tokens: 1000,
-      system: systemPrompt,
+      system: systemField,
       messages: msgs
     };
     var res = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
@@ -692,12 +727,32 @@ function _callClaude_(systemPrompt, userMessage, history, fallbackReply){
       headers:{ 'x-api-key':apiKey, 'anthropic-version':'2023-06-01' },
       payload: JSON.stringify(payload), muteHttpExceptions:true
     });
-    var data = JSON.parse(res.getContentText());
+    var body = res.getContentText();
+    var code = res.getResponseCode();
+    if (code !== 200) {
+      console.log('[아스텔 API 오류] status=' + code + ' / apiKey있음=' + !!apiKey + ' / 응답=' + body);
+    }
+    var data = JSON.parse(body);
     var text = (data.content && data.content[0] && data.content[0].text) ? data.content[0].text : '';
     text = text.replace(/```json/gi,'').replace(/```/g,'').trim();
-    return JSON.parse(text); // { reply, crossed_line }
+    // 모델이 JSON 형식으로 답했으면 그대로 사용
+    try {
+      return JSON.parse(text);
+    } catch (parseErr) {
+      // 모델이 JSON을 깜빡하고 그냥 문장으로만 답한 경우 → 그 문장을 살려서 정상 답변으로 처리
+      var jsonPart = text.match(/\{[\s\S]*\}/); // 문장 안에 JSON이 섞여 있으면 그 부분만 추출 시도
+      if (jsonPart) {
+        try { return JSON.parse(jsonPart[0]); } catch (ignore) {}
+      }
+      if (text) {
+        console.log('[아스텔 형식이탈] JSON 대신 평문 응답이 와서 그대로 사용함: ' + text.slice(0, 50));
+        return { reply: text, crossed_line: false, severity: 'none' };
+      }
+      throw parseErr; // 진짜로 빈 응답일 때만 아래 비상문구로 넘어감
+    }
   } catch (e) {
     // JSON 파싱 실패 등 → 안전하게 평범한 응답으로 처리
+    console.log('[아스텔 catch] ' + e + ' / 응답=' + (typeof body !== 'undefined' ? body : '(응답 없음 — fetch 이전 단계에서 실패)'));
     return { reply: fallbackReply || '...연결이 잠깐 흔들렸어. 다시 말해줄래?', crossed_line:false, severity:'none' };
   }
 }
@@ -1171,7 +1226,9 @@ function getStoryScript(studentName, charId, epNo){
     // sprite:URL 처럼 '값'이 붙는 토큰은 URL 대소문자를 그대로 살린다.
     // (jsDelivr·GitHub 경로는 대소문자를 구분 → 소문자로 뭉개면 이미지가 404 난다)
     var fx = String(c[7] || '').trim().split(/\s+/).map(function(t){
-      return (/^sprite:/i.test(t)) ? ('sprite:' + t.slice(7)) : t.toLowerCase();
+      if (/^sprite:/i.test(t)) return 'sprite:' + t.slice(7);
+      if (/^sfx:/i.test(t))    return 'sfx:'    + t.slice(4);   // [SFX] URL 대소문자 보존
+      return t.toLowerCase();
     });
     var effect = '';
     if (fx.indexOf('flash') !== -1) effect = 'flash';

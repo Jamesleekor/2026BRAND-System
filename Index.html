@@ -945,6 +945,7 @@
     }
     .mail-item.expanded .mail-detail { display: block; }
     .mail-body    { font-size: 13px; color: #555; white-space: pre-wrap; line-height: 1.5; padding-top: 10px; }
+    .mail-link { color: #2980b9; font-weight: 600; text-decoration: underline; word-break: break-all; }
     .mail-time    { font-size: 11px; color: #bbb; margin-top: 6px; }
 
     /* ══════════════════════════════════════════════════════
@@ -1829,6 +1830,40 @@
       font-size: 11px; color: #c0ccd5; line-height: 1.4; /* 가독성 개선: 크롬북 저밝기 대응 */
     }
 
+    /* ══ 2차직업 현황판 접이식 바 (지갑 바로 아래) ══ */
+    .jobboard-card { padding: 0; overflow: hidden; }
+    .jobboard-bar {
+      display: flex; align-items: center; gap: 10px;
+      padding: 16px 20px; cursor: pointer; user-select: none;
+    }
+    .jobboard-bar-title { font-size: 16px; color: var(--text-secondary); font-weight: 600; }
+    .jobboard-bar-count {
+      font-size: 12px; color: var(--text-muted);
+      background: var(--card-bg-2); border: 1px solid var(--border-color);
+      border-radius: 12px; padding: 2px 9px;
+    }
+    .jobboard-bar-toggle {
+      margin-left: auto; font-size: 13px; color: #bc8cff; white-space: nowrap;
+      border: 1px solid rgba(188,140,255,0.4); border-radius: 20px; padding: 6px 14px;
+    }
+    .jobboard-body { padding: 0 20px 18px; }
+    .jobboard-list { display: flex; flex-direction: column; gap: 8px; max-height: 420px; overflow-y: auto; }
+    .jobrow {
+      background: var(--card-bg-2); border: 1px solid var(--border-color);
+      border-radius: 10px; padding: 10px 13px;
+    }
+    .jobrow-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+    .jobrow-name { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+    .jobrow-job { font-size: 12px; color: #bc8cff; font-weight: 600; }
+    .jobrow-desc { display: flex; gap: 6px; align-items: flex-start; cursor: pointer; margin-top: 6px; }
+    .jobrow-desc-tx {
+      flex: 1; min-width: 0; font-size: 11px; color: #c0ccd5; line-height: 1.5;
+      display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .jobrow.open .jobrow-desc-tx { -webkit-line-clamp: unset; }
+    .jobrow-desc-cv { flex-shrink: 0; font-size: 11px; color: var(--text-muted); transition: transform 0.2s; margin-top: 2px; }
+    .jobrow.open .jobrow-desc-cv { transform: rotate(180deg); }
+
     /* ══ 헤더 캐릭터 거울 ══ */
     #charImgArea { position: relative; }
 
@@ -2480,7 +2515,7 @@
 
   <div id="loginSection" class="login-box">
     <i class="fas fa-university" style="font-size:30px;color:var(--primary-color);margin-bottom:10px;"></i>
-    <h2>2026 동화초 5-4 자산관리 시스템</h2>
+    <h2>2026 BRAND 시스템</h2>
     <p style="font-size:12px;color:var(--text-secondary);">이름을 입력하세요</p>
     <input type="text" id="studentName" placeholder="예: 이순신">
     <input type="password" id="studentPassword" placeholder="비밀번호를 입력하세요">
@@ -2624,6 +2659,24 @@
       </div>
     </div>
 
+    <!-- ── 우리 반 2차직업 현황판 (접이식 바 · 지갑 바로 아래) ── -->
+    <div class="card hud-card jobboard-card" style="border-top:2px solid #bc8cff;margin-bottom:16px;">
+      <div class="jobboard-bar" id="jobboardBar" onclick="toggleJobBoard()">
+        <span class="jobboard-bar-title">👥 우리 반 2차직업 현황판</span>
+        <span class="jobboard-bar-count" id="jobboardCount"></span>
+        <span class="jobboard-bar-toggle" id="jobboardToggleLabel">펼쳐보기 ▾</span>
+      </div>
+      <div class="jobboard-body" id="jobboardBody" style="display:none;">
+        <div id="jobMarketGrid" class="jobboard-list">
+          <!-- JS로 렌더링 -->
+        </div>
+        <!-- 기존 테이블 (JS 호환용 숨김) -->
+        <div style="display:none;">
+          <table id="jobMarketTable"><tbody id="jobMarketBody"></tbody></table>
+        </div>
+      </div>
+    </div>
+
     <!-- ── 신용등급 + 티어 카드 ── -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
 
@@ -2752,18 +2805,6 @@
           <div style="font-size:32px;margin-bottom:8px;">🔒</div>
           <div style="font-size:12px;color:var(--text-secondary);">금 광석 이상 달성 시 해금</div>
         </div>
-      </div>
-    </div>
-
-    <!-- ── 우리 반 2차직업 현황판 (2열 그리드) ── -->
-    <div class="card hud-card" style="border-top:2px solid #bc8cff;">
-      <div class="card-title"><span>👥 우리 반 2차직업 현황판</span></div>
-      <div id="jobMarketGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;max-height:320px;overflow-y:auto;">
-        <!-- JS로 렌더링 -->
-      </div>
-      <!-- 기존 테이블 (JS 호환용 숨김) -->
-      <div style="display:none;">
-        <table id="jobMarketTable"><tbody id="jobMarketBody"></tbody></table>
       </div>
     </div>
 
@@ -3961,8 +4002,10 @@
               s.read=true; s.isNew=false; c._hasNew=stories.some(function(x){return x.unlocked&&!x.read;});
               var d=$('h2MeetDot'); if(d) d.style.display=c._hasNew?'block':'none'; renderFriends();
             }
-            // 5편은 감상 안내 모달을 먼저 띄움
-            if(Number(s.ep)===5){
+            // [수정] 감상 안내 모달은 '긴 편'에만 띄운다. 캐릭터ID + 편 번호로 지정.
+            //   아래 배열에 'CHAR-###:편번호' 형태로 추가/삭제하면 된다.
+            var NOTICE_EPISODES = ['CHAR-022:5', 'CHAR-012:6'];   // 아스텔 5편, 루미 6편
+            if(NOTICE_EPISODES.indexOf(String(c.charId).trim() + ':' + Number(s.ep)) !== -1){
               var ov=$('h2NoticeOv'); ov.classList.add('show');
               $('h2NoticeEnter').onclick=function(){ ov.classList.remove('show'); _enterStory_(); };
               $('h2NoticeLater').onclick=function(){ ov.classList.remove('show'); };
@@ -5851,13 +5894,13 @@
 
   // 3. 티어 뱃지 이미지 링크
   var TIER_IMAGES = {
-    '새싹':           'https://lh3.googleusercontent.com/d/1zFDg7LEHBOO0PpBdo2e4kuVTOJGBUBRQ=s200',
-    '브론즈':         'https://lh3.googleusercontent.com/d/1OIyG_nSFeX_bBV1jtxw-kSBChhCHjLVr=s200',
-    '빛나는 브론즈':   'https://lh3.googleusercontent.com/d/1u4I2VY4AeRFsDspjEki9L-hQ1j5JiKGx=s200',
-    '거친 실버':       'https://lh3.googleusercontent.com/d/1uWgt0OOK5rJcVTEi-VyGp5UnVgWwyGlC=s200',
-    '성장한 실버':     'https://lh3.googleusercontent.com/d/1osUBjhruiHVJN4t-Gpr3ZF4q8P0TpDJJ=s200',
-    '진화한 실버':     'https://lh3.googleusercontent.com/d/1BUY9C9_L4OifyyIYZRG5hUwCotRMfpdV=s200',
-    '은빛 극점':       'https://lh3.googleusercontent.com/d/1WUyRfQrEp694zsOF3HW5TJ7cNSV7hh6N=s200',
+    '새싹':           'https://raw.githubusercontent.com/Jamesleekor/brand-assets/main/tier_icon/rankicon_sprout.png',
+    '브론즈':         'https://raw.githubusercontent.com/Jamesleekor/brand-assets/main/tier_icon/rankicon_bronze1.png',
+    '빛나는 브론즈':   'https://raw.githubusercontent.com/Jamesleekor/brand-assets/main/tier_icon/rankicon_bronze2.png',
+    '거친 실버':       'https://raw.githubusercontent.com/Jamesleekor/brand-assets/main/tier_icon/rankicon_silver1.png',
+    '성장한 실버':     'https://raw.githubusercontent.com/Jamesleekor/brand-assets/main/tier_icon/rankicon_silver2.png',
+    '진화한 실버':     'https://raw.githubusercontent.com/Jamesleekor/brand-assets/main/tier_icon/rankicon_silver3.png',
+    '은빛 극점':       'https://raw.githubusercontent.com/Jamesleekor/brand-assets/main/tier_icon/rankicon_silver4.png',
     '금 광석':         'https://raw.githubusercontent.com/Jamesleekor/brand-assets/main/tier_icon/rankicon_gold1.png',
     '제련된 골드':     'https://raw.githubusercontent.com/Jamesleekor/brand-assets/main/tier_icon/rankicon_gold2.png',
     '정련된 골드':     'https://raw.githubusercontent.com/Jamesleekor/brand-assets/main/tier_icon/rankicon_gold3.png',
@@ -7625,8 +7668,12 @@ function requestCancelSaving(savId, principal) {
   )) return;
   if (!confirm('⚠️ 이 작업은 되돌릴 수 없습니다.\n정말 해지하시겠습니까?')) return;
 
+  var cancelBtn = document.querySelector('[onclick*="requestCancelSaving(\'' + savId + '\'"]');
+  if (cancelBtn) { cancelBtn.disabled = true; cancelBtn.innerText = '⏳ 처리 중...'; }
+
   google.script.run
     .withSuccessHandler(function(res) {
+      if (cancelBtn) { cancelBtn.disabled = false; cancelBtn.innerText = '⚠️ 중도 해지'; }
       if (res.success) {
         alert(res.msg);
         var balEl = document.getElementById('myBalance');
@@ -7637,7 +7684,7 @@ function requestCancelSaving(savId, principal) {
         alert('해지 실패: ' + res.msg);
       }
     })
-    .withFailureHandler(function(err) { alert('서버 오류: ' + err.message); })
+    .withFailureHandler(function(err) { if (cancelBtn) { cancelBtn.disabled = false; cancelBtn.innerText = '⚠️ 중도 해지'; } alert('서버 오류: ' + err.message); })
     .cancelSaving(window._currentStudentName, savId);
 }
 
@@ -7753,21 +7800,33 @@ function requestCancelSaving(savId, principal) {
       tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;padding:16px;color:#bbb;">아직 2차 직업을 가진 학생이 없습니다.</td></tr>';
     }
   
-    // ── jobMarketGrid 렌더링 (홈탭 2열 그리드) ──
+    // ── jobMarketGrid 렌더링 (홈탭 접이식 바 · 컴팩트 목록) ──
     var _grid = document.getElementById('jobMarketGrid');
     if (_grid) {
-      var _jm = data.jobMarket || [];
+      var _jm = (data.jobMarket || []).slice();
+      var _cnt = document.getElementById('jobboardCount');
+      if (_cnt) _cnt.innerText = _jm.length ? (_jm.length + '명') : '';
       if (_jm.length === 0) {
-        _grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--text-muted);font-size:13px;">아직 2차 직업을 가진 학생이 없습니다.</div>';
+        _grid.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px;">아직 2차 직업을 가진 학생이 없습니다.</div>';
       } else {
+        // 보는 학생ID + 날짜를 시드로 순서를 섞어, 특정 학생이 항상 위에 노출되는 편향을 제거
+        var _now  = new Date();
+        var _seed = (window._currentStudentName || 'guest') + '|' +
+                    _now.getFullYear() + '-' + (_now.getMonth() + 1) + '-' + _now.getDate();
+        _jm = _seededShuffle(_jm, _seed);
         _grid.innerHTML = _jm.map(function(j) {
           var badgeHtml = j.badge
-            ? '<span style="font-size:13px;margin-left:4px;" title="인증됨">' + j.badge + '</span>'
+            ? '<span style="font-size:12px;margin-left:4px;" title="인증됨">' + j.badge + '</span>'
             : '';
-          return '<div class="job-market-card">' +
-            '<div class="job-market-name">' + (j.studentName || '') + badgeHtml + '</div>' +
-            '<div class="job-market-job">' + (j.jobName || '') + '</div>' +
-            '<div class="job-market-desc">' + (j.jobDesc || '') + '</div>' +
+          return '<div class="jobrow">' +
+            '<div class="jobrow-head">' +
+              '<span class="jobrow-name">' + (j.studentName || '') + badgeHtml + '</span>' +
+              '<span class="jobrow-job">' + (j.jobName || '') + '</span>' +
+            '</div>' +
+            '<div class="jobrow-desc" onclick="toggleJobRow(this)">' +
+              '<span class="jobrow-desc-tx">' + (j.jobDesc || '') + '</span>' +
+              '<span class="jobrow-desc-cv">▾</span>' +
+            '</div>' +
           '</div>';
         }).join('');
       }
@@ -7778,6 +7837,46 @@ function requestCancelSaving(savId, principal) {
   function scrollToJob2() {
     var el = document.getElementById('job2Section');
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // ── 2차직업 현황판: 시드 기반 순서 섞기 (학생ID + 날짜) ──
+  // 같은 학생·같은 날에는 순서 고정(안정적), 날짜가 바뀌면 재배치(회전 효과).
+  // 학생마다 시드가 달라 "특정 학생이 모두에게 항상 최상단"인 상황이 사라짐.
+  function _seededShuffle(arr, seedStr) {
+    var h = 2166136261;
+    for (var i = 0; i < seedStr.length; i++) {
+      h ^= seedStr.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    var seed = h >>> 0;
+    function rnd() {
+      seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+      var t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    }
+    var a = arr.slice();
+    for (var j = a.length - 1; j > 0; j--) {
+      var k = Math.floor(rnd() * (j + 1));
+      var tmp = a[j]; a[j] = a[k]; a[k] = tmp;
+    }
+    return a;
+  }
+
+  // ── 2차직업 현황판: 접이식 바 토글 (기본 닫힘) ──
+  function toggleJobBoard() {
+    var body  = document.getElementById('jobboardBody');
+    var label = document.getElementById('jobboardToggleLabel');
+    if (!body) return;
+    var willOpen = (body.style.display === 'none');
+    body.style.display = willOpen ? 'block' : 'none';
+    if (label) label.innerHTML = willOpen ? '접기 ▴' : '펼쳐보기 ▾';
+  }
+
+  // ── 2차직업 현황판: 소개 줄 탭 → 원문 펼치기/접기 ──
+  function toggleJobRow(el) {
+    var row = el.closest('.jobrow');
+    if (row) row.classList.toggle('open');
   }
 
   // ── 2차 직업 신청 ────────────────────────────────────────────
@@ -8297,6 +8396,17 @@ function requestCancelSaving(savId, principal) {
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
+  // 우편 본문의 URL을 클릭 가능한 링크로 변환
+  function _linkifyMailBody(s) {
+    var safe = _escapeHtml(s);
+    return safe.replace(/(https?:\/\/[^\s<]+)/g, function(url) {
+      var tail = '';
+      // 문장 끝 문장부호가 링크에 붙는 것 방지
+      while (/[.,!?)\]]$/.test(url)) { tail = url.slice(-1) + tail; url = url.slice(0, -1); }
+      return '<a href="' + url + '" target="_blank" rel="noopener" class="mail-link">🔗 ' + url + '</a>' + tail;
+    });
+  }
+
   function openMailModal() {
     document.getElementById('mailModal').classList.add('open');
     var list = document.getElementById('mailList');
@@ -8320,7 +8430,7 @@ function requestCancelSaving(savId, principal) {
             '<span class="mail-caret">▾</span>' +
           '</div>' +
           '<div class="mail-detail">' +
-            '<div class="mail-body">' + _escapeHtml(m.body) + '</div>' +
+            '<div class="mail-body">' + _linkifyMailBody(m.body) + '</div>' +
             '<div class="mail-time">' + _escapeHtml(m.sentAt) + '</div>' +
           '</div>' +
         '</div>';
@@ -8987,6 +9097,7 @@ function requestCancelSaving(savId, principal) {
       .withSuccessHandler(function(res) {
         if (btn) { btn.disabled = false; btn.innerText = '장착'; }
         if (!res.success) { alert('오류: ' + res.msg); return; }
+        alert(res.msg || '✅ 장착되었습니다.');
         if (res.category === '스킨')                  applySkin(res.resourceVal);
         if (res.category === '폰트')                  applyFont(res.resourceVal);
         if (res.category.startsWith('캐릭터'))        applyCharacter(res.resourceVal);
@@ -9018,7 +9129,11 @@ function requestCancelSaving(savId, principal) {
     var _it = (_shopData.items || []).filter(function(i){ return i.itemId === itemId; })[0];
     var _isChar = !!(_it && _it.category && _it.category.indexOf('캐릭터') === 0);
     if (!confirm(_isChar ? '영입하시겠습니까?' : '구매하시겠습니까?')) return;
+    var _buyBtn = document.querySelector('[onclick^="buyShopItem(\'' + itemId + '\'"]');
+    var _buyBtnText = _buyBtn ? _buyBtn.textContent : '';
+    if (_buyBtn) { _buyBtn.disabled = true; _buyBtn.textContent = '⏳ 처리 중...'; }
     google.script.run.withSuccessHandler(function(res) {
+      if (_buyBtn) { _buyBtn.disabled = false; _buyBtn.textContent = _buyBtnText; }
       if (!res.success) { alert('오류: ' + res.msg); return; }
       alert(res.msg);
       // 즉시 스킨/폰트/캐릭터 적용
@@ -9027,6 +9142,9 @@ function requestCancelSaving(savId, principal) {
       if (res.category.startsWith('캐릭터'))      applyCharacter(res.resourceVal); // 캐릭터(남)/(여) 통합
       // 상점 새로고침
       openShopModal();
+    }).withFailureHandler(function(err) {
+      if (_buyBtn) { _buyBtn.disabled = false; _buyBtn.textContent = _buyBtnText; }
+      alert('오류: ' + err.message);
     }).purchaseShopItem(window._currentStudentName, itemId);
   }
 
@@ -9223,6 +9341,7 @@ function requestCancelSaving(savId, principal) {
           return;
         }
         _historyData = null;
+        alert(res.msg || '✅ 기부가 완료되었습니다.');
       })
       .withFailureHandler(function(err) {
         if (btn) { btn.disabled = false; btn.innerText = '💚 기부하기'; }
@@ -9536,6 +9655,7 @@ function requestCancelSaving(savId, principal) {
     google.script.run
       .withSuccessHandler(function(res) {
         if (res.success) {
+          alert(res.msg || '✅ 평점이 저장되었습니다.');
           openP2PHistoryModal();
         } else {
           alert('평점 저장 실패: ' + res.msg);
@@ -10880,6 +11000,7 @@ function submitPeerEvalForm() {
         alert('오류: ' + (res ? res.msg : '알 수 없는 오류'));
         return;
       }
+      alert(res.msg || '✅ 동료평가가 제출되었습니다.');
       // 제출 성공 → 모달 내 목록 새로고침
       _peerEvalCurrentTarget = null;
       _peerEvalCurrentScore  = null;
@@ -11432,6 +11553,7 @@ function goToPeerEvalFromGate() {
     story = s; idx=-1; muted=false; $('bvnMute').textContent='🔊';
     _preloadStoryImages(s);   // ★ 등장 이미지 전부 미리 받아두기
     // [선택지] 점프 대상(순서번호) → 배열 인덱스 매핑 생성
+    _epiMidPlayed = false;   // [최종장] 새 이야기를 열 때 초기화
     orderToIdx = {};
     for(var oi=0; oi<(s.cuts||[]).length; oi++){ var o=s.cuts[oi].order; if(o) orderToIdx[o]=oi; }
     var img=$('bvnSprite'); if(s.sprite) img.src=s.sprite;
@@ -11477,6 +11599,31 @@ function goToPeerEvalFromGate() {
       if(c.effects[i].indexOf('sprite:')===0) return c.effects[i].slice(7).trim();
     }
     return null;
+  }
+  // ── [SFX] 효과음 전용 채널 ──────────────────────────────────────
+  //   효과 칸에 sfx:URL 토큰 → BGM은 그대로 흐르고 효과음만 1회 얹힌다.
+  //   sfx:none / sfx:- 를 넣으면 재생 중인 효과음을 끈다.
+  //   BGM(audio)과 완전히 별개 변수라 서로 간섭하지 않는다.
+  var sfxAudio = null;
+  var SFX_VOLUME = 0.7;   // 효과음 음량 (BGM은 0.5)
+  function _sfxToken(c){
+    if(!c || !c.effects) return null;
+    for(var i=0;i<c.effects.length;i++){
+      if(c.effects[i].indexOf('sfx:')===0) return c.effects[i].slice(4).trim();
+    }
+    return null;
+  }
+  function stopSfx(){
+    if(sfxAudio){ try{ sfxAudio.pause(); }catch(e){} sfxAudio = null; }
+  }
+  function playSfx(url){
+    if(!url) return;
+    var u = url.toLowerCase();
+    if(u==='none' || u==='-'){ stopSfx(); return; }
+    stopSfx();
+    if(muted) return;
+    sfxAudio = Object.assign(new Audio(url), {loop:false, volume:SFX_VOLUME});
+    sfxAudio.play().catch(function(){ /* 자동재생 차단 시 무시 */ });
   }
   function showSpeakerSprite(c){
     var spk=_cleanSpk(c.speaker);
@@ -11690,6 +11837,20 @@ function goToPeerEvalFromGate() {
     var cur = (idx>=0 && idx<story.cuts.length) ? story.cuts[idx] : null;
     if(cur && cur.type==='choice'){ return; }       // [선택지] 버튼으로만 진행 (탭 무시)
     if(cur && cur.jump!=null){ return goToOrder(cur.jump); }  // [선택지] 분기 끝 → 합류 지점 점프
+
+    // [최종장] 본편 마지막 컷(atCut)을 넘기는 순간 → 엔딩 내레이션을 먼저 재생하고,
+    //   내레이션이 걷히면서 다음 컷(히든 엔딩)이 드러나게 한다.
+    var _ec = _epilogueConfigOf(story && story.title);
+    if(_ec && _ec.atCut && !_epiMidPlayed && cur && Number(cur.order) === Number(_ec.atCut)){
+      _epiMidPlayed = true;
+      playAstelEpilogue(function(){
+        idx++;
+        if(idx >= story.cuts.length){ return end(); }
+        render(story.cuts[idx]);        // 히든 엔딩 첫 컷을 오버레이 뒤에서 미리 그려둔다
+      }, _ec, true);                    // true = 중간 재생(엔딩 화면/버튼 처리 건너뜀)
+      return;
+    }
+
     idx++;
     if(idx >= story.cuts.length){ return end(); }
     render(story.cuts[idx]);
@@ -11731,6 +11892,7 @@ function goToPeerEvalFromGate() {
     if(c.effect==='flash'){ var f=$('bvnFlash'); f.classList.remove('go'); void f.offsetWidth; f.classList.add('go'); }
     if(c.effect==='shake'){ var v=$('brandVN'); v.classList.remove('shake'); void v.offsetWidth; v.classList.add('shake'); }
     applyFx(c);   // [효과확장] 필터·줌·흔들림·오버레이·파티클 적용 (없으면 자동 해제)
+    playSfx(_sfxToken(c));   // [SFX] 효과 칸에 sfx:URL 있으면 1회 재생 (BGM 유지)
 
     if(c.type==='title'){
       $('bvnBox').classList.remove('show'); hideSprite();
@@ -11819,9 +11981,12 @@ function goToPeerEvalFromGate() {
   }
 
   var epiloguePlaying=false;   // [최종장] 에필로그 재생 중 입력 잠금용 (호이스팅되어 next()에서도 참조됨)
+  var HIDDEN_HOLD_MS = 9000;   // [히든 엔딩] JS 히든 방식에서 엔딩 화면을 보여주는 시간(밀리초)
+  var _epiMidPlayed = false;   // [최종장] 도중 내레이션을 이미 재생했는지 (중복 방지)
 
-  // [최종장 엔딩 연출] 이 제목의 이야기일 때만 에필로그 내레이션 재생. 다른 캐릭터/다른 편은 기존대로.
-  var EPILOGUE_TITLE = '멈춰버린 밤';
+  // [최종장 엔딩 연출] 아래 표에 등록된 제목의 이야기일 때만 에필로그 내레이션 재생.
+  //   키 = 이야기 제목에 포함된 문구, 값 = { lines: 내레이션 줄, hidden: 히든 엔딩(선택) }
+  var EPILOGUE_TITLE = '멈춰버린 밤';   // (구버전 호환용)
   // 타이밍(ms) — 음악 길이에 맞춰 이 숫자만 조절하면 됨
   var EPILOGUE_TIMING = {
     fadeToBlack:2500, holdBlack:2500, lineFade:1800, afterOpening:1600,
@@ -11838,11 +12003,65 @@ function goToPeerEvalFromGate() {
     { text:'그러니 가끔은, 그를 보러 와주길.' },
     { text:'……그 긴 기다림이, 조금은 덜 외롭도록.' }
   ];
+
+  // ── 루미 최종장(6편) 에필로그 ──
+  var RUMI_EPILOGUE_LINES = [
+    { text:'긴 겨울이 있었다.', opening:true, blankAfter:true },
+    { text:'닿으면 부서질까 두려워' },
+    { text:'끝내 아무도 곁에 두지 못했던 눈여우가 있었다.', blankAfter:true },
+    { text:'그 겨울의 끝까지 남아' },
+    { text:'그녀의 이름을 불러 준 단 한 사람.', witness:true, blankAfter:true, longPauseAfter:true },
+    { text:'그러니 가끔은, 그녀를 보러 와주길.' },
+    { text:'……눈이 녹아야, 봄이 오는 거니까.' }
+  ];
+
+  // 히든 엔딩(리미넬). 엔딩 화면이 잠시 머문 뒤 다시 암전되며 재생된다.
+  //   lines: 한 줄씩 페이드인 / speaker 표시가 필요하면 text 앞에 직접 넣으면 된다.
+  var RUMI_HIDDEN = {
+    heading: '― 아르카눔, 경계의 기록관 ―',
+    lines: [
+      { text:'…녹티스. 그게 네 선택인가?' },
+      { text:'아니면, 나에게 보여주고 싶었던 건가.', blankAfter:true },
+      { text:'후후… 뭐 어쨌든.' },
+      { text:'덕분에 저 아이는 살았구나.', blankAfter:true, longPauseAfter:true },
+      { text:'루미넬이라…' },
+      { text:'…그 이름은 오랜만이로군.', blankAfter:true },
+      { text:'살려 둔 건 정을 둬서가 아니야.' },
+      { text:'그저, 조금 궁금했을 뿐이지.', blankAfter:true },
+      { text:'내가 두고 온 한 조각이,' },
+      { text:'나와는 다른 무언가가 되어 가는 모습이.', blankAfter:true, longPauseAfter:true },
+      { text:'그리고 당신은... 하필, 저 아이와 이어졌다라…' },
+      { text:'……그건 정말 우연이었을까.', witness:true, blankAfter:true },
+      { text:'후. …그 이야긴, 아직 이르지.', blankAfter:true, longPauseAfter:true },
+      { text:'…기억해 두세요.' },
+      { text:'저 아이의 겨울은 끝났지만…' },
+      { text:'진짜 추위는, 아직 오지 않았으니…', witness:true, blankAfter:true },
+      { text:'경계의 기록관은, 조용히 창을 닫았다.' }
+    ]
+  };
+
+  // 제목별 에필로그 설정표. 제목에 키 문구가 포함되면 해당 연출이 재생된다.
+  //   atCut : 그 순서번호의 컷을 보고 넘길 때 내레이션을 재생한 뒤, 다음 컷으로 이어간다.
+  //           (루미처럼 히든 엔딩이 TSV 컷으로 들어 있는 경우 사용. 본편 마지막 컷 번호를 적는다)
+  //   atCut이 없으면 기존처럼 '모든 컷이 끝난 뒤' 재생한다. (아스텔)
+  var EPILOGUE_BY_TITLE = [
+    { key:'멈춰버린 밤', lines:EPILOGUE_LINES,      hidden:null },
+    { key:'맞잡은 손',   lines:RUMI_EPILOGUE_LINES, hidden:null, atCut:235 }
+  ];
+  function _epilogueConfigOf(title){
+    title = String(title||'');
+    for(var i=0;i<EPILOGUE_BY_TITLE.length;i++){
+      if(title.indexOf(EPILOGUE_BY_TITLE[i].key) !== -1) return EPILOGUE_BY_TITLE[i];
+    }
+    return null;
+  }
+
   function _epiSleep(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
 
   // 에필로그 내레이션 재생 → 끝나면 onReveal() 호출(기존 엔딩 화면 표시)
-  async function playAstelEpilogue(onReveal){
+  async function playAstelEpilogue(onReveal, cfg, midStory){
     var T = EPILOGUE_TIMING;
+    var LINES = (cfg && cfg.lines) ? cfg.lines : EPILOGUE_LINES;   // 캐릭터별 내레이션
     epiloguePlaying = true;
 
     // 검은 오버레이 + 내레이션 DOM 생성 (기존 CSS 안 건드리고 인라인 스타일로)
@@ -11856,7 +12075,7 @@ function goToPeerEvalFromGate() {
     ov.appendChild(box);
     $('brandVN').appendChild(ov);
 
-    var els = EPILOGUE_LINES.map(function(it){
+    var els = LINES.map(function(it){
       var pp = document.createElement('p');
       var base = 'margin:0;opacity:0;transition:opacity '+T.lineFade+'ms ease;font-size:23px;letter-spacing:.04em;';
       if(it.opening) base += 'font-size:26px;letter-spacing:.12em;color:#c6cdf0;';
@@ -11872,13 +12091,13 @@ function goToPeerEvalFromGate() {
 
     for(var i=0;i<els.length;i++){
       els[i].style.opacity = '1';                    // 줄 페이드인
-      var it = EPILOGUE_LINES[i];
+      var it = LINES[i];
       await _epiSleep(T.lineFade);
       if(it.longPauseAfter)      await _epiSleep(T.longPause);
       else if(it.blankAfter)     await _epiSleep(T.betweenLines);
       else if(i===0)             await _epiSleep(T.afterOpening);
       else                       await _epiSleep(T.gapSmall);
-      if(EPILOGUE_LINES[i+1] && EPILOGUE_LINES[i+1].witness) await _epiSleep(T.beforeWitness);
+      if(LINES[i+1] && LINES[i+1].witness) await _epiSleep(T.beforeWitness);
     }
 
     await _epiSleep(T.narrationHold);                // 마지막 두 줄 머무름
@@ -11892,18 +12111,90 @@ function goToPeerEvalFromGate() {
     await _epiSleep(T.revealEnding);
     if(ov.parentNode) ov.parentNode.removeChild(ov);
 
+    // [중간 재생] 이야기 도중(히든 엔딩 앞)에 재생한 경우: 버튼/엔딩화면 처리 없이 여기서 종료.
+    if(midStory){ epiloguePlaying = false; return; }
+
     await _epiSleep(T.buttonDelay);                  // 잠시 그림·음악만 → 돌아가기 버튼 등장
+
+    // [히든 엔딩 — JS 방식] 설정표에 hidden이 있을 때만. (TSV 컷으로 만든 경우엔 쓰지 않는다)
+    if(cfg && cfg.hidden){
+      await _epiSleep(HIDDEN_HOLD_MS);
+      await _playHiddenEnding(cfg.hidden);
+    }
+
     var b=$('bvnEndBtn'); if(b){ b.style.transition='opacity 1.2s ease'; b.style.opacity='1'; b.style.pointerEvents='auto'; }
     epiloguePlaying = false;
+  }
+
+  // [히든 엔딩] 엔딩 화면 위로 다시 암전 → 대사 한 줄씩 → 걷힘.
+  //   본편 에필로그와 같은 타이밍 값을 쓰되, 히든다운 여운을 위해 조금 더 느리게 간다.
+  async function _playHiddenEnding(H){
+    var T = EPILOGUE_TIMING;
+    var LINES = H.lines || [];
+
+    var ov = document.createElement('div');
+    ov.id = 'bvnHidden';
+    ov.style.cssText = 'position:absolute;inset:0;z-index:75;display:flex;align-items:center;'
+      + 'justify-content:center;background:#000;opacity:0;transition:opacity '+T.fadeToBlack+'ms ease;';
+    var box = document.createElement('div');
+    box.style.cssText = "max-width:760px;padding:0 28px;text-align:center;color:#cfd6f2;"
+      + "line-height:2.1;font-family:'Noto Serif KR',serif;";
+    ov.appendChild(box);
+    $('brandVN').appendChild(ov);
+
+    // 소제목(장소 표기)
+    var head = null;
+    if(H.heading){
+      head = document.createElement('p');
+      head.style.cssText = 'margin:0 0 26px;opacity:0;transition:opacity '+T.lineFade+'ms ease;'
+        + 'font-size:19px;letter-spacing:.22em;color:#8f9ac9;';
+      head.textContent = H.heading; box.appendChild(head);
+    }
+
+    var els = LINES.map(function(it){
+      var pp = document.createElement('p');
+      var base = 'margin:0;opacity:0;transition:opacity '+T.lineFade+'ms ease;font-size:23px;letter-spacing:.04em;';
+      if(it.witness) base += 'color:#e6ecff;letter-spacing:.12em;text-shadow:0 0 18px rgba(150,170,255,.55);';
+      pp.style.cssText = base; pp.textContent = it.text; box.appendChild(pp);
+      if(it.blankAfter){ var sp=document.createElement('div'); sp.style.height='14px'; box.appendChild(sp); }
+      return pp;
+    });
+
+    await _epiSleep(30);
+    ov.style.opacity = '1';                          // 다시 암전
+    await _epiSleep(T.fadeToBlack + T.holdBlack);
+
+    if(head){ head.style.opacity='1'; await _epiSleep(T.lineFade + 900); }
+
+    for(var i=0;i<els.length;i++){
+      els[i].style.opacity = '1';
+      var it = LINES[i];
+      await _epiSleep(T.lineFade);
+      if(it.longPauseAfter)      await _epiSleep(T.longPause);
+      else if(it.blankAfter)     await _epiSleep(T.betweenLines);
+      else                       await _epiSleep(T.gapSmall);
+      if(LINES[i+1] && LINES[i+1].witness) await _epiSleep(T.beforeWitness);
+    }
+
+    await _epiSleep(T.narrationHold);
+    box.style.transition = 'opacity '+T.narrationFade+'ms ease';
+    box.style.opacity = '0';
+    await _epiSleep(T.narrationFade);
+
+    ov.style.transition = 'opacity '+T.revealEnding+'ms ease';
+    ov.style.opacity = '0';                          // 걷히면 엔딩 화면으로 복귀
+    await _epiSleep(T.revealEnding);
+    if(ov.parentNode) ov.parentNode.removeChild(ov);
   }
 
   function end(){
     $('bvnBox').classList.remove('show'); $('bvnTitle').classList.remove('show'); $('bvnNext').classList.remove('show');
     $('bvnEndT').textContent = story.title || '';
-    var isFinale = !!(story && story.title && story.title.indexOf(EPILOGUE_TITLE) !== -1);
-    if(isFinale){
+    var epiCfg = _epilogueConfigOf(story && story.title);   // [최종장] 제목으로 연출 설정 조회
+    if(epiCfg && epiCfg.atCut) epiCfg = null;              // atCut 방식은 이미 도중에 재생함
+    if(epiCfg){
       var b=$('bvnEndBtn'); if(b){ b.style.opacity='0'; b.style.pointerEvents='none'; }   // 버튼 잠시 숨김
-      playAstelEpilogue(function(){ $('bvnEnd').classList.add('show'); });                // 내레이션 → 엔딩 화면
+      playAstelEpilogue(function(){ $('bvnEnd').classList.add('show'); }, epiCfg);        // 내레이션 → 엔딩 화면 → (히든)
     } else {
       $('bvnEnd').classList.add('show');                                                  // 기존 동작 그대로
     }
@@ -11911,10 +12202,12 @@ function goToPeerEvalFromGate() {
   }
 
   function close(){ var el=$('brandVN'); el.classList.remove('vis');
-    var _ov=$('bvnEpilogue'); if(_ov&&_ov.parentNode) _ov.parentNode.removeChild(_ov); epiloguePlaying=false;   // [최종장] 정리
+    var _ov=$('bvnEpilogue'); if(_ov&&_ov.parentNode) _ov.parentNode.removeChild(_ov);
+    var _hd=$('bvnHidden');   if(_hd&&_hd.parentNode) _hd.parentNode.removeChild(_hd);
+    epiloguePlaying=false;   // [최종장] 정리
     var _b=$('bvnEndBtn'); if(_b){ _b.style.opacity=''; _b.style.pointerEvents=''; }
     setTimeout(function(){ el.classList.remove('on'); $('bvnEnd').classList.remove('show'); stopStars(); }, 360);
-    stopBgm(); clearInterval(tmr); typing=false; }
+    stopBgm(); stopSfx(); clearInterval(tmr); typing=false; }   // [SFX] 닫을 때 효과음도 정지
 
   // 별가루 (열렸을 때만)
   var cv, ctx, stars=[];
@@ -11930,18 +12223,66 @@ function goToPeerEvalFromGate() {
 
   // BGM
   function toggleMute(){ muted=!muted; $('bvnMute').textContent=muted?'🔇':'🔊';
-    if(audio){ if(!muted){ audio.volume=0.5; audio.play().catch(function(){}); } else audio.pause(); } }
-  function stopBgm(){ if(audio){ audio.pause(); } }
+    if(audio){ if(!muted){ audio.volume=0.5; audio.play().catch(function(){}); } else audio.pause(); }
+    if(muted) stopSfx(); }   // [SFX] 음소거하면 재생 중인 효과음도 즉시 정지
+  function stopBgm(){ if(audio){ _bgmFadeCancel(); audio.pause(); } }
+
+  // ===== [BGM 페이드] 음악이 뚝 끊기지 않고 서서히 잦아들게 한다 =====
+  //  음악 칸에 none / - 를 넣으면 FADE_OUT_MS 동안 볼륨이 0까지 내려간 뒤 정지.
+  //  다른 곡으로 바뀌면 옛 곡은 짧게 사라지고 새 곡이 서서히 차오른다(크로스페이드).
+  //  여운을 더 길게/짧게 하려면 아래 두 숫자만 바꾸면 된다.
+  var FADE_OUT_MS = 3000;   // 곡을 끌 때 잦아드는 시간(밀리초)
+  var FADE_IN_MS  = 1200;   // 새 곡이 차오르는 시간(밀리초)
+  var _bgmFadeTmr = null;
+
+  function _bgmFadeCancel(){ if(_bgmFadeTmr){ clearInterval(_bgmFadeTmr); _bgmFadeTmr = null; } }
+
+  // 지정한 오디오의 볼륨을 ms 동안 서서히 0으로 줄인 뒤 정지시킨다.
+  function _bgmFadeOut(target, ms){
+    if(!target) return;
+    _bgmFadeCancel();
+    var step = 50;                                   // 50ms마다 조금씩 줄인다
+    var from = target.volume;
+    if(from <= 0){ target.pause(); return; }
+    var dec = from / Math.max(1, Math.round(ms/step));
+    _bgmFadeTmr = setInterval(function(){
+      var v = target.volume - dec;
+      if(v <= 0.001){ target.volume = 0; target.pause(); _bgmFadeCancel(); }
+      else { target.volume = v; }
+    }, step);
+  }
+
+  // 새 곡을 0에서 시작해 서서히 제 음량까지 올린다.
+  function _bgmFadeIn(target, ms){
+    if(!target) return;
+    var step = 50, goal = 0.5;
+    var inc = goal / Math.max(1, Math.round(ms/step));
+    target.volume = 0;
+    var t = setInterval(function(){
+      if(!audio || audio !== target){ clearInterval(t); return; }   // 그 사이 곡이 바뀌면 중단
+      var v = target.volume + inc;
+      if(v >= goal){ target.volume = goal; clearInterval(t); }
+      else { target.volume = v; }
+    }, step);
+  }
+
   // 컷별 BGM 전환: 같은 곡이면 무시, 다르면 교체(음소거 상태 유지). ''/none이면 정지.
+  //   [수정] 즉시 pause 하지 않고 페이드아웃한다.
   function switchBgm(url){
     url = url || '';
     if(url === curBgm) return;
     curBgm = url;
-    if(audio){ audio.pause(); audio = null; }
-    if(url){
-      audio = Object.assign(new Audio(url), {loop:true, volume:0});
-      if(!muted){ audio.volume=0.5; audio.play().catch(function(){}); }
+
+    var prev = audio;
+    if(!url){
+      audio = null;
+      _bgmFadeOut(prev, FADE_OUT_MS);   // 음악 끄기 → 서서히 잦아듦
+      return;
     }
+
+    _bgmFadeOut(prev, 800);             // 곡 교체 → 옛 곡은 짧게 사라지고
+    audio = Object.assign(new Audio(url), {loop:true, volume:0});
+    if(!muted){ audio.play().catch(function(){}); _bgmFadeIn(audio, FADE_IN_MS); }
   }
 
   // 입력

@@ -2239,6 +2239,11 @@
       from { transform: scale(1); }
       to   { transform: scale(1.06); }
     }
+    /* ★ 좌우 반전 버전 — flip:true 초상화 전용 */
+    @keyframes mvpKenBurnsFlip {
+      from { transform: scaleX(-1) scale(1); }
+      to   { transform: scaleX(-1) scale(1.06); }
+    }
 
     /* ═══════════════════════════════════════════════════════
        모바일/태블릿 대응 (1149px 이하)
@@ -2584,6 +2589,11 @@
           <i class="fas fa-envelope"></i>
           <span class="hdr-btn-label">우편함</span>
           <span id="mailBadge" class="mail-badge" style="display:none;position:absolute;top:-3px;right:-3px;background:#f85149;color:#fff;border-radius:50%;width:14px;height:14px;font-size:9px;align-items:center;justify-content:center;">0</span>
+        </button>
+        <button class="hdr-btn" id="vacBtn" onclick="openVacModal()" title="여름의 별자리" style="display:none;position:relative;">
+          <i class="fas fa-star"></i>
+          <span class="hdr-btn-label">별자리</span>
+          <span id="vacDot" style="display:none;position:absolute;top:-2px;right:-2px;width:8px;height:8px;border-radius:50%;background:#ffd76a;box-shadow:0 0 6px #ffd76a;"></span>
         </button>
         <button class="hdr-btn" onclick="logout()" title="로그아웃">
           <i class="fas fa-right-from-bracket"></i>
@@ -6012,6 +6022,7 @@
 
   // ── 부가 데이터 백그라운드 로드 (공통) ───────────────────────
   function _loadSubData(name) {
+    _vacInit(name);   // ★ 여름의 별자리 — 방학 기간에만 동작, 기간 외에는 서버가 즉시 null 반환
     google.script.run
       .withSuccessHandler(function(sub) {
         if (!sub || !sub.success) return;
@@ -8212,12 +8223,14 @@ function requestCancelSaving(savId, principal) {
       imageUrl: 'https://cdn.jsdelivr.net/gh/Jamesleekor/brand-assets@main/mvp/April_MVP.png' }
     // 추후 추가 시: { month: '월', name: '학생이름', color: '색상키', imageUrl: '...MVP.png' }
   ];
-  var MVP_RIGHT = [  // 우측 패널 (5월·6월) — 아래로 스크롤
-    { month: '5월', name: '한서현',   color: 'crimson-rose',
+  var MVP_RIGHT = [  // 우측 패널 (5월·6월·7월) — 아래로 스크롤
+    { month: '5월', name: '한서현',   color: 'crimson-rose', flip: true,
       imageUrl: 'https://cdn.jsdelivr.net/gh/Jamesleekor/brand-assets@main/mvp/May_MVP.png' },
     { month: '6월', name: '류은우',   color: 'teal-cyan',
-      imageUrl: 'https://cdn.jsdelivr.net/gh/Jamesleekor/brand-assets@main/mvp/June_MVP.png' }
-    // 7월 MVP 선정 시: { month: '7월', name: '학생이름', color: 'amber-gold', imageUrl: '...July_MVP.png' }
+      imageUrl: 'https://cdn.jsdelivr.net/gh/Jamesleekor/brand-assets@main/mvp/June_MVP.png' },
+    { month: '7월', name: '김서영',   color: 'amber-gold',
+      imageUrl: 'https://cdn.jsdelivr.net/gh/Jamesleekor/brand-assets@main/mvp/July_MVP.png' }
+    // 9월 MVP 선정 시(8월은 방학): { month: '9월', name: '학생이름', color: '색상키', imageUrl: '...September_MVP.png' }
   ];
   var MVP_COLOR_MAP = {
     // ── 6월까지 확정된 MVP 오라 색상 ──
@@ -8252,7 +8265,7 @@ function requestCancelSaving(savId, principal) {
       var img = document.createElement('img');
       img.src = mvp.imageUrl;
       img.alt = mvp.month + ' MVP ' + mvp.name;
-      img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;z-index:1;animation:mvpKenBurns ' + (12 + idx * 2) + 's ease-in-out infinite alternate;animation-delay:' + (idx * -3) + 's;';
+      img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;z-index:1;animation:' + (mvp.flip ? 'mvpKenBurnsFlip' : 'mvpKenBurns') + ' ' + (12 + idx * 2) + 's ease-in-out infinite alternate;animation-delay:' + (idx * -3) + 's;';
       wrap.appendChild(img);
 
       var badge = document.createElement('div');
@@ -10031,71 +10044,158 @@ function requestCancelSaving(savId, principal) {
    ══════════════════════════════════ */
 
 /* ── 매월 수정 구역 START ── */
+/* ★ 2장 구성: page1 = 서한/포상/MVP , page2 = 시즌 결산
+   ★ 빈 배열([])로 두면 해당 섹션은 자동으로 숨겨집니다.
+   ★ 월간 복귀 시: seasonRankings/contribBlocks를 []로 비우고
+      rankings에 기존 형식(rank/emoji/name/score/contrib/contribScore)을 넣으면
+      예전 한 장짜리 순위표가 그대로 동작합니다. */
 var GUILD_CELEBRATION_CONFIG = {
   enabled: true,
-  storageKey: 'brand_guild_celebration_2026_06',
-  month: '2026년 6월',
-  winnerGuild: '빛나는 은하수',
-  winnerGuildEmoji: '🌌',
-  missions: ['M04', 'M07'],
-  allSessionAttended: true,
+  storageKey: 'brand_guild_celebration_2026_s1_final',
+  month: '시즌1 · 2026년 7월',
 
-  // 📜 운영국 서한 — 배열의 각 항목이 <p> 한 단락이 됩니다. 매월 이 부분만 자유롭게 교체하세요.
+  // 헤더 (비워두면 기존 '○○ 길드에 드리는 축전' 방식으로 자동 생성)
+  badgeText: '🏆 B.R.A.N.D 운영국 공식 공문 · 시즌1 결산',
+  title: '🏁 시즌1을 마치며',
+  subtitle: '7월 MVP · 길드 대전 최종 결과',
+  winnerGuild: 'Ruby',
+  winnerGuildEmoji: '♦️',
+
+  missions: [],            // 이번 축전은 미션 배지 사용 안 함
+  allSessionAttended: false,
+
+  /* ━━━ 1장 ━━━ */
   proseParagraphs: [
-    '빛나는 은하수 길드의 모든 용사들에게,',
-    'B.R.A.N.D 운영국은 <span class="gcl-highlight">6월의 최강 길드<\/span>로 우뚝 선 <span class="gcl-highlight">🌌 빛나는 은하수 길드<\/span> 전원에게 진심 어린 축하를 전합니다.',
-    '6월 내내 <b>단독 선두<\/b>를 지켜온 빛나는 은하수 길드는, 마지막 순간 Ruby 길드가 <b>M04 미션(P2P 거래 5건 이상)<\/b>을 완수하며 맹추격에 나서면서 손에 땀을 쥐는 초접전을 펼쳤습니다. 그러나 끝내 <span class="gcl-highlight">8,100점<\/span>으로 Ruby 길드(8,051점)를 단 <span class="gcl-highlight">0.7%<\/span> 차이로 따돌리고 6월의 최강 길드 자리에 발돋움했습니다! 🔥',
-    '또한 빛나는 은하수 길드의 <b>지담<\/b> 학생이 MVP 후보로 선정되었고, Ruby 길드의 <b>김서영·한서현<\/b> 학생은 <span class="gcl-highlight">2개월 연속<\/span> MVP 후보에 이름을 올리는 저력을 보여주었습니다. ✨'
+    'Ruby 길드의 모든 용사들에게,',
+    'B.R.A.N.D 운영국은 시즌1의 마지막 달을 온전히 <span class="gcl-highlight">Ruby 길드의 잔치<\/span>로 만들어낸 여러분 모두에게 진심 어린 축하를 전합니다.',
+    '7월 MVP 최종 후보 네 자리 중 무려 <span class="gcl-highlight">세 자리<\/span>가 Ruby 길드의 몫이었습니다. <b>김서영·한서현·정우림<\/b> — 한 길드가 후보석의 4분의 3을 채운 것은 시즌1을 통틀어 처음 있는 일입니다. 남은 한 자리는 🌌 빛나는 은하수 길드의 <b>지담<\/b> 학생이 끝까지 지켜냈습니다. ✨',
+    '특히 <b>김서영<\/b> 학생은 3월부터 7월까지 <span class="gcl-highlight">다섯 달 내리<\/span> 후보석에 앉으며 <span class="gcl-highlight">3월과 7월, 두 번의 최종 MVP<\/span>를 거머쥐었습니다. <b>한서현<\/b> 학생 역시 네 차례(3·5·6·7월) 후보에 오르며 5월의 MVP를 품에 안았고, <b>정우림<\/b> 학생이 7월 예선을 뚫고 그 옆에 이름을 더했습니다. 시즌1이 내어준 스무 개의 후보석 가운데 <span class="gcl-highlight">정확히 절반인 열 자리<\/span>가 Ruby 길드 세 사람의 이름으로 채워졌습니다. 🔥',
+    '하지만 이번 7월이 정말 특별했던 이유는 따로 있습니다. 처음으로 <span class="gcl-highlight">예선전<\/span>이 공개되면서, 그동안 이름이 잘 드러나지 않았던 친구들이 저마다 어떤 강점을 조용히 갈고닦아 왔는지 우리 모두가 두 눈으로 확인할 수 있었기 때문입니다. 후보석에 앉지 못했을 뿐, 그 자리에 오를 자격을 갖춘 이들은 생각보다 훨씬 많았습니다.',
+    '그래서 운영국은 시즌2를 이렇게 기대합니다. <span class="gcl-highlight">더 많은, 더 다채로운 얼굴들이 후보석에 앉게 되기를.<\/span> 다음 자리의 주인은 아직 아무도 정해지지 않았습니다. 🌱'
   ],
 
-  rewards: [
-    { icon: '💎', value: 'BV +500',     desc: '브랜드가치 포상' },
-    { icon: '💰', value: '자산 +1,000', desc: '경제 자산 포상' },
-    { icon: '🥇', value: '이달의 으뜸', desc: '업적 신청 자격 확정' }
-  ],
+  // 🎁 포상 — 비워두면 섹션 자동 숨김.
+  // 예: { icon:'💎', value:'BV +500', desc:'브랜드가치 포상' }
+  rewards: [],
 
-  // ⭐ MVP 섹션 — 월별로 '주인공' 유무·구성이 달라 라벨과 카드를 CONFIG에서 지정합니다.
-  mvpSectionLabel: '⭐ 6월의 MVP 후보',
+  mvpSectionLabel: '⭐ 7월의 MVP',
   mvpCards: [
-    { name: '지담', star: true, badgeClass: 'gold', badgeLabel: '🌟 MVP 후보', sub: '빛나는 은하수 · 기여도 1위 595점', ach: '🛡️ 길드의 수호신 신청 가능' }
+    { name:'김서영', star:true, badgeClass:'gold',   badgeLabel:'👑 7월 MVP',   sub:'♦️ Ruby · 5개월 연속 후보',        ach:'3월·7월 두 번의 왕관' },
+    { name:'한서현', badgeClass:'silver', badgeLabel:'🌟 MVP 후보', sub:'♦️ Ruby · 4회 후보(3·5·6·7월)',   ach:'5월 MVP' },
+    { name:'지담',   badgeClass:'silver', badgeLabel:'🌟 MVP 후보', sub:'🌌 빛나는 은하수 · 결승 진출', ach:'업적 점수 282 · 역대 1위' },
+    { name:'정우림', badgeClass:'silver', badgeLabel:'🌟 MVP 후보', sub:'♦️ Ruby · 예선 최종전 통과',   ach:'첫 후보석 진입' }
   ],
 
-  rankings: [
-    { rank:1, emoji:'🌌', name:'빛나는 은하수',       score:'8,100', contrib:'지담',   contribScore:'595' },
-    { rank:2, emoji:'♦️', name:'Ruby',                score:'8,051', contrib:'김서영', contribScore:'545' },
-    { rank:3, emoji:'⚡', name:'라이징볼트태클즈',    score:'5,550', contrib:'류은우', contribScore:'600' },
-    { rank:4, emoji:'🖤', name:'암흑장미',            score:'5,501', contrib:'박서은', contribScore:'472' },
-    { rank:5, emoji:'🟢', name:'에메랄드',            score:'2,985', contrib:'정민준', contribScore:'422' }
+  /* ━━━ 2장 ━━━ */
+  // 예전 한 장짜리 월간 순위표(비워두면 숨김) — 이번에는 시즌 카드로 대체
+  rankings: [],
+
+  seasonLabel: '⚔️ 시즌1 길드 대전 최종 결과',
+  seasonProse: [
+    '시즌1의 승부는 마지막까지 <span class="gcl-highlight">12점<\/span>이었습니다.',
+    '5월에 Ruby가 16점을 앞섬고, 6월에 빛나는 은하수가 49점을 뒤집었으며, 7월에 Ruby가 다시 45점을 되찾았습니다. 세 달을 모두 더한 결과가 <b>26,826 대 26,814<\/b> — 두 길드는 시즌 내내 서로의 그림자였고, 마지막 한 걸음에서 갈렸습니다.'
+  ],
+  seasonRankings: [
+    { medal:'🥇 1', emoji:'♦️', name:'Ruby',                  m5:'9,750', m6:'8,051', m7:'9,025', total:'26,826' },
+    { medal:'🥈 2', emoji:'🌌', name:'빛나는 은하수', m5:'9,734', m6:'8,100', m7:'8,980', total:'26,814' },
+    { medal:'🥉 3', emoji:'🟢', name:'에메랄드',        m5:'8,958', m6:'2,985', m7:'8,468', total:'20,411' },
+    { medal:'4',   emoji:'⚡', name:'라이징볼트태클즈', m5:'4,583', m6:'5,440', m7:'8,619', total:'18,642' },
+    { medal:'5',   emoji:'🖤', name:'암흑장미',          m5:'9,473', m6:'5,501', m7:'2,032', total:'17,006' }
+  ],
+  seasonNotes: [
+    '🟢 <b>에메랄드<\/b> — 6월 2,985에서 7월 8,468로. 시즌 최대의 골짜기에서 가장 크게 되돌아온 길드',
+    '⚡ <b>라이징볼트태클즈<\/b> — 4,583 → 5,440 → 8,619. 세 달 내내 <span class="gcl-highlight">단 한 번도 내려가지 않은 유일한 길드<\/span>',
+    '🖤 <b>암흑장미<\/b> — 5월의 9,473점은 시즌 전체를 통틀어 <span class="gcl-highlight">단일 월 3위<\/span>에 해당하는 기록'
   ],
 
-  closingMsg: '7월에도 모든 길드원들의 건투를 빕니다! 💪'
+  contribLabel: '🤝 개인 기여도',
+  contribNotes: [
+    '기여도는 등수를 매기려고 만든 숫자가 아니라, 길드 안에서 각자가 어떤 몫을 맡았는지 보는 눈금입니다. 그래서 운영국은 전체 순위표 대신 세 개의 이름표만 꺼내 놓습니다.',
+    '※ <b>6월은 미션 점수 자체가 낮게 책정된 달<\/b>이라 스무네 명 거의 모두의 숫자가 함께 내려갔습니다. 6월 수치가 작다면 그건 그 달을 덜 열심히 살아서가 아닙니다.'
+  ],
+  contribBlocks: [
+    { label:'🏛️ 다섯 길드의 기둥', rows:[
+      { l:'♦️ Ruby · 한서현',                 r:'1.860' },
+      { l:'🟢 에메랄드 · 정민준',          r:'1.714' },
+      { l:'⚡ 라이징볼트태클즈 · 류은우', r:'1.662' },
+      { l:'🌌 빛나는 은하수 · 지담',      r:'1.621' },
+      { l:'🖤 암흑장미 · 부희주',            r:'1.615' }
+    ]},
+    { label:'🌟 시즌1 기여도 TOP 5',
+      inline:'1위 <b>한서현<\/b> 1.860 · 2위 <b>김서영<\/b> 1.744 · 3위 <b>정민준<\/b> 1.714 · 4위 <b>류은우<\/b> 1.662 · 5위 <b>이한성<\/b> 1.634' },
+    { label:'🌱 가장 크게 자라난 이들', desc:'시즌 내내 기여도가 꾸준히 올라간 학생들입니다.', rows:[
+      { l:'이준혁 · 6월 0.142 → 7월 0.402', r:'2.8배' },
+      { l:'한동준 · 5월 0.182 → 7월 0.296', r:'1.6배' },
+      { l:'이하람 · 5월 0.225 → 7월 0.352', r:'1.6배' },
+      { l:'김나연 · 5월 0.328 → 7월 0.451', r:'1.4배' }
+    ]}
+  ],
+
+  // 페이지별 맺음말 (closingMsg 문자열만 써도 동작)
+  closingMsgs: [
+    '다음 장에서 시즌1 길드 대전의 최종 결과가 공개됩니다. 📜',
+    '시즌1을 지탱한 것은 스무네 개의 몫이었습니다. 시즌2에서 다시 만납시다! 💪'
+  ]
 };
 /* ── 매월 수정 구역 END ── */
 
+function gclNum(v){ return parseInt(String(v == null ? '' : v).replace(/,/g, ''), 10) || 0; }
+function gclShow(id, on){ var el = document.getElementById(id); if (el) el.style.display = on ? '' : 'none'; }
+
+/* ★ 페이지 전환 (1장 ↔ 2장) */
+var GCL_PAGE = 1;
+function gclSetPage(n) {
+  var c = GUILD_CELEBRATION_CONFIG;
+  GCL_PAGE = (n < 1) ? 1 : (n > 2 ? 2 : n);
+  var p1 = document.getElementById('gcl-page-1'), p2 = document.getElementById('gcl-page-2');
+  if (p1) p1.className = 'gcl-page' + (GCL_PAGE === 1 ? ' active' : '');
+  if (p2) p2.className = 'gcl-page' + (GCL_PAGE === 2 ? ' active' : '');
+  var d1 = document.getElementById('gcl-dot-1'), d2 = document.getElementById('gcl-dot-2');
+  if (d1) d1.className = 'gcl-dot' + (GCL_PAGE === 1 ? ' on' : '');
+  if (d2) d2.className = 'gcl-dot' + (GCL_PAGE === 2 ? ' on' : '');
+  var pv = document.getElementById('gcl-prev'), nx = document.getElementById('gcl-next');
+  if (pv) pv.disabled = (GCL_PAGE === 1);
+  if (nx) nx.disabled = (GCL_PAGE === 2);
+  var msgs = c.closingMsgs || [c.closingMsg || '', c.closingMsg || ''];
+  var cl = document.getElementById('gcl-closing');
+  if (cl) cl.textContent = msgs[GCL_PAGE - 1] || '';
+  var box = document.getElementById('guildCelebBox');
+  if (box) box.scrollTop = 0;
+}
+function gclGoPage(delta) { gclSetPage(GCL_PAGE + delta); }
+
 function renderGuildCelebModal() {
   var c = GUILD_CELEBRATION_CONFIG;
-  document.getElementById('gcl-badge-month').textContent = '🏆 B.R.A.N.D 운영국 공식 공문 · ' + c.month;
-  document.getElementById('gcl-title').innerHTML = c.winnerGuildEmoji + ' ' + c.winnerGuild + ' 길드에 드리는 축전';
-  document.getElementById('gcl-subtitle').textContent = c.month + ' · B.R.A.N.D 길드 대전 최종 결과';
-  // 📜 운영국 서한 — proseParagraphs 배열의 각 항목을 <p> 단락으로 출력
+  document.getElementById('gcl-badge-month').textContent = c.badgeText || ('🏆 B.R.A.N.D 운영국 공식 공문 · ' + c.month);
+  document.getElementById('gcl-title').innerHTML = c.title || (c.winnerGuildEmoji + ' ' + c.winnerGuild + ' 길드에 드리는 축전');
+  document.getElementById('gcl-subtitle').textContent = c.subtitle || (c.month + ' · B.R.A.N.D 길드 대전 최종 결과');
+
+  // 📜 운영국 서한
   document.getElementById('gcl-prose').innerHTML =
-    c.proseParagraphs.map(function(p){ return '<p>' + p + '<\/p>'; }).join('');
+    (c.proseParagraphs || []).map(function(p){ return '<p>' + p + '<\/p>'; }).join('');
+
+  // 미션 배지
   var pillsHtml = '';
-  c.missions.forEach(function(m){ pillsHtml += '<span class="gcl-pill">✅ ' + m + ' 전원 달성<\/span>'; });
+  (c.missions || []).forEach(function(m){ pillsHtml += '<span class="gcl-pill">✅ ' + m + ' 전원 달성<\/span>'; });
   if (c.allSessionAttended) pillsHtml += '<span class="gcl-pill">📅 전 세션 참석 완료<\/span>';
   document.getElementById('gcl-pills').innerHTML = pillsHtml;
+
+  // 🎁 포상 — 비어 있으면 섹션 숨김
   var rwHtml = '';
-  c.rewards.forEach(function(r){
+  (c.rewards || []).forEach(function(r){
     rwHtml += '<div class="gcl-reward-card"><div class="gcl-reward-icon">' + r.icon + '<\/div>' +
       '<div class="gcl-reward-val">' + r.value + '<\/div><div class="gcl-reward-desc">' + r.desc + '<\/div><\/div>';
   });
   document.getElementById('gcl-rewards').innerHTML = rwHtml;
-  // ⭐ MVP 카드 — mvpCards 배열을 그대로 렌더 (gold=대표/주인공, silver=후보, star=강조 테두리)
+  gclShow('gcl-rewards-sec', (c.rewards || []).length > 0);
+
+  // ⭐ MVP 카드
   if (c.mvpSectionLabel) document.getElementById('gcl-mvp-label').textContent = c.mvpSectionLabel;
+  var mvpCards = c.mvpCards || [];
   var mvpHtml = '';
-  var mvpCompact = (c.mvpCards.length === 1);  // 후보 1명이면 카드를 좁게(메인 아님)
-  c.mvpCards.forEach(function(m){
-    var achStyle = m.achColor ? ' style="color:' + m.achColor + ';"' : '';
+  var mvpCompact = (mvpCards.length === 1);  // 후보 1명이면 카드를 좁게(메인 아님)
+  mvpCards.forEach(function(m){
+    var achStyle  = m.achColor ? ' style="color:' + m.achColor + ';"' : '';
     var cardStyle = mvpCompact ? ' style="flex:0 1 260px;"' : '';
     mvpHtml +=
       '<div class="gcl-mvp-card' + (m.star ? ' star' : '') + '"' + cardStyle + '>' +
@@ -10105,22 +10205,78 @@ function renderGuildCelebModal() {
       '<div class="gcl-mvp-ach"' + achStyle + '>' + m.ach + '<\/div><\/div>';
   });
   document.getElementById('gcl-mvp').innerHTML = mvpHtml;
-  var maxScore = parseInt((c.rankings[0].score||'').replace(/,/g,''),10)||1;
-  var barColors = ['#a78bfa','#aeb9c5','#e67e22','#4da8f5','#3fb950'];
-  var tbodyHtml = '';
-  c.rankings.forEach(function(r,i){
-    var sc = parseInt((r.score||'').replace(/,/g,''),10)||0;
-    var pct = Math.round((sc/maxScore)*88);
-    var cc = i<3?['gcl-rank-1','gcl-rank-2','gcl-rank-3'][i]:'';
-    tbodyHtml += '<tr><td><span class="gcl-rank-num ' + cc + '">' + r.rank + '위<\/span><\/td>' +
-      '<td><b>' + r.emoji + ' ' + r.name + '<\/b><\/td>' +
-      '<td><div class="gcl-score-wrap"><div class="gcl-bar" style="width:' + pct + 'px;background:' + barColors[i] + ';"><\/div>' +
-      '<span style="font-size:11px;color:#c9d1d9;white-space:nowrap;">' + r.score + '<\/span><\/div><\/td>' +
-      '<td style="font-size:11px;"><span style="color:#c9d1d9;">' + r.contrib + '<\/span><br>' +
-      '<span style="color:#c9d1d9;">' + r.contribScore + '점 🛡️<\/span><\/td><\/tr>';
-  });
-  document.getElementById('gcl-rank-tbody').innerHTML = tbodyHtml;
-  document.getElementById('gcl-closing').textContent = c.closingMsg;
+  gclShow('gcl-mvp-sec', mvpCards.length > 0);
+
+  // 🏅 월간 순위표 (예전 형식) — rankings가 비어 있으면 숨김
+  var rk = c.rankings || [];
+  gclShow('gcl-rank-sec', rk.length > 0);
+  if (rk.length) {
+    var maxScore = gclNum(rk[0].score) || 1;
+    var barColors = ['#a78bfa','#aeb9c5','#e67e22','#4da8f5','#3fb950'];
+    var tbodyHtml = '';
+    rk.forEach(function(r,i){
+      var pct = Math.round((gclNum(r.score) / maxScore) * 88);
+      var cc = i<3?['gcl-rank-1','gcl-rank-2','gcl-rank-3'][i]:'';
+      tbodyHtml += '<tr><td><span class="gcl-rank-num ' + cc + '">' + r.rank + '위<\/span><\/td>' +
+        '<td><b>' + r.emoji + ' ' + r.name + '<\/b><\/td>' +
+        '<td><div class="gcl-score-wrap"><div class="gcl-bar" style="width:' + pct + 'px;background:' + barColors[i] + ';"><\/div>' +
+        '<span style="font-size:11px;color:#c9d1d9;white-space:nowrap;">' + r.score + '<\/span><\/div><\/td>' +
+        '<td style="font-size:11px;"><span style="color:#c9d1d9;">' + r.contrib + '<\/span><br>' +
+        '<span style="color:#c9d1d9;">' + r.contribScore + '점 🛡️<\/span><\/td><\/tr>';
+    });
+    document.getElementById('gcl-rank-tbody').innerHTML = tbodyHtml;
+  }
+
+  // ⚔️ 시즌 길드 대전 카드
+  var sr = c.seasonRankings || [];
+  gclShow('gcl-season-sec', sr.length > 0);
+  if (sr.length) {
+    if (c.seasonLabel) document.getElementById('gcl-season-label').textContent = c.seasonLabel;
+    document.getElementById('gcl-season-prose').innerHTML =
+      (c.seasonProse || []).map(function(p){ return '<p>' + p + '<\/p>'; }).join('');
+    var maxTotal = 1;
+    sr.forEach(function(r){ if (gclNum(r.total) > maxTotal) maxTotal = gclNum(r.total); });
+    var sColors = ['#f5a623','#a78bfa','#3fb950','#4da8f5','#e06060'];
+    var sHtml = '';
+    sr.forEach(function(r,i){
+      var w = Math.max(6, Math.round(gclNum(r.total) / maxTotal * 100));
+      var cc = i<3?['gcl-rank-1','gcl-rank-2','gcl-rank-3'][i]:'';
+      sHtml += '<div class="gcl-gcard' + (i === 0 ? ' top' : '') + '">' +
+        '<div class="gcl-gcard-head">' +
+          '<span class="gcl-gcard-rank ' + cc + '">' + r.medal + '<\/span>' +
+          '<span class="gcl-gcard-name">' + r.emoji + ' ' + r.name + '<\/span>' +
+          '<span class="gcl-gcard-total">' + r.total + '<\/span><\/div>' +
+        '<div class="gcl-gcard-months">5월 ' + r.m5 + ' · 6월 ' + r.m6 + ' · 7월 ' + r.m7 + '<\/div>' +
+        '<div class="gcl-gcard-track"><div class="gcl-gcard-fill" style="width:' + w + '%;background:' + sColors[i] + ';"><\/div><\/div>' +
+        '<\/div>';
+    });
+    document.getElementById('gcl-season-cards').innerHTML = sHtml;
+    document.getElementById('gcl-season-notes').innerHTML =
+      (c.seasonNotes || []).map(function(n){ return '<div class="gcl-note">' + n + '<\/div>'; }).join('');
+  }
+
+  // 🤝 개인 기여도
+  var cb = c.contribBlocks || [];
+  gclShow('gcl-contrib-sec', cb.length > 0);
+  if (cb.length) {
+    if (c.contribLabel) document.getElementById('gcl-contrib-label').textContent = c.contribLabel;
+    document.getElementById('gcl-contrib-note').innerHTML =
+      (c.contribNotes || []).map(function(n){ return '<div class="gcl-note">' + n + '<\/div>'; }).join('');
+    var cbHtml = '';
+    cb.forEach(function(b){
+      cbHtml += '<div class="gcl-ctb-block"><div class="gcl-section-label">' + b.label + '<\/div>';
+      if (b.desc)   cbHtml += '<div class="gcl-caption">' + b.desc + '<\/div>';
+      if (b.inline) cbHtml += '<div class="gcl-prose" style="font-size:12.5px">' + b.inline + '<\/div>';
+      (b.rows || []).forEach(function(rw){
+        cbHtml += '<div class="gcl-ctb-row"><span class="gcl-ctb-l">' + rw.l + '<\/span>' +
+                  '<span class="gcl-ctb-r">' + rw.r + '<\/span><\/div>';
+      });
+      cbHtml += '<\/div>';
+    });
+    document.getElementById('gcl-contrib-blocks').innerHTML = cbHtml;
+  }
+
+  gclSetPage(1);
 }
 
 function checkGuildCelebration() {
@@ -11177,6 +11333,36 @@ function goToPeerEvalFromGate() {
 .gcl-btn-close{flex:1;padding:10px;border-radius:8px;font-size:12px;font-weight:bold;cursor:pointer;background:#7c6df2;color:white;border:none;}
 .gcl-btn-close:hover{background:#6354d6;}
 
+/* ═══ 2장 구성(페이지 넘김) + 시즌 결산 전용 ═══ */
+.gcl-page{display:none;}
+.gcl-page.active{display:block;}
+.gcl-pagenav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:18px;padding-top:14px;border-top:1px solid #21262d;}
+.gcl-nav-btn{padding:8px 14px;border-radius:8px;font-size:12px;font-weight:bold;cursor:pointer;border:1px solid #30363d;background:#0d1117;color:#c9d1d9;}
+.gcl-nav-btn:hover:not(:disabled){background:#21262d;color:#e6edf3;}
+.gcl-nav-btn:disabled{opacity:.3;cursor:default;}
+.gcl-nav-btn.primary{background:#7c6df2;color:#fff;border-color:#7c6df2;}
+.gcl-nav-btn.primary:hover:not(:disabled){background:#6354d6;}
+.gcl-dots{display:flex;gap:6px;}
+.gcl-dot{width:7px;height:7px;border-radius:50%;background:#30363d;}
+.gcl-dot.on{background:#a78bfa;}
+.gcl-gcard{background:#0d1117;border:1px solid #30363d;border-radius:10px;padding:10px 12px;margin-bottom:8px;}
+.gcl-gcard.top{border-color:#f5a623;}
+.gcl-gcard-head{display:flex;align-items:baseline;gap:8px;}
+.gcl-gcard-rank{font-size:12px;font-weight:bold;flex:0 0 auto;white-space:nowrap;}
+.gcl-gcard-name{font-size:13px;font-weight:bold;color:#e6edf3;flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.gcl-gcard-total{font-size:14px;font-weight:bold;color:#e6edf3;flex:0 0 auto;}
+.gcl-gcard-months{font-size:10.5px;color:#aeb9c5;margin-top:4px;}
+.gcl-gcard-track{height:5px;border-radius:3px;background:#21262d;margin-top:7px;overflow:hidden;}
+.gcl-gcard-fill{height:100%;border-radius:3px;}
+.gcl-note{font-size:11.5px;color:#c9d1d9;line-height:1.65;background:#0d1117;border:1px solid #21262d;border-left:3px solid #7c6df2;border-radius:8px;padding:8px 10px;margin-bottom:6px;}
+.gcl-note:last-child{margin-bottom:0;}
+.gcl-ctb-block{margin-top:14px;}
+.gcl-ctb-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #21262d;font-size:12px;color:#c9d1d9;}
+.gcl-ctb-row:last-child{border-bottom:none;}
+.gcl-ctb-l{flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.gcl-ctb-r{flex:0 0 auto;font-weight:bold;color:#e6edf3;}
+.gcl-caption{font-size:10.5px;color:#aeb9c5;line-height:1.6;margin:-2px 0 4px;}
+
 /* ═══════════════════════════════════════════════════════════
    gcl 길드 랭킹 테이블 — 모바일 전용 flex 재설계 (600px 이하)
    문제: table-layout:auto가 4열을 글자 단위로 쪼개는 현상
@@ -11226,27 +11412,51 @@ function goToPeerEvalFromGate() {
       <div class="gcl-subtitle" id="gcl-subtitle"></div>
     </div>
     <div class="gcl-body">
-      <div class="gcl-section">
-        <div class="gcl-section-label">📜 운영국 서한</div>
-        <div class="gcl-prose" id="gcl-prose"></div>
-        <div class="gcl-pills" id="gcl-pills"></div>
+      <!-- ═══ 1장: 서한 · 포상 · MVP ═══ -->
+      <div class="gcl-page active" id="gcl-page-1">
+        <div class="gcl-section">
+          <div class="gcl-section-label">📜 운영국 서한</div>
+          <div class="gcl-prose" id="gcl-prose"></div>
+          <div class="gcl-pills" id="gcl-pills"></div>
+        </div>
+        <div class="gcl-section" id="gcl-rewards-sec">
+          <div class="gcl-section-label">🎁 길드원 전원 포상</div>
+          <div class="gcl-reward-grid" id="gcl-rewards"></div>
+        </div>
+        <div class="gcl-section" id="gcl-mvp-sec" style="margin-bottom:0">
+          <div class="gcl-section-label" id="gcl-mvp-label">⭐ MVP</div>
+          <div class="gcl-mvp-row" id="gcl-mvp"></div>
+        </div>
       </div>
-      <div class="gcl-section">
-        <div class="gcl-section-label">🎁 길드원 전원 포상</div>
-        <div class="gcl-reward-grid" id="gcl-rewards"></div>
+
+      <!-- ═══ 2장: 길드 대전 최종 결과 · 개인 기여도 ═══ -->
+      <div class="gcl-page" id="gcl-page-2">
+        <div class="gcl-section" id="gcl-season-sec">
+          <div class="gcl-section-label" id="gcl-season-label">⚔️ 시즌1 길드 대전 최종 결과</div>
+          <div class="gcl-prose" id="gcl-season-prose" style="margin-bottom:12px"></div>
+          <div id="gcl-season-cards"></div>
+          <div id="gcl-season-notes" style="margin-top:10px"></div>
+        </div>
+        <div class="gcl-section" id="gcl-rank-sec">
+          <div class="gcl-section-label">🏅 최종 길드 순위</div>
+          <table class="gcl-rank-table">
+            <thead><tr><th style="width:30px">순위</th><th>길드</th><th>점수</th><th>기여도 1위</th></tr></thead>
+            <tbody id="gcl-rank-tbody"></tbody>
+          </table>
+          <div style="margin-top:6px;font-size:10px;color:#aeb9c5">🛡️ 표시 학생은 '길드의 수호신' 업적 신청 자격 획득</div>
+        </div>
+        <div class="gcl-section" id="gcl-contrib-sec" style="margin-bottom:0">
+          <div class="gcl-section-label" id="gcl-contrib-label">🤝 개인 기여도</div>
+          <div id="gcl-contrib-note"></div>
+          <div id="gcl-contrib-blocks"></div>
+        </div>
       </div>
-      <div class="gcl-section">
-        <div class="gcl-section-label" id="gcl-mvp-label">⭐ 6월의 MVP 후보</div>
-        <div class="gcl-mvp-row" id="gcl-mvp"></div>
-      </div>
-      <hr class="gcl-divider">
-      <div class="gcl-section" style="margin-bottom:0">
-        <div class="gcl-section-label">🏅 최종 길드 순위</div>
-        <table class="gcl-rank-table">
-          <thead><tr><th style="width:30px">순위</th><th>길드</th><th>점수</th><th>기여도 1위</th></tr></thead>
-          <tbody id="gcl-rank-tbody"></tbody>
-        </table>
-        <div style="margin-top:6px;font-size:10px;color:#aeb9c5">🛡️ 표시 학생은 '길드의 수호신' 업적 신청 자격 획득</div>
+
+      <!-- ═══ 페이지 넘김 ═══ -->
+      <div class="gcl-pagenav">
+        <button class="gcl-nav-btn" id="gcl-prev" onclick="gclGoPage(-1)">◀ 이전 장</button>
+        <div class="gcl-dots"><span class="gcl-dot on" id="gcl-dot-1"></span><span class="gcl-dot" id="gcl-dot-2"></span></div>
+        <button class="gcl-nav-btn primary" id="gcl-next" onclick="gclGoPage(1)">다음 장 ▶</button>
       </div>
     </div>
     <div class="gcl-footer">
@@ -12297,6 +12507,369 @@ function goToPeerEvalFromGate() {
     if(['Enter',' ','ArrowRight'].indexOf(e.key)!==-1 && !$('bvnEnd').classList.contains('show')){ e.preventDefault(); next(); }
     if(e.key==='Escape') close();
   });
+})();
+</script>
+
+<!-- ════════════════════════════════════════════════════════════ -->
+<!-- ★ 여름의 별자리 (방학 이벤트, 2026-07-27 ~ 08-23 + 보충 1주)   -->
+<!--   독립 모듈 — 기존 코드와 이름 충돌 없음 (vac- 접두사)          -->
+<!-- ════════════════════════════════════════════════════════════ -->
+<style>
+  #vacModal {
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.78); z-index: 10040;
+    justify-content: center; align-items: center;
+  }
+  #vacModal.open { display: flex; }
+  .vac-box {
+    background: linear-gradient(180deg, #05070f 0%, #0a1024 55%, #141b38 100%);
+    border: 1px solid #2a3560; border-radius: 16px; padding: 20px;
+    width: 94%; max-width: 560px; max-height: 90vh; overflow-y: auto;
+    box-shadow: 0 12px 50px rgba(0,0,0,0.7); color: #dfe6ff;
+  }
+  .vac-title { display: flex; justify-content: space-between; align-items: center;
+    font-size: 17px; font-weight: bold; color: #ffd76a; margin-bottom: 4px; }
+  .vac-close { background: none; border: none; color: #8fa0d8; font-size: 18px; cursor: pointer; }
+  .vac-sub { font-size: 11px; color: #7b89c4; margin-bottom: 10px; }
+  .vac-stats { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+  .vac-stat { flex: 1; min-width: 100px; background: rgba(255,255,255,0.05);
+    border: 1px solid #2a3560; border-radius: 10px; padding: 7px 4px; text-align: center; }
+  .vac-stat b { display: block; font-size: 15px; color: #ffd76a; }
+  .vac-stat span { font-size: 10px; color: #8fa0d8; }
+
+  #vacSky { position: relative; width: 100%; height: 400px;
+    background: radial-gradient(ellipse at 50% 120%, rgba(90,110,200,0.18), transparent 60%);
+    border: 1px solid #232d52; border-radius: 12px; overflow: hidden; margin-bottom: 10px; }
+  #vacSkyLines { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+  .vac-star { position: absolute; width: 12px; height: 12px; margin: -6px 0 0 -6px;
+    border-radius: 50%; background: #2c3763; border: 1px solid #3a4a85;
+    cursor: default; transition: all 0.25s; }
+  .vac-star.lit { background: #ffd76a; border-color: #fff2c4;
+    box-shadow: 0 0 8px 2px rgba(255,215,106,0.75), 0 0 20px 6px rgba(255,215,106,0.25);
+    cursor: pointer; }
+  .vac-star.lit.vac-has-note::after { content: ''; position: absolute; top: -4px; right: -4px;
+    width: 6px; height: 6px; border-radius: 50%; background: #6ad2ff; box-shadow: 0 0 5px #6ad2ff; }
+  .vac-star.vac-final { width: 18px; height: 18px; margin: -9px 0 0 -9px; }
+  .vac-star.vac-final.lit { animation: vacPulse 2s ease-in-out infinite; background: #fff2c4; }
+  @keyframes vacPulse {
+    0%,100% { box-shadow: 0 0 10px 3px rgba(255,236,170,0.8), 0 0 30px 10px rgba(255,215,106,0.3); }
+    50%     { box-shadow: 0 0 16px 6px rgba(255,236,170,1),   0 0 46px 16px rgba(255,215,106,0.45); }
+  }
+  .vac-final-label { position: absolute; font-size: 9px; color: #7b89c4;
+    transform: translate(-50%, 10px); white-space: nowrap; pointer-events: none; }
+
+  #vacDetail { display: none; background: rgba(255,255,255,0.05); border: 1px solid #2a3560;
+    border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; font-size: 12px; line-height: 1.6; }
+  #vacDetail b { color: #ffd76a; }
+
+  .vac-gauge-wrap { margin-bottom: 12px; }
+  .vac-gauge-label { display: flex; justify-content: space-between; font-size: 11px;
+    color: #8fa0d8; margin-bottom: 4px; }
+  .vac-gauge { position: relative; height: 14px; background: #131a33;
+    border: 1px solid #2a3560; border-radius: 7px; overflow: visible; }
+  .vac-gauge-fill { height: 100%; border-radius: 7px;
+    background: linear-gradient(90deg, #4d6cf5, #6ad2ff); transition: width 0.6s; }
+  .vac-tick { position: absolute; top: -3px; width: 2px; height: 20px; background: #3a4a85; }
+  .vac-tick.hit { background: #ffd76a; box-shadow: 0 0 5px #ffd76a; }
+  .vac-tick-label { position: absolute; top: 20px; transform: translateX(-50%);
+    font-size: 9px; color: #7b89c4; white-space: nowrap; }
+  .vac-milestones { font-size: 10.5px; color: #8fa0d8; margin-top: 22px; line-height: 1.7; }
+  .vac-milestones .hit { color: #ffd76a; }
+
+  .vac-btn { border: none; border-radius: 9px; padding: 9px 14px; font-size: 12.5px;
+    font-weight: bold; cursor: pointer; }
+  .vac-btn-gold { background: linear-gradient(135deg, #b8860b, #ffd76a); color: #241a00; width: 100%; margin-bottom: 8px; }
+  .vac-btn-blue { background: #2a3560; color: #dfe6ff; }
+  .vac-panel { background: rgba(255,255,255,0.05); border: 1px solid #2a3560;
+    border-radius: 10px; padding: 12px; margin-bottom: 10px; }
+  .vac-panel-title { font-size: 13px; font-weight: bold; color: #ffd76a; margin-bottom: 6px; }
+  .vac-panel input, .vac-panel textarea, .vac-panel select {
+    width: 100%; box-sizing: border-box; background: #131a33; border: 1px solid #2a3560;
+    border-radius: 8px; color: #dfe6ff; font-size: 12px; padding: 8px; margin-bottom: 6px;
+    outline: none; font-family: inherit; }
+  .vac-panel textarea { resize: vertical; min-height: 64px; }
+
+  #vacToast { display: none; position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%);
+    background: #0a1024; border: 1px solid #ffd76a; color: #ffe9ad; border-radius: 12px;
+    padding: 11px 18px; font-size: 12.5px; z-index: 10050; box-shadow: 0 6px 24px rgba(0,0,0,0.6);
+    max-width: 86%; text-align: center; line-height: 1.6; }
+</style>
+
+<div id="vacModal">
+  <div class="vac-box">
+    <div class="vac-title">
+      <span>🌌 여름의 별자리</span>
+      <button class="vac-close" onclick="closeVacModal()">✕</button>
+    </div>
+    <div class="vac-sub" id="vacSubText">매일 접속해 별을 하나씩 켜고, 여름의 별자리를 완성하세요.</div>
+
+    <div class="vac-stats">
+      <div class="vac-stat"><b id="vacStatCells">0/28</b><span>나의 별</span></div>
+      <div class="vac-stat"><b id="vacStatStreak">0일</b><span>연속 관측</span></div>
+      <div class="vac-stat"><b id="vacStatTokens">0</b><span>탐사 토큰</span></div>
+      <div class="vac-stat"><b id="vacStatTickets">0</b><span>복구권</span></div>
+    </div>
+
+    <div id="vacSky">
+      <svg id="vacSkyLines"></svg>
+    </div>
+    <div id="vacDetail"></div>
+
+    <button id="vacRestoreBtn" class="vac-btn vac-btn-gold" style="display:none;"
+            onclick="vacUseRestore()">🌠 어제 놓친 별 복구하기 (복구권 사용)</button>
+
+    <div id="vacLibPanel" class="vac-panel" style="display:none;">
+      <div class="vac-panel-title">🕊️ 8월 15일 — 오늘 알게 된 것 한 줄</div>
+      <div style="font-size:11px;color:#8fa0d8;margin-bottom:6px;">
+        오늘 도착한 운영국 우편을 읽고, 알게 된 것을 한 줄로 남겨보세요.</div>
+      <textarea id="vacLibNote" maxlength="200" placeholder="한 줄로 적어주세요 (200자 이내)"></textarea>
+      <button class="vac-btn vac-btn-gold" style="margin:0;" onclick="vacSubmitLibNote()">남기기</button>
+    </div>
+
+    <div class="vac-gauge-wrap">
+      <div class="vac-gauge-label">
+        <span>🔭 우리 반 공동 관측</span>
+        <span id="vacClassCount">0회</span>
+      </div>
+      <div class="vac-gauge" id="vacGauge">
+        <div class="vac-gauge-fill" id="vacGaugeFill" style="width:0%;"></div>
+      </div>
+      <div class="vac-milestones" id="vacMilestones"></div>
+    </div>
+
+    <div class="vac-panel">
+      <div class="vac-panel-title">💫 이름 없는 별을 발견했습니다</div>
+      <div style="font-size:11.5px;color:#a8b4e0;line-height:1.6;margin-bottom:8px;">
+        저 높은 곳의 별은 아직 이름이 없습니다. 무엇이라 부르면 좋을까요?<br>
+        별 이름과 시즌2 아이디어를 운영국에 제안해 보세요. 채택되면 <b style="color:#ffd76a;">시즌2 개회식에서 발표</b>됩니다.</div>
+      <button class="vac-btn vac-btn-blue" onclick="vacToggleProposal()">✍️ 제안 쓰기</button>
+      <div id="vacPropForm" style="display:none;margin-top:8px;">
+        <select id="vacPropCat">
+          <option>별 이름 공모</option><option>새 제도</option><option>2차직업 아이디어</option>
+          <option>길드 운영</option><option>이벤트</option><option>기타</option>
+        </select>
+        <input id="vacPropTitle" maxlength="50" placeholder="제목 (50자 이내)">
+        <textarea id="vacPropContent" maxlength="1000" placeholder="내용 (1000자 이내)"></textarea>
+        <button class="vac-btn vac-btn-gold" style="margin:0;" onclick="vacSubmitProposal()">제안 보내기</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="vacToast"></div>
+
+<script>
+(function() {
+  var _vacState = null;
+
+  // 별 28개 좌표 (% 단위) — 아래에서 위로 굽이치다, 28번째 별만 아득히 높은 곳에
+  var VAC_POS = [
+    [10,92],[22,88],[34,90],[46,85],[57,88],[68,82],[78,85],
+    [85,76],[74,72],[62,75],[50,70],[38,73],[26,68],[15,71],
+    [10,60],[20,55],[32,58],[44,53],[56,56],[67,50],[78,53],
+    [85,44],[72,40],[58,42],[44,38],[30,40],[18,34],
+    [76,6]
+  ];
+
+  // ── 로그인 후 초기화 (두 로그인 경로 공통 _loadSubData 에서 호출) ──
+  window._vacInit = function(name) {
+    try {
+      google.script.run
+        .withSuccessHandler(function(v) {
+          if (!v || !v.active) return;           // 방학 기간 아님
+          _vacState = v;
+          var btn = document.getElementById('vacBtn');
+          if (btn) btn.style.display = '';
+          if (v.checkedToday && v.newCell) {
+            _vacToast('⭐ ' + v.newCell + '번째 별이 켜졌어요! +' + (v.gold || 0) + '골드 · 토큰 +1' +
+              (v.messages && v.messages.length ? '<br>' + v.messages.join('<br>') : ''), 5000);
+          }
+          var dot = document.getElementById('vacDot');
+          if (dot) dot.style.display = (v.restoreAvailable || (v.isLiberationDay && !v.libNoteDone)) ? 'block' : 'none';
+        })
+        .withFailureHandler(function() {})       // 방학 로직 오류는 조용히 무시
+        .vacationOnLogin(name);
+    } catch (e) {}
+  };
+
+  // ── 모달 열기 (최신 상태를 서버에서 새로 조회) ──
+  window.openVacModal = function() {
+    var name = window._currentStudentName;
+    if (!name) return;
+    document.getElementById('vacModal').classList.add('open');
+    google.script.run
+      .withSuccessHandler(function(st) {
+        if (!st || !st.success) return;
+        _vacRender(st);
+      })
+      .withFailureHandler(function() {})
+      .getVacationStatus(name);
+  };
+  window.closeVacModal = function() {
+    document.getElementById('vacModal').classList.remove('open');
+    document.getElementById('vacDetail').style.display = 'none';
+  };
+  document.getElementById('vacModal').addEventListener('click', function(e) {
+    if (e.target === this) closeVacModal();
+  });
+
+  // ── 렌더링 ──
+  function _vacRender(st) {
+    document.getElementById('vacStatCells').innerText   = st.myCells + '/' + st.totalCells;
+    document.getElementById('vacStatStreak').innerText  = st.streak + '일';
+    document.getElementById('vacStatTokens').innerText  = st.tokens;
+    document.getElementById('vacStatTickets').innerText = st.tickets;
+
+    // 하늘: 별 + 연결선
+    var sky = document.getElementById('vacSky');
+    sky.querySelectorAll('.vac-star,.vac-final-label').forEach(function(el){ el.remove(); });
+    var opened = {};
+    (st.openedCells || []).forEach(function(c){ opened[c.no] = c; });
+
+    for (var n = 1; n <= st.totalCells; n++) {
+      var p = VAC_POS[n - 1];
+      var star = document.createElement('div');
+      star.className = 'vac-star' + (n === st.totalCells ? ' vac-final' : '');
+      if (n <= st.myCells) star.className += ' lit';
+      var cell = opened[n];
+      if (cell && (cell.title || cell.content)) star.className += ' vac-has-note';
+      star.style.left = p[0] + '%';
+      star.style.top  = p[1] + '%';
+      star.title = n + '번째 별';
+      if (n <= st.myCells) {
+        (function(no, c) {
+          star.onclick = function() { _vacShowDetail(no, c); };
+        })(n, cell);
+      }
+      sky.appendChild(star);
+    }
+    // 최종 별 라벨
+    var lbl = document.createElement('div');
+    lbl.className = 'vac-final-label';
+    lbl.style.left = VAC_POS[st.totalCells - 1][0] + '%';
+    lbl.style.top  = VAC_POS[st.totalCells - 1][1] + '%';
+    lbl.innerText = st.myCells >= st.totalCells ? '이름 없는 별' : '???';
+    sky.appendChild(lbl);
+
+    // 연결선 (켜진 별끼리) + 27→28 은 점선
+    var svg = document.getElementById('vacSkyLines');
+    var w = sky.clientWidth, h = sky.clientHeight, lines = '';
+    for (var i = 1; i < st.myCells && i < st.totalCells; i++) {
+      var a = VAC_POS[i - 1], b = VAC_POS[i];
+      var dash = (i === st.totalCells - 1) ? ' stroke-dasharray="4,5"' : '';
+      lines += '<line x1="' + (a[0]/100*w) + '" y1="' + (a[1]/100*h) +
+               '" x2="' + (b[0]/100*w) + '" y2="' + (b[1]/100*h) +
+               '" stroke="rgba(255,215,106,0.32)" stroke-width="1"' + dash + '/>';
+    }
+    svg.innerHTML = lines;
+
+    // 복구 버튼 / 광복절 패널 (로그인 시 상태 기준)
+    var v = _vacState || {};
+    document.getElementById('vacRestoreBtn').style.display =
+      (v.restoreAvailable && st.tickets > 0) ? '' : 'none';
+    document.getElementById('vacLibPanel').style.display =
+      (v.isLiberationDay && !v.libNoteDone) ? '' : 'none';
+    if (v.mode === '보충') {
+      document.getElementById('vacSubText').innerText =
+        '보충 기간이에요. 하루 최대 3개의 별을 켤 수 있어요. (새로고침으로 재접속하면 다음 별이 켜집니다)';
+    }
+
+    // 공동 관측 게이지
+    document.getElementById('vacClassCount').innerText = st.classTotal.toLocaleString() + '회';
+    var lastAt = st.milestones.length ? st.milestones[st.milestones.length - 1].at : 500;
+    var gaugeMax = Math.max(lastAt, Math.min(st.classTotal, st.classMax));
+    document.getElementById('vacGaugeFill').style.width =
+      Math.min(100, st.classTotal / gaugeMax * 100) + '%';
+    var gauge = document.getElementById('vacGauge');
+    gauge.querySelectorAll('.vac-tick,.vac-tick-label').forEach(function(el){ el.remove(); });
+    var msHtml = '';
+    st.milestones.forEach(function(m) {
+      var x = Math.min(100, m.at / gaugeMax * 100);
+      gauge.insertAdjacentHTML('beforeend',
+        '<div class="vac-tick' + (m.reached ? ' hit' : '') + '" style="left:' + x + '%;"></div>' +
+        '<div class="vac-tick-label" style="left:' + x + '%;">' + m.at + '</div>');
+      msHtml += '<div class="' + (m.reached ? 'hit' : '') + '">' +
+                (m.reached ? '✅' : '⬜') + ' ' + m.at + '회 — ' + m.label + '</div>';
+    });
+    document.getElementById('vacMilestones').innerHTML = msHtml;
+  }
+
+  function _vacShowDetail(no, cell) {
+    var box = document.getElementById('vacDetail');
+    var icon = { '기록':'📜', '떡밥':'🔮', '보물':'🎁', '최종':'🌟' };
+    if (cell && (cell.title || cell.content)) {
+      box.innerHTML = '<b>' + (icon[cell.type] || '⭐') + ' ' + no + '번째 별' +
+        (cell.title ? ' — ' + cell.title : '') + '</b><br>' + (cell.content || '');
+    } else {
+      box.innerHTML = '<b>⭐ ' + no + '번째 별</b><br>' + '이 별은 조용히 빛나고 있어요.';
+    }
+    box.style.display = 'block';
+  }
+
+  // ── 복구권 사용 ──
+  window.vacUseRestore = function() {
+    if (!confirm('복구권 1개를 사용해 어제 놓친 별을 되살릴까요?')) return;
+    var btn = document.getElementById('vacRestoreBtn');
+    btn.disabled = true;
+    google.script.run
+      .withSuccessHandler(function(r) {
+        btn.disabled = false;
+        if (!r.success) { alert(r.msg); return; }
+        if (_vacState) { _vacState.restoreAvailable = false; }
+        _vacToast('🌠 ' + (r.messages || []).join('<br>'), 4500);
+        openVacModal();   // 새 상태로 다시 그리기
+      })
+      .withFailureHandler(function(err) { btn.disabled = false; alert('오류: ' + err.message); })
+      .useVacationRestore(window._currentStudentName);
+  };
+
+  // ── 광복절 한 줄 소감 ──
+  window.vacSubmitLibNote = function() {
+    var note = document.getElementById('vacLibNote').value.trim();
+    if (!note) { alert('내용을 입력해주세요.'); return; }
+    google.script.run
+      .withSuccessHandler(function(r) {
+        alert(r.msg);
+        if (r.success) {
+          if (_vacState) _vacState.libNoteDone = true;
+          document.getElementById('vacLibPanel').style.display = 'none';
+        }
+      })
+      .withFailureHandler(function(err) { alert('오류: ' + err.message); })
+      .submitLiberationNote(window._currentStudentName, note);
+  };
+
+  // ── 제안함 ──
+  window.vacToggleProposal = function() {
+    var f = document.getElementById('vacPropForm');
+    f.style.display = (f.style.display === 'none') ? 'block' : 'none';
+  };
+  window.vacSubmitProposal = function() {
+    var cat     = document.getElementById('vacPropCat').value;
+    var title   = document.getElementById('vacPropTitle').value.trim();
+    var content = document.getElementById('vacPropContent').value.trim();
+    if (!title || !content) { alert('제목과 내용을 모두 적어주세요.'); return; }
+    google.script.run
+      .withSuccessHandler(function(r) {
+        alert(r.msg);
+        if (r.success) {
+          document.getElementById('vacPropTitle').value = '';
+          document.getElementById('vacPropContent').value = '';
+          document.getElementById('vacPropForm').style.display = 'none';
+        }
+      })
+      .withFailureHandler(function(err) { alert('오류: ' + err.message); })
+      .submitSeasonProposal(window._currentStudentName, cat, title, content);
+  };
+
+  // ── 토스트 ──
+  var _vacToastTimer = null;
+  function _vacToast(html, ms) {
+    var t = document.getElementById('vacToast');
+    t.innerHTML = html;
+    t.style.display = 'block';
+    if (_vacToastTimer) clearTimeout(_vacToastTimer);
+    _vacToastTimer = setTimeout(function() { t.style.display = 'none'; }, ms || 4000);
+  }
 })();
 </script>
 

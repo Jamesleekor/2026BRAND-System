@@ -12,6 +12,9 @@ const VAC_CFG = {
   END:          '2026-08-23',   // 방학 종료일
   MAKEUP_START: '2026-08-24',   // 보충 기간 시작 (개학 후 1주)
   MAKEUP_END:   '2026-08-28',   // 보충 기간 종료
+  PROPOSAL_OPEN:'2026-08-03',   // 방학 시작 7일 후 제안소 공개
+  PROPOSAL_MIN_CHARS: 20,       // 제안 본문 최소 글자 수
+  PROPOSAL_LIST_LIMIT: 100,     // 공개 목록 최대 표시 수
   TOTAL_CELLS:  28,             // 별 개수 (= 방학 일수)
   DAILY_GOLD:   50,             // 매일 출석 골드
   DAILY_TOKEN:  1,              // 매일 출석 토큰
@@ -43,6 +46,9 @@ const SHEET_VAC_ATT   = '방학_출석';
 const SHEET_VAC_HIST  = '방학_출석_히스토리';
 const SHEET_VAC_MAP   = '방학_별자리';       // 칸별 유형·내용 (교사가 직접 편집)
 const SHEET_VAC_PROP  = '방학_제안함';
+const SHEET_VAC_PROP_REC = '방학_제안추천';
+const SHEET_VAC_FINISH = '방학_완주자';
+const SHEET_VAC_Q     = '방학_질문게시판';
 
 // 방학_출석 열 번호 (1-indexed)
 const VC = {
@@ -111,13 +117,23 @@ function setupVacationSheets() {
     sh.getRange(2, 1, rows.length, 4).setValues(rows);
   }
 
-  // ④ 방학_제안함
-  if (!ss.getSheetByName(SHEET_VAC_PROP)) {
-    const sh = ss.insertSheet(SHEET_VAC_PROP);
-    sh.appendRow(['제출일','이름','분류','제목','내용','검토상태','타임스탬프']);
+  // ④ 방학_제안함·의회 추천·완주자 기록
+  // 기존 7열 제안함도 자동으로 새 구조로 확장됩니다.
+  _vacEnsureProposalSheets_(ss);
+
+  // ⑤ 방학_질문게시판 — 교사는 E열에 답변을 적고 F열 상태를 '답변완료'로 변경
+  if (!ss.getSheetByName(SHEET_VAC_Q)) {
+    const sh = ss.insertSheet(SHEET_VAC_Q);
+    sh.appendRow(['등록일','이름','분류','질문','답변','상태','답변일','타임스탬프']);
+    sh.setFrozenRows(1);
+    sh.getRange(1, 1, 500, 8).setWrap(true);
+    sh.setColumnWidth(2, 90);
+    sh.setColumnWidth(3, 120);
+    sh.setColumnWidth(4, 360);
+    sh.setColumnWidth(5, 360);
   }
 
-  return '✅ 방학 시트 4개 준비 완료! 방학_별자리 시트에 기록·떡밥 칸 내용을 채워주세요.';
+  return '✅ 방학 시트 준비 완료! 제안함·의회 추천·완주자 기록 시트까지 최신 구조로 정리했습니다.';
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -228,7 +244,7 @@ function _vacCheckIn_(studentName, today) {
     if (newCells === VAC_CFG.TOTAL_CELLS && bonusLog.indexOf('완주') === -1) {
       tokens += VAC_CFG.COMPLETE_TOKEN;
       bonusLog += ',완주';
-      messages.push(`🌌 별자리 완성! 토큰 +${VAC_CFG.COMPLETE_TOKEN} · 업적 「긴 여름의 관측자」는 개학 후 승인됩니다`);
+      messages.push(`🌌 별자리 완성! 토큰 +${VAC_CFG.COMPLETE_TOKEN} · 「28성의 개척자」 칭호와 별자리 의회 자격이 기록되었습니다`);
     }
 
     // 시트 반영 (한 번에)
@@ -253,6 +269,7 @@ function _vacCheckIn_(studentName, today) {
       today, studentName, '출석', totalGold, tokens - Number(cur[VC.TOKENS - 1]),
       newCells, messages.join(' | '), '', _nowStr()
     ]);
+    if (newCells === VAC_CFG.TOTAL_CELLS) _vacRecordCompletionPerk_(ss, studentName, today);
 
     return {
       active: true, mode: '방학',
@@ -309,7 +326,7 @@ function _vacMakeup_(studentName, today) {
     if (newCells === VAC_CFG.TOTAL_CELLS && bonusLog.indexOf('완주') === -1) {
       tokens += VAC_CFG.COMPLETE_TOKEN;
       bonusLog += ',완주';
-      messages.push(`🌌 별자리 완성! 토큰 +${VAC_CFG.COMPLETE_TOKEN}`);
+      messages.push(`🌌 별자리 완성! 토큰 +${VAC_CFG.COMPLETE_TOKEN} · 별자리 의회 자격 획득`);
     }
 
     const newRow = cur.slice();
@@ -327,6 +344,7 @@ function _vacMakeup_(studentName, today) {
       today, studentName, '보충', totalGold, tokens - Number(cur[VC.TOKENS - 1]),
       newCells, messages.join(' | '), '', _nowStr()
     ]);
+    if (newCells === VAC_CFG.TOTAL_CELLS) _vacRecordCompletionPerk_(ss, studentName, today);
 
     return {
       active: true, mode: '보충', checkedToday: true, newCell: newCells,
@@ -392,7 +410,7 @@ function useVacationRestore(studentName) {
     if (newCells === VAC_CFG.TOTAL_CELLS && bonusLog.indexOf('완주') === -1) {
       tokens += VAC_CFG.COMPLETE_TOKEN;
       bonusLog += ',완주';
-      messages.push(`🌌 별자리 완성! 토큰 +${VAC_CFG.COMPLETE_TOKEN}`);
+      messages.push(`🌌 별자리 완성! 토큰 +${VAC_CFG.COMPLETE_TOKEN} · 별자리 의회 자격 획득`);
     }
 
     const newRow = cur.slice();
@@ -411,6 +429,7 @@ function useVacationRestore(studentName) {
       today, studentName, '복구', VAC_CFG.DAILY_GOLD, tokens - Number(cur[VC.TOKENS - 1]),
       newCells, messages.join(' | '), '', _nowStr()
     ]);
+    if (newCells === VAC_CFG.TOTAL_CELLS) _vacRecordCompletionPerk_(ss, studentName, today);
 
     return { success: true, cells: newCells, streak: restoredStreak,
              tokens: tokens, tickets: tickets - 1, messages: messages };
@@ -438,6 +457,9 @@ function getVacationStatus(studentName) {
   if (!myRow) return { success: false };
 
   const myCells = Number(myRow[VC.CELLS - 1]) || 0;
+  const today = _vacToday_(studentName);
+  const councilEligible = myCells >= VAC_CFG.TOTAL_CELLS;
+  if (councilEligible) _vacRecordCompletionPerk_(ss, studentName, today);
 
   // 열린 칸의 내용만 전달 (스포일러 방지)
   const mapSheet = ss.getSheetByName(SHEET_VAC_MAP);
@@ -466,7 +488,13 @@ function getVacationStatus(studentName) {
     openedCells: openedCells,
     classTotal: classTotal,          // 숫자와 게이지만 표시할 것 (개인별 노출 금지)
     classMax: (data.length - 1) * VAC_CFG.TOTAL_CELLS,
-    milestones: milestones
+    milestones: milestones,
+    proposalOpen: today >= VAC_CFG.PROPOSAL_OPEN && today <= VAC_CFG.MAKEUP_END,
+    proposalOpenDate: VAC_CFG.PROPOSAL_OPEN,
+    proposalMinChars: VAC_CFG.PROPOSAL_MIN_CHARS,
+    councilEligible: councilEligible,
+    completionTitle: councilEligible ? '28성의 개척자' : '',
+    completionBadge: councilEligible ? '✦28' : ''
   };
 }
 
@@ -501,25 +529,285 @@ function submitLiberationNote(studentName, note) {
 }
 
 // ════════════════════════════════════════════════════════════════
-// 5. 시즌2 제안함
+// 5. 시즌2 공개 제안소
+//    8/3부터 전원 공개 · 20자 이상 · 반복 제출 가능 · 작성자 익명
+//    28별 완주자는 「별자리 의회」 구성원으로 다른 제안을 추천할 수 있음
 // ════════════════════════════════════════════════════════════════
 function submitSeasonProposal(studentName, category, title, content) {
   studentName = String(studentName).trim();
-  category = _sanitizeString(category);
+  category = _vacProposalCategory_(category);
   title    = _sanitizeString(title);
   content  = _sanitizeString(content);
+
   if (!title || !content) return { success: false, msg: '제목과 내용을 모두 적어주세요.' };
-  if (title.length > 50 || content.length > 1000) return { success: false, msg: '너무 길어요! (제목 50자, 내용 1000자 이내)' };
+  if (title.length > 50 || content.length > 1000) {
+    return { success: false, msg: '너무 길어요! 제목 50자, 내용 1000자 이내로 적어주세요.' };
+  }
+  if (content.length < VAC_CFG.PROPOSAL_MIN_CHARS) {
+    return { success: false, msg: `제안 내용은 ${VAC_CFG.PROPOSAL_MIN_CHARS}자 이상 적어주세요. 현재 ${content.length}자입니다.` };
+  }
+
+  const today = _vacToday_(studentName);
+  if (today < VAC_CFG.PROPOSAL_OPEN) {
+    return { success: false, msg: `시즌2 공개 제안소는 ${VAC_CFG.PROPOSAL_OPEN}부터 열립니다.` };
+  }
+  if (today > VAC_CFG.MAKEUP_END) {
+    return { success: false, msg: '여름 시즌2 제안 접수 기간이 종료되었습니다.' };
+  }
 
   const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const att = ss.getSheetByName(SHEET_VAC_ATT);
+  if (!att || !_vacStudentExists_(att, studentName)) {
+    return { success: false, msg: '학생 정보를 확인할 수 없어요.' };
+  }
+  _vacEnsureProposalSheets_(ss);
   const sh = ss.getSheetByName(SHEET_VAC_PROP);
-  if (!sh) return { success: false, msg: '제안함이 아직 열리지 않았어요.' };
-  sh.appendRow([_vacToday_(studentName), studentName, category || '기타', title, content, '검토전', _nowStr()]);
-  return { success: true, msg: '제안이 접수되었어요! 채택되면 시즌2 개회식에서 발표됩니다. 🌟' };
+
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const data = sh.getDataRange().getValues();
+    let hasPrevious = false;
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][1] || '').trim() === studentName && String(data[i][4] || '').trim()) {
+        hasPrevious = true;
+        break;
+      }
+    }
+
+    const proposalId = 'P-' + Utilities.getUuid().slice(0, 8).toUpperCase();
+    const achievementMark = hasPrevious ? '' : '시즌2의 설계자 조건충족';
+    sh.appendRow([today, studentName, category, title, content, '새 제안', _nowStr(), proposalId, achievementMark, 0]);
+
+    if (!hasPrevious) {
+      const hist = ss.getSheetByName(SHEET_VAC_HIST);
+      if (hist) hist.appendRow([
+        today, studentName, '업적조건충족', 0, 0, '', '시즌2의 설계자 — 20자 이상 첫 제안 제출', '', _nowStr()
+      ]);
+    }
+
+    return {
+      success: true,
+      firstValid: !hasPrevious,
+      msg: !hasPrevious
+        ? '제안이 공개 제안소에 등록되었습니다. 업적 「시즌2의 설계자」 달성 조건도 충족했습니다. 🛠️'
+        : '새 제안이 공개 제안소에 등록되었습니다. 다른 아이디어도 계속 제출할 수 있어요. 💡'
+    };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function getSeasonProposals(studentName) {
+  studentName = String(studentName).trim();
+  const today = _vacToday_(studentName);
+  const isOpen = today >= VAC_CFG.PROPOSAL_OPEN && today <= VAC_CFG.MAKEUP_END;
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const att = ss.getSheetByName(SHEET_VAC_ATT);
+  if (!att || !_vacStudentExists_(att, studentName)) {
+    return { success: false, msg: '학생 정보를 확인할 수 없어요.', proposals: [] };
+  }
+
+  const studentRow = _vacFindStudentRow_(att, studentName);
+  const myCells = studentRow ? Number(studentRow[VC.CELLS - 1]) || 0 : 0;
+  const councilEligible = myCells >= VAC_CFG.TOTAL_CELLS;
+  if (councilEligible) _vacRecordCompletionPerk_(ss, studentName, today);
+
+  if (!isOpen) {
+    return {
+      success: true, open: false, openDate: VAC_CFG.PROPOSAL_OPEN,
+      minChars: VAC_CFG.PROPOSAL_MIN_CHARS, proposals: [], councilEligible: councilEligible,
+      completionTitle: councilEligible ? '28성의 개척자' : '', completionBadge: councilEligible ? '✦28' : ''
+    };
+  }
+
+  _vacEnsureProposalSheets_(ss);
+  const sh = ss.getSheetByName(SHEET_VAC_PROP);
+  const recSh = ss.getSheetByName(SHEET_VAC_PROP_REC);
+  const data = sh.getDataRange().getValues();
+  const recData = recSh.getDataRange().getValues();
+  const recCounts = {};
+  const myRecs = {};
+
+  for (let i = 1; i < recData.length; i++) {
+    const pid = String(recData[i][1] || '').trim();
+    const who = String(recData[i][2] || '').trim();
+    if (!pid || !who) continue;
+    recCounts[pid] = (recCounts[pid] || 0) + 1;
+    if (who === studentName) myRecs[pid] = true;
+  }
+
+  const proposals = [];
+  for (let i = data.length - 1; i >= 1 && proposals.length < VAC_CFG.PROPOSAL_LIST_LIMIT; i--) {
+    const owner = String(data[i][1] || '').trim();
+    const content = String(data[i][4] || '').trim();
+    if (!content) continue;
+    const proposalId = String(data[i][7] || '').trim() || ('P-LEGACY-' + (i + 1));
+    const status = _vacProposalStatus_(data[i][5]);
+    proposals.push({
+      id: proposalId,
+      date: _vacDateKey_(data[i][0]),
+      category: String(data[i][2] || '기타'),
+      title: String(data[i][3] || ''),
+      content: content,
+      status: status.label,
+      statusKey: status.key,
+      recommendationCount: recCounts[proposalId] || Number(data[i][9]) || 0,
+      isMine: owner === studentName,
+      canRecommend: councilEligible && owner !== studentName,
+      recommendedByMe: !!myRecs[proposalId]
+    });
+  }
+
+  return {
+    success: true, open: true, openDate: VAC_CFG.PROPOSAL_OPEN,
+    minChars: VAC_CFG.PROPOSAL_MIN_CHARS, limit: VAC_CFG.PROPOSAL_LIST_LIMIT,
+    proposals: proposals, councilEligible: councilEligible,
+    completionTitle: councilEligible ? '28성의 개척자' : '', completionBadge: councilEligible ? '✦28' : ''
+  };
+}
+
+function toggleSeasonProposalRecommendation(studentName, proposalId) {
+  studentName = String(studentName).trim();
+  proposalId = String(proposalId || '').trim();
+  const today = _vacToday_(studentName);
+  if (today < VAC_CFG.PROPOSAL_OPEN || today > VAC_CFG.MAKEUP_END) {
+    return { success: false, msg: '지금은 별자리 의회 추천 기간이 아닙니다.' };
+  }
+  if (!proposalId) return { success: false, msg: '제안을 찾을 수 없어요.' };
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const att = ss.getSheetByName(SHEET_VAC_ATT);
+  const studentRow = att ? _vacFindStudentRow_(att, studentName) : null;
+  if (!studentRow || (Number(studentRow[VC.CELLS - 1]) || 0) < VAC_CFG.TOTAL_CELLS) {
+    return { success: false, msg: '28개의 별을 모두 밝힌 별자리 의회 구성원만 추천할 수 있어요.' };
+  }
+
+  _vacEnsureProposalSheets_(ss);
+  const sh = ss.getSheetByName(SHEET_VAC_PROP);
+  const recSh = ss.getSheetByName(SHEET_VAC_PROP_REC);
+  const data = sh.getDataRange().getValues();
+  let proposalRow = -1, owner = '';
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][7] || '').trim() === proposalId) {
+      proposalRow = i + 1;
+      owner = String(data[i][1] || '').trim();
+      break;
+    }
+  }
+  if (proposalRow < 0) return { success: false, msg: '제안을 찾을 수 없어요. 목록을 새로고침해주세요.' };
+  if (owner === studentName) return { success: false, msg: '자신이 제출한 제안은 직접 추천할 수 없어요.' };
+
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const recData = recSh.getDataRange().getValues();
+    let existingRow = -1;
+    for (let i = 1; i < recData.length; i++) {
+      if (String(recData[i][1] || '').trim() === proposalId && String(recData[i][2] || '').trim() === studentName) {
+        existingRow = i + 1;
+        break;
+      }
+    }
+
+    let recommended;
+    if (existingRow > 0) {
+      recSh.deleteRow(existingRow);
+      recommended = false;
+    } else {
+      recSh.appendRow([today, proposalId, studentName, _nowStr()]);
+      recommended = true;
+    }
+
+    const latest = recSh.getDataRange().getValues();
+    let count = 0;
+    for (let i = 1; i < latest.length; i++) {
+      if (String(latest[i][1] || '').trim() === proposalId) count++;
+    }
+    sh.getRange(proposalRow, 10).setValue(count);
+
+    return {
+      success: true, recommended: recommended, count: count,
+      msg: recommended ? '별자리 의회 추천을 보냈습니다. ✦' : '추천을 취소했습니다.'
+    };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 // ════════════════════════════════════════════════════════════════
-// 6. 학급 공동 진행도 단계 보상 (하루 1회 트리거)
+// 6. 여름 방학 질문게시판 — 정규 방학 기간에만 운영
+//    모든 학생의 질문과 답변을 익명 공개하고, 본인 글만 isMine으로 표시
+// ════════════════════════════════════════════════════════════════
+function submitVacationQuestion(studentName, category, question) {
+  studentName = String(studentName).trim();
+  category = _sanitizeString(category) || '기타';
+  question = _sanitizeString(question);
+
+  const today = _vacToday_(studentName);
+  if (today < VAC_CFG.START || today > VAC_CFG.END) {
+    return { success: false, msg: '질문게시판은 여름 방학 기간에만 운영됩니다.' };
+  }
+  if (!question) return { success: false, msg: '질문 내용을 적어주세요.' };
+  if (question.length > 500) return { success: false, msg: '질문은 500자 이내로 적어주세요.' };
+  if (category.length > 30) category = category.slice(0, 30);
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const att = ss.getSheetByName(SHEET_VAC_ATT);
+  const qSheet = ss.getSheetByName(SHEET_VAC_Q);
+  if (!att || !qSheet) return { success: false, msg: '질문게시판이 아직 준비되지 않았어요.' };
+
+  // 로그인 학생 명단 확인
+  const names = att.getRange(2, VC.NAME, Math.max(att.getLastRow() - 1, 1), 1).getValues();
+  const exists = names.some(function(r) { return String(r[0]).trim() === studentName; });
+  if (!exists) return { success: false, msg: '학생 정보를 확인할 수 없어요.' };
+
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    qSheet.appendRow([today, studentName, category, question, '', '답변대기', '', _nowStr()]);
+  } finally {
+    lock.releaseLock();
+  }
+  return { success: true, msg: '질문이 등록되었습니다. 교사의 답변은 이 게시판에서 확인할 수 있어요. 💬' };
+}
+
+function getMyVacationQuestions(studentName) {
+  studentName = String(studentName).trim();
+  const today = _vacToday_(studentName);
+  if (today < VAC_CFG.START || today > VAC_CFG.END) {
+    return { success: false, msg: '질문게시판 운영 기간이 아닙니다.', questions: [] };
+  }
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sh = ss.getSheetByName(SHEET_VAC_Q);
+  if (!sh) return { success: false, msg: '질문게시판이 아직 준비되지 않았어요.', questions: [] };
+
+  const data = sh.getDataRange().getValues();
+  const questions = [];
+  // 최신 질문 최대 50개를 공개한다. 작성자 이름 자체는 응답에 포함하지 않는다.
+  for (let i = data.length - 1; i >= 1 && questions.length < 50; i--) {
+    const owner = String(data[i][1] || '').trim();
+    const question = String(data[i][3] || '').trim();
+    if (!question) continue;
+    const answer = String(data[i][4] || '').trim();
+    const status = String(data[i][5] || '').trim();
+    questions.push({
+      date: _vacDateKey_(data[i][0]),
+      category: String(data[i][2] || '기타'),
+      question: question,
+      answer: answer,
+      answered: !!answer || status === '답변완료',
+      answerDate: _vacDateKey_(data[i][6]),
+      isMine: owner === studentName
+    });
+  }
+  return { success: true, questions: questions, limit: 50 };
+}
+
+
+// ════════════════════════════════════════════════════════════════
+// 7. 학급 공동 진행도 단계 보상 (하루 1회 트리거)
 //    이미 지급한 단계는 PropertiesService 에 기록해 중복 지급 방지
 // ════════════════════════════════════════════════════════════════
 function checkVacationClassMilestones() {
@@ -580,6 +868,116 @@ function removeVacationTrigger() {
   ScriptApp.getProjectTriggers().forEach(function(t) {
     if (t.getHandlerFunction() === 'checkVacationClassMilestones') ScriptApp.deleteTrigger(t);
   });
+}
+
+// ── 공개 제안소 시트 구조 보정 ─────────────────────────────────
+function _vacEnsureProposalSheets_(ss) {
+  let sh = ss.getSheetByName(SHEET_VAC_PROP);
+  if (!sh) sh = ss.insertSheet(SHEET_VAC_PROP);
+  const headers = ['제출일','이름','분류','제목','내용','검토상태','타임스탬프','제안ID','업적처리','의회추천수'];
+  if (sh.getMaxColumns() < headers.length) sh.insertColumnsAfter(sh.getMaxColumns(), headers.length - sh.getMaxColumns());
+  sh.getRange(1, 1, 1, headers.length).setValues([headers]);
+  sh.setFrozenRows(1);
+  sh.getRange(1, 1, Math.max(sh.getMaxRows(), 2), headers.length).setWrap(true);
+  sh.setColumnWidth(2, 90);
+  sh.setColumnWidth(3, 120);
+  sh.setColumnWidth(4, 220);
+  sh.setColumnWidth(5, 420);
+  sh.setColumnWidth(6, 130);
+
+  const lastRow = sh.getLastRow();
+  if (lastRow >= 2) {
+    const rows = sh.getRange(2, 1, lastRow - 1, headers.length).getValues();
+    let changed = false;
+    for (let i = 0; i < rows.length; i++) {
+      if (!String(rows[i][7] || '').trim() && String(rows[i][4] || '').trim()) {
+        rows[i][7] = 'P-LEGACY-' + String(i + 2).padStart(3, '0');
+        changed = true;
+      }
+      if (!String(rows[i][5] || '').trim() && String(rows[i][4] || '').trim()) {
+        rows[i][5] = '새 제안';
+        changed = true;
+      }
+      if (rows[i][9] === '') {
+        rows[i][9] = 0;
+        changed = true;
+      }
+    }
+    if (changed) sh.getRange(2, 1, rows.length, headers.length).setValues(rows);
+  }
+
+  let rec = ss.getSheetByName(SHEET_VAC_PROP_REC);
+  if (!rec) {
+    rec = ss.insertSheet(SHEET_VAC_PROP_REC);
+    rec.appendRow(['추천일','제안ID','추천자','타임스탬프']);
+  }
+  rec.setFrozenRows(1);
+  rec.getRange(1, 1, Math.max(rec.getMaxRows(), 2), 4).setWrap(true);
+
+  let finish = ss.getSheetByName(SHEET_VAC_FINISH);
+  if (!finish) {
+    finish = ss.insertSheet(SHEET_VAC_FINISH);
+    finish.appendRow(['완주일','이름','한정칭호','프로필표식','별자리의회','타임스탬프']);
+  }
+  finish.setFrozenRows(1);
+  finish.getRange(1, 1, Math.max(finish.getMaxRows(), 2), 6).setWrap(true);
+  return sh;
+}
+
+function _vacRecordCompletionPerk_(ss, studentName, completionDate) {
+  _vacEnsureProposalSheets_(ss);
+  const sh = ss.getSheetByName(SHEET_VAC_FINISH);
+  const data = sh.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][1] || '').trim() === studentName) return;
+  }
+  sh.appendRow([completionDate, studentName, '28성의 개척자', '✦28', '초대', _nowStr()]);
+}
+
+function _vacStudentExists_(attSheet, studentName) {
+  return !!_vacFindStudentRow_(attSheet, studentName);
+}
+
+function _vacFindStudentRow_(attSheet, studentName) {
+  if (!attSheet || attSheet.getLastRow() < 2) return null;
+  const data = attSheet.getRange(2, 1, attSheet.getLastRow() - 1, 14).getValues();
+  for (let i = 0; i < data.length; i++) {
+    if (String(data[i][VC.NAME - 1] || '').trim() === studentName) return data[i];
+  }
+  return null;
+}
+
+function _vacProposalCategory_(category) {
+  const allowed = ['새 제도','이벤트','길드 운영','직업·성장','웹앱 개선','기타'];
+  category = _sanitizeString(category);
+  return allowed.indexOf(category) >= 0 ? category : '기타';
+}
+
+function _vacProposalStatus_(raw) {
+  const v = String(raw || '').replace(/\s/g, '');
+  if (v.indexOf('검토중') !== -1) return { key:'review', label:'🔍 검토 중' };
+  if (v.indexOf('시험운영후보') !== -1 || v.indexOf('시험운영') !== -1) return { key:'candidate', label:'🧪 시험 운영 후보' };
+  if (v.indexOf('시즌2반영예정') !== -1 || v.indexOf('반영예정') !== -1 || v.indexOf('채택') !== -1) return { key:'accepted', label:'✅ 시즌2 반영 예정' };
+  if (v.indexOf('보관') !== -1 || v.indexOf('보류') !== -1) return { key:'archive', label:'📦 보관' };
+  return { key:'new', label:'💡 새 제안' };
+}
+
+// 교사용 1회 실행: 기존 28별 완주자를 완주자 시트에 일괄 기록
+function syncVacationCompletionPerks() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const att = ss.getSheetByName(SHEET_VAC_ATT);
+  if (!att) return '방학_출석 시트를 찾을 수 없습니다.';
+  _vacEnsureProposalSheets_(ss);
+  const data = att.getDataRange().getValues();
+  let count = 0;
+  for (let i = 1; i < data.length; i++) {
+    const name = String(data[i][VC.NAME - 1] || '').trim();
+    if (!name || (Number(data[i][VC.CELLS - 1]) || 0) < VAC_CFG.TOTAL_CELLS) continue;
+    const before = ss.getSheetByName(SHEET_VAC_FINISH).getLastRow();
+    _vacRecordCompletionPerk_(ss, name, _vacDateKey_(data[i][VC.LAST_DATE - 1]) || _vacToday_(name));
+    if (ss.getSheetByName(SHEET_VAC_FINISH).getLastRow() > before) count++;
+  }
+  return `✅ 완주자 ${count}명의 별자리 의회·칭호 기록을 추가했습니다.`;
 }
 
 // ════════════════════════════════════════════════════════════════

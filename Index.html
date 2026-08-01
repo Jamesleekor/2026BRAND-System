@@ -2495,6 +2495,110 @@
     #panel-guild [style*="color:#9ca3af"] { color: #b7c2cd !important; }
     #panel-guild [style*="color:#7f8c8d"] { color: #a8b4bd !important; }
 
+
+  /* ═══════════════════════════════════════════════════════
+     Ruby 길드 시즌1 우승 Tribute 로그인
+     ═══════════════════════════════════════════════════════ */
+  #loginSection.ruby-tribute-card {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    width: 100%;
+    padding: 18px 20px 26px;
+    border-radius: 28px;
+    background: rgba(8,10,19,.86);
+    border: 1px solid rgba(255,255,255,.11);
+    box-shadow: 0 24px 80px rgba(0,0,0,.58), 0 0 0 1px rgba(255,66,113,.06) inset, 0 0 85px rgba(208,34,83,.15);
+    backdrop-filter: blur(16px);
+    text-align: center;
+  }
+  #loginSection.ruby-tribute-card::before {
+    content:""; position:absolute; inset:9px; border-radius:21px;
+    border:1px solid rgba(255,255,255,.08); pointer-events:none; z-index:-1;
+  }
+  #loginSection.ruby-tribute-card::after {
+    content:""; position:absolute; left:-40%; top:-12%; width:58%; height:140%;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.07),transparent);
+    transform:skewX(-20deg); animation:rubyGlassSweep 9s linear infinite;
+    pointer-events:none; z-index:-1;
+  }
+  @keyframes rubyGlassSweep { 0%{transform:translateX(-120%) skewX(-20deg)} 22%,100%{transform:translateX(250%) skewX(-20deg)} }
+  .ruby-starfield { position:absolute; inset:0; pointer-events:none; z-index:-2; opacity:.9;
+    background-image:
+      radial-gradient(circle at 8% 12%,rgba(255,255,255,.9) 0 1px,transparent 1.6px),
+      radial-gradient(circle at 62% 24%,rgba(255,160,188,.9) 0 1px,transparent 1.6px),
+      radial-gradient(circle at 83% 70%,rgba(122,214,255,.95) 0 1px,transparent 1.6px),
+      radial-gradient(circle at 21% 83%,rgba(255,241,168,.9) 0 1px,transparent 1.6px),
+      radial-gradient(circle at 93% 19%,rgba(255,255,255,.8) 0 1.1px,transparent 1.7px);
+    background-size:220px 180px,340px 240px,280px 240px,320px 280px,360px 320px;
+    animation:rubyStarShift 18s ease-in-out infinite alternate;
+  }
+  @keyframes rubyStarShift { to { transform:translateY(-10px) scale(1.02); } }
+  .ruby-crest-wrap { margin:-5px auto 2px; width:min(100%,420px); }
+  .ruby-constellation-svg { width:100%; height:auto; display:block; overflow:visible; }
+  .ruby-path-glow { filter:url(#lineGlow); }
+  .ruby-orbit-node { filter:url(#nodeGlow); }
+  .ruby-orbit-label { font-family:'Noto Sans KR',sans-serif; font-weight:700; pointer-events:none; }
+  .ruby-core-pulse { animation:rubyCoreHeartbeat 3.6s ease-in-out infinite; transform-origin:center; transform-box:fill-box; }
+  @keyframes rubyCoreHeartbeat {
+    0%,100%{transform:scale(1.15)} 12%{transform:scale(1.20)} 20%{transform:scale(1.17)}
+    30%{transform:scale(1.24)} 42%{transform:scale(1.18)} 58%{transform:scale(1.20)}
+  }
+  .ruby-sparkle { animation:rubySparkleBlink 2.4s ease-in-out infinite; transform-origin:center; }
+  .ruby-sparkle.ruby-s2 { animation-delay:-.8s; }
+  .ruby-sparkle.ruby-s3 { animation-delay:-1.6s; }
+  @keyframes rubySparkleBlink { 0%,100%{opacity:.35;transform:scale(.82)} 50%{opacity:1;transform:scale(1.18)} }
+  .ruby-eyebrow { color:#d7b5ff; letter-spacing:3px; font-size:10px; font-weight:800; text-transform:uppercase; margin-top:-2px; }
+  #loginSection .ruby-title { margin:5px 0 7px; font-family:Georgia,'Times New Roman',serif; font-size:46px; line-height:1; letter-spacing:8px; font-weight:700; }
+  .ruby-shine { position:relative; display:inline-block; overflow:hidden; white-space:nowrap;
+    background:linear-gradient(90deg,#fff5fb 0%,#ffd7e4 18%,#ff7a9c 42%,#fff5fb 62%,#ffd0e0 100%);
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:transparent;
+    filter:drop-shadow(0 0 12px rgba(255,93,133,.38)) drop-shadow(0 0 28px rgba(255,93,133,.22)); isolation:isolate;
+  }
+  .ruby-shine::after { content:'RUBY'; position:absolute; inset:0; overflow:hidden; white-space:nowrap; color:transparent;
+    -webkit-text-fill-color:transparent; -webkit-background-clip:text; background-clip:text;
+    background:linear-gradient(115deg,transparent 0%,transparent 41%,rgba(255,255,255,.12) 46%,rgba(255,255,255,.98) 50%,rgba(255,255,255,.16) 54%,transparent 59%,transparent 100%);
+    transform:translateX(-115%) skewX(-18deg); animation:rubyTextSweep 3.8s ease-in-out infinite; pointer-events:none;
+  }
+  @keyframes rubyTextSweep { 0%,15%{transform:translateX(-115%) skewX(-18deg)} 55%,100%{transform:translateX(115%) skewX(-18deg)} }
+  #loginSection .ruby-winner-copy { margin:0 0 14px; font-size:15px; font-weight:700; color:#e1e5ff; text-shadow:0 0 15px rgba(170,184,255,.12); }
+  .ruby-member-line { display:flex; flex-wrap:wrap; justify-content:center; gap:8px; margin:0 0 16px; }
+  .ruby-member-line span { font-size:12px; padding:6px 10px; border-radius:999px; color:#eef2ff;
+    background:linear-gradient(135deg,rgba(255,255,255,.07),rgba(255,255,255,.03)); border:1px solid rgba(255,255,255,.1); }
+  .ruby-tag-wind{border-color:rgba(112,214,107,.40)!important;box-shadow:0 0 16px rgba(112,214,107,.14)}
+  .ruby-tag-earth{border-color:rgba(199,161,106,.38)!important;box-shadow:0 0 16px rgba(199,161,106,.12)}
+  .ruby-tag-fire{border-color:rgba(240,67,86,.40)!important;box-shadow:0 0 16px rgba(240,67,86,.15)}
+  .ruby-tag-water{border-color:rgba(105,200,255,.38)!important;box-shadow:0 0 16px rgba(105,200,255,.12)}
+  .ruby-tag-light{border-color:rgba(255,241,168,.38)!important;box-shadow:0 0 16px rgba(255,241,168,.12)}
+  .ruby-login-form { width:min(100%,392px); margin:0 auto; }
+  .ruby-field { display:block; position:relative; margin-bottom:11px; }
+  .ruby-field > svg { position:absolute; left:15px; top:50%; transform:translateY(-50%); width:18px; height:18px; opacity:.78; color:#f4d7e3; z-index:2; }
+  #loginSection .ruby-field input[type='text'], #loginSection .ruby-field input[type='password'] {
+    width:100%; height:50px; margin:0; padding:0 14px 0 44px; border-radius:14px; font-size:14px;
+    border:1px solid rgba(255,255,255,.12); background:linear-gradient(180deg,rgba(8,10,18,.88),rgba(16,19,31,.86)); color:#f9f7ff;
+    box-shadow:0 0 0 1px rgba(255,255,255,.02) inset; transition:.22s;
+  }
+  #loginSection .ruby-field input:focus { border-color:rgba(255,109,149,.75); box-shadow:0 0 0 3px rgba(255,69,117,.14),0 0 16px rgba(255,69,117,.2),0 0 30px rgba(255,69,117,.08); }
+  #loginSection button.ruby-login-action { position:relative; overflow:hidden; width:100%; height:51px; padding:0; border-radius:14px;
+    color:#fff; font-weight:900; letter-spacing:.6px; border:0;
+    background:linear-gradient(90deg,#61183f 0%,#ca285b 28%,#ff507e 50%,#ca285b 72%,#6d1d45 100%); background-size:220% 100%;
+    box-shadow:0 0 18px rgba(255,86,131,.22),0 14px 34px rgba(171,17,67,.28); animation:rubyButtonGlow 6s linear infinite;
+  }
+  #loginSection button.ruby-login-action::before { content:""; position:absolute; inset:0;
+    background:linear-gradient(110deg,transparent 0%,transparent 35%,rgba(255,255,255,.08) 44%,rgba(255,255,255,.75) 50%,rgba(255,255,255,.1) 56%,transparent 68%,transparent 100%);
+    transform:translateX(-150%) skewX(-18deg); animation:rubyButtonSweep 3.5s ease-in-out infinite;
+  }
+  @keyframes rubyButtonGlow { to{background-position:220% 0} }
+  @keyframes rubyButtonSweep { 0%,18%{transform:translateX(-150%) skewX(-18deg)} 60%,100%{transform:translateX(170%) skewX(-18deg)} }
+  @media(max-width:520px){
+    #loginSection.ruby-tribute-card{padding:14px 12px 22px;border-radius:23px}
+    #loginSection .ruby-title{font-size:40px;letter-spacing:6px}
+    .ruby-member-line{gap:6px}.ruby-member-line span{padding:5px 8px;font-size:11px}
+  }
+  @media(prefers-reduced-motion:reduce){
+    .ruby-starfield,.ruby-core-pulse,.ruby-sparkle,.ruby-shine::after,#loginSection.ruby-tribute-card::after,#loginSection button.ruby-login-action,#loginSection button.ruby-login-action::before{animation:none!important}
+  }
+
 </style>
 </head>
 <body>
@@ -2518,13 +2622,203 @@
 
 <div class="container">
 
-  <div id="loginSection" class="login-box">
-    <i class="fas fa-university" style="font-size:30px;color:var(--primary-color);margin-bottom:10px;"></i>
-    <h2>2026 BRAND 시스템</h2>
-    <p style="font-size:12px;color:var(--text-secondary);">이름을 입력하세요</p>
-    <input type="text" id="studentName" placeholder="예: 이순신">
-    <input type="password" id="studentPassword" placeholder="비밀번호를 입력하세요">
-    <button class="login-btn" onclick="login()">데이터 불러오기</button>
+  <div id="loginSection" class="login-box ruby-tribute-card">
+    <div class="ruby-starfield" aria-hidden="true"></div>
+    <div class="ruby-crest-wrap">
+<svg aria-label="다섯 길드원 속성 루비와 중앙 Ruby 길드 문장" class="ruby-constellation-svg" role="img" viewbox="0 0 420 290">
+<defs>
+<filter height="200%" id="lineGlow" width="200%" x="-50%" y="-50%">
+<feGaussianBlur result="blur1" stddeviation="2.6"></feGaussianBlur>
+<feMerge>
+<feMergenode in="blur1"></feMergeNode>
+<feMergenode in="SourceGraphic"></feMergeNode>
+</feMerge>
+</filter>
+<filter height="260%" id="nodeGlow" width="260%" x="-80%" y="-80%">
+<feGaussianBlur result="blur2" stddeviation="4"></feGaussianBlur>
+<feMerge>
+<feMergenode in="blur2"></feMergeNode>
+<feMergenode in="SourceGraphic"></feMergeNode>
+</feMerge>
+</filter>
+<radialGradient cx="50%" cy="50%" id="haloCrimson" r="50%">
+<stop offset="0%" stop-color="#ff8eab" stop-opacity=".65"></stop>
+<stop offset="55%" stop-color="#ff3e70" stop-opacity=".22"></stop>
+<stop offset="100%" stop-color="#ff1e59" stop-opacity="0"></stop>
+</radialGradient>
+<radialGradient cx="50%" cy="50%" id="haloWind" r="50%">
+<stop offset="0%" stop-color="#98f596" stop-opacity=".68"></stop>
+<stop offset="60%" stop-color="#70d66b" stop-opacity=".20"></stop>
+<stop offset="100%" stop-color="#70d66b" stop-opacity="0"></stop>
+</radialGradient>
+<radialGradient cx="50%" cy="50%" id="haloEarth" r="50%">
+<stop offset="0%" stop-color="#d4b180" stop-opacity=".60"></stop>
+<stop offset="60%" stop-color="#c7a16a" stop-opacity=".18"></stop>
+<stop offset="100%" stop-color="#c7a16a" stop-opacity="0"></stop>
+</radialGradient>
+<radialGradient cx="50%" cy="50%" id="haloFire" r="50%">
+<stop offset="0%" stop-color="#ff9aaa" stop-opacity=".66"></stop>
+<stop offset="60%" stop-color="#f04356" stop-opacity=".22"></stop>
+<stop offset="100%" stop-color="#f04356" stop-opacity="0"></stop>
+</radialGradient>
+<radialGradient cx="50%" cy="50%" id="haloWater" r="50%">
+<stop offset="0%" stop-color="#7ad8ff" stop-opacity=".62"></stop>
+<stop offset="60%" stop-color="#69c8ff" stop-opacity=".18"></stop>
+<stop offset="100%" stop-color="#69c8ff" stop-opacity="0"></stop>
+</radialGradient>
+<radialGradient cx="50%" cy="50%" id="haloLight" r="50%">
+<stop offset="0%" stop-color="#fff7c7" stop-opacity=".78"></stop>
+<stop offset="60%" stop-color="#fff1a8" stop-opacity=".22"></stop>
+<stop offset="100%" stop-color="#fff1a8" stop-opacity="0"></stop>
+</radialGradient>
+<linearGradient id="gemCrimson" x1="0" x2="1" y1="0" y2="1">
+<stop offset="0%" stop-color="#ffe2ea"></stop>
+<stop offset="18%" stop-color="#ff9ab2"></stop>
+<stop offset="45%" stop-color="#d93d66"></stop>
+<stop offset="72%" stop-color="#8d1737"></stop>
+<stop offset="100%" stop-color="#39000f"></stop>
+</linearGradient>
+<linearGradient id="gemWind" x1="0" x2="1" y1="0" y2="1">
+<stop offset="0%" stop-color="#f2fff1"></stop>
+<stop offset="35%" stop-color="#baf7ad"></stop>
+<stop offset="68%" stop-color="#5dcf5b"></stop>
+<stop offset="100%" stop-color="#23703c"></stop>
+</linearGradient>
+<linearGradient id="gemEarth" x1="0" x2="1" y1="0" y2="1">
+<stop offset="0%" stop-color="#fff2dc"></stop>
+<stop offset="35%" stop-color="#e6c392"></stop>
+<stop offset="68%" stop-color="#aa7c46"></stop>
+<stop offset="100%" stop-color="#5b3a19"></stop>
+</linearGradient>
+<linearGradient id="gemFire" x1="0" x2="1" y1="0" y2="1">
+<stop offset="0%" stop-color="#fff1f4"></stop>
+<stop offset="32%" stop-color="#ffb0bf"></stop>
+<stop offset="62%" stop-color="#f04356"></stop>
+<stop offset="100%" stop-color="#7a1020"></stop>
+</linearGradient>
+<linearGradient id="gemWater" x1="0" x2="1" y1="0" y2="1">
+<stop offset="0%" stop-color="#eefaff"></stop>
+<stop offset="30%" stop-color="#93e1ff"></stop>
+<stop offset="62%" stop-color="#4db8ff"></stop>
+<stop offset="100%" stop-color="#13548e"></stop>
+</linearGradient>
+<linearGradient id="gemLight" x1="0" x2="1" y1="0" y2="1">
+<stop offset="0%" stop-color="#ffffff"></stop>
+<stop offset="28%" stop-color="#fff7d0"></stop>
+<stop offset="60%" stop-color="#ffd960"></stop>
+<stop offset="100%" stop-color="#a97f16"></stop>
+</linearGradient>
+</defs>
+<g class="ruby-path-glow" fill="none" stroke-linecap="round">
+<path d="M210 34 L344 114 L297 248 L124 248 L76 114 Z" stroke="rgba(255,120,161,.85)" stroke-width="1.8"></path>
+<path d="M210 34 L297 248 M344 114 L124 248 M76 114 L297 248 M210 34 L124 248 M76 114 L344 114" stroke="rgba(255,120,161,.34)" stroke-width="1.2"></path>
+<circle cx="210" cy="143" r="74" stroke="rgba(255,120,161,.22)" stroke-width="1.2"></circle>
+<circle cx="210" cy="143" r="92" stroke="rgba(255,120,161,.10)" stroke-width="1"></circle>
+</g>
+<!-- 학생 루비 5개: 오방진 꼭짓점에서 다음 꼭짓점으로, 외곽 선분 전체를 계속 순환 -->
+<g class="ruby-orbit-node ruby-orbit-wind">
+<circle fill="url(#haloWind)" r="36"></circle>
+<g>
+<polygon fill="url(#gemWind)" points="0,-22 19,-11 19,11 0,22 -19,11 -19,-11" stroke="#ebffe7" stroke-width="2"></polygon>
+<polyline fill="none" points="0,-22 0,22" stroke="rgba(255,255,255,.55)" stroke-width="1"></polyline>
+<polyline fill="none" points="-19,-11 0,0 19,-11" stroke="rgba(255,255,255,.45)" stroke-width="1"></polyline>
+<polyline fill="none" points="-19,11 0,0 19,11" stroke="rgba(255,255,255,.40)" stroke-width="1"></polyline>
+</g>
+<text class="ruby-orbit-label" fill="#f0ffef" font-size="12" text-anchor="middle" x="0" y="42">김서영</text>
+<animateMotion calcMode="linear" dur="24s" path="M210 34 L344 114 L297 248 L124 248 L76 114 Z" repeatCount="indefinite" rotate="0"></animateMotion>
+</g>
+<g class="ruby-orbit-node ruby-orbit-earth">
+<circle fill="url(#haloEarth)" r="36"></circle>
+<g>
+<polygon fill="url(#gemEarth)" points="0,-22 19,-11 19,11 0,22 -19,11 -19,-11" stroke="#f6e2bf" stroke-width="2"></polygon>
+<polyline fill="none" points="0,-22 0,22" stroke="rgba(255,255,255,.50)" stroke-width="1"></polyline>
+<polyline fill="none" points="-19,-11 0,0 19,-11" stroke="rgba(255,255,255,.38)" stroke-width="1"></polyline>
+<polyline fill="none" points="-19,11 0,0 19,11" stroke="rgba(255,255,255,.34)" stroke-width="1"></polyline>
+</g>
+<text class="ruby-orbit-label" fill="#fff4e7" font-size="12" text-anchor="middle" x="0" y="42">박시우</text>
+<animateMotion calcMode="linear" dur="24s" path="M344 114 L297 248 L124 248 L76 114 L210 34 Z" repeatCount="indefinite" rotate="0"></animateMotion>
+</g>
+<g class="ruby-orbit-node ruby-orbit-fire">
+<circle fill="url(#haloFire)" r="36"></circle>
+<g>
+<polygon fill="url(#gemFire)" points="0,-22 19,-11 19,11 0,22 -19,11 -19,-11" stroke="#ffe1e8" stroke-width="2"></polygon>
+<polyline fill="none" points="0,-22 0,22" stroke="rgba(255,255,255,.56)" stroke-width="1"></polyline>
+<polyline fill="none" points="-19,-11 0,0 19,-11" stroke="rgba(255,255,255,.40)" stroke-width="1"></polyline>
+<polyline fill="none" points="-19,11 0,0 19,11" stroke="rgba(255,255,255,.36)" stroke-width="1"></polyline>
+</g>
+<text class="ruby-orbit-label" fill="#fff2f5" font-size="12" text-anchor="middle" x="0" y="42">이현석</text>
+<animateMotion calcMode="linear" dur="24s" path="M297 248 L124 248 L76 114 L210 34 L344 114 Z" repeatCount="indefinite" rotate="0"></animateMotion>
+</g>
+<g class="ruby-orbit-node ruby-orbit-water">
+<circle fill="url(#haloWater)" r="36"></circle>
+<g>
+<polygon fill="url(#gemWater)" points="0,-22 19,-11 19,11 0,22 -19,11 -19,-11" stroke="#d6efff" stroke-width="2"></polygon>
+<polyline fill="none" points="0,-22 0,22" stroke="rgba(255,255,255,.56)" stroke-width="1"></polyline>
+<polyline fill="none" points="-19,-11 0,0 19,-11" stroke="rgba(255,255,255,.40)" stroke-width="1"></polyline>
+<polyline fill="none" points="-19,11 0,0 19,11" stroke="rgba(255,255,255,.36)" stroke-width="1"></polyline>
+</g>
+<text class="ruby-orbit-label" fill="#eef8ff" font-size="12" text-anchor="middle" x="0" y="42">정우림</text>
+<animateMotion calcMode="linear" dur="24s" path="M124 248 L76 114 L210 34 L344 114 L297 248 Z" repeatCount="indefinite" rotate="0"></animateMotion>
+</g>
+<g class="ruby-orbit-node ruby-orbit-light">
+<circle fill="url(#haloLight)" r="36"></circle>
+<g>
+<polygon fill="url(#gemLight)" points="0,-22 19,-11 19,11 0,22 -19,11 -19,-11" stroke="#fff9dc" stroke-width="2"></polygon>
+<polyline fill="none" points="0,-22 0,22" stroke="rgba(255,255,255,.62)" stroke-width="1"></polyline>
+<polyline fill="none" points="-19,-11 0,0 19,-11" stroke="rgba(255,255,255,.46)" stroke-width="1"></polyline>
+<polyline fill="none" points="-19,11 0,0 19,11" stroke="rgba(255,255,255,.40)" stroke-width="1"></polyline>
+</g>
+<text class="ruby-orbit-label" fill="#fffbee" font-size="12" text-anchor="middle" x="0" y="42">한서현</text>
+<animateMotion calcMode="linear" dur="24s" path="M76 114 L210 34 L344 114 L297 248 L124 248 Z" repeatCount="indefinite" rotate="0"></animateMotion>
+</g>
+<g transform="translate(210 143)">
+<g class="ruby-core-pulse">
+<circle fill="url(#haloCrimson)" r="70"></circle>
+<circle fill="none" r="55" stroke="rgba(255,232,239,.18)"></circle>
+<g filter="url(#nodeGlow)">
+<polygon fill="url(#gemCrimson)" points="0,-41 35,-20 35,20 0,41 -35,20 -35,-20" stroke="#ffe4eb" stroke-width="2.6"></polygon>
+<polyline fill="none" points="0,-41 0,41" stroke="rgba(255,255,255,.60)" stroke-width="1.3"></polyline>
+<polyline fill="none" points="-35,-20 0,0 35,-20" stroke="rgba(255,255,255,.52)" stroke-width="1.3"></polyline>
+<polyline fill="none" points="-35,20 0,0 35,20" stroke="rgba(255,255,255,.48)" stroke-width="1.3"></polyline>
+<polyline fill="none" points="-17,-30 17,-30 35,-20" stroke="rgba(255,255,255,.20)" stroke-width="1.05"></polyline>
+</g>
+<text fill="#fff8fb" font-family="Georgia, 'Times New Roman', serif" font-size="21" font-weight="700" letter-spacing="3" text-anchor="middle" x="0" y="7">RUBY</text>
+</g>
+</g>
+<g>
+<g class="ruby-sparkle" transform="translate(168 90)">
+<path d="M0 -6 L1.6 -1.6 L6 0 L1.6 1.6 L0 6 L-1.6 1.6 L-6 0 L-1.6 -1.6 Z" fill="#ffffff" opacity=".95"></path>
+</g>
+<g class="ruby-sparkle ruby-s2" transform="translate(248 74)">
+<path d="M0 -5 L1.3 -1.3 L5 0 L1.3 1.3 L0 5 L-1.3 1.3 L-5 0 L-1.3 -1.3 Z" fill="#ffd8e5"></path>
+</g>
+<g class="ruby-sparkle ruby-s3" transform="translate(266 214)">
+<path d="M0 -5 L1.3 -1.3 L5 0 L1.3 1.3 L0 5 L-1.3 1.3 L-5 0 L-1.3 -1.3 Z" fill="#fff0b3"></path>
+</g>
+</g>
+</svg>
+</div>
+    <div class="ruby-eyebrow">Five Elements · One Victory</div>
+    <h2 class="ruby-title"><span class="ruby-shine">RUBY</span></h2>
+    <p class="ruby-winner-copy">2026 시즌1 길드 대전 최종 우승</p>
+    <div class="ruby-member-line" aria-label="Ruby 길드원 명단">
+      <span class="ruby-tag-wind">김서영</span>
+      <span class="ruby-tag-earth">박시우</span>
+      <span class="ruby-tag-fire">이현석</span>
+      <span class="ruby-tag-water">정우림</span>
+      <span class="ruby-tag-light">한서현</span>
+    </div>
+    <div class="ruby-login-form">
+      <label class="ruby-field">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c.8-5 3.4-7 8-7s7.2 2 8 7"/></svg>
+        <input type="text" id="studentName" placeholder="이름을 입력하세요" aria-label="이름">
+      </label>
+      <label class="ruby-field">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+        <input type="password" id="studentPassword" placeholder="비밀번호를 입력하세요" aria-label="비밀번호">
+      </label>
+      <button class="login-btn ruby-login-action" onclick="login()">성좌의 문 열기</button>
+    </div>
   </div>
 
   <!-- 명예의 전당: 전체 학생 업적 현황 -->
@@ -2575,6 +2869,10 @@
                                      color:#e8e2d6;letter-spacing:-0.3px;
                                      white-space:nowrap;overflow:hidden;
                                      text-overflow:ellipsis;max-width:150px;">반갑습니다!</h3>
+          <span id="vacCompletionProfileBadge" title="한정 칭호: 28성의 개척자 · 별자리 의회"
+                style="display:none;padding:2px 6px;border-radius:999px;border:1px solid rgba(255,215,106,.5);
+                       background:rgba(255,215,106,.12);color:#ffe49a;font-size:9px;font-weight:800;
+                       box-shadow:0 0 8px rgba(255,215,106,.16);">✦28</span>
         </div>
         <!-- 브랜드명 -->
         <div id="hdrBrandName" style="font-size:11px;font-weight:600;
@@ -7098,10 +7396,9 @@
       })
       .getStudentHistory(data.personal.name);
 
-    // ── 길드 축전 팝업 체크 (로그인 직후 자동 표시) ──
-    setTimeout(function() {
-      if (typeof checkGuildCelebration === 'function') checkGuildCelebration();
-    }, 200);
+    // 로그인 직후 팝업 순서는 _vacInit에서 관리합니다.
+    // 방학 이벤트가 활성화되면 여름 팝업 → 시즌1 축전 순서,
+    // 비활성 기간에는 시즌1 축전만 표시됩니다.
 
   }    // ← showDashboard 함수 닫기
 
@@ -12511,53 +12808,117 @@ function goToPeerEvalFromGate() {
 </script>
 
 <!-- ════════════════════════════════════════════════════════════ -->
-<!-- ★ 여름의 별자리 (방학 이벤트, 2026-07-27 ~ 08-23 + 보충 1주)   -->
-<!--   독립 모듈 — 기존 코드와 이름 충돌 없음 (vac- 접두사)          -->
+<!-- ★ 여름의 별자리 (방학 이벤트, 2026-07-27 ~ 08-23 + 보충 기간) -->
+<!--   안내 → 별자리 → 질문게시판 / 닫으면 시즌1 축전으로 연결     -->
 <!-- ════════════════════════════════════════════════════════════ -->
 <style>
   #vacModal {
-    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.78); z-index: 10040;
-    justify-content: center; align-items: center;
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.82); z-index: 10040;
+    justify-content: center; align-items: center; padding: 14px;
   }
   #vacModal.open { display: flex; }
   .vac-box {
     background: linear-gradient(180deg, #05070f 0%, #0a1024 55%, #141b38 100%);
-    border: 1px solid #2a3560; border-radius: 16px; padding: 20px;
-    width: 94%; max-width: 560px; max-height: 90vh; overflow-y: auto;
-    box-shadow: 0 12px 50px rgba(0,0,0,0.7); color: #dfe6ff;
+    border: 1px solid #2a3560; border-radius: 18px; padding: 18px;
+    width: 96%; max-width: 620px; max-height: 92vh; overflow-y: auto;
+    box-shadow: 0 18px 60px rgba(0,0,0,0.72); color: #dfe6ff;
   }
   .vac-title { display: flex; justify-content: space-between; align-items: center;
-    font-size: 17px; font-weight: bold; color: #ffd76a; margin-bottom: 4px; }
-  .vac-close { background: none; border: none; color: #8fa0d8; font-size: 18px; cursor: pointer; }
-  .vac-sub { font-size: 11px; color: #7b89c4; margin-bottom: 10px; }
+    font-size: 18px; font-weight: bold; color: #ffd76a; margin-bottom: 4px; }
+  .vac-close { background: none; border: none; color: #8fa0d8; font-size: 20px; cursor: pointer; padding: 4px 7px; }
+  .vac-sub { font-size: 11.5px; color: #8fa0d8; margin-bottom: 10px; line-height: 1.55; }
+  .vac-tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 12px; }
+  .vac-tabs.three { grid-template-columns: repeat(3, 1fr); }
+  .vac-tab { border: 1px solid #2a3560; border-radius: 9px; padding: 8px 5px;
+    background: rgba(255,255,255,0.035); color: #9eacd9; font-size: 11.5px;
+    font-weight: bold; cursor: pointer; }
+  .vac-tab.active { color: #fff1ba; border-color: #9e7a24;
+    background: linear-gradient(135deg, rgba(184,134,11,.30), rgba(255,215,106,.10)); }
+  .vac-page { display: none; }
+  .vac-page.active { display: block; }
+
+  .vac-hero { border: 1px solid #314071; border-radius: 14px; padding: 18px 16px;
+    text-align: center; margin-bottom: 10px;
+    background: radial-gradient(circle at 50% 0%, rgba(106,210,255,.16), transparent 48%),
+                linear-gradient(145deg, rgba(31,45,92,.82), rgba(11,17,40,.94)); }
+  .vac-hero-symbol { font-size: 36px; margin-bottom: 5px; filter: drop-shadow(0 0 12px rgba(255,215,106,.42)); }
+  .vac-hero h3 { margin: 0 0 5px; color: #fff1ba; font-size: 20px; }
+  .vac-hero p { margin: 0; color: #aebae4; font-size: 12px; line-height: 1.65; }
+  .vac-period { display:inline-block; margin-top:9px; padding:5px 10px; border-radius:20px;
+    background:rgba(255,215,106,.10); border:1px solid rgba(255,215,106,.28);
+    color:#ffd76a; font-size:11px; font-weight:bold; }
+  .vac-guide-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-bottom:10px; }
+  .vac-guide-card { border:1px solid #29365f; border-radius:11px; padding:11px;
+    background:rgba(255,255,255,.045); min-height:82px; }
+  .vac-guide-card b { display:block; color:#ffd76a; font-size:12.5px; margin-bottom:5px; }
+  .vac-guide-card span { display:block; color:#aebae4; font-size:11px; line-height:1.55; }
+  .vac-callout { border-left:3px solid #6ad2ff; background:rgba(106,210,255,.07);
+    border-radius:8px; padding:9px 11px; color:#b9c8ef; font-size:11px; line-height:1.6; margin-bottom:10px; }
+  .vac-market { width:100%; border-collapse:collapse; font-size:11px; margin-top:5px; }
+  .vac-market th,.vac-market td { padding:7px 8px; border-bottom:1px solid rgba(143,160,216,.16); }
+  .vac-market th { color:#8fa0d8; text-align:left; font-weight:normal; }
+  .vac-market td:last-child,.vac-market th:last-child { text-align:right; color:#ffd76a; font-weight:bold; }
+
   .vac-stats { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
-  .vac-stat { flex: 1; min-width: 100px; background: rgba(255,255,255,0.05);
-    border: 1px solid #2a3560; border-radius: 10px; padding: 7px 4px; text-align: center; }
-  .vac-stat b { display: block; font-size: 15px; color: #ffd76a; }
+  .vac-stat { flex: 1; min-width: 105px; background: rgba(255,255,255,0.05);
+    border: 1px solid #2a3560; border-radius: 10px; padding: 8px 4px; text-align: center; }
+  .vac-stat b { display: block; font-size: 16px; color: #ffd76a; }
   .vac-stat span { font-size: 10px; color: #8fa0d8; }
+  #vacLoginNotice { display:none; margin-bottom:10px; padding:9px 11px; border-radius:10px;
+    border:1px solid rgba(255,215,106,.35); background:rgba(255,215,106,.08);
+    color:#ffe8a6; font-size:11.5px; line-height:1.55; }
 
   #vacSky { position: relative; width: 100%; height: 400px;
     background: radial-gradient(ellipse at 50% 120%, rgba(90,110,200,0.18), transparent 60%);
     border: 1px solid #232d52; border-radius: 12px; overflow: hidden; margin-bottom: 10px; }
-  #vacSkyLines { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
-  .vac-star { position: absolute; width: 12px; height: 12px; margin: -6px 0 0 -6px;
-    border-radius: 50%; background: #2c3763; border: 1px solid #3a4a85;
-    cursor: default; transition: all 0.25s; }
-  .vac-star.lit { background: #ffd76a; border-color: #fff2c4;
-    box-shadow: 0 0 8px 2px rgba(255,215,106,0.75), 0 0 20px 6px rgba(255,215,106,0.25);
-    cursor: pointer; }
-  .vac-star.lit.vac-has-note::after { content: ''; position: absolute; top: -4px; right: -4px;
-    width: 6px; height: 6px; border-radius: 50%; background: #6ad2ff; box-shadow: 0 0 5px #6ad2ff; }
-  .vac-star.vac-final { width: 18px; height: 18px; margin: -9px 0 0 -9px; }
-  .vac-star.vac-final.lit { animation: vacPulse 2s ease-in-out infinite; background: #fff2c4; }
-  @keyframes vacPulse {
-    0%,100% { box-shadow: 0 0 10px 3px rgba(255,236,170,0.8), 0 0 30px 10px rgba(255,215,106,0.3); }
-    50%     { box-shadow: 0 0 16px 6px rgba(255,236,170,1),   0 0 46px 16px rgba(255,215,106,0.45); }
-  }
+  #vacSkyLines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .vac-star { position:absolute; width:24px; height:24px; margin:-12px 0 0 -12px;
+    color:#34406c; cursor:default; transition:transform .24s ease, opacity .24s ease;
+    --vac-star-glow:rgba(84,104,174,.32); z-index:2; }
+  .vac-star svg { width:100%; height:100%; overflow:visible; display:block;
+    filter:drop-shadow(0 0 2px rgba(0,0,0,.72)); transform-origin:50% 50%; }
+  .vac-star-shell { fill:currentColor; stroke:rgba(255,255,255,.52); stroke-width:2.4; stroke-linejoin:round; }
+  .vac-star-inner { fill:rgba(255,255,255,.24); stroke:rgba(255,255,255,.18); stroke-width:1; }
+  .vac-star-core { fill:#fff; opacity:.32; }
+  .vac-star-rays { stroke:currentColor; stroke-width:3; stroke-linecap:round; opacity:0; }
+  .vac-star:not(.lit) { opacity:.44; transform:scale(.72); }
+  .vac-star:not(.lit) .vac-star-inner,.vac-star:not(.lit) .vac-star-core { opacity:.08; }
+  .vac-star.lit { cursor:pointer; opacity:1; }
+  .vac-star.lit svg { filter:drop-shadow(0 0 4px var(--vac-star-glow)) drop-shadow(0 0 9px var(--vac-star-glow)); }
+  .vac-star.lit:hover { transform:scale(1.28); z-index:4; }
+  .vac-star.lit:hover .vac-star-rays { opacity:.42; }
+  .vac-star.vac-type-normal { color:#ffe29a; --vac-star-glow:rgba(255,215,106,.72); }
+  .vac-star.vac-type-record { color:#78d8ff; --vac-star-glow:rgba(92,196,255,.78); }
+  .vac-star.vac-type-clue { color:#bd86ff; --vac-star-glow:rgba(174,103,255,.82); }
+  .vac-star.vac-type-treasure { color:#ffae45; --vac-star-glow:rgba(255,151,45,.88); }
+  .vac-star.vac-type-final { color:#fff3bd; --vac-star-glow:rgba(255,224,119,.94); }
+  .vac-star.lit.vac-type-record svg { animation:vacRecordGlow 4.2s ease-in-out infinite; }
+  .vac-star.lit.vac-type-clue svg { animation:vacClueGlow 3.1s ease-in-out infinite; }
+  .vac-star.lit.vac-type-treasure svg { animation:vacTreasureGlow 2.8s ease-in-out infinite; }
+  .vac-star.vac-final { width:34px; height:34px; margin:-17px 0 0 -17px; }
+  .vac-star.vac-final .vac-star-rays { opacity:.58; }
+  .vac-star.vac-final.lit svg { animation:vacFinalPulse 2.2s ease-in-out infinite; }
+  .vac-star.vac-new-star { animation:vacNewStar 1.6s ease-out 2; }
+  .vac-star.lit.vac-has-note::after { content:''; position:absolute; top:-3px; right:-3px;
+    width:7px; height:7px; transform:rotate(45deg); border-radius:2px;
+    background:#eaf8ff; box-shadow:0 0 7px #7fe2ff; }
+  @keyframes vacRecordGlow { 0%,100%{opacity:.86} 50%{opacity:1;transform:scale(1.08)} }
+  @keyframes vacClueGlow { 0%,100%{opacity:.72;transform:scale(.96)} 42%{opacity:1;transform:scale(1.12)} 68%{opacity:.82;transform:scale(1.02)} }
+  @keyframes vacTreasureGlow { 0%,100%{transform:rotate(-2deg) scale(1)} 50%{transform:rotate(2deg) scale(1.12)} }
+  @keyframes vacFinalPulse { 0%,100%{transform:scale(1);opacity:.9} 50%{transform:scale(1.16);opacity:1} }
+  @keyframes vacNewStar { 0%{transform:scale(.15) rotate(-35deg);opacity:0} 55%{transform:scale(1.55) rotate(8deg);opacity:1} 100%{transform:scale(1);opacity:1} }
+  .vac-star-legend { display:flex; flex-wrap:wrap; gap:7px 12px; align-items:center;
+    margin:-2px 0 10px; padding:7px 9px; border:1px solid rgba(76,94,153,.42);
+    border-radius:9px; background:rgba(255,255,255,.025); color:#94a3d2; font-size:9.8px; }
+  .vac-star-legend span { display:inline-flex; align-items:center; gap:4px; }
+  .vac-star-legend svg { width:13px; height:13px; overflow:visible; }
+  .vac-star-legend .vac-mini-shell { fill:currentColor; stroke:rgba(255,255,255,.5); stroke-width:2; }
+  .vac-star-legend .normal { color:#ffe29a; } .vac-star-legend .record { color:#78d8ff; }
+  .vac-star-legend .clue { color:#bd86ff; } .vac-star-legend .treasure { color:#ffae45; }
+  .vac-star-legend .final { color:#fff3bd; }
   .vac-final-label { position: absolute; font-size: 9px; color: #7b89c4;
     transform: translate(-50%, 10px); white-space: nowrap; pointer-events: none; }
-
   #vacDetail { display: none; background: rgba(255,255,255,0.05); border: 1px solid #2a3560;
     border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; font-size: 12px; line-height: 1.6; }
   #vacDetail b { color: #ffd76a; }
@@ -12578,8 +12939,11 @@ function goToPeerEvalFromGate() {
 
   .vac-btn { border: none; border-radius: 9px; padding: 9px 14px; font-size: 12.5px;
     font-weight: bold; cursor: pointer; }
+  .vac-btn:disabled { opacity:.55; cursor:default; }
   .vac-btn-gold { background: linear-gradient(135deg, #b8860b, #ffd76a); color: #241a00; width: 100%; margin-bottom: 8px; }
   .vac-btn-blue { background: #2a3560; color: #dfe6ff; }
+  .vac-btn-row { display:flex; gap:7px; flex-wrap:wrap; }
+  .vac-btn-row .vac-btn { flex:1; min-width:145px; }
   .vac-panel { background: rgba(255,255,255,0.05); border: 1px solid #2a3560;
     border-radius: 10px; padding: 12px; margin-bottom: 10px; }
   .vac-panel-title { font-size: 13px; font-weight: bold; color: #ffd76a; margin-bottom: 6px; }
@@ -12587,70 +12951,267 @@ function goToPeerEvalFromGate() {
     width: 100%; box-sizing: border-box; background: #131a33; border: 1px solid #2a3560;
     border-radius: 8px; color: #dfe6ff; font-size: 12px; padding: 8px; margin-bottom: 6px;
     outline: none; font-family: inherit; }
-  .vac-panel textarea { resize: vertical; min-height: 64px; }
+  .vac-panel textarea { resize: vertical; min-height: 72px; }
+  .vac-faq-toolbar { margin:9px 0 5px; display:grid; gap:6px; }
+  .vac-faq-toolbar input,.vac-faq-toolbar select { margin:0; }
+  .vac-faq-filter-row { display:grid; grid-template-columns:1.15fr 1fr 1fr; gap:6px; }
+  .vac-q-summary { display:flex; justify-content:space-between; gap:8px; align-items:center;
+    color:#8595ca; font-size:10px; margin:2px 0 8px; }
+  .vac-q-list { margin-top:8px; display:grid; gap:8px; }
+  .vac-q-card { border:1px solid #29365f; border-radius:10px; padding:10px; background:rgba(255,255,255,.035); }
+  .vac-q-card.is-mine { border-color:rgba(255,215,106,.52); background:rgba(255,215,106,.045); }
+  .vac-q-card.is-answered { box-shadow:inset 3px 0 0 rgba(106,210,255,.48); }
+  .vac-q-meta { display:flex; justify-content:space-between; gap:8px; align-items:flex-start;
+    color:#7f8fc6; font-size:9.5px; margin-bottom:6px; }
+  .vac-q-meta-left { display:flex; flex-wrap:wrap; gap:4px 6px; align-items:center; }
+  .vac-q-badge { display:inline-flex; align-items:center; border-radius:999px; padding:2px 6px;
+    background:rgba(255,215,106,.12); border:1px solid rgba(255,215,106,.34); color:#ffe39a; font-weight:bold; }
+  .vac-q-status { white-space:nowrap; font-weight:bold; }
+  .vac-q-status.done { color:#86e2ff; } .vac-q-status.wait { color:#b0b9d6; }
+  .vac-q-text { color:#dfe6ff; font-size:11.5px; line-height:1.58; white-space:pre-wrap; }
+  .vac-q-answer { margin-top:8px; padding:9px; border-radius:8px; background:rgba(106,210,255,.07);
+    border:1px solid rgba(106,210,255,.15); color:#bfe8ff; font-size:11px; line-height:1.58; white-space:pre-wrap; }
+  .vac-q-answer b { color:#82dcff; }
+  .vac-council-card { position:relative; overflow:hidden; border-color:rgba(255,215,106,.5);
+    background:linear-gradient(135deg,rgba(255,215,106,.10),rgba(120,216,255,.055)); }
+  .vac-council-card::after { content:'✦'; position:absolute; right:12px; top:3px; font-size:58px;
+    color:rgba(255,235,165,.075); transform:rotate(12deg); pointer-events:none; }
+  .vac-council-badge { display:inline-flex; align-items:center; gap:6px; padding:4px 9px; border-radius:999px;
+    border:1px solid rgba(255,215,106,.45); background:rgba(255,215,106,.11); color:#ffe49a;
+    font-size:10.5px; font-weight:bold; margin-bottom:6px; }
+  .vac-prop-char { display:flex; justify-content:space-between; color:#7f8fc6; font-size:9.5px; margin:-2px 1px 7px; }
+  .vac-prop-list { display:grid; gap:9px; margin-top:8px; }
+  .vac-prop-card { border:1px solid #29365f; border-radius:11px; padding:11px;
+    background:rgba(255,255,255,.035); }
+  .vac-prop-card.is-mine { border-color:rgba(255,215,106,.52); background:rgba(255,215,106,.045); }
+  .vac-prop-card.is-candidate { box-shadow:inset 3px 0 0 rgba(190,134,255,.58); }
+  .vac-prop-card.is-accepted { box-shadow:inset 3px 0 0 rgba(104,226,168,.68); }
+  .vac-prop-title { color:#eef2ff; font-weight:bold; font-size:12.5px; line-height:1.45; margin-bottom:5px; }
+  .vac-prop-content { color:#cbd5f7; font-size:11.2px; line-height:1.62; white-space:pre-wrap; }
+  .vac-prop-footer { display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;
+    margin-top:9px; padding-top:8px; border-top:1px solid rgba(73,88,139,.34); }
+  .vac-prop-recs { color:#aeb9e0; font-size:10px; font-weight:bold; }
+  .vac-prop-rec-btn { border:1px solid rgba(255,215,106,.36); border-radius:8px; padding:5px 9px;
+    background:rgba(255,215,106,.08); color:#ffe39a; font-size:10px; font-weight:bold; cursor:pointer; }
+  .vac-prop-rec-btn.active { background:linear-gradient(135deg,#a5740a,#e9c457); color:#241a00; }
+  .vac-prop-rec-btn:disabled { opacity:.52; cursor:default; }
+  .vac-prop-status { white-space:nowrap; font-weight:bold; }
+  .vac-prop-status.new { color:#ffe39a; } .vac-prop-status.review { color:#83dfff; }
+  .vac-prop-status.candidate { color:#c99aff; } .vac-prop-status.accepted { color:#83e5ad; }
+  .vac-prop-status.archive { color:#939dbd; }
+  .vac-empty { text-align:center; padding:16px 8px; color:#7383bb; font-size:11px; }
 
   #vacToast { display: none; position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%);
     background: #0a1024; border: 1px solid #ffd76a; color: #ffe9ad; border-radius: 12px;
     padding: 11px 18px; font-size: 12.5px; z-index: 10050; box-shadow: 0 6px 24px rgba(0,0,0,0.6);
     max-width: 86%; text-align: center; line-height: 1.6; }
+  @media (max-width:520px) {
+    .vac-box { padding:14px; }
+    .vac-guide-grid { grid-template-columns:1fr; }
+    #vacSky { height:360px; }
+    .vac-tab { font-size:10.5px; }
+    .vac-faq-filter-row { grid-template-columns:1fr; }
+  }
 </style>
 
 <div id="vacModal">
   <div class="vac-box">
     <div class="vac-title">
       <span>🌌 여름의 별자리</span>
-      <button class="vac-close" onclick="closeVacModal()">✕</button>
+      <button class="vac-close" onclick="closeVacModal()" aria-label="닫기">✕</button>
     </div>
     <div class="vac-sub" id="vacSubText">매일 접속해 별을 하나씩 켜고, 여름의 별자리를 완성하세요.</div>
 
-    <div class="vac-stats">
-      <div class="vac-stat"><b id="vacStatCells">0/28</b><span>나의 별</span></div>
-      <div class="vac-stat"><b id="vacStatStreak">0일</b><span>연속 관측</span></div>
-      <div class="vac-stat"><b id="vacStatTokens">0</b><span>탐사 토큰</span></div>
-      <div class="vac-stat"><b id="vacStatTickets">0</b><span>복구권</span></div>
+    <div class="vac-tabs">
+      <button id="vacTabIntro" class="vac-tab" onclick="vacShowPage('intro')">📘 이벤트 안내</button>
+      <button id="vacTabStatus" class="vac-tab" onclick="vacShowPage('status')">🌠 나의 별자리</button>
+      <button id="vacTabProposal" class="vac-tab" onclick="vacShowPage('proposal')">💡 공개 제안소</button>
+      <button id="vacTabQuestion" class="vac-tab" onclick="vacShowPage('question')">💬 질문게시판</button>
     </div>
 
-    <div id="vacSky">
-      <svg id="vacSkyLines"></svg>
-    </div>
-    <div id="vacDetail"></div>
-
-    <button id="vacRestoreBtn" class="vac-btn vac-btn-gold" style="display:none;"
-            onclick="vacUseRestore()">🌠 어제 놓친 별 복구하기 (복구권 사용)</button>
-
-    <div id="vacLibPanel" class="vac-panel" style="display:none;">
-      <div class="vac-panel-title">🕊️ 8월 15일 — 오늘 알게 된 것 한 줄</div>
-      <div style="font-size:11px;color:#8fa0d8;margin-bottom:6px;">
-        오늘 도착한 운영국 우편을 읽고, 알게 된 것을 한 줄로 남겨보세요.</div>
-      <textarea id="vacLibNote" maxlength="200" placeholder="한 줄로 적어주세요 (200자 이내)"></textarea>
-      <button class="vac-btn vac-btn-gold" style="margin:0;" onclick="vacSubmitLibNote()">남기기</button>
-    </div>
-
-    <div class="vac-gauge-wrap">
-      <div class="vac-gauge-label">
-        <span>🔭 우리 반 공동 관측</span>
-        <span id="vacClassCount">0회</span>
+    <!-- 1장: 이벤트 안내 -->
+    <div id="vacIntroPage" class="vac-page">
+      <div class="vac-hero">
+        <div class="vac-hero-symbol">✦</div>
+        <h3>여름 하늘에 28개의 별을 밝혀라</h3>
+        <p>방학 동안 하루 한 번 접속하면 별이 하나씩 켜집니다.<br>나의 별자리와 우리 반의 공동 관측 기록을 함께 완성해 보세요.</p>
+        <div class="vac-period">7월 27일 ~ 8월 23일 · 보충 8월 24일 ~ 28일</div>
       </div>
-      <div class="vac-gauge" id="vacGauge">
-        <div class="vac-gauge-fill" id="vacGaugeFill" style="width:0%;"></div>
+
+      <div class="vac-guide-grid">
+        <div class="vac-guide-card"><b>⭐ 매일 첫 접속</b><span>별 1개, 골드 50, 탐사 토큰 1개를 자동으로 받습니다.</span></div>
+        <div class="vac-guide-card"><b>🔥 연속 관측</b><span>3·7·14·21일 연속으로 관측하면 추가 탐사 토큰을 받습니다.</span></div>
+        <div class="vac-guide-card"><b>🌠 놓친 별 복구</b><span>복구권은 2개입니다. 하루를 놓쳤다면 바로 다음 날 복구할 수 있습니다.</span></div>
+        <div class="vac-guide-card"><b>🎁 특별한 별</b><span>기록과 단서가 담긴 별이 있으며, 10번과 22번은 보물별입니다. 보상 확률은 비밀입니다.</span></div>
+        <div class="vac-guide-card"><b>🏅 특별 업적</b><span>꾸준히 별을 모으면 특별 업적을 얻을 수 있습니다. 자세한 조건은 방학 시작 1주 뒤 업적 도감에서 확인하세요.</span></div>
+        <div class="vac-guide-card"><b>🔭 공동 관측</b><span>반 전체가 밝힌 별을 합쳐 100·200·300·400·500회 공동 보상에 도전합니다.</span></div>
+        <div class="vac-guide-card"><b>💡 시즌2 공개 제안소</b><span>8월 3일부터 모두에게 열립니다. 20자 이상의 제안을 여러 번 제출하고 다른 아이디어도 익명으로 볼 수 있습니다.</span></div>
+        <div class="vac-guide-card"><b>✦ 별자리 의회</b><span>28개의 별을 모두 밝힌 모험가는 공개 제안을 추천하고 시즌2 후보를 다듬는 의회 자격을 얻습니다.</span></div>
       </div>
-      <div class="vac-milestones" id="vacMilestones"></div>
+
+      <div class="vac-panel">
+        <div class="vac-panel-title">🪙 개학 후 열리는 여름 시장</div>
+        <div style="font-size:10.5px;color:#8fa0d8;line-height:1.55;">탐사 토큰은 개학 후 사용할 수 있습니다. 토큰 80개를 모았을 때의 가격 예시입니다.</div>
+        <table class="vac-market">
+          <thead><tr><th>품목</th><th>토큰</th></tr></thead>
+          <tbody>
+            <tr><td>방학 한정 스킨</td><td>30</td></tr>
+            <tr><td>한정 칭호</td><td>25</td></tr>
+            <tr><td>슈퍼패스(선택 1종) 1회</td><td>25</td></tr>
+            <tr><td>한정 폰트</td><td>20</td></tr>
+            <tr><td>간식 쿠폰</td><td>12</td></tr>
+            <tr><td>랜덤 상자</td><td>8</td></tr>
+          </tbody>
+        </table>
+        <div style="font-size:10px;color:#8190c5;margin-top:7px;">※ 보물별에서 랜덤 상자 쿠폰이 나오면 개학 후 지급됩니다.</div>
+      </div>
+
+      <div class="vac-callout">궁금한 점은 <b>질문게시판</b>에 남기고, 시즌2 아이디어는 8월 3일부터 열리는 <b>공개 제안소</b>에서 나눠보세요.</div>
+      <div class="vac-btn-row">
+        <button id="vacIntroQuestionBtn" class="vac-btn vac-btn-blue" onclick="vacShowPage('question')">💬 질문 남기기</button>
+        <button class="vac-btn vac-btn-gold" style="margin:0;" onclick="vacConfirmIntro()">안내를 확인했습니다 · 내 별자리 보기</button>
+      </div>
     </div>
 
-    <div class="vac-panel">
-      <div class="vac-panel-title">💫 이름 없는 별을 발견했습니다</div>
-      <div style="font-size:11.5px;color:#a8b4e0;line-height:1.6;margin-bottom:8px;">
-        저 높은 곳의 별은 아직 이름이 없습니다. 무엇이라 부르면 좋을까요?<br>
-        별 이름과 시즌2 아이디어를 운영국에 제안해 보세요. 채택되면 <b style="color:#ffd76a;">시즌2 개회식에서 발표</b>됩니다.</div>
-      <button class="vac-btn vac-btn-blue" onclick="vacToggleProposal()">✍️ 제안 쓰기</button>
-      <div id="vacPropForm" style="display:none;margin-top:8px;">
-        <select id="vacPropCat">
-          <option>별 이름 공모</option><option>새 제도</option><option>2차직업 아이디어</option>
-          <option>길드 운영</option><option>이벤트</option><option>기타</option>
-        </select>
-        <input id="vacPropTitle" maxlength="50" placeholder="제목 (50자 이내)">
-        <textarea id="vacPropContent" maxlength="1000" placeholder="내용 (1000자 이내)"></textarea>
-        <button class="vac-btn vac-btn-gold" style="margin:0;" onclick="vacSubmitProposal()">제안 보내기</button>
+    <!-- 2장: 별자리 현황 -->
+    <div id="vacStatusPage" class="vac-page">
+      <div id="vacLoginNotice"></div>
+      <div class="vac-stats">
+        <div class="vac-stat"><b id="vacStatCells">0/28</b><span>나의 별</span></div>
+        <div class="vac-stat"><b id="vacStatStreak">0일</b><span>연속 관측</span></div>
+        <div class="vac-stat"><b id="vacStatTokens">0</b><span>탐사 토큰</span></div>
+        <div class="vac-stat"><b id="vacStatTickets">0</b><span>복구권</span></div>
+      </div>
+
+      <div id="vacSky"><svg id="vacSkyLines"></svg></div>
+      <div class="vac-star-legend" aria-label="별 종류 안내">
+        <span class="normal"><svg viewBox="0 0 100 100" aria-hidden="true"><polygon class="vac-mini-shell" points="50,4 61.8,33.8 93.7,35.8 69,56.2 77,87.2 50,70 23,87.2 31,56.2 6.3,35.8 38.2,33.8"/></svg>일반</span>
+        <span class="record"><svg viewBox="0 0 100 100" aria-hidden="true"><polygon class="vac-mini-shell" points="50,4 61.8,33.8 93.7,35.8 69,56.2 77,87.2 50,70 23,87.2 31,56.2 6.3,35.8 38.2,33.8"/></svg>기록</span>
+        <span class="clue"><svg viewBox="0 0 100 100" aria-hidden="true"><polygon class="vac-mini-shell" points="50,4 61.8,33.8 93.7,35.8 69,56.2 77,87.2 50,70 23,87.2 31,56.2 6.3,35.8 38.2,33.8"/></svg>떡밥</span>
+        <span class="treasure"><svg viewBox="0 0 100 100" aria-hidden="true"><polygon class="vac-mini-shell" points="50,4 61.8,33.8 93.7,35.8 69,56.2 77,87.2 50,70 23,87.2 31,56.2 6.3,35.8 38.2,33.8"/></svg>보물</span>
+        <span class="final"><svg viewBox="0 0 100 100" aria-hidden="true"><polygon class="vac-mini-shell" points="50,4 61.8,33.8 93.7,35.8 69,56.2 77,87.2 50,70 23,87.2 31,56.2 6.3,35.8 38.2,33.8"/></svg>최종</span>
+        <span style="margin-left:auto;color:#7180b2;">미발견 별은 종류가 숨겨집니다.</span>
+      </div>
+      <div id="vacDetail"></div>
+
+      <button id="vacRestoreBtn" class="vac-btn vac-btn-gold" style="display:none;" onclick="vacUseRestore()">🌠 어제 놓친 별 복구하기 (복구권 사용)</button>
+
+      <div id="vacLibPanel" class="vac-panel" style="display:none;">
+        <div class="vac-panel-title">🕊️ 8월 15일 — 오늘 알게 된 것 한 줄</div>
+        <div style="font-size:11px;color:#8fa0d8;margin-bottom:6px;">오늘 도착한 운영국 우편을 읽고, 알게 된 것을 한 줄로 남겨보세요.</div>
+        <textarea id="vacLibNote" maxlength="200" placeholder="한 줄로 적어주세요 (200자 이내)"></textarea>
+        <button class="vac-btn vac-btn-gold" style="margin:0;" onclick="vacSubmitLibNote()">남기기</button>
+      </div>
+
+      <div class="vac-gauge-wrap">
+        <div class="vac-gauge-label"><span>🔭 우리 반 공동 관측</span><span id="vacClassCount">0회</span></div>
+        <div class="vac-gauge" id="vacGauge"><div class="vac-gauge-fill" id="vacGaugeFill" style="width:0%;"></div></div>
+        <div class="vac-milestones" id="vacMilestones"></div>
+      </div>
+
+      <div id="vacCouncilPanel" class="vac-panel vac-council-card" style="display:none;">
+        <div class="vac-council-badge"><span id="vacCouncilBadge">✦28</span> 별자리 의회 초대</div>
+        <div class="vac-panel-title">🏛️ 28개의 별을 모두 밝힌 관측자</div>
+        <div style="font-size:11.3px;color:#b7c3e8;line-height:1.62;">
+          한정 칭호 <b id="vacCouncilTitle" style="color:#ffe49a;">28성의 개척자</b>와 프로필 표식이 기록되었습니다.<br>
+          공개 제안소에서 다른 모험가의 아이디어를 추천하고, 시즌2 시험 운영 후보를 고르는 데 참여할 수 있습니다.
+        </div>
+      </div>
+    </div>
+
+    <!-- 3장: 질문게시판 -->
+    <div id="vacQuestionPage" class="vac-page">
+      <div class="vac-panel">
+        <div class="vac-panel-title">💬 여름 방학 질문게시판</div>
+        <div id="vacQuestionOpenText" style="font-size:11px;color:#9eacd9;line-height:1.6;margin-bottom:8px;">
+          다른 학생이 남긴 질문과 교사의 답변도 이름 없이 함께 공개됩니다. 질문을 등록하기 전에 아래에서 비슷한 내용을 검색해 보세요.
+        </div>
+        <div id="vacQuestionForm">
+          <select id="vacQuestionCat">
+            <option>이벤트 참여</option><option>보상·탐사 토큰</option><option>복구권</option>
+            <option>접속·오류</option><option>기타</option>
+          </select>
+          <textarea id="vacQuestionText" maxlength="500" placeholder="질문을 적어주세요 (500자 이내)"></textarea>
+          <button id="vacQuestionSubmitBtn" class="vac-btn vac-btn-gold" style="margin:0;" onclick="vacSubmitQuestion()">질문 등록하기</button>
+        </div>
+      </div>
+      <div class="vac-panel">
+        <div class="vac-panel-title">📚 모두의 질문과 답변</div>
+        <div class="vac-faq-toolbar">
+          <input id="vacQuestionSearch" maxlength="80" placeholder="질문이나 답변 검색" oninput="vacApplyQuestionFilters()">
+          <div class="vac-faq-filter-row">
+            <select id="vacQuestionFilterCat" onchange="vacApplyQuestionFilters()">
+              <option value="">전체 분야</option><option>이벤트 참여</option><option>보상·탐사 토큰</option>
+              <option>복구권</option><option>접속·오류</option><option>기타</option>
+            </select>
+            <select id="vacQuestionFilterStatus" onchange="vacApplyQuestionFilters()">
+              <option value="">전체 상태</option><option value="answered">답변 완료</option><option value="waiting">답변 대기</option>
+            </select>
+            <select id="vacQuestionSort" onchange="vacApplyQuestionFilters()">
+              <option value="latest">최신순</option><option value="answered">답변 완료 우선</option>
+            </select>
+          </div>
+        </div>
+        <div class="vac-q-summary"><span id="vacQuestionCount">0개의 질문</span><span>작성자 이름은 공개되지 않습니다.</span></div>
+        <div id="vacQuestionList" class="vac-q-list"><div class="vac-empty">질문게시판을 불러오는 중입니다.</div></div>
+      </div>
+    </div>
+
+    <!-- 4장: 시즌2 공개 제안소 -->
+    <div id="vacProposalPage" class="vac-page">
+      <div id="vacProposalLocked" class="vac-panel" style="display:none;">
+        <div class="vac-panel-title">🔒 시즌2 공개 제안소 준비 중</div>
+        <div id="vacProposalLockedText" style="font-size:11.5px;color:#a8b4e0;line-height:1.65;">
+          공개 제안소는 2026년 8월 3일부터 모든 모험가에게 열립니다.
+        </div>
+      </div>
+
+      <div id="vacProposalOpenArea" style="display:none;">
+        <div id="vacProposalCouncilBanner" class="vac-panel vac-council-card" style="display:none;">
+          <div class="vac-council-badge">✦28 별자리 의회 구성원</div>
+          <div class="vac-panel-title">🏛️ 아이디어를 실제 제도로 발전시키는 권한</div>
+          <div style="font-size:11px;color:#b7c3e8;line-height:1.6;">
+            본인 제안을 제외한 아이디어에 의회 추천을 보낼 수 있습니다. 추천은 익명으로 집계되며 최종 채택은 운영국이 결정합니다.
+          </div>
+        </div>
+
+        <div class="vac-panel">
+          <div class="vac-panel-title">✍️ 새 제안 등록</div>
+          <div style="font-size:10.5px;color:#8fa0d8;line-height:1.55;margin-bottom:8px;">
+            제안은 여러 번 제출할 수 있고 작성자 이름은 공개되지 않습니다. 첫 유효 제안은 업적 「시즌2의 설계자」 달성 조건으로 기록됩니다.
+          </div>
+          <select id="vacPropCat">
+            <option>새 제도</option><option>이벤트</option><option>길드 운영</option>
+            <option>직업·성장</option><option>웹앱 개선</option><option>기타</option>
+          </select>
+          <input id="vacPropTitle" maxlength="50" placeholder="제안 제목 (50자 이내)">
+          <textarea id="vacPropContent" maxlength="1000" oninput="vacUpdateProposalCount()" placeholder="제안 내용을 구체적으로 적어주세요 (최소 20자)"></textarea>
+          <div class="vac-prop-char"><span>본문 최소 20자</span><span id="vacPropCharCount">0 / 1000자</span></div>
+          <button id="vacPropSubmitBtn" class="vac-btn vac-btn-gold" style="margin:0;" onclick="vacSubmitProposal()">제안 공개하기</button>
+        </div>
+
+        <div class="vac-panel">
+          <div class="vac-panel-title">📚 모두의 시즌2 제안</div>
+          <div style="font-size:10.5px;color:#8fa0d8;line-height:1.55;">다른 사람의 아이디어를 참고해 새로운 제안으로 발전시켜도 좋습니다. 작성자 이름은 공개되지 않습니다.</div>
+          <div class="vac-faq-toolbar">
+            <input id="vacProposalSearch" maxlength="80" placeholder="제안 제목이나 내용 검색" oninput="vacApplyProposalFilters()">
+            <div class="vac-faq-filter-row">
+              <select id="vacProposalFilterCat" onchange="vacApplyProposalFilters()">
+                <option value="">전체 분야</option><option>새 제도</option><option>이벤트</option><option>길드 운영</option>
+                <option>직업·성장</option><option>웹앱 개선</option><option>기타</option>
+              </select>
+              <select id="vacProposalFilterStatus" onchange="vacApplyProposalFilters()">
+                <option value="">전체 상태</option><option value="new">새 제안</option><option value="review">검토 중</option>
+                <option value="candidate">시험 운영 후보</option><option value="accepted">시즌2 반영 예정</option><option value="archive">보관</option>
+              </select>
+              <select id="vacProposalSort" onchange="vacApplyProposalFilters()">
+                <option value="latest">최신순</option><option value="recommended">의회 추천순</option><option value="status">진행 상태순</option>
+              </select>
+            </div>
+          </div>
+          <div class="vac-q-summary"><span id="vacProposalCount">0개의 제안</span><span>익명 공개 · 최대 100개</span></div>
+          <div id="vacProposalList" class="vac-prop-list"><div class="vac-empty">공개 제안소를 불러오는 중입니다.</div></div>
+        </div>
       </div>
     </div>
   </div>
@@ -12660,8 +13221,14 @@ function goToPeerEvalFromGate() {
 <script>
 (function() {
   var _vacState = null;
+  var _vacStatus = null;
+  var _vacAutoFlowPending = false;
+  var _vacQuestionLoaded = false;
+  var _vacQuestionsAll = [];
+  var _vacProposalLoaded = false;
+  var _vacProposalsAll = [];
+  var _vacProposalMeta = null;
 
-  // 별 28개 좌표 (% 단위) — 아래에서 위로 굽이치다, 28번째 별만 아득히 높은 곳에
   var VAC_POS = [
     [10,92],[22,88],[34,90],[46,85],[57,88],[68,82],[78,85],
     [85,76],[74,72],[62,75],[50,70],[38,73],[26,68],[15,71],
@@ -12670,56 +13237,131 @@ function goToPeerEvalFromGate() {
     [76,6]
   ];
 
-  // ── 로그인 후 초기화 (두 로그인 경로 공통 _loadSubData 에서 호출) ──
+  function _vacIntroKey_() {
+    return 'brand_vac_intro_2026_' + String(window._currentStudentName || 'student');
+  }
+  function _vacContinueLoginFlow_() {
+    setTimeout(function() {
+      if (typeof checkGuildCelebration === 'function') checkGuildCelebration();
+    }, 140);
+  }
+  function _vacSetQuestionAvailability_() {
+    var isOpen = !!(_vacState && _vacState.mode === '방학');
+    var tab = document.getElementById('vacTabQuestion');
+    var introBtn = document.getElementById('vacIntroQuestionBtn');
+    if (tab) tab.style.display = isOpen ? '' : 'none';
+    if (introBtn) introBtn.style.display = isOpen ? '' : 'none';
+    var tabs = document.querySelector('#vacModal .vac-tabs');
+    if (tabs) tabs.classList.toggle('three', !isOpen);
+  }
+
+  // 로그인 완료 후 방학 이벤트를 먼저 처리하고, 닫은 뒤 축전을 연다.
   window._vacInit = function(name) {
     try {
       google.script.run
         .withSuccessHandler(function(v) {
-          if (!v || !v.active) return;           // 방학 기간 아님
+          if (!v || !v.active) {
+            _vacContinueLoginFlow_();
+            return;
+          }
           _vacState = v;
           var btn = document.getElementById('vacBtn');
           if (btn) btn.style.display = '';
-          if (v.checkedToday && v.newCell) {
-            _vacToast('⭐ ' + v.newCell + '번째 별이 켜졌어요! +' + (v.gold || 0) + '골드 · 토큰 +1' +
-              (v.messages && v.messages.length ? '<br>' + v.messages.join('<br>') : ''), 5000);
-          }
           var dot = document.getElementById('vacDot');
           if (dot) dot.style.display = (v.restoreAvailable || (v.isLiberationDay && !v.libNoteDone)) ? 'block' : 'none';
+          _vacSetQuestionAvailability_();
+
+          var introSeen = localStorage.getItem(_vacIntroKey_()) === 'seen';
+          _vacAutoFlowPending = true;
+          openVacModal({ auto: true, page: introSeen ? 'status' : 'intro' });
         })
-        .withFailureHandler(function() {})       // 방학 로직 오류는 조용히 무시
+        .withFailureHandler(function() { _vacContinueLoginFlow_(); })
         .vacationOnLogin(name);
-    } catch (e) {}
+    } catch (e) {
+      _vacContinueLoginFlow_();
+    }
   };
 
-  // ── 모달 열기 (최신 상태를 서버에서 새로 조회) ──
-  window.openVacModal = function() {
+  // 수동 호출은 별자리 현황부터, 자동 호출은 전달받은 페이지부터 연다.
+  window.openVacModal = function(options) {
+    options = options || {};
     var name = window._currentStudentName;
-    if (!name) return;
+    if (!name) {
+      if (options.auto) _vacContinueLoginFlow_();
+      return;
+    }
+    _vacQuestionLoaded = false;
+    _vacQuestionsAll = [];
+    _vacProposalLoaded = false;
+    _vacProposalsAll = [];
+    _vacProposalMeta = null;
     document.getElementById('vacModal').classList.add('open');
+    _vacSetQuestionAvailability_();
+    vacShowPage(options.page || 'status');
+
     google.script.run
       .withSuccessHandler(function(st) {
-        if (!st || !st.success) return;
+        if (!st || !st.success) {
+          document.getElementById('vacSubText').innerText = '별자리 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.';
+          return;
+        }
+        _vacStatus = st;
         _vacRender(st);
       })
-      .withFailureHandler(function() {})
+      .withFailureHandler(function() {
+        document.getElementById('vacSubText').innerText = '별자리 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.';
+      })
       .getVacationStatus(name);
   };
+
   window.closeVacModal = function() {
     document.getElementById('vacModal').classList.remove('open');
     document.getElementById('vacDetail').style.display = 'none';
+    if (_vacAutoFlowPending) {
+      _vacAutoFlowPending = false;
+      _vacContinueLoginFlow_();
+    }
   };
+
   document.getElementById('vacModal').addEventListener('click', function(e) {
     if (e.target === this) closeVacModal();
   });
 
-  // ── 렌더링 ──
+  window.vacShowPage = function(page) {
+    if (page === 'question' && !(_vacState && _vacState.mode === '방학')) page = 'intro';
+    ['intro','status','proposal','question'].forEach(function(p) {
+      var box = document.getElementById('vac' + p.charAt(0).toUpperCase() + p.slice(1) + 'Page');
+      var tab = document.getElementById('vacTab' + p.charAt(0).toUpperCase() + p.slice(1));
+      if (box) box.classList.toggle('active', p === page);
+      if (tab) tab.classList.toggle('active', p === page);
+    });
+    if (page === 'status' && _vacStatus) {
+      requestAnimationFrame(function() { _vacDrawLines_(_vacStatus); });
+    }
+    if (page === 'question' && !_vacQuestionLoaded) vacLoadQuestions();
+    if (page === 'proposal' && !_vacProposalLoaded) vacLoadProposals();
+  };
+
+  window.vacConfirmIntro = function() {
+    try { localStorage.setItem(_vacIntroKey_(), 'seen'); } catch (e) {}
+    vacShowPage('status');
+  };
+
   function _vacRender(st) {
     document.getElementById('vacStatCells').innerText   = st.myCells + '/' + st.totalCells;
     document.getElementById('vacStatStreak').innerText  = st.streak + '일';
     document.getElementById('vacStatTokens').innerText  = st.tokens;
     document.getElementById('vacStatTickets').innerText = st.tickets;
 
-    // 하늘: 별 + 연결선
+    var notice = document.getElementById('vacLoginNotice');
+    if (_vacState && _vacState.checkedToday && _vacState.newCell) {
+      var extra = (_vacState.messages && _vacState.messages.length) ? '<br>' + _vacState.messages.join('<br>') : '';
+      notice.innerHTML = '⭐ 오늘 <b>' + _vacState.newCell + '번째 별</b>이 켜졌습니다. +' + (_vacState.gold || 0) + '골드 · 탐사 토큰 +1' + extra;
+      notice.style.display = 'block';
+    } else {
+      notice.style.display = 'none';
+    }
+
     var sky = document.getElementById('vacSky');
     sky.querySelectorAll('.vac-star,.vac-final-label').forEach(function(el){ el.remove(); });
     var opened = {};
@@ -12728,21 +13370,24 @@ function goToPeerEvalFromGate() {
     for (var n = 1; n <= st.totalCells; n++) {
       var p = VAC_POS[n - 1];
       var star = document.createElement('div');
-      star.className = 'vac-star' + (n === st.totalCells ? ' vac-final' : '');
-      if (n <= st.myCells) star.className += ' lit';
+      var isLit = n <= st.myCells;
       var cell = opened[n];
+      var type = isLit ? _vacStarType_(cell && cell.type, n === st.totalCells) : 'unknown';
+      star.className = 'vac-star' + (n === st.totalCells ? ' vac-final' : '') +
+        (isLit ? ' lit vac-type-' + type : ' vac-type-unknown');
       if (cell && (cell.title || cell.content)) star.className += ' vac-has-note';
+      if (_vacState && _vacState.checkedToday && Number(_vacState.newCell) === n) star.className += ' vac-new-star';
       star.style.left = p[0] + '%';
       star.style.top  = p[1] + '%';
-      star.title = n + '번째 별';
-      if (n <= st.myCells) {
-        (function(no, c) {
-          star.onclick = function() { _vacShowDetail(no, c); };
-        })(n, cell);
+      star.title = n + '번째 별' + (isLit && cell && cell.type ? ' · ' + cell.type : '');
+      star.setAttribute('aria-label', star.title);
+      star.innerHTML = _vacStarSvg_();
+      if (isLit) {
+        (function(no, c) { star.onclick = function() { _vacShowDetail(no, c); }; })(n, cell);
       }
       sky.appendChild(star);
     }
-    // 최종 별 라벨
+
     var lbl = document.createElement('div');
     lbl.className = 'vac-final-label';
     lbl.style.left = VAC_POS[st.totalCells - 1][0] + '%';
@@ -12750,35 +13395,35 @@ function goToPeerEvalFromGate() {
     lbl.innerText = st.myCells >= st.totalCells ? '이름 없는 별' : '???';
     sky.appendChild(lbl);
 
-    // 연결선 (켜진 별끼리) + 27→28 은 점선
-    var svg = document.getElementById('vacSkyLines');
-    var w = sky.clientWidth, h = sky.clientHeight, lines = '';
-    for (var i = 1; i < st.myCells && i < st.totalCells; i++) {
-      var a = VAC_POS[i - 1], b = VAC_POS[i];
-      var dash = (i === st.totalCells - 1) ? ' stroke-dasharray="4,5"' : '';
-      lines += '<line x1="' + (a[0]/100*w) + '" y1="' + (a[1]/100*h) +
-               '" x2="' + (b[0]/100*w) + '" y2="' + (b[1]/100*h) +
-               '" stroke="rgba(255,215,106,0.32)" stroke-width="1"' + dash + '/>';
-    }
-    svg.innerHTML = lines;
+    _vacDrawLines_(st);
 
-    // 복구 버튼 / 광복절 패널 (로그인 시 상태 기준)
     var v = _vacState || {};
-    document.getElementById('vacRestoreBtn').style.display =
-      (v.restoreAvailable && st.tickets > 0) ? '' : 'none';
-    document.getElementById('vacLibPanel').style.display =
-      (v.isLiberationDay && !v.libNoteDone) ? '' : 'none';
+    document.getElementById('vacRestoreBtn').style.display = (v.restoreAvailable && st.tickets > 0) ? '' : 'none';
+    document.getElementById('vacLibPanel').style.display = (v.isLiberationDay && !v.libNoteDone) ? '' : 'none';
+    var councilPanel = document.getElementById('vacCouncilPanel');
+    if (councilPanel) councilPanel.style.display = st.councilEligible ? '' : 'none';
+    var profileBadge = document.getElementById('vacCompletionProfileBadge');
+    if (profileBadge) {
+      profileBadge.style.display = st.councilEligible ? 'inline-flex' : 'none';
+      profileBadge.textContent = st.completionBadge || '✦28';
+      profileBadge.title = '한정 칭호: ' + (st.completionTitle || '28성의 개척자') + ' · 별자리 의회';
+    }
+    if (st.councilEligible) {
+      var cTitle = document.getElementById('vacCouncilTitle');
+      var cBadge = document.getElementById('vacCouncilBadge');
+      if (cTitle) cTitle.textContent = st.completionTitle || '28성의 개척자';
+      if (cBadge) cBadge.textContent = st.completionBadge || '✦28';
+    }
     if (v.mode === '보충') {
-      document.getElementById('vacSubText').innerText =
-        '보충 기간이에요. 하루 최대 3개의 별을 켤 수 있어요. (새로고침으로 재접속하면 다음 별이 켜집니다)';
+      document.getElementById('vacSubText').innerText = '보충 기간입니다. 하루 최대 3개의 별을 켤 수 있습니다. 새로고침하거나 다시 접속하면 다음 별이 켜집니다.';
+    } else {
+      document.getElementById('vacSubText').innerText = '매일 접속해 별을 하나씩 켜고, 여름의 별자리를 완성하세요.';
     }
 
-    // 공동 관측 게이지
     document.getElementById('vacClassCount').innerText = st.classTotal.toLocaleString() + '회';
     var lastAt = st.milestones.length ? st.milestones[st.milestones.length - 1].at : 500;
     var gaugeMax = Math.max(lastAt, Math.min(st.classTotal, st.classMax));
-    document.getElementById('vacGaugeFill').style.width =
-      Math.min(100, st.classTotal / gaugeMax * 100) + '%';
+    document.getElementById('vacGaugeFill').style.width = Math.min(100, st.classTotal / gaugeMax * 100) + '%';
     var gauge = document.getElementById('vacGauge');
     gauge.querySelectorAll('.vac-tick,.vac-tick-label').forEach(function(el){ el.remove(); });
     var msHtml = '';
@@ -12793,6 +13438,40 @@ function goToPeerEvalFromGate() {
     document.getElementById('vacMilestones').innerHTML = msHtml;
   }
 
+  function _vacStarType_(type, isFinal) {
+    if (isFinal || type === '최종') return 'final';
+    if (type === '기록') return 'record';
+    if (type === '떡밥') return 'clue';
+    if (type === '보물') return 'treasure';
+    return 'normal';
+  }
+
+  function _vacStarSvg_() {
+    return '<svg viewBox="0 0 100 100" aria-hidden="true" focusable="false">' +
+      '<path class="vac-star-rays" d="M50 0V100M0 50H100" />' +
+      '<polygon class="vac-star-shell" points="50,4 61.8,33.8 93.7,35.8 69,56.2 77,87.2 50,70 23,87.2 31,56.2 6.3,35.8 38.2,33.8" />' +
+      '<polygon class="vac-star-inner" points="50,16 58.2,38.5 82,39.5 63.5,54.5 69,76 50,63.5 31,76 36.5,54.5 18,39.5 41.8,38.5" />' +
+      '<circle class="vac-star-core" cx="50" cy="47" r="7" />' +
+      '</svg>';
+  }
+
+  function _vacDrawLines_(st) {
+    requestAnimationFrame(function() {
+      var sky = document.getElementById('vacSky');
+      var svg = document.getElementById('vacSkyLines');
+      if (!sky || !svg || !sky.clientWidth || !sky.clientHeight) return;
+      var w = sky.clientWidth, h = sky.clientHeight, lines = '';
+      for (var i = 1; i < st.myCells && i < st.totalCells; i++) {
+        var a = VAC_POS[i - 1], b = VAC_POS[i];
+        var dash = (i === st.totalCells - 1) ? ' stroke-dasharray="4,5"' : '';
+        lines += '<line x1="' + (a[0]/100*w) + '" y1="' + (a[1]/100*h) +
+                 '" x2="' + (b[0]/100*w) + '" y2="' + (b[1]/100*h) +
+                 '" stroke="rgba(255,215,106,0.32)" stroke-width="1"' + dash + '/>';
+      }
+      svg.innerHTML = lines;
+    });
+  }
+
   function _vacShowDetail(no, cell) {
     var box = document.getElementById('vacDetail');
     var icon = { '기록':'📜', '떡밥':'🔮', '보물':'🎁', '최종':'🌟' };
@@ -12800,12 +13479,12 @@ function goToPeerEvalFromGate() {
       box.innerHTML = '<b>' + (icon[cell.type] || '⭐') + ' ' + no + '번째 별' +
         (cell.title ? ' — ' + cell.title : '') + '</b><br>' + (cell.content || '');
     } else {
-      box.innerHTML = '<b>⭐ ' + no + '번째 별</b><br>' + '이 별은 조용히 빛나고 있어요.';
+      box.innerHTML = '<b>⭐ ' + no + '번째 별</b><br>이 별은 조용히 빛나고 있어요.';
     }
     box.style.display = 'block';
+    box.scrollIntoView({ behavior:'smooth', block:'nearest' });
   }
 
-  // ── 복구권 사용 ──
   window.vacUseRestore = function() {
     if (!confirm('복구권 1개를 사용해 어제 놓친 별을 되살릴까요?')) return;
     var btn = document.getElementById('vacRestoreBtn');
@@ -12814,15 +13493,14 @@ function goToPeerEvalFromGate() {
       .withSuccessHandler(function(r) {
         btn.disabled = false;
         if (!r.success) { alert(r.msg); return; }
-        if (_vacState) { _vacState.restoreAvailable = false; }
+        if (_vacState) _vacState.restoreAvailable = false;
         _vacToast('🌠 ' + (r.messages || []).join('<br>'), 4500);
-        openVacModal();   // 새 상태로 다시 그리기
+        openVacModal({ page:'status' });
       })
       .withFailureHandler(function(err) { btn.disabled = false; alert('오류: ' + err.message); })
       .useVacationRestore(window._currentStudentName);
   };
 
-  // ── 광복절 한 줄 소감 ──
   window.vacSubmitLibNote = function() {
     var note = document.getElementById('vacLibNote').value.trim();
     if (!note) { alert('내용을 입력해주세요.'); return; }
@@ -12838,30 +13516,262 @@ function goToPeerEvalFromGate() {
       .submitLiberationNote(window._currentStudentName, note);
   };
 
-  // ── 제안함 ──
-  window.vacToggleProposal = function() {
-    var f = document.getElementById('vacPropForm');
-    f.style.display = (f.style.display === 'none') ? 'block' : 'none';
-  };
-  window.vacSubmitProposal = function() {
-    var cat     = document.getElementById('vacPropCat').value;
-    var title   = document.getElementById('vacPropTitle').value.trim();
-    var content = document.getElementById('vacPropContent').value.trim();
-    if (!title || !content) { alert('제목과 내용을 모두 적어주세요.'); return; }
+  window.vacLoadProposals = function() {
+    var list = document.getElementById('vacProposalList');
+    _vacProposalLoaded = true;
+    if (list) list.innerHTML = '<div class="vac-empty">공개 제안소를 불러오는 중입니다.</div>';
     google.script.run
       .withSuccessHandler(function(r) {
+        if (!r || !r.success) {
+          if (list) list.innerHTML = '<div class="vac-empty">' + _vacEsc_((r && r.msg) || '제안소를 불러오지 못했습니다.') + '</div>';
+          return;
+        }
+        _vacProposalMeta = r;
+        var locked = document.getElementById('vacProposalLocked');
+        var openArea = document.getElementById('vacProposalOpenArea');
+        if (!r.open) {
+          if (locked) locked.style.display = '';
+          if (openArea) openArea.style.display = 'none';
+          var txt = document.getElementById('vacProposalLockedText');
+          if (txt) txt.textContent = '공개 제안소는 ' + (r.openDate || '2026-08-03') + '부터 모든 모험가에게 열립니다. 열린 뒤에는 20자 이상의 제안을 여러 번 제출하고 다른 제안도 익명으로 볼 수 있습니다.';
+          return;
+        }
+        if (locked) locked.style.display = 'none';
+        if (openArea) openArea.style.display = '';
+        var council = document.getElementById('vacProposalCouncilBanner');
+        if (council) council.style.display = r.councilEligible ? '' : 'none';
+        _vacRenderProposals_(r.proposals || []);
+      })
+      .withFailureHandler(function() {
+        if (list) list.innerHTML = '<div class="vac-empty">공개 제안소를 불러오지 못했습니다.</div>';
+      })
+      .getSeasonProposals(window._currentStudentName);
+  };
+
+  window.vacUpdateProposalCount = function() {
+    var text = document.getElementById('vacPropContent');
+    var count = document.getElementById('vacPropCharCount');
+    if (count) count.textContent = (text ? text.value.length : 0) + ' / 1000자';
+  };
+
+  window.vacSubmitProposal = function() {
+    if (!_vacProposalMeta || !_vacProposalMeta.open) {
+      alert('공개 제안소가 아직 열리지 않았어요.'); return;
+    }
+    var cat = document.getElementById('vacPropCat').value;
+    var title = document.getElementById('vacPropTitle').value.trim();
+    var content = document.getElementById('vacPropContent').value.trim();
+    var minChars = Number(_vacProposalMeta.minChars || 20);
+    if (!title || !content) { alert('제목과 내용을 모두 적어주세요.'); return; }
+    if (content.length < minChars) { alert('제안 내용은 ' + minChars + '자 이상 적어주세요. 현재 ' + content.length + '자입니다.'); return; }
+    var btn = document.getElementById('vacPropSubmitBtn');
+    btn.disabled = true;
+    google.script.run
+      .withSuccessHandler(function(r) {
+        btn.disabled = false;
         alert(r.msg);
         if (r.success) {
           document.getElementById('vacPropTitle').value = '';
           document.getElementById('vacPropContent').value = '';
-          document.getElementById('vacPropForm').style.display = 'none';
+          vacUpdateProposalCount();
+          _vacProposalLoaded = false;
+          vacLoadProposals();
         }
       })
-      .withFailureHandler(function(err) { alert('오류: ' + err.message); })
+      .withFailureHandler(function(err) { btn.disabled = false; alert('오류: ' + err.message); })
       .submitSeasonProposal(window._currentStudentName, cat, title, content);
   };
 
-  // ── 토스트 ──
+  function _vacRenderProposals_(items) {
+    _vacProposalsAll = (items || []).map(function(p, i) {
+      p = p || {};
+      p._order = i;
+      return p;
+    });
+    vacApplyProposalFilters();
+  }
+
+  window.vacApplyProposalFilters = function() {
+    var keyword = String((document.getElementById('vacProposalSearch') || {}).value || '').trim().toLowerCase();
+    var category = String((document.getElementById('vacProposalFilterCat') || {}).value || '');
+    var status = String((document.getElementById('vacProposalFilterStatus') || {}).value || '');
+    var sort = String((document.getElementById('vacProposalSort') || {}).value || 'latest');
+    var filtered = _vacProposalsAll.filter(function(p) {
+      if (category && String(p.category || '') !== category) return false;
+      if (status && String(p.statusKey || '') !== status) return false;
+      if (keyword) {
+        var hay = [p.category, p.title, p.content, p.status].join(' ').toLowerCase();
+        if (hay.indexOf(keyword) === -1) return false;
+      }
+      return true;
+    });
+    var statusRank = { accepted:0, candidate:1, review:2, new:3, archive:4 };
+    filtered.sort(function(a,b) {
+      if (sort === 'recommended') {
+        var diff = Number(b.recommendationCount || 0) - Number(a.recommendationCount || 0);
+        if (diff) return diff;
+      }
+      if (sort === 'status') {
+        var sd = Number(statusRank[a.statusKey] == null ? 9 : statusRank[a.statusKey]) - Number(statusRank[b.statusKey] == null ? 9 : statusRank[b.statusKey]);
+        if (sd) return sd;
+      }
+      return Number(a._order || 0) - Number(b._order || 0);
+    });
+    _vacRenderProposalList_(filtered);
+  };
+
+  function _vacRenderProposalList_(items) {
+    var list = document.getElementById('vacProposalList');
+    var count = document.getElementById('vacProposalCount');
+    if (count) count.textContent = items.length + '개의 제안';
+    if (!items.length) {
+      list.innerHTML = '<div class="vac-empty">조건에 맞는 제안이 없습니다.</div>';
+      return;
+    }
+    list.innerHTML = items.map(function(p) {
+      var mine = p.isMine ? '<span class="vac-q-badge">내 제안</span>' : '';
+      var statusKey = _vacEsc_(p.statusKey || 'new');
+      var cardClass = p.statusKey === 'candidate' ? ' is-candidate' : (p.statusKey === 'accepted' ? ' is-accepted' : '');
+      var action = '';
+      if (p.canRecommend) {
+        action = '<button class="vac-prop-rec-btn' + (p.recommendedByMe ? ' active' : '') + '" onclick="vacToggleProposalRecommendation(\'' + _vacEsc_(p.id) + '\')">' +
+          (p.recommendedByMe ? '✦ 추천 취소' : '✦ 의회 추천') + '</button>';
+      } else if (p.isMine && _vacProposalMeta && _vacProposalMeta.councilEligible) {
+        action = '<span style="font-size:9.5px;color:#7887b9;">본인 제안은 추천할 수 없습니다.</span>';
+      }
+      return '<div class="vac-prop-card' + (p.isMine ? ' is-mine' : '') + cardClass + '">' +
+        '<div class="vac-q-meta"><span class="vac-q-meta-left"><span>' + _vacEsc_(p.category || '기타') + ' · ' + _vacEsc_(p.date || '') + '</span>' + mine + '</span>' +
+        '<span class="vac-prop-status ' + statusKey + '">' + _vacEsc_(p.status || '💡 새 제안') + '</span></div>' +
+        '<div class="vac-prop-title">' + _vacEsc_(p.title || '제목 없는 제안') + '</div>' +
+        '<div class="vac-prop-content">' + _vacEsc_(p.content || '') + '</div>' +
+        '<div class="vac-prop-footer"><span class="vac-prop-recs">✦ 별자리 의회 추천 ' + Number(p.recommendationCount || 0) + '</span>' + action + '</div>' +
+        '</div>';
+    }).join('');
+  }
+
+  window.vacToggleProposalRecommendation = function(proposalId) {
+    var target = _vacProposalsAll.find(function(p) { return String(p.id) === String(proposalId); });
+    if (!target || !target.canRecommend) return;
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (!r.success) { alert(r.msg); return; }
+        target.recommendedByMe = !!r.recommended;
+        target.recommendationCount = Number(r.count || 0);
+        vacApplyProposalFilters();
+        _vacToast(r.msg, 2200);
+      })
+      .withFailureHandler(function(err) { alert('오류: ' + err.message); })
+      .toggleSeasonProposalRecommendation(window._currentStudentName, proposalId);
+  };
+
+  window.vacLoadQuestions = function() {
+    var list = document.getElementById('vacQuestionList');
+    _vacQuestionLoaded = true;
+    if (!(_vacState && _vacState.mode === '방학')) {
+      list.innerHTML = '<div class="vac-empty">질문게시판 운영 기간이 아닙니다.</div>';
+      return;
+    }
+    list.innerHTML = '<div class="vac-empty">질문을 불러오는 중입니다.</div>';
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (!r || !r.success) {
+          list.innerHTML = '<div class="vac-empty">' + _vacEsc_((r && r.msg) || '질문을 불러오지 못했습니다.') + '</div>';
+          return;
+        }
+        _vacRenderQuestions_(r.questions || []);
+      })
+      .withFailureHandler(function() {
+        list.innerHTML = '<div class="vac-empty">질문을 불러오지 못했습니다.</div>';
+      })
+      .getMyVacationQuestions(window._currentStudentName);
+  };
+
+  window.vacSubmitQuestion = function() {
+    var cat = document.getElementById('vacQuestionCat').value;
+    var text = document.getElementById('vacQuestionText').value.trim();
+    if (!text) { alert('질문 내용을 적어주세요.'); return; }
+    var btn = document.getElementById('vacQuestionSubmitBtn');
+    btn.disabled = true;
+    google.script.run
+      .withSuccessHandler(function(r) {
+        btn.disabled = false;
+        alert(r.msg);
+        if (r.success) {
+          document.getElementById('vacQuestionText').value = '';
+          _vacQuestionLoaded = false;
+          vacLoadQuestions();
+        }
+      })
+      .withFailureHandler(function(err) { btn.disabled = false; alert('오류: ' + err.message); })
+      .submitVacationQuestion(window._currentStudentName, cat, text);
+  };
+
+  function _vacRenderQuestions_(items) {
+    _vacQuestionsAll = (items || []).map(function(q, i) {
+      q = q || {};
+      q._order = i;
+      return q;
+    });
+    vacApplyQuestionFilters();
+  }
+
+  window.vacApplyQuestionFilters = function() {
+    var searchEl = document.getElementById('vacQuestionSearch');
+    var catEl = document.getElementById('vacQuestionFilterCat');
+    var statusEl = document.getElementById('vacQuestionFilterStatus');
+    var sortEl = document.getElementById('vacQuestionSort');
+    var keyword = String(searchEl ? searchEl.value : '').trim().toLowerCase();
+    var category = catEl ? catEl.value : '';
+    var status = statusEl ? statusEl.value : '';
+    var sort = sortEl ? sortEl.value : 'latest';
+
+    var filtered = _vacQuestionsAll.filter(function(q) {
+      if (category && String(q.category || '') !== category) return false;
+      if (status === 'answered' && !q.answered) return false;
+      if (status === 'waiting' && q.answered) return false;
+      if (keyword) {
+        var haystack = [q.category, q.question, q.answer].join(' ').toLowerCase();
+        if (haystack.indexOf(keyword) === -1) return false;
+      }
+      return true;
+    });
+
+    filtered.sort(function(a, b) {
+      if (sort === 'answered' && Boolean(a.answered) !== Boolean(b.answered)) return a.answered ? -1 : 1;
+      return Number(a._order || 0) - Number(b._order || 0);
+    });
+    _vacRenderQuestionList_(filtered);
+  };
+
+  function _vacRenderQuestionList_(items) {
+    var list = document.getElementById('vacQuestionList');
+    var count = document.getElementById('vacQuestionCount');
+    if (count) count.textContent = items.length + '개의 질문';
+    if (!items.length) {
+      list.innerHTML = '<div class="vac-empty">조건에 맞는 질문이 없습니다.</div>';
+      return;
+    }
+    list.innerHTML = items.map(function(q) {
+      var statusText = q.answered ? '✅ 답변 완료' : '⏳ 답변 대기';
+      var statusClass = q.answered ? 'done' : 'wait';
+      var mine = q.isMine ? '<span class="vac-q-badge">내 질문</span>' : '';
+      var answerDate = q.answerDate ? ' · ' + _vacEsc_(q.answerDate) : '';
+      var answer = q.answered
+        ? '<div class="vac-q-answer"><b>교사 답변' + answerDate + '</b><br>' + _vacEsc_(q.answer || '답변이 등록되었습니다.') + '</div>'
+        : '';
+      return '<div class="vac-q-card' + (q.isMine ? ' is-mine' : '') + (q.answered ? ' is-answered' : '') + '">' +
+        '<div class="vac-q-meta"><span class="vac-q-meta-left"><span>' + _vacEsc_(q.category || '기타') + ' · ' + _vacEsc_(q.date || '') + '</span>' + mine + '</span>' +
+        '<span class="vac-q-status ' + statusClass + '">' + statusText + '</span></div>' +
+        '<div class="vac-q-text">' + _vacEsc_(q.question || '') + '</div>' + answer + '</div>';
+    }).join('');
+  }
+
+  function _vacEsc_(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
   var _vacToastTimer = null;
   function _vacToast(html, ms) {
     var t = document.getElementById('vacToast');
@@ -12872,6 +13782,7 @@ function goToPeerEvalFromGate() {
   }
 })();
 </script>
+
 
 </body>
 </html>\

@@ -832,8 +832,40 @@
       50%     { box-shadow: 0 0 16px 4px rgba(190,225,255,0.8), 0 0 34px 7px rgba(210,200,255,0.5); }
     }
 
+    /* ── 4. 시즌1의 황제 (GUILD-014): 제왕 / 황금관 ── */
+    .tcx-emperor {
+      background: linear-gradient(115deg, #ffd700, #6b0f2a, #ffefc0, #3d0a1f, #ffd700);
+      background-size: 300% 300%;
+      animation: tcxBorderFlow 5.5s ease infinite,
+                 tcxAuraImperial 3.2s ease-in-out infinite;
+    }
+    .tcx-emperor .tcx-badge {
+      background: linear-gradient(135deg, #1a0510 0%, #4a0e2e 40%, #7a1530 65%, #1a0510 100%);
+      color: #ffe9b0;
+      text-shadow: 0 0 8px rgba(255,215,0,0.7), 0 0 16px rgba(180,20,60,0.4);
+    }
+    .tcx-emperor .tcx-crown {
+      position: absolute;
+      top: -9px; left: 50%;
+      transform: translateX(-50%);
+      z-index: 4;
+      color: #ffd700;
+      font-size: 13px;
+      text-shadow: 0 0 8px rgba(255,215,0,0.9), 0 0 4px rgba(0,0,0,0.6);
+      pointer-events: none;
+      animation: tcxCrownFloat 2.6s ease-in-out infinite;
+    }
+    @keyframes tcxCrownFloat {
+      0%,100% { transform: translateX(-50%) translateY(0)    scale(1);    opacity: 0.9; }
+      50%     { transform: translateX(-50%) translateY(-2px) scale(1.15); opacity: 1;   }
+    }
+    @keyframes tcxAuraImperial {
+      0%,100% { box-shadow: 0 0 8px 1px rgba(255,215,0,0.5),  0 0 20px 3px rgba(150,20,50,0.35); }
+      50%     { box-shadow: 0 0 18px 5px rgba(255,215,0,0.85), 0 0 38px 8px rgba(180,20,60,0.55); }
+    }
 
-    /* ══ 초월 개별 프레임: 부활한 영웅 / 영웅적 활약 / 마스터피스 ══ */
+
+    /* ══ 초월 개별 프레임: 부활한 영웅 / 영웅적 활약 / 마스터피스 / 시즌1의 황제 ══ */
     /* [정리] 초월 프레임은 신형(System A)로 통일 — 아래 구형(System B) .tcx-phoenix 중복은 비활성화 */
     .tcx-dualmvp, .tcx-prism{
       padding:3px 12px; border-radius:12px; font-size:12px; font-weight:bold;
@@ -8335,6 +8367,7 @@ function requestCancelSaving(savId, principal) {
     if (achId === 'CHAL-014') return 'phoenix';   // 부활한 영웅
     if (achId === 'HID-006')  return 'champion';  // 영웅적 활약(MVP 2회)
     if (achId === 'CHAL-013') return 'master';    // 마스터피스
+    if (achId === 'GUILD-014') return 'emperor';  // 시즌1의 황제
     return '';
   }
   function tcxParticleSpecs(kind) {
@@ -8347,6 +8380,11 @@ function requestCancelSaving(savId, principal) {
     if (kind === 'master') return [
       'left:30%;width:2px;height:2px;background:radial-gradient(circle,#ffffff,#bfe4ff 70%,transparent);animation-duration:3.5s;animation-delay:0.5s;',
       'left:72%;width:2px;height:2px;background:radial-gradient(circle,#ffffff,#e4d6ff 70%,transparent);animation-duration:4s;animation-delay:1.8s;'
+    ];
+    if (kind === 'emperor') return [
+      'left:20%;width:2.5px;height:2.5px;background:radial-gradient(circle,#ffe9a8,#ffd700 60%,transparent);animation-duration:3s;animation-delay:0.2s;',
+      'left:50%;width:2px;height:2px;background:radial-gradient(circle,#fff2c8,#b8860b 70%,transparent);animation-duration:3.4s;animation-delay:1.1s;',
+      'left:80%;width:2.5px;height:2.5px;background:radial-gradient(circle,#ffe9a8,#ffd700 60%,transparent);animation-duration:2.8s;animation-delay:0.6s;'
     ];
     return []; // champion 은 파티클 대신 좌우 쌍성(✦) 사용
   }
@@ -8374,6 +8412,12 @@ function requestCancelSaving(savId, principal) {
       glint.textContent = '\u2727';
       frame.appendChild(glint);
     }
+    if (kind === 'emperor') {
+      var crown = document.createElement('span');
+      crown.className = 'tcx-crown';
+      crown.textContent = '\u265A';
+      frame.appendChild(crown);
+    }
 
     var specs = tcxParticleSpecs(kind);
     if (specs.length) {
@@ -8396,6 +8440,7 @@ function requestCancelSaving(savId, principal) {
       : text;
     var extra = '';
     if (kind === 'master') extra += '<span class="tcx-glint">\u2727</span>';
+    if (kind === 'emperor') extra += '<span class="tcx-crown">\u265A</span>';
     var specs = tcxParticleSpecs(kind);
     if (specs.length) {
       var pl = '<span class="tcx-plyr">';
